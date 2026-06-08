@@ -594,19 +594,112 @@ function render() {
           const todayStart = new Date(); todayStart.setHours(0,0,0,0);
 
           if (window._diogotab === "tarefas") {
-            // Split: own tasks vs delegated by team
             const ownTasks = active.filter(t => !t.delegatedBy || t.delegatedBy === "Diogo");
             const teamTasks = active.filter(t => t.delegatedBy && t.delegatedBy !== "Diogo");
 
-            if (ownTasks.length === 0 && teamTasks.length === 0) {
-              const e=document.createElement("p"); e.style.cssText="font-size:11px;color:var(--text3);text-align:center;padding:14px 0;"; e.textContent="Nenhuma tarefa ativa"; panel.appendChild(e);
+            // Own tasks
+            if (ownTasks.length === 0) {
+              const e=document.createElement("p"); e.style.cssText="font-size:11px;color:var(--text3);padding:10px 0 4px;"; e.textContent="Nenhuma tarefa sua ainda"; panel.appendChild(e);
+            }
+            ownTasks.forEach(task => {
+              const pc = themePrio(task.prio);
+              const row = document.createElement("div"); row.className = "task-row";
+              const chk = document.createElement("button"); chk.className = "task-check" + (task.done?" done":"");
+              chk.style.borderColor = pc; chk.style.background = task.done ? pc : "none";
+              chk.addEventListener("click", () => toggleTask(task.id, task.done));
+              const tw = document.createElement("div"); tw.style.flex = "1";
+              const tt = document.createElement("div"); tt.className = "task-text"; tt.textContent = task.text; tw.appendChild(tt);
+              const pb = document.createElement("div"); pb.className = "task-prio";
+              pb.innerHTML = `<span class="dot" style="background:${pc}"></span><span style="color:${pc}">${PRIO[task.prio].label}</span>`;
+              tw.appendChild(pb);
+              const del = document.createElement("button"); del.className = "del-btn"; del.textContent = "×";
+              del.addEventListener("click", () => deleteTask(task.id));
+              row.appendChild(chk); row.appendChild(tw); row.appendChild(del);
+              panel.appendChild(row);
+            });
+
+            // Add/delegate buttons
+            appendAddTask(panel, color, "Minhas tarefas", "+ minha tarefa", null, (text,prio)=>addTask("Diogo",text,prio), true);
+            appendDelegate(panel, color, true);
+
+            // Team delegated tasks section
+            if (teamTasks.length > 0) {
+              const divider = document.createElement("div"); divider.className = "section";
+              divider.innerHTML = `<div class="section-label">Mensagem da equipe</div>`;
+              teamTasks.forEach(task => {
+                const pc = themePrio(task.prio);
+                // Message card style
+                const card = document.createElement("div");
+                card.style.cssText = `background:var(--bg3);border:1px solid ${themeColor(task.delegatedBy)}44;border-left:3px solid ${themeColor(task.delegatedBy)};border-radius:6px;padding:10px 12px;margin-bottom:6px;`;
+
+                // Header: who delegated
+                const hdr = document.createElement("div");
+                hdr.style.cssText = `display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;`;
+                hdr.innerHTML = `<span style="font-size:10px;color:${themeColor(task.delegatedBy)};letter-spacing:1px;font-weight:500">${task.delegatedBy}</span><span style="font-size:9px;color:var(--text3)">${PRIO[task.prio].label}</span>`;
+                card.appendChild(hdr);
+
+                // Task text
+                const tt2 = document.createElement("div");
+                tt2.style.cssText = "font-size:13px;color:var(--text);line-height:1.4;margin-bottom:8px;";
+                tt2.textContent = task.text;
+                card.appendChild(tt2);
+
+                // Actions: reply + close
+                const actions = document.createElement("div");
+                actions.style.cssText = "display:flex;gap:6px;";
+
+                // Reply button
+                const replyBtn = document.createElement("button");
+                replyBtn.textContent = "↩ Responder";
+                replyBtn.style.cssText = `background:none;border:1px solid ${themeColor(task.delegatedBy)}66;color:${themeColor(task.delegatedBy)};border-radius:4px;padding:4px 10px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:1px;`;
+
+                // Close button
+                const closeBtn = document.createElement("button");
+                closeBtn.textContent = "✓ Encerrar";
+                closeBtn.style.cssText = `background:none;border:1px solid #4ade8066;color:#4ade80;border-radius:4px;padding:4px 10px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:1px;`;
+                closeBtn.addEventListener("click", () => deleteTask(task.id));
+
+                actions.appendChild(replyBtn);
+                actions.appendChild(closeBtn);
+                card.appendChild(actions);
+
+                // Reply form (hidden)
+                const mf = document.createElement("div");
+                mf.style.cssText = "display:none;margin-top:8px;";
+                const mi = document.createElement("input"); mi.placeholder = "Sua resposta...";
+                mi.style.cssText = "width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:6px 8px;color:var(--text);font-size:12px;font-family:inherit;outline:none;margin-bottom:6px;";
+                const mbr = document.createElement("div"); mbr.style.cssText = "display:flex;gap:6px;";
+                const sb = document.createElement("button"); sb.className = "btn-primary";
+                sb.style.cssText = `background:${color};color:#000;font-size:9px;letter-spacing:2px;border:none;border-radius:4px;padding:6px;cursor:pointer;font-family:inherit;flex:1;`;
+                sb.textContent = "ENVIAR";
+                const cb = document.createElement("button"); cb.className = "btn-cancel"; cb.textContent = "✕";
+                mbr.appendChild(sb); mbr.appendChild(cb);
+                mf.appendChild(mi); mf.appendChild(mbr);
+
+                const submit = () => {
+                  if (!mi.value.trim()) return;
+                  sendMessage("Diogo", mi.value.trim(), task.id, task.text, task.delegatedBy, task.delegatedBy);
+                  mi.value = ""; mf.style.display = "none";
+                };
+                sb.addEventListener("click", submit);
+                cb.addEventListener("click", () => { mf.style.display = "none"; replyBtn.textContent = "↩ Responder"; });
+                mi.addEventListener("keydown", e => { if (e.key === "Enter") submit(); if (e.key === "Escape") { mf.style.display = "none"; } });
+                replyBtn.addEventListener("click", () => {
+                  const vis = mf.style.display !== "none";
+                  mf.style.display = vis ? "none" : "block";
+                  replyBtn.textContent = vis ? "↩ Responder" : "✕ Cancelar";
+                  if (!vis) setTimeout(() => mi.focus(), 50);
+                });
+
+                card.appendChild(mf);
+                divider.appendChild(card);
+              });
+              panel.appendChild(divider);
             }
 
-            // Swap active to only own tasks for the main loop below
-            active.length = 0; ownTasks.forEach(t => active.push(t));
-
-            // Team delegated tasks section (rendered after own tasks)
-            window._diogoteamtasks = teamTasks;
+            // Skip the generic active tasks loop below for Diogo
+            active.length = 0;
+            window._diogoteamtasks = [];
           } else if (window._diogotab === "concluidas") {
             // Completion alerts + all done tasks
             if (Object.keys(completionAlerts).length > 0) {
