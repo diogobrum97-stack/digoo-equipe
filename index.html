@@ -625,11 +625,10 @@ function render() {
               divider.innerHTML = `<div class="section-label">Mensagem da equipe</div>`;
               teamTasks.forEach(task => {
                 const pc = themePrio(task.prio);
-                // Message card style
                 const card = document.createElement("div");
                 card.style.cssText = `background:var(--bg3);border:1px solid ${themeColor(task.delegatedBy)}44;border-left:3px solid ${themeColor(task.delegatedBy)};border-radius:6px;padding:10px 12px;margin-bottom:6px;`;
 
-                // Header: who delegated
+                // Header
                 const hdr = document.createElement("div");
                 hdr.style.cssText = `display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;`;
                 hdr.innerHTML = `<span style="font-size:10px;color:${themeColor(task.delegatedBy)};letter-spacing:1px;font-weight:500">${task.delegatedBy}</span><span style="font-size:9px;color:var(--text3)">${PRIO[task.prio].label}</span>`;
@@ -641,26 +640,38 @@ function render() {
                 tt2.textContent = task.text;
                 card.appendChild(tt2);
 
-                // Actions: reply + close
+                // Conversation thread inline
+                const threadMsgs = Object.values(state.messages||{}).filter(m=>m!=null&&m.taskId===task.id).sort((a,b)=>(a.ts_raw||0)-(b.ts_raw||0));
+                if (threadMsgs.length > 0) {
+                  const thread = document.createElement("div");
+                  thread.style.cssText = "border-top:1px solid var(--sep);padding-top:8px;margin-bottom:8px;";
+                  threadMsgs.forEach(msg => {
+                    const isMine = msg.from === "Diogo";
+                    const mEl = document.createElement("div");
+                    mEl.style.cssText = `display:flex;flex-direction:${isMine?"row-reverse":"row"};margin-bottom:5px;`;
+                    const bubble = document.createElement("div");
+                    bubble.style.cssText = `max-width:75%;padding:5px 9px;border-radius:${isMine?"9px 9px 2px 9px":"9px 9px 9px 2px"};background:${isMine?themeColor("Diogo")+"22":"var(--bg2)"};border:1px solid ${isMine?themeColor("Diogo")+"44":"var(--border)"};`;
+                    bubble.innerHTML = `<div style="font-size:12px;color:var(--text);line-height:1.4">${msg.text}</div><div style="font-size:9px;color:var(--text3);margin-top:2px;text-align:${isMine?"right":"left"}">${msg.ts}</div>`;
+                    mEl.appendChild(bubble);
+                    thread.appendChild(mEl);
+                  });
+                  card.appendChild(thread);
+                }
+
+                // Actions
                 const actions = document.createElement("div");
                 actions.style.cssText = "display:flex;gap:6px;";
-
-                // Reply button
                 const replyBtn = document.createElement("button");
                 replyBtn.textContent = "↩ Responder";
                 replyBtn.style.cssText = `background:none;border:1px solid ${themeColor(task.delegatedBy)}66;color:${themeColor(task.delegatedBy)};border-radius:4px;padding:4px 10px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:1px;`;
-
-                // Close button
                 const closeBtn = document.createElement("button");
                 closeBtn.textContent = "✓ Encerrar";
                 closeBtn.style.cssText = `background:none;border:1px solid #4ade8066;color:#4ade80;border-radius:4px;padding:4px 10px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:1px;`;
                 closeBtn.addEventListener("click", () => deleteTask(task.id));
-
-                actions.appendChild(replyBtn);
-                actions.appendChild(closeBtn);
+                actions.appendChild(replyBtn); actions.appendChild(closeBtn);
                 card.appendChild(actions);
 
-                // Reply form (hidden)
+                // Reply form
                 const mf = document.createElement("div");
                 mf.style.cssText = "display:none;margin-top:8px;";
                 const mi = document.createElement("input"); mi.placeholder = "Sua resposta...";
@@ -672,7 +683,6 @@ function render() {
                 const cb = document.createElement("button"); cb.className = "btn-cancel"; cb.textContent = "✕";
                 mbr.appendChild(sb); mbr.appendChild(cb);
                 mf.appendChild(mi); mf.appendChild(mbr);
-
                 const submit = () => {
                   if (!mi.value.trim()) return;
                   sendMessage("Diogo", mi.value.trim(), task.id, task.text, task.delegatedBy, task.delegatedBy);
@@ -687,7 +697,6 @@ function render() {
                   replyBtn.textContent = vis ? "↩ Responder" : "✕ Cancelar";
                   if (!vis) setTimeout(() => mi.focus(), 50);
                 });
-
                 card.appendChild(mf);
                 divider.appendChild(card);
               });
