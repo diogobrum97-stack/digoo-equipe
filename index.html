@@ -594,8 +594,19 @@ function render() {
           const todayStart = new Date(); todayStart.setHours(0,0,0,0);
 
           if (window._diogotab === "tarefas") {
-            // Active tasks
-            if (active.length===0) { const e=document.createElement("p"); e.style.cssText="font-size:11px;color:var(--text3);text-align:center;padding:14px 0;"; e.textContent="Nenhuma tarefa ativa"; panel.appendChild(e); }
+            // Split: own tasks vs delegated by team
+            const ownTasks = active.filter(t => !t.delegatedBy || t.delegatedBy === "Diogo");
+            const teamTasks = active.filter(t => t.delegatedBy && t.delegatedBy !== "Diogo");
+
+            if (ownTasks.length === 0 && teamTasks.length === 0) {
+              const e=document.createElement("p"); e.style.cssText="font-size:11px;color:var(--text3);text-align:center;padding:14px 0;"; e.textContent="Nenhuma tarefa ativa"; panel.appendChild(e);
+            }
+
+            // Swap active to only own tasks for the main loop below
+            active.length = 0; ownTasks.forEach(t => active.push(t));
+
+            // Team delegated tasks section (rendered after own tasks)
+            window._diogoteamtasks = teamTasks;
           } else if (window._diogotab === "concluidas") {
             // Completion alerts + all done tasks
             if (Object.keys(completionAlerts).length > 0) {
@@ -725,6 +736,38 @@ function render() {
         if (member.locked && window._diogotab === "tarefas") {
           appendAddTask(panel, color, "Minhas tarefas", "+ minha tarefa", null, (text,prio)=>addTask("Diogo",text,prio), true);
           appendDelegate(panel, color, true);
+
+          // Team delegated tasks section
+          const teamTasks = window._diogoteamtasks || [];
+          if (teamTasks.length > 0) {
+            const divider = document.createElement("div");
+            divider.className = "section";
+            divider.innerHTML = `<div class="section-label" style="color:${color};opacity:1">Mensagem da equipe</div>`;
+            teamTasks.forEach(task => {
+              const pc = themePrio(task.prio);
+              const row = document.createElement("div"); row.className = "task-row";
+              const chk = document.createElement("button"); chk.className = "task-check" + (task.done?" done":"");
+              chk.style.borderColor = pc; chk.style.background = task.done ? pc : "none";
+              chk.addEventListener("click", () => toggleTask(task.id, task.done));
+              const tw = document.createElement("div"); tw.style.flex = "1";
+              const tt = document.createElement("div"); tt.className = "task-text"; tt.textContent = task.text; tw.appendChild(tt);
+              const pb = document.createElement("div"); pb.className = "task-prio";
+              pb.innerHTML = `<span class="dot" style="background:${themePrio(task.prio)}"></span><span style="color:${themePrio(task.prio)}">${PRIO[task.prio].label}</span>`;
+              tw.appendChild(pb);
+              if (task.delegatedBy) {
+                const from = document.createElement("div");
+                from.style.cssText = `font-size:9px;color:${themeColor(task.delegatedBy)};margin-top:2px;letter-spacing:1px;`;
+                from.textContent = `de ${task.delegatedBy}`;
+                tw.appendChild(from);
+              }
+              const del = document.createElement("button"); del.className = "del-btn"; del.textContent = "×";
+              del.addEventListener("click", () => deleteTask(task.id));
+              row.appendChild(chk); row.appendChild(tw); row.appendChild(del);
+              divider.appendChild(row);
+            });
+            panel.appendChild(divider);
+          }
+          window._diogoteamtasks = [];
         }
 
         // Team: incoming messages for this member
