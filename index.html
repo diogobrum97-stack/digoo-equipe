@@ -737,12 +737,12 @@ function render() {
           appendAddTask(panel, color, "Minhas tarefas", "+ minha tarefa", null, (text,prio)=>addTask("Diogo",text,prio), true);
           appendDelegate(panel, color, true);
 
-          // Team delegated tasks section
+          // Team delegated tasks section - shown BEFORE add buttons
           const teamTasks = window._diogoteamtasks || [];
           if (teamTasks.length > 0) {
             const divider = document.createElement("div");
             divider.className = "section";
-            divider.innerHTML = `<div class="section-label" style="color:${color};opacity:1">Mensagem da equipe</div>`;
+            divider.innerHTML = `<div class="section-label">Mensagem da equipe</div>`;
             teamTasks.forEach(task => {
               const pc = themePrio(task.prio);
               const row = document.createElement("div"); row.className = "task-row";
@@ -762,12 +762,47 @@ function render() {
               }
               const del = document.createElement("button"); del.className = "del-btn"; del.textContent = "×";
               del.addEventListener("click", () => deleteTask(task.id));
-              row.appendChild(chk); row.appendChild(tw); row.appendChild(del);
-              divider.appendChild(row);
+
+              // Message button for Diogo to reply to team task
+              const mb = document.createElement("button"); mb.className = "msg-btn"; 
+              const taskMsgsCount = Object.values(state.messages||{}).filter(m=>m!=null&&m.taskId===task.id).length;
+              mb.textContent = taskMsgsCount > 0 ? `💬 ${taskMsgsCount}` : "💬";
+              if (taskMsgsCount > 0) mb.classList.add("has-msg");
+
+              const mf = document.createElement("div"); mf.className = "task-msg-form"; mf.style.display = "none";
+              const mi = document.createElement("input"); mi.placeholder = "Responder...";
+              const mbr = document.createElement("div"); mbr.style.cssText = "display:flex;gap:6px;";
+              const sb = document.createElement("button"); sb.className = "btn-primary";
+              sb.style.cssText = `background:${color};color:#000;font-size:9px;letter-spacing:2px;border:none;border-radius:4px;padding:6px;cursor:pointer;font-family:inherit;flex:1;`;
+              sb.textContent = "ENVIAR";
+              const cb = document.createElement("button"); cb.className = "btn-cancel"; cb.textContent = "✕";
+              mbr.appendChild(sb); mbr.appendChild(cb); mf.appendChild(mi); mf.appendChild(mbr);
+
+              const submit = () => {
+                if (!mi.value.trim()) return;
+                sendMessage("Diogo", mi.value.trim(), task.id, task.text, task.delegatedBy, task.delegatedBy);
+                mi.value = ""; mf.style.display = "none";
+              };
+              sb.addEventListener("click", submit);
+              cb.addEventListener("click", () => mf.style.display = "none");
+              mi.addEventListener("keydown", e => { if (e.key === "Enter") submit(); if (e.key === "Escape") mf.style.display = "none"; });
+              mb.addEventListener("click", () => {
+                const vis = mf.style.display !== "none";
+                mf.style.display = vis ? "none" : "block";
+                if (!vis) setTimeout(() => mi.focus(), 50);
+              });
+
+              row.appendChild(mb); row.appendChild(del);
+              const rowWrap = document.createElement("div"); rowWrap.appendChild(row); rowWrap.appendChild(mf);
+              divider.appendChild(rowWrap);
             });
             panel.appendChild(divider);
           }
           window._diogoteamtasks = [];
+
+          // Add/delegate buttons at the bottom
+          appendAddTask(panel, color, "Minhas tarefas", "+ minha tarefa", null, (text,prio)=>addTask("Diogo",text,prio), true);
+          appendDelegate(panel, color, true);
         }
 
         // Team: incoming messages for this member
