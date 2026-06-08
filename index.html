@@ -336,7 +336,7 @@ function setSyncing(v) { syncDot.style.opacity = v ? "0.4" : "1"; }
 
 onValue(ref(db, "/"), snap => {
   const d = snap.val() || {};
-  d.tasks = d.tasks || {}; d.messages = d.messages || {}; d.flashes = d.flashes || {};
+  d.tasks = d.tasks || {}; d.messages = d.messages || {}; d.flashes = d.flashes || {}; d.notices = d.notices || {};
 
   // Detect new tasks for currentUser
   const seenTasks = JSON.parse(localStorage.getItem("digoo_seen_tasks")||"{}");
@@ -348,6 +348,18 @@ onValue(ref(db, "/"), snap => {
     seenTasks[id] = true; seenChanged = true;
   });
   if (seenChanged) localStorage.setItem("digoo_seen_tasks", JSON.stringify(seenTasks));
+
+  // Detect new notices for currentUser
+  const seenNotices = JSON.parse(localStorage.getItem("digoo_seen_notices")||"{}");
+  let noticesChanged = false;
+  Object.entries(d.notices||{}).filter(([,n])=>n!=null).forEach(([id, notice]) => {
+    if (!seenNotices[id] && notice.forMember === currentUser && Object.keys(window._prevNotices||{}).length > 0) {
+      sendNotif("Digoo · Tarefa Concluída", `${notice.by} concluiu: ${notice.text}`, "#00ff88");
+    }
+    seenNotices[id] = true; noticesChanged = true;
+  });
+  if (noticesChanged) localStorage.setItem("digoo_seen_notices", JSON.stringify(seenNotices));
+  window._prevNotices = { ...(d.notices||{}) };
 
   // Detect new messages for currentUser
   const seenMsgs = JSON.parse(localStorage.getItem("digoo_seen_msgs")||"{}");
@@ -667,7 +679,20 @@ function render() {
                 const closeBtn = document.createElement("button");
                 closeBtn.textContent = "✓ Encerrar";
                 closeBtn.style.cssText = `background:none;border:1px solid #4ade8066;color:#4ade80;border-radius:4px;padding:4px 10px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:1px;`;
-                closeBtn.addEventListener("click", () => deleteTask(task.id));
+                closeBtn.addEventListener("click", () => {
+                  // Notify the delegator that task is concluded
+                  push(ref(db, "/notices"), {
+                    forMember: task.delegatedBy,
+                    text: task.text,
+                    by: "Diogo",
+                    ts: new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}),
+                    ts_raw: Date.now()
+                  });
+                  set(ref(db, `/flashes/${task.delegatedBy}`), { ts: Date.now(), msg: `Diogo concluiu sua tarefa!` });
+                  // Clean up messages for this task
+                  Object.entries(state.messages||{}).forEach(([mid,m])=>{ if(m!=null&&m.taskId===task.id) remove(ref(db,`/messages/${mid}`)); });
+                  deleteTask(task.id);
+                });
                 actions.appendChild(replyBtn); actions.appendChild(closeBtn);
                 card.appendChild(actions);
 
@@ -827,6 +852,28 @@ function render() {
             });
             panel.appendChild(sec);
             setTimeout(()=>{const cb=document.getElementById(`clr-${member.name}`);if(cb)cb.addEventListener("click",()=>clearDone(member.name));},50);
+          }
+        }
+
+        // Team: completion notices for this member
+        if (!member.locked) {
+          const myNotices = Object.entries(state.notices||{})
+            .filter(([,n])=>n!=null && n.forMember===member.name)
+            .map(([id,n])=>({...n,id}))
+            .sort((a,b)=>b.ts_raw-a.ts_raw);
+          if (myNotices.length > 0) {
+            const nsec = document.createElement("div"); nsec.className="section";
+            nsec.innerHTML=`<div class="section-label">Tarefas concluídas</div>`;
+            myNotices.forEach(notice => {
+              const el=document.createElement("div");
+              el.style.cssText="display:flex;align-items:center;gap:10px;padding:9px 10px;margin-bottom:4px;border-radius:5px;background:#00140a;border:1px solid #00e67644;";
+              el.innerHTML=`<span style="color:#00e676;font-size:13px">✓</span><div style="flex:1"><div style="font-size:12px;color:var(--text2);text-decoration:line-through">${notice.text}</div><div style="font-size:9px;color:var(--text3);margin-top:2px">${notice.by} concluiu · ${notice.ts}</div></div>`;
+              const ok=document.createElement("button"); ok.textContent="OK";
+              ok.style.cssText="background:#00e676;color:#000;border:none;border-radius:3px;padding:3px 10px;font-size:9px;letter-spacing:1.5px;cursor:pointer;font-family:inherit;font-weight:700;";
+              ok.addEventListener("click",()=>remove(ref(db,`/notices/${notice.id}`)));
+              el.appendChild(ok); nsec.appendChild(el);
+            });
+            panel.appendChild(nsec);
           }
         }
 
