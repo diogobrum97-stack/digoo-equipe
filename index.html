@@ -380,17 +380,6 @@ onValue(ref(db, "/"), snap => {
       completionAlerts[id] = { member: task.member, text: task.text };
       set(ref(db, `/flashes/Diogo`), { ts: Date.now(), msg: `${task.member} concluiu uma tarefa!` });
       if (currentUser === "Diogo") sendNotif("Digoo · Tarefa Concluída", `${task.member} concluiu: ${task.text}`, themeColor("Diogo"));
-      // If a team member delegated this task, notify them too
-      if (task.delegatedBy && task.delegatedBy !== "Diogo" && task.delegatedBy !== task.member && currentUser === task.member) {
-        push(ref(db, "/notices"), {
-          forMember: task.delegatedBy,
-          text: task.text,
-          by: task.member,
-          ts: new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}),
-          ts_raw: Date.now()
-        });
-        set(ref(db, `/flashes/${task.delegatedBy}`), { ts: Date.now(), msg: `${task.member} concluiu sua tarefa!` });
-      }
     }
   });
 
@@ -427,8 +416,20 @@ function addTask(member, text, prio, sender) {
 function toggleTask(id, done) {
   setSyncing(true);
   update(ref(db, `/tasks/${id}`), { done: !done });
-  // If marking as done, mark messages as closed after 30s (hidden from team, visible to Diogo)
   if (!done) {
+    // Marking as done — notify the delegator if it's a team member
+    const task = state.tasks && state.tasks[id];
+    if (task && task.delegatedBy && task.delegatedBy !== "Diogo" && task.delegatedBy !== task.member) {
+      push(ref(db, "/notices"), {
+        forMember: task.delegatedBy,
+        text: task.text,
+        by: task.member,
+        ts: new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}),
+        ts_raw: Date.now()
+      });
+      set(ref(db, `/flashes/${task.delegatedBy}`), { ts: Date.now(), msg: `${task.member} concluiu sua tarefa!` });
+    }
+    // Mark messages as closed after 30s
     setTimeout(() => {
       Object.entries(state.messages || {}).forEach(([msgId, msg]) => {
         if (msg != null && msg.taskId === id) update(ref(db, `/messages/${msgId}`), { closed: true });
@@ -572,12 +573,6 @@ function render() {
       ud.style.cssText=`background:${color};box-shadow:0 0 8px ${color};`; header.appendChild(ud);
     }
 
-    // Completion badge for Diogo
-    if (member.locked && Object.keys(completionAlerts).length>0) {
-      const badge=document.createElement("span"); const cnt=Object.keys(completionAlerts).length;
-      badge.style.cssText=`background:#00e676;color:#000;border-radius:10px;padding:2px 8px;font-size:10px;font-weight:700;letter-spacing:1px;margin-right:6px;`;
-      badge.textContent=cnt+` concluída${cnt>1?"s":""} ✓`; header.appendChild(badge);
-    }
 
     const chev=document.createElement("span"); chev.className="chevron"+(isOpen?" open":""); chev.textContent="▼"; header.appendChild(chev);
 
@@ -593,10 +588,10 @@ function render() {
       const panel=document.createElement("div"); panel.className="panel open";
 
       if (member.locked && !diogoPinUnlocked) {
-        panel.innerHTML=`<div class="pin-wrap"><div class="pin-icon">◈</div><p>Digite o PIN para acessar</p><input class="pin-input" type="password" maxlength="10" placeholder="••••••" id="pin-field"><div style="font-size:10px;color:#f87171;margin-top:8px;letter-spacing:1px;display:none" id="pin-err">PIN incorreto</div><button class="pin-btn" style="background:${color};color:#000" id="pin-btn">ENTRAR</button></div>`;
+        panel.innerHTML=`<div class="pin-wrap"><div class="pin-icon">◈</div><p>Digite o PIN para acessar</p><input class="pin-input" type="password" inputmode="numeric" autocomplete="off" autocorrect="off" maxlength="10" placeholder="••••••" id="pin-field"><div style="font-size:10px;color:#f87171;margin-top:8px;letter-spacing:1px;display:none" id="pin-err">PIN incorreto</div><button class="pin-btn" style="background:${color};color:#000" id="pin-btn">ENTRAR</button></div>`;
         setTimeout(()=>{
           const f=document.getElementById("pin-field"),e=document.getElementById("pin-err"),b=document.getElementById("pin-btn");
-          if(f) f.focus();
+          if(f){ f.value=""; f.focus(); }
           const try_=()=>{ if(f.value===PIN){diogoPinUnlocked=true;render();}else{f.classList.add("shake");f.value="";e.style.display="block";setTimeout(()=>f.classList.remove("shake"),400);}};
           if(b) b.addEventListener("click",try_);
           if(f) f.addEventListener("keydown",e2=>{if(e2.key==="Enter")try_();});
