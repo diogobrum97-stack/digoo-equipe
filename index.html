@@ -619,10 +619,7 @@ function render() {
             });
 
             // Add/delegate buttons
-            appendAddTask(panel, color, "Minhas tarefas", "+ minha tarefa", null, (text,prio)=>addTask("Diogo",text,prio), true);
-            appendDelegate(panel, color, true);
-
-            // Team delegated tasks section
+            // Team delegated tasks section (shown before add buttons)
             if (teamTasks.length > 0) {
               const divider = document.createElement("div"); divider.className = "section";
               divider.innerHTML = `<div class="section-label">Mensagem da equipe</div>`;
@@ -696,6 +693,10 @@ function render() {
               });
               panel.appendChild(divider);
             }
+
+            // Add/delegate buttons at the very bottom
+            appendAddTask(panel, color, "Minhas tarefas", "+ minha tarefa", null, (text,prio)=>addTask("Diogo",text,prio), true);
+            appendDelegate(panel, color, true);
 
             // Skip the generic active tasks loop below for Diogo
             active.length = 0;
@@ -776,126 +777,48 @@ function render() {
           }
         }
 
-        if (member.locked && window._diogotab !== "tarefas") { /* skip active tasks on other tabs */ } else
-        active.forEach(task=>{
-          const pc=themePrio(task.prio);
-          const row=document.createElement("div"); row.className="task-row";
-          const chk=document.createElement("button"); chk.className="task-check"+(task.done?" done":"");
-          chk.style.borderColor=pc; chk.style.background=task.done?pc:"none";
-          chk.addEventListener("click",()=>toggleTask(task.id,task.done));
-          const tw=document.createElement("div"); tw.style.flex="1";
-          const tt=document.createElement("div"); tt.className="task-text"; tt.textContent=task.text; tw.appendChild(tt);
-          if(member.locked){const pb=document.createElement("div");pb.className="task-prio";pb.innerHTML=`<span class="dot" style="background:${pc}"></span><span style="color:${pc}">${PRIO[task.prio].label}</span>`;tw.appendChild(pb);}
-          if(!member.locked && task.delegatedBy){const db=document.createElement("div");db.style.cssText="font-size:9px;color:var(--text3);margin-top:3px;letter-spacing:1px;opacity:0.7;";db.textContent=`de ${task.delegatedBy}`;tw.appendChild(db);}
-          row.appendChild(chk); row.appendChild(tw);
+        // Non-locked members: render active tasks with message button
+        if (!member.locked) {
+          active.forEach(task=>{
+            const pc=themePrio(task.prio);
+            const row=document.createElement("div"); row.className="task-row";
+            const chk=document.createElement("button"); chk.className="task-check"+(task.done?" done":"");
+            chk.style.borderColor=pc; chk.style.background=task.done?pc:"none";
+            chk.addEventListener("click",()=>toggleTask(task.id,task.done));
+            const tw=document.createElement("div"); tw.style.flex="1";
+            const tt=document.createElement("div"); tt.className="task-text"; tt.textContent=task.text; tw.appendChild(tt);
+            if(task.delegatedBy){const dbb=document.createElement("div");dbb.style.cssText=`font-size:9px;color:${themeColor(task.delegatedBy)};margin-top:3px;letter-spacing:1px;`;dbb.textContent=`de ${task.delegatedBy}`;tw.appendChild(dbb);}
+            row.appendChild(chk); row.appendChild(tw);
 
-          if (member.locked) {
-            const del=document.createElement("button"); del.className="del-btn"; del.textContent="×"; del.addEventListener("click",()=>deleteTask(task.id)); row.appendChild(del); panel.appendChild(row);
-          } else {
             const taskMsgs=Object.values(state.messages||{}).filter(m=>m!=null&&m.taskId===task.id);
-            // Also show incoming messages addressed to this member
-            const incomingMsgs=Object.values(state.messages||{}).filter(m=>m!=null&&m.recipient===member.name&&m.taskId===task.id);
             const mb=document.createElement("button"); mb.className="msg-btn"+(taskMsgs.length>0?" has-msg":""); mb.textContent=taskMsgs.length>0?`💬 ${taskMsgs.length}`:"💬";
             const mf=document.createElement("div"); mf.className="task-msg-form"; mf.style.display="none";
             const mi=document.createElement("input"); mi.placeholder="Recado sobre essa tarefa...";
             const mbr=document.createElement("div"); mbr.style.cssText="display:flex;gap:6px;";
             const sb=document.createElement("button"); sb.className="btn-primary"; sb.style.cssText=`background:${color};color:#000;font-size:9px;letter-spacing:2px;border:none;border-radius:4px;padding:6px;cursor:pointer;font-family:inherit;flex:1;`; sb.textContent="ENVIAR";
-            const cb=document.createElement("button"); cb.className="btn-cancel"; cb.textContent="✕";
-            mbr.appendChild(sb); mbr.appendChild(cb); mf.appendChild(mi); mf.appendChild(mbr);
+            const cbt=document.createElement("button"); cbt.className="btn-cancel"; cbt.textContent="✕";
+            mbr.appendChild(sb); mbr.appendChild(cbt); mf.appendChild(mi); mf.appendChild(mbr);
             const submit=()=>{if(mi.value.trim()){sendMessage(member.name,mi.value.trim(),task.id,task.text,task.delegatedBy||"Diogo",task.delegatedBy||"Diogo");mi.value="";mf.style.display="none";}};
-            sb.addEventListener("click",submit); cb.addEventListener("click",()=>{mf.style.display="none";});
+            sb.addEventListener("click",submit); cbt.addEventListener("click",()=>{mf.style.display="none";});
             mi.addEventListener("keydown",e=>{if(e.key==="Enter")submit();if(e.key==="Escape")mf.style.display="none";});
             mb.addEventListener("click",()=>{const vis=mf.style.display!=="none";mf.style.display=vis?"none":"block";if(!vis)setTimeout(()=>mi.focus(),50);});
             row.appendChild(mb);
             const rw=document.createElement("div"); rw.appendChild(row); rw.appendChild(mf); panel.appendChild(rw);
-          }
-        });
-
-        // Done section for non-locked members only
-        if (done.length>0&&!member.locked) {
-          const sec=document.createElement("div"); sec.className="section";
-          sec.innerHTML=`<div class="done-header"><span class="done-label">CONCLUÍDAS</span><button class="clear-btn" id="clr-${member.name}">LIMPAR</button></div>`;
-          done.forEach(task=>{
-            const row=document.createElement("div"); row.className="task-row done-row";
-            const chk=document.createElement("button"); chk.className="task-check done"; chk.style.cssText=`background:#4ade80;border-color:#4ade80;`; chk.addEventListener("click",()=>toggleTask(task.id,task.done));
-            const t=document.createElement("div"); t.className="task-text done"; t.style.flex="1"; t.textContent=task.text;
-            row.appendChild(chk); row.appendChild(t); sec.appendChild(row);
           });
-          panel.appendChild(sec);
-          setTimeout(()=>{const cb=document.getElementById(`clr-${member.name}`);if(cb)cb.addEventListener("click",()=>clearDone(member.name));},50);
-        }
 
-        // Diogo: add own task + delegate (only on tarefas tab)
-        if (member.locked && window._diogotab === "tarefas") {
-          appendAddTask(panel, color, "Minhas tarefas", "+ minha tarefa", null, (text,prio)=>addTask("Diogo",text,prio), true);
-          appendDelegate(panel, color, true);
-
-          // Team delegated tasks section - shown BEFORE add buttons
-          const teamTasks = window._diogoteamtasks || [];
-          if (teamTasks.length > 0) {
-            const divider = document.createElement("div");
-            divider.className = "section";
-            divider.innerHTML = `<div class="section-label">Mensagem da equipe</div>`;
-            teamTasks.forEach(task => {
-              const pc = themePrio(task.prio);
-              const row = document.createElement("div"); row.className = "task-row";
-              const chk = document.createElement("button"); chk.className = "task-check" + (task.done?" done":"");
-              chk.style.borderColor = pc; chk.style.background = task.done ? pc : "none";
-              chk.addEventListener("click", () => toggleTask(task.id, task.done));
-              const tw = document.createElement("div"); tw.style.flex = "1";
-              const tt = document.createElement("div"); tt.className = "task-text"; tt.textContent = task.text; tw.appendChild(tt);
-              const pb = document.createElement("div"); pb.className = "task-prio";
-              pb.innerHTML = `<span class="dot" style="background:${themePrio(task.prio)}"></span><span style="color:${themePrio(task.prio)}">${PRIO[task.prio].label}</span>`;
-              tw.appendChild(pb);
-              if (task.delegatedBy) {
-                const from = document.createElement("div");
-                from.style.cssText = `font-size:9px;color:${themeColor(task.delegatedBy)};margin-top:2px;letter-spacing:1px;`;
-                from.textContent = `de ${task.delegatedBy}`;
-                tw.appendChild(from);
-              }
-              const del = document.createElement("button"); del.className = "del-btn"; del.textContent = "×";
-              del.addEventListener("click", () => deleteTask(task.id));
-
-              // Message button for Diogo to reply to team task
-              const mb = document.createElement("button"); mb.className = "msg-btn"; 
-              const taskMsgsCount = Object.values(state.messages||{}).filter(m=>m!=null&&m.taskId===task.id).length;
-              mb.textContent = taskMsgsCount > 0 ? `💬 ${taskMsgsCount}` : "💬";
-              if (taskMsgsCount > 0) mb.classList.add("has-msg");
-
-              const mf = document.createElement("div"); mf.className = "task-msg-form"; mf.style.display = "none";
-              const mi = document.createElement("input"); mi.placeholder = "Responder...";
-              const mbr = document.createElement("div"); mbr.style.cssText = "display:flex;gap:6px;";
-              const sb = document.createElement("button"); sb.className = "btn-primary";
-              sb.style.cssText = `background:${color};color:#000;font-size:9px;letter-spacing:2px;border:none;border-radius:4px;padding:6px;cursor:pointer;font-family:inherit;flex:1;`;
-              sb.textContent = "ENVIAR";
-              const cb = document.createElement("button"); cb.className = "btn-cancel"; cb.textContent = "✕";
-              mbr.appendChild(sb); mbr.appendChild(cb); mf.appendChild(mi); mf.appendChild(mbr);
-
-              const submit = () => {
-                if (!mi.value.trim()) return;
-                sendMessage("Diogo", mi.value.trim(), task.id, task.text, task.delegatedBy, task.delegatedBy);
-                mi.value = ""; mf.style.display = "none";
-              };
-              sb.addEventListener("click", submit);
-              cb.addEventListener("click", () => mf.style.display = "none");
-              mi.addEventListener("keydown", e => { if (e.key === "Enter") submit(); if (e.key === "Escape") mf.style.display = "none"; });
-              mb.addEventListener("click", () => {
-                const vis = mf.style.display !== "none";
-                mf.style.display = vis ? "none" : "block";
-                if (!vis) setTimeout(() => mi.focus(), 50);
-              });
-
-              row.appendChild(mb); row.appendChild(del);
-              const rowWrap = document.createElement("div"); rowWrap.appendChild(row); rowWrap.appendChild(mf);
-              divider.appendChild(rowWrap);
+          // Done section
+          if (done.length>0) {
+            const sec=document.createElement("div"); sec.className="section";
+            sec.innerHTML=`<div class="done-header"><span class="done-label">CONCLUÍDAS</span><button class="clear-btn" id="clr-${member.name}">LIMPAR</button></div>`;
+            done.forEach(task=>{
+              const row=document.createElement("div"); row.className="task-row done-row";
+              const chk=document.createElement("button"); chk.className="task-check done"; chk.style.cssText=`background:#4ade80;border-color:#4ade80;`; chk.addEventListener("click",()=>toggleTask(task.id,task.done));
+              const t=document.createElement("div"); t.className="task-text done"; t.style.flex="1"; t.textContent=task.text;
+              row.appendChild(chk); row.appendChild(t); sec.appendChild(row);
             });
-            panel.appendChild(divider);
+            panel.appendChild(sec);
+            setTimeout(()=>{const cb=document.getElementById(`clr-${member.name}`);if(cb)cb.addEventListener("click",()=>clearDone(member.name));},50);
           }
-          window._diogoteamtasks = [];
-
-          // Add/delegate buttons at the bottom
-          appendAddTask(panel, color, "Minhas tarefas", "+ minha tarefa", null, (text,prio)=>addTask("Diogo",text,prio), true);
-          appendDelegate(panel, color, true);
         }
 
         // Team: incoming messages for this member
