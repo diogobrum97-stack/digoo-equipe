@@ -380,6 +380,17 @@ onValue(ref(db, "/"), snap => {
       completionAlerts[id] = { member: task.member, text: task.text };
       set(ref(db, `/flashes/Diogo`), { ts: Date.now(), msg: `${task.member} concluiu uma tarefa!` });
       if (currentUser === "Diogo") sendNotif("Digoo · Tarefa Concluída", `${task.member} concluiu: ${task.text}`, themeColor("Diogo"));
+      // If a team member delegated this task, notify them too
+      if (task.delegatedBy && task.delegatedBy !== "Diogo" && task.delegatedBy !== task.member && currentUser === task.member) {
+        push(ref(db, "/notices"), {
+          forMember: task.delegatedBy,
+          text: task.text,
+          by: task.member,
+          ts: new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}),
+          ts_raw: Date.now()
+        });
+        set(ref(db, `/flashes/${task.delegatedBy}`), { ts: Date.now(), msg: `${task.member} concluiu sua tarefa!` });
+      }
     }
   });
 
