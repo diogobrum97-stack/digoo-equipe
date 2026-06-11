@@ -784,9 +784,9 @@ function render() {
           // --- TABS for Diogo ---
           if (!window._diogotab) window._diogotab = "tarefas";
           const tabs = document.createElement("div"); tabs.className = "tabs";
-          ["tarefas","concluidas","conversas","ml"].forEach(tab => {
+          ["tarefas","concluidas","conversas"].forEach(tab => {
             const btn = document.createElement("button"); btn.className = "tab-btn" + (window._diogotab===tab?" active":"");
-            btn.textContent = tab === "tarefas" ? "Minhas Tarefas" : tab === "concluidas" ? "Concluídas Equipe" : tab === "conversas" ? "Conversas" : "🛒 ML";
+            btn.textContent = tab === "tarefas" ? "Minhas Tarefas" : tab === "concluidas" ? "Concluídas Equipe" : "Conversas";
             btn.addEventListener("click", () => { window._diogotab = tab; render(); });
             tabs.appendChild(btn);
           });
@@ -924,9 +924,7 @@ function render() {
             // Skip the generic active tasks loop below for Diogo
             active.length = 0;
             window._diogoteamtasks = [];
-          } else if (window._diogotab === "ml") {
-            // ML Devoluções tab
-            renderMLTab(panel, color);
+
           } else if (window._diogotab === "concluidas") {
             // Completion alerts + all done tasks
             if (Object.keys(completionAlerts).length > 0) {
@@ -1045,6 +1043,41 @@ function render() {
             panel.appendChild(sec);
             setTimeout(()=>{const cb=document.getElementById(`clr-${member.name}`);if(cb)cb.addEventListener("click",()=>clearDone(member.name));},50);
           }
+        }
+
+        // ML tab for Larissa
+        if (!member.locked && member.name === "Larissa") {
+          if (!window._larissaml) window._larissaml = "tarefas";
+
+          // Tabs for Larissa
+          const lTabs = document.createElement("div");
+          lTabs.className = "tabs";
+          ["tarefas","ml"].forEach(tab => {
+            const btn = document.createElement("button");
+            btn.className = "tab-btn" + (window._larissaml === tab ? " active" : "");
+            btn.style.color = window._larissaml === tab ? member.color : "";
+            btn.style.borderBottomColor = window._larissaml === tab ? member.color : "";
+            btn.textContent = tab === "tarefas" ? "Tarefas" : "🛒 Devoluções";
+            btn.addEventListener("click", () => { window._larissaml = tab; render(); });
+            lTabs.appendChild(btn);
+          });
+          panel.insertBefore(lTabs, panel.firstChild);
+
+          if (window._larissaml === "ml") {
+            renderMLTab(panel, member.color);
+            panel.querySelector && null; // skip rest by returning early via flag
+            window._skipTeamContent = true;
+          } else {
+            window._skipTeamContent = false;
+          }
+        } else {
+          window._skipTeamContent = false;
+        }
+
+        if (window._skipTeamContent) {
+          card.appendChild(panel);
+          container.appendChild(card);
+          return;
         }
 
         // Team: completion notices for this member
