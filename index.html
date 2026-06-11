@@ -586,13 +586,12 @@ function stopTabFlash() { if(tabFlashInterval){clearInterval(tabFlashInterval);t
 // Render
 // ---- ML INTEGRATION ----
 let mlSubTab = "canceladas";
-let mlModalOpen = false;
 let mlCanceladas = null, mlDevolucoes = null, mlReclamacoes = null;
 let mlLoadingTab = null;
 
 async function fetchMLData(tab) {
   mlLoadingTab = tab;
-  renderMLModal();
+  render();
   try {
     const r = await fetch(`${VERCEL_BACKEND}/api/ml-${tab}`);
     const data = await r.json();
@@ -605,56 +604,11 @@ async function fetchMLData(tab) {
     else if (tab === "reclamacoes") mlReclamacoes = { error: e.message };
   }
   mlLoadingTab = null;
-  renderMLModal();
+  render();
 }
 
-function openMLModal(color) {
-  mlModalOpen = true;
-  if (!mlCanceladas) fetchMLData("canceladas");
-  renderMLModal(color);
-}
-
-function closeMLModal() {
-  mlModalOpen = false;
-  const overlay = document.getElementById("ml-modal-overlay");
-  if (overlay) overlay.remove();
-}
-
-function renderMLModal(color) {
-  let overlay = document.getElementById("ml-modal-overlay");
-  if (!mlModalOpen) { if (overlay) overlay.remove(); return; }
-
-  if (!overlay) {
-    overlay = document.createElement("div");
-    overlay.className = "card-modal-overlay";
-    overlay.id = "ml-modal-overlay";
-    overlay.addEventListener("click", (e) => { if (e.target === overlay) closeMLModal(); });
-    document.body.appendChild(overlay);
-  }
-  overlay.innerHTML = "";
-
-  const modal = document.createElement("div");
-  modal.className = "card-modal";
-
-  // Header
-  const hdr = document.createElement("div");
-  hdr.className = "card-modal-header";
-  hdr.innerHTML = `
-    <div style="width:34px;height:34px;border-radius:50%;background:${color||"#ff1f7a"}22;border:1.5px solid ${color||"#ff1f7a"};color:${color||"#ff1f7a"};display:flex;align-items:center;justify-content:center;font-size:10px;letter-spacing:1px;flex-shrink:0;">LA</div>
-    <div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:${color||"#ff1f7a"}">LARISSA</div>
-      <div style="font-size:9px;color:var(--text3);letter-spacing:1px">Mercado Livre</div>
-    </div>`;
-  const closeBtn = document.createElement("button");
-  closeBtn.className = "card-modal-close";
-  closeBtn.textContent = "×";
-  closeBtn.addEventListener("click", closeMLModal);
-  hdr.appendChild(closeBtn);
-  modal.appendChild(hdr);
-
-  // Body
-  const body = document.createElement("div");
-  body.className = "card-modal-body";
+function renderMLInPanel(panel, color) {
+  const body = panel;
 
   // Sub-tabs
   const subTabs = document.createElement("div");
@@ -749,8 +703,6 @@ function renderMLModal(color) {
     body.appendChild(refBtn);
   }
 
-  modal.appendChild(body);
-  overlay.appendChild(modal);
 }
 
 // ---- ML INTEGRATION ----
@@ -1259,20 +1211,30 @@ function render() {
           }
         }
 
-        // Larissa: ML button in header area + modal on click
-        if (!member.locked && member.name === "Larissa") {
-          // Add ML button to card header
-          const mlHeaderBtn = document.createElement("button");
-          mlHeaderBtn.style.cssText = `background:none;border:1px solid ${member.color}55;color:${member.color};border-radius:4px;padding:3px 10px;font-size:9px;cursor:pointer;font-family:inherit;letter-spacing:1px;flex-shrink:0;margin-left:auto;margin-right:8px;`;
-          mlHeaderBtn.textContent = "🛒 ML";
-          mlHeaderBtn.addEventListener("click", (e) => {
-            e.stopPropagation();
-            openMLModal(member.color);
-          });
-          // Insert before chevron
-          header.insertBefore(mlHeaderBtn, header.lastChild);
-        }
         window._skipTeamContent = false;
+
+        // Larissa gets ML tab
+        if (!member.locked && member.name === "Larissa") {
+          if (!window._larissatab) window._larissatab = "tarefas";
+          const lTabs = document.createElement("div");
+          lTabs.className = "tabs";
+          ["tarefas", "ml"].forEach(tab => {
+            const btn = document.createElement("button");
+            btn.className = "tab-btn" + (window._larissatab === tab ? " active" : "");
+            if (window._larissatab === tab) { btn.style.color = member.color; btn.style.borderBottomColor = member.color; }
+            btn.textContent = tab === "tarefas" ? "Tarefas" : "🛒 Mercado Livre";
+            btn.addEventListener("click", () => { window._larissatab = tab; render(); });
+            lTabs.appendChild(btn);
+          });
+          panel.appendChild(lTabs);
+
+          if (window._larissatab === "ml") {
+            renderMLInPanel(panel, member.color);
+            card.appendChild(panel);
+            container.appendChild(card);
+            return;
+          }
+        }
 
         // Team: completion notices for this member
         if (!member.locked) {
