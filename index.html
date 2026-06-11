@@ -229,11 +229,11 @@ h1 { font-family: 'Bebas Neue', sans-serif; font-size: 44px; letter-spacing: 5px
 /* Tabs */
 .tabs { display: flex; gap: 0; margin-bottom: 14px; border-bottom: 1px solid var(--sep); }
 .tab-btn {
-  padding: 8px 12px; background: none; border: none;
-  font-family: inherit; font-size: 10px; letter-spacing: 1.5px;
+  padding: 8px 14px; background: none; border: none;
+  font-family: inherit; font-size: 10px; letter-spacing: 2px;
   text-transform: uppercase; cursor: pointer; color: var(--text3);
   border-bottom: 2px solid transparent; margin-bottom: -1px;
-  transition: all 0.15s; line-height: 1.3; text-align: center;
+  transition: all 0.15s;
 }
 .tab-btn.active { color: var(--text); border-bottom-color: var(--text); }
 
@@ -1224,7 +1224,7 @@ function render() {
             const btn = document.createElement("button");
             btn.className = "tab-btn" + (window._larissatab === tab ? " active" : "");
             if (window._larissatab === tab) { btn.style.color = member.color; btn.style.borderBottomColor = member.color; }
-            btn.innerHTML = tab === "tarefas" ? "Tarefas" : "Mercado<br>Livre";
+            btn.textContent = tab === "tarefas" ? "Tarefas" : "Mercado Livre";
             btn.addEventListener("click", () => { window._larissatab = tab; render(); });
             lTabs.appendChild(btn);
           });
