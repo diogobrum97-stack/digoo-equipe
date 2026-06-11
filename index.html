@@ -92,7 +92,7 @@ h1 { font-family: 'Bebas Neue', sans-serif; font-size: 44px; letter-spacing: 5px
 
 /* Panel */
 .panel { background: var(--bg2); padding: 16px; display: none; }
-.panel.open { display: block; }
+.panel.open { display: block; max-height: 80vh; overflow-y: auto; }
 
 /* PIN */
 .pin-wrap { text-align: center; padding: 20px 0; }
@@ -229,11 +229,11 @@ h1 { font-family: 'Bebas Neue', sans-serif; font-size: 44px; letter-spacing: 5px
 /* Tabs */
 .tabs { display: flex; gap: 0; margin-bottom: 14px; border-bottom: 1px solid var(--sep); }
 .tab-btn {
-  padding: 8px 14px; background: none; border: none;
-  font-family: inherit; font-size: 10px; letter-spacing: 2px;
+  padding: 8px 12px; background: none; border: none;
+  font-family: inherit; font-size: 10px; letter-spacing: 1.5px;
   text-transform: uppercase; cursor: pointer; color: var(--text3);
   border-bottom: 2px solid transparent; margin-bottom: -1px;
-  transition: all 0.15s;
+  transition: all 0.15s; line-height: 1.3; text-align: center;
 }
 .tab-btn.active { color: var(--text); border-bottom-color: var(--text); }
 
@@ -619,6 +619,8 @@ function renderMLInPanel(panel, color) {
     { id: "devolucoes", label: "Devoluções", data: mlDevolucoes },
     { id: "reclamacoes", label: "Reclamações", data: mlReclamacoes },
   ];
+  // Auto-load canceladas if not loaded
+  if (!mlCanceladas && mlLoadingTab !== "canceladas") fetchMLData("canceladas");
 
   tabs.forEach(t => {
     const btn = document.createElement("button");
@@ -1222,17 +1224,18 @@ function render() {
             const btn = document.createElement("button");
             btn.className = "tab-btn" + (window._larissatab === tab ? " active" : "");
             if (window._larissatab === tab) { btn.style.color = member.color; btn.style.borderBottomColor = member.color; }
-            btn.textContent = tab === "tarefas" ? "Tarefas" : "🛒 Mercado Livre";
+            btn.innerHTML = tab === "tarefas" ? "Tarefas" : "Mercado<br>Livre";
             btn.addEventListener("click", () => { window._larissatab = tab; render(); });
             lTabs.appendChild(btn);
           });
           panel.appendChild(lTabs);
 
           if (window._larissatab === "ml") {
+            // Only ML content - clear any task content
             renderMLInPanel(panel, member.color);
             card.appendChild(panel);
             container.appendChild(card);
-            return;
+            return; // skip tasks, notices, messages
           }
         }
 
