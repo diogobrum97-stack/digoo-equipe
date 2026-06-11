@@ -153,6 +153,34 @@ h1 { font-family: 'Bebas Neue', sans-serif; font-size: 44px; letter-spacing: 5px
 .task-msg-form input { width: 100%; background: none; border: none; outline: none; color: var(--text); font-size: 12px; padding: 0; font-family: inherit; margin-bottom: 8px; }
 .task-msg-form input::placeholder { color: var(--text3); }
 
+/* ML Tab */
+.ml-tab { padding: 14px 0; }
+.ml-connect-btn {
+  display: block; width: 100%; padding: 12px;
+  background: none; border: 1px solid #fff15544;
+  color: #fff155; border-radius: 6px; font-family: inherit;
+  font-size: 11px; letter-spacing: 2px; cursor: pointer;
+  text-align: center; transition: all 0.15s; margin-bottom: 12px;
+}
+.ml-connect-btn:hover { background: #fff15511; }
+.ml-card {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 6px; padding: 10px 12px; margin-bottom: 6px;
+  display: flex; align-items: flex-start; gap: 10px;
+}
+.ml-card:hover { border-color: #fff15544; }
+.ml-badge {
+  font-size: 9px; padding: 2px 7px; border-radius: 3px;
+  letter-spacing: 1px; white-space: nowrap; flex-shrink: 0;
+}
+.ml-link {
+  background: none; border: none; color: #fff155; cursor: pointer;
+  font-size: 10px; letter-spacing: 1px; font-family: inherit;
+  padding: 0; text-decoration: underline; margin-top: 4px; display: block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinning { animation: spin 1s linear infinite; display: inline-block; }
+
 /* Tabs */
 .tabs { display: flex; gap: 0; margin-bottom: 14px; border-bottom: 1px solid var(--sep); }
 .tab-btn {
@@ -336,7 +364,7 @@ function setSyncing(v) { syncDot.style.opacity = v ? "0.4" : "1"; }
 
 onValue(ref(db, "/"), snap => {
   const d = snap.val() || {};
-  d.tasks = d.tasks || {}; d.messages = d.messages || {}; d.flashes = d.flashes || {}; d.notices = d.notices || {};
+  d.tasks = d.tasks || {}; d.messages = d.messages || {}; d.flashes = d.flashes || {}; d.notices = d.notices || {}; d.ml_token = d.ml_token || null; d.ml_cache = d.ml_cache || null;
 
   // Detect new tasks for currentUser
   const seenTasks = JSON.parse(localStorage.getItem("digoo_seen_tasks")||"{}");
@@ -511,6 +539,161 @@ function startTabFlash(msg, color) {
 function stopTabFlash() { if(tabFlashInterval){clearInterval(tabFlashInterval);tabFlashInterval=null;} document.title=origTitle; }
 
 // Render
+// ---- ML INTEGRATION ----
+const VERCEL_BACKEND = "https://digoo-backend.vercel.app";
+let mlData = null;
+let mlLoading = false;
+let mlAutoInterval = null;
+
+async function fetchDevolucoes() {
+  mlLoading = true;
+  if (window._diogotab === "ml") render();
+  try {
+    const r = await fetch(`${VERCEL_BACKEND}/api/ml-devolucoes`);
+    const data = await r.json();
+    if (data.ok) {
+      mlData = data;
+      // Save to Firebase so all devices see it
+      set(ref(db, "/ml_cache"), { data: data.data, updated_at: data.updated_at });
+    } else {
+      mlData = { error: data.error };
+    }
+  } catch(e) {
+    mlData = { error: "Erro ao buscar devoluções: " + e.message };
+  }
+  mlLoading = false;
+  render();
+}
+
+function startMLAutoRefresh() {
+  if (mlAutoInterval) clearInterval(mlAutoInterval);
+  fetchDevolucoes();
+  mlAutoInterval = setInterval(fetchDevolucoes, 5 * 60 * 1000); // every 5 min
+}
+
+function renderMLTab(panel, color) {
+  const wrap = document.createElement("div");
+  wrap.className = "ml-tab";
+
+  // Check if connected (ml_token exists in Firebase)
+  const mlToken = state.ml_token;
+
+  if (!mlToken || !mlToken.access_token) {
+    // Not connected
+    const msg = document.createElement("p");
+    msg.style.cssText = "font-size:11px;color:var(--text3);margin-bottom:12px;line-height:1.6;";
+    msg.textContent = "Conecte sua conta do Mercado Livre para ver as devoluções em tempo real.";
+    wrap.appendChild(msg);
+    const btn = document.createElement("button");
+    btn.className = "ml-connect-btn";
+    btn.textContent = "🔗 Conectar Mercado Livre";
+    btn.addEventListener("click", () => {
+      window.open(`${VERCEL_BACKEND}/api/ml-auth`, "_blank");
+    });
+    wrap.appendChild(btn);
+    panel.appendChild(wrap);
+    return;
+  }
+
+  // Connected - show devoluções
+  const header = document.createElement("div");
+  header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;";
+
+  const title = document.createElement("div");
+  title.style.cssText = "font-size:9px;color:var(--text2);letter-spacing:2px;text-transform:uppercase;";
+
+  const refreshBtn = document.createElement("button");
+  refreshBtn.style.cssText = `background:none;border:1px solid ${color}44;color:${color};border-radius:4px;padding:3px 10px;font-size:9px;cursor:pointer;font-family:inherit;letter-spacing:1px;`;
+  refreshBtn.innerHTML = mlLoading ? '<span class="spinning">↻</span> Atualizando...' : "↻ Atualizar";
+  refreshBtn.addEventListener("click", fetchDevolucoes);
+
+  header.appendChild(title);
+  header.appendChild(refreshBtn);
+  wrap.appendChild(header);
+
+  if (mlLoading) {
+    title.textContent = "Buscando devoluções...";
+    panel.appendChild(wrap);
+    return;
+  }
+
+  // Load from Firebase cache if no local data
+  const devolucoes = mlData?.data || (state.ml_cache?.data) || null;
+  const updatedAt = mlData?.updated_at || state.ml_cache?.updated_at;
+
+  if (!devolucoes) {
+    title.textContent = "Devoluções";
+    const loadBtn = document.createElement("button");
+    loadBtn.className = "ml-connect-btn";
+    loadBtn.textContent = "↻ Carregar Devoluções";
+    loadBtn.addEventListener("click", startMLAutoRefresh);
+    wrap.appendChild(loadBtn);
+    panel.appendChild(wrap);
+    if (!mlAutoInterval) startMLAutoRefresh();
+    return;
+  }
+
+  if (mlData?.error) {
+    title.textContent = "Devoluções";
+    const err = document.createElement("p");
+    err.style.cssText = "font-size:11px;color:#f87171;margin-bottom:8px;";
+    err.textContent = mlData.error;
+    wrap.appendChild(err);
+    panel.appendChild(wrap);
+    return;
+  }
+
+  title.textContent = `${devolucoes.length} devoluções abertas`;
+  if (updatedAt) {
+    const upd = document.createElement("div");
+    upd.style.cssText = "font-size:9px;color:var(--text3);margin-bottom:10px;";
+    upd.textContent = "Atualizado: " + new Date(updatedAt).toLocaleTimeString("pt-BR", {hour:"2-digit",minute:"2-digit"});
+    wrap.appendChild(upd);
+  }
+
+  if (devolucoes.length === 0) {
+    const empty = document.createElement("p");
+    empty.style.cssText = "font-size:12px;color:#4ade80;text-align:center;padding:20px 0;";
+    empty.textContent = "✓ Nenhuma devolução aberta";
+    wrap.appendChild(empty);
+  }
+
+  devolucoes.forEach(dev => {
+    const stageColors = { "waiting_seller": "#f87171", "seller": "#f87171", "buyer": "#fbbf24", "dispute": "#ff2222", "resolved": "#4ade80" };
+    const stageLabels = { "waiting_seller": "Aguarda você", "seller": "Aguarda você", "buyer": "Aguarda comprador", "dispute": "Em disputa", "resolved": "Resolvida" };
+    const stageColor = stageColors[dev.stage] || "#888";
+    const stageLabel = stageLabels[dev.stage] || dev.stage;
+
+    const card = document.createElement("div");
+    card.className = "ml-card";
+    card.style.borderLeftColor = stageColor;
+    card.style.borderLeftWidth = "3px";
+
+    const info = document.createElement("div");
+    info.style.flex = "1";
+    info.innerHTML = `
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap;">
+        <span style="font-size:12px;color:var(--text);font-weight:500">${dev.product}</span>
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:6px;">
+        Comprador: <span style="color:var(--text2)">${dev.buyer}</span>
+        ${dev.valor ? ` · <span style="color:#fbbf24">R$ ${Number(dev.valor).toFixed(2)}</span>` : ""}
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+        <span class="ml-badge" style="background:${stageColor}22;color:${stageColor};border:1px solid ${stageColor}44">${stageLabel}</span>
+        <span class="ml-badge" style="background:var(--bg2);color:var(--text3);border:1px solid var(--border)">${dev.reason}</span>
+      </div>
+      <button class="ml-link" onclick="window.open('${dev.permalink}','_blank')">Abrir no ML →</button>`;
+    card.appendChild(info);
+    wrap.appendChild(card);
+  });
+
+  // Start auto-refresh if not started
+  if (!mlAutoInterval) startMLAutoRefresh();
+
+  panel.appendChild(wrap);
+}
+
 function render() {
   try {
   setSyncing(false);
@@ -588,10 +771,10 @@ function render() {
       const panel=document.createElement("div"); panel.className="panel open";
 
       if (member.locked && !diogoPinUnlocked) {
-        panel.innerHTML=`<div class="pin-wrap"><div class="pin-icon">◈</div><p>Digite o PIN para acessar</p><input class="pin-input" type="password" inputmode="numeric" autocomplete="off" autocorrect="off" maxlength="10" placeholder="••••••" id="pin-field"><div style="font-size:10px;color:#f87171;margin-top:8px;letter-spacing:1px;display:none" id="pin-err">PIN incorreto</div><button class="pin-btn" style="background:${color};color:#000" id="pin-btn">ENTRAR</button></div>`;
+        panel.innerHTML=`<div class="pin-wrap"><div class="pin-icon">◈</div><p>Digite o PIN para acessar</p><input class="pin-input" type="password" inputmode="numeric" autocomplete="new-password" name="digoo-pin-${Date.now()}" data-lpignore="true" data-form-type="other" maxlength="10" placeholder="••••••" id="pin-field" readonly><div style="font-size:10px;color:#f87171;margin-top:8px;letter-spacing:1px;display:none" id="pin-err">PIN incorreto</div><button class="pin-btn" style="background:${color};color:#000" id="pin-btn">ENTRAR</button></div>`;
         setTimeout(()=>{
           const f=document.getElementById("pin-field"),e=document.getElementById("pin-err"),b=document.getElementById("pin-btn");
-          if(f){ f.value=""; f.focus(); }
+          if(f){ f.value=""; f.removeAttribute("readonly"); f.focus(); }
           const try_=()=>{ if(f.value===PIN){diogoPinUnlocked=true;render();}else{f.classList.add("shake");f.value="";e.style.display="block";setTimeout(()=>f.classList.remove("shake"),400);}};
           if(b) b.addEventListener("click",try_);
           if(f) f.addEventListener("keydown",e2=>{if(e2.key==="Enter")try_();});
@@ -601,9 +784,9 @@ function render() {
           // --- TABS for Diogo ---
           if (!window._diogotab) window._diogotab = "tarefas";
           const tabs = document.createElement("div"); tabs.className = "tabs";
-          ["tarefas","concluidas","conversas"].forEach(tab => {
+          ["tarefas","concluidas","conversas","ml"].forEach(tab => {
             const btn = document.createElement("button"); btn.className = "tab-btn" + (window._diogotab===tab?" active":"");
-            btn.textContent = tab === "tarefas" ? "Minhas Tarefas" : tab === "concluidas" ? "Concluídas Equipe" : "Conversas";
+            btn.textContent = tab === "tarefas" ? "Minhas Tarefas" : tab === "concluidas" ? "Concluídas Equipe" : tab === "conversas" ? "Conversas" : "🛒 ML";
             btn.addEventListener("click", () => { window._diogotab = tab; render(); });
             tabs.appendChild(btn);
           });
@@ -741,6 +924,9 @@ function render() {
             // Skip the generic active tasks loop below for Diogo
             active.length = 0;
             window._diogoteamtasks = [];
+          } else if (window._diogotab === "ml") {
+            // ML Devoluções tab
+            renderMLTab(panel, color);
           } else if (window._diogotab === "concluidas") {
             // Completion alerts + all done tasks
             if (Object.keys(completionAlerts).length > 0) {
@@ -1039,8 +1225,30 @@ function appendCornerDelegate(container, color, senderName) {
 // User label click
 document.getElementById("user-label").addEventListener("click", ()=>{
   localStorage.removeItem(STORAGE_KEY); currentUser=null;
-  const s=document.getElementById("identity-screen"); s.innerHTML=""; s.style.display="flex"; setupIdentityScreen();
+  const s=document.getElementById("identity-screen"); s.innerHTML=""; s.style.display="flex"; // Handle ML OAuth callback
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get("ml_connected") === "1") {
+  window.history.replaceState({}, "", window.location.pathname);
+  startMLAutoRefresh();
+}
+if (urlParams.get("ml_error")) {
+  alert("Erro ao conectar ML: " + urlParams.get("ml_error"));
+  window.history.replaceState({}, "", window.location.pathname);
+}
+
+setupIdentityScreen();
 });
+
+// Handle ML OAuth callback
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get("ml_connected") === "1") {
+  window.history.replaceState({}, "", window.location.pathname);
+  startMLAutoRefresh();
+}
+if (urlParams.get("ml_error")) {
+  alert("Erro ao conectar ML: " + urlParams.get("ml_error"));
+  window.history.replaceState({}, "", window.location.pathname);
+}
 
 setupIdentityScreen();
 </script>
