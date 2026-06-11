@@ -92,7 +92,7 @@ h1 { font-family: 'Bebas Neue', sans-serif; font-size: 44px; letter-spacing: 5px
 
 /* Panel */
 .panel { background: var(--bg2); padding: 16px; display: none; }
-.panel.open { display: block; max-height: 80vh; overflow-y: auto; }
+.panel.open { display: block; }
 
 /* PIN */
 .pin-wrap { text-align: center; padding: 20px 0; }
@@ -1163,7 +1163,30 @@ function render() {
             });
           }
         } else {
-          // Non-locked: no tabs, show active tasks normally
+          // Non-locked: Larissa gets ML tab first
+          if (member.name === "Larissa") {
+            if (!window._larissatab) window._larissatab = "tarefas";
+            const lTabs = document.createElement("div");
+            lTabs.className = "tabs";
+            ["tarefas", "ml"].forEach(tab => {
+              const btn = document.createElement("button");
+              btn.className = "tab-btn" + (window._larissatab === tab ? " active" : "");
+              if (window._larissatab === tab) { btn.style.color = member.color; btn.style.borderBottomColor = member.color; }
+              btn.textContent = tab === "tarefas" ? "Tarefas" : "Mercado Livre";
+              btn.addEventListener("click", () => { window._larissatab = tab; render(); });
+              lTabs.appendChild(btn);
+            });
+            panel.appendChild(lTabs);
+
+            if (window._larissatab === "ml") {
+              renderMLInPanel(panel, member.color);
+              card.appendChild(panel);
+              container.appendChild(card);
+              return;
+            }
+          }
+
+          // Tasks tab (or non-Larissa members)
           if (active.length===0&&done.length===0) {
             const e=document.createElement("p"); e.style.cssText="font-size:11px;color:var(--text3);text-align:center;padding:14px 0;"; e.textContent="Nenhuma tarefa delegada"; panel.appendChild(e);
           }
@@ -1210,32 +1233,6 @@ function render() {
             });
             panel.appendChild(sec);
             setTimeout(()=>{const cb=document.getElementById(`clr-${member.name}`);if(cb)cb.addEventListener("click",()=>clearDone(member.name));},50);
-          }
-        }
-
-        window._skipTeamContent = false;
-
-        // Larissa gets ML tab
-        if (!member.locked && member.name === "Larissa") {
-          if (!window._larissatab) window._larissatab = "tarefas";
-          const lTabs = document.createElement("div");
-          lTabs.className = "tabs";
-          ["tarefas", "ml"].forEach(tab => {
-            const btn = document.createElement("button");
-            btn.className = "tab-btn" + (window._larissatab === tab ? " active" : "");
-            if (window._larissatab === tab) { btn.style.color = member.color; btn.style.borderBottomColor = member.color; }
-            btn.textContent = tab === "tarefas" ? "Tarefas" : "Mercado Livre";
-            btn.addEventListener("click", () => { window._larissatab = tab; render(); });
-            lTabs.appendChild(btn);
-          });
-          panel.appendChild(lTabs);
-
-          if (window._larissatab === "ml") {
-            // Only ML content - clear any task content
-            renderMLInPanel(panel, member.color);
-            card.appendChild(panel);
-            container.appendChild(card);
-            return; // skip tasks, notices, messages
           }
         }
 
