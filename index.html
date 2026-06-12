@@ -473,9 +473,10 @@ function renderMLInPanel(panel,color){
       try{
         const d=new Date(dev.dueDate);const today=new Date();
         const diff=Math.ceil((d-today)/(1000*60*60*24));
-        const label=diff<=0?"HOJE":diff===1?"amanhã":`${diff}d`;
-        const urgentColor=diff<=1?"#f87171":diff<=3?"#fbbf24":"#888";
-        dueBadgeHtml=`<span class="ml-badge" style="background:${urgentColor}22;color:${urgentColor};border:1px solid ${urgentColor}44">até ${d.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"})} (${label})</span>`;
+        const label=diff<=0?"HOJE":diff===1?"amanhã":`em ${diff}d`;
+        const urgentColor=diff<=1?"#f87171":diff<=2?"#fbbf24":"#888";
+        const pulse=diff<=1?`animation:pulse 1s infinite;`:"";
+        dueBadgeHtml=`<span class="ml-badge" style="background:${urgentColor}22;color:${urgentColor};border:1px solid ${urgentColor}44;${pulse}">⏱ revisar até ${d.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"})} (${label})</span>`;
       }catch{}
     }
 
@@ -487,6 +488,7 @@ function renderMLInPanel(panel,color){
         <div style="font-size:13px;color:var(--text);margin-bottom:4px;line-height:1.4">${dev.product}</div>
         <div style="font-size:10px;color:var(--text3);margin-bottom:6px">
           Comprador: <span style="color:var(--text2)">${dev.buyer}</span>
+          ${dev.returnQty ? ` · <span style="color:var(--text2)">${dev.returnQty} un.</span>` : ""}
           ${dev.valor?` · <span style="color:#fbbf24">R$ ${Number(dev.valor).toFixed(2)}</span>`:""}
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px;">
