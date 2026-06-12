@@ -619,8 +619,8 @@ function renderMLInPanel(panel, color) {
     { id: "devolucoes", label: "Devoluções", data: mlDevolucoes },
     { id: "reclamacoes", label: "Reclamações", data: mlReclamacoes },
   ];
-  // Auto-load canceladas if not loaded
-  if (!mlCanceladas && mlLoadingTab !== "canceladas") fetchMLData("canceladas");
+  // Auto-load canceladas if not loaded and connected
+  if (!mlCanceladas && mlLoadingTab !== "canceladas" && state.ml_token?.access_token) fetchMLData("canceladas");
 
   tabs.forEach(t => {
     const btn = document.createElement("button");
@@ -652,10 +652,23 @@ function renderMLInPanel(panel, color) {
     loadBtn.addEventListener("click", () => fetchMLData(mlSubTab));
     body.appendChild(loadBtn);
   } else if (data.error) {
-    const err = document.createElement("p");
-    err.style.cssText = "color:#f87171;font-size:12px;padding:20px 0;";
-    err.textContent = data.error;
-    body.appendChild(err);
+    // If not connected, show connect button instead of error
+    if (data.error.toLowerCase().includes("conectado") || data.error.toLowerCase().includes("token")) {
+      const msg = document.createElement("p");
+      msg.style.cssText = "font-size:11px;color:var(--text3);margin-bottom:12px;line-height:1.6;";
+      msg.textContent = "Conecte sua conta do Mercado Livre para ver os dados.";
+      body.appendChild(msg);
+      const btn = document.createElement("button");
+      btn.className = "ml-connect-btn";
+      btn.textContent = "Conectar Mercado Livre";
+      btn.addEventListener("click", () => { window.open(`${VERCEL_BACKEND}/api/ml-auth`, "_blank"); });
+      body.appendChild(btn);
+    } else {
+      const err = document.createElement("p");
+      err.style.cssText = "color:#f87171;font-size:12px;padding:20px 0;";
+      err.textContent = data.error;
+      body.appendChild(err);
+    }
   } else if (!data.data?.length) {
     const empty = document.createElement("p");
     empty.style.cssText = "color:#4ade80;text-align:center;padding:40px 0;font-size:13px;";
