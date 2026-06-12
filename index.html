@@ -488,7 +488,7 @@ function renderMLInPanel(panel,color){
         <div style="font-size:13px;color:var(--text);margin-bottom:4px;line-height:1.4">${dev.product}</div>
         <div style="font-size:10px;color:var(--text3);margin-bottom:6px">
           Comprador: <span style="color:var(--text2)">${dev.buyer}</span>
-          ${dev.returnQty ? ` · <span style="color:var(--text2)">${dev.returnQty} un.</span>` : ""}
+          ${dev.returnQty ? ` · <span style="color:var(--text2)">${Math.round(Number(dev.returnQty))} un.</span>` : ""}
           ${dev.valor?` · <span style="color:#fbbf24">R$ ${Number(dev.valor).toFixed(2)}</span>`:""}
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px;">
