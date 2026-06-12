@@ -71,6 +71,7 @@ h1 { font-family: 'Bebas Neue', sans-serif; font-size: 44px; letter-spacing: 5px
 .task-row:last-of-type { border-bottom: none; }
 .task-check { width: 28px; height: 28px; border-radius: 5px; border: 1.5px solid var(--border2); background: none; cursor: pointer; flex-shrink: 0; padding: 0; transition: all 0.15s; touch-action: manipulation; display: flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent; }
 .task-check.done::after { content: '✓'; color: #000; font-size: 11px; font-weight: 700; }
+.task-check.progress::after { content: ''; }
 .task-text { flex: 1; font-size: 13px; color: var(--text); line-height: 1.4; }
 .task-text.done { text-decoration: line-through; color: var(--text); opacity: 0.5; }
 .task-prio { display: flex; align-items: center; gap: 4px; margin-top: 3px; }
@@ -299,8 +300,20 @@ function addTask(member,text,prio,sender){
   if(member!=="Diogo"){const from=sender||"Diogo";set(ref(db,`/flashes/${member}`),{ts:Date.now(),msg:`Nova tarefa de ${from}!`});startTabFlash(`Tarefa delegada para ${member}!`,themeColor(member));}
   else if(member==="Diogo"&&sender)set(ref(db,`/flashes/Diogo`),{ts:Date.now(),msg:`Nova tarefa de ${sender}!`});
 }
-function toggleTask(id,done){
-  setSyncing(true);update(ref(db,`/tasks/${id}`),{done:!done});
+function toggleTask(id,done,progress){
+  setSyncing(true);
+  if(progress){
+    // progresso -> concluído
+    update(ref(db,`/tasks/${id}`),{done:true,progress:false});
+  } else if(!done&&!progress){
+    // pendente -> em progresso
+    update(ref(db,`/tasks/${id}`),{done:false,progress:true});
+    return;
+  } else {
+    // concluído -> pendente
+    update(ref(db,`/tasks/${id}`),{done:false,progress:false});
+    return;
+  }
   if(!done){
     const task=state.tasks&&state.tasks[id];
     if(task&&task.delegatedBy&&task.delegatedBy!=="Diogo"&&task.delegatedBy!==task.member){
@@ -382,7 +395,8 @@ function renderMLInPanel(panel,color){
   if(!currentDataMap[mlSubTab]&&mlLoadingTab!==mlSubTab&&state.ml_token?.access_token){fetchMLData(mlSubTab);}
   tabs.forEach(t=>{
     const btn=document.createElement("button");btn.className="ml-subtab"+(mlSubTab===t.id?" active":"");
-    const count=t.data?.data?.length;
+    let count=t.data?.data?.length;
+    if(t.id==="devolucoes"&&t.data?.data){count=t.data.data.filter(d=>d.needsReview).length;}
     btn.innerHTML=t.label+(count>0?`<span class="badge">${count}</span>`:"");
     btn.addEventListener("click",()=>{mlSubTab=t.id;if(!t.data)fetchMLData(t.id);else render();});
     subTabs.appendChild(btn);
@@ -427,7 +441,8 @@ function renderMLInPanel(panel,color){
 
   if(data.updated_at){
     const upd=document.createElement("div");upd.style.cssText="font-size:9px;color:var(--text3);margin-bottom:12px;";
-    upd.textContent=`${data.data.length} itens · Atualizado: ${new Date(data.updated_at).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}`;
+    const displayCount = mlSubTab === "devolucoes" ? data.data.filter(d=>d.needsReview).length : data.data.length;
+  upd.textContent=`${displayCount} itens · Atualizado: ${new Date(data.updated_at).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}`;
     panel.appendChild(upd);
   }
 
@@ -554,7 +569,7 @@ function render(){
     const color=themeColor(member.name),hbg=themeHbg(member.name);
     const active=tasksFor(member.name).filter(t=>!t.done),done=tasksFor(member.name).filter(t=>t.done);
     const isOpen=openCard===member.name,isFlashing=!member.locked&&!!flashQueue[member.name];
-    const hasPending=!member.locked&&active.length>0;
+    const hasPending=!member.locked&&active.filter(t=>!t.progress).length>0;
     const unreadMsgs=!member.locked?msgsFor(member.name).filter(m=>!m.read):[];
 
     const card=document.createElement("div");card.className="card"+(hasPending||isFlashing?" flashing":"");
@@ -605,7 +620,12 @@ function render(){
             if(ownTasks.length===0){const e=document.createElement("p");e.style.cssText="font-size:11px;color:var(--text3);padding:10px 0 4px;";e.textContent="Nenhuma tarefa sua ainda";panel.appendChild(e);}
             ownTasks.forEach(task=>{
               const pc=themePrio(task.prio);const row=document.createElement("div");row.className="task-row";
-              const chk=document.createElement("button");chk.className="task-check"+(task.done?" done":"");chk.style.borderColor=pc;chk.style.background=task.done?pc:"none";chk.addEventListener("click",()=>toggleTask(task.id,task.done));
+              const chk=document.createElement("button");chk.className="task-check"+(task.done?" done":task.progress?" progress":"");
+              chk.style.borderColor=pc;
+              if(task.done) chk.style.background=pc;
+              else if(task.progress) chk.style.background=`linear-gradient(to top, ${pc} 50%, transparent 50%)`;
+              else chk.style.background="none";
+              chk.addEventListener("click",()=>toggleTask(task.id,task.done,task.progress));
               const tw=document.createElement("div");tw.style.flex="1";const tt=document.createElement("div");tt.className="task-text";tt.textContent=task.text;tw.appendChild(tt);
               const pb=document.createElement("div");pb.className="task-prio";pb.innerHTML=`<span class="dot" style="background:${pc}"></span><span style="color:${pc}">${PRIO[task.prio].label}</span>`;tw.appendChild(pb);
               const del=document.createElement("button");del.className="del-btn";del.textContent="×";del.addEventListener("click",()=>deleteTask(task.id));
@@ -676,7 +696,12 @@ function render(){
         if(!member.locked){
           active.forEach(task=>{
             const pc=themePrio(task.prio);const row=document.createElement("div");row.className="task-row";
-            const chk=document.createElement("button");chk.className="task-check"+(task.done?" done":"");chk.style.borderColor=pc;chk.style.background=task.done?pc:"none";chk.addEventListener("click",()=>toggleTask(task.id,task.done));
+            const chk=document.createElement("button");chk.className="task-check"+(task.done?" done":task.progress?" progress":"");
+            chk.style.borderColor=pc;
+            if(task.done) chk.style.background=pc;
+            else if(task.progress) chk.style.background=`linear-gradient(to top, ${pc} 50%, transparent 50%)`;
+            else chk.style.background="none";
+            chk.addEventListener("click",()=>toggleTask(task.id,task.done,task.progress));
             const tw=document.createElement("div");tw.style.flex="1";const tt=document.createElement("div");tt.className="task-text";tt.textContent=task.text;tw.appendChild(tt);
             if(task.delegatedBy){const dbb=document.createElement("div");dbb.style.cssText=`font-size:9px;color:${themeColor(task.delegatedBy)};margin-top:3px;letter-spacing:1px;`;dbb.textContent=`de ${task.delegatedBy}`;tw.appendChild(dbb);}
             row.appendChild(chk);row.appendChild(tw);
