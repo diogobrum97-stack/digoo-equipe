@@ -356,16 +356,18 @@ async function fetchMLData(tab){
 }
 
 // Cores e labels para status de devolução
-function returnStatusStyle(label){
-  const l=(label||"").toLowerCase();
-  if(l.includes("caminho"))   return {bg:"#a78bfa22",color:"#a78bfa",border:"#a78bfa44"};
-  if(l.includes("devolvido")) return {bg:"#4ade8022",color:"#4ade80",border:"#4ade8044"};
-  if(l.includes("revisão")||l.includes("revisao")) return {bg:"#fbbf2422",color:"#fbbf24",border:"#fbbf2444"};
-  if(l.includes("disputa"))   return {bg:"#f8717122",color:"#f87171",border:"#f8717144"};
-  if(l.includes("aguard"))    return {bg:"#f8717122",color:"#f87171",border:"#f8717144"};
-  if(l.includes("extraviado"))return {bg:"#f8717122",color:"#f87171",border:"#f8717144"};
-  if(l.includes("recusado"))  return {bg:"#f8717122",color:"#f87171",border:"#f8717144"};
-  return {bg:"#88888822",color:"#888",border:"#88888844"};
+function returnStatusStyle(key){
+  const map={
+    transit:  {bg:"#a78bfa22",color:"#a78bfa",border:"#a78bfa44"},
+    delivered:{bg:"#4ade8022",color:"#4ade80",border:"#4ade8044"},
+    review:   {bg:"#fbbf2422",color:"#fbbf24",border:"#fbbf2444"},
+    waiting:  {bg:"#fbbf2422",color:"#fbbf24",border:"#fbbf2444"},
+    dispute:  {bg:"#f8717122",color:"#f87171",border:"#f8717144"},
+    lost:     {bg:"#f8717122",color:"#f87171",border:"#f8717144"},
+    cancelled:{bg:"#88888822",color:"#888",border:"#88888844"},
+    default:  {bg:"#88888822",color:"#888",border:"#88888844"},
+  };
+  return map[key||"default"]||map.default;
 }
 
 function renderMLInPanel(panel,color){
@@ -441,10 +443,10 @@ function renderMLInPanel(panel,color){
     const card=document.createElement("div");card.className="ml-card";
     card.style.borderLeftColor=sc;card.style.borderLeftWidth="3px";
 
-    // Badge de status da devolução (só para sub-aba devoluções)
+    // Badge de status da devolução (só para sub-aba devoluções, não duplica com stage)
     let returnBadgeHtml="";
-    if(mlSubTab==="devolucoes"&&dev.returnStatusLabel){
-      const rs=returnStatusStyle(dev.returnStatusLabel);
+    if(mlSubTab==="devolucoes"&&dev.returnStatusLabel&&dev.returnStatusKey!=="default"){
+      const rs=returnStatusStyle(dev.returnStatusKey);
       returnBadgeHtml=`<span class="ml-badge" style="background:${rs.bg};color:${rs.color};border:1px solid ${rs.border}">${dev.returnStatusLabel}</span>`;
     }
 
@@ -469,8 +471,8 @@ function renderMLInPanel(panel,color){
           ${dev.valor?` · <span style="color:#fbbf24">R$ ${Number(dev.valor).toFixed(2)}</span>`:""}
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-          <span class="ml-badge" style="background:${sc}22;color:${sc};border:1px solid ${sc}44">${sl}</span>
-          ${returnBadgeHtml}
+          ${mlSubTab==="devolucoes"&&returnBadgeHtml ? returnBadgeHtml : `<span class="ml-badge" style="background:${sc}22;color:${sc};border:1px solid ${sc}44">${sl}</span>`}
+          ${mlSubTab!=="devolucoes" ? "" : ""}
           ${dueBadgeHtml}
           ${dev.reason&&dev.reason!=="—"?`<span class="ml-badge" style="background:var(--bg2);color:var(--text3);border:1px solid var(--border)">${dev.reason}</span>`:""}
         </div>
