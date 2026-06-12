@@ -121,6 +121,7 @@ h1 { font-family: 'Bebas Neue', sans-serif; font-size: 44px; letter-spacing: 5px
 .ml-link { background: none; border: none; color: #fff155; cursor: pointer; font-size: 10px; letter-spacing: 1px; font-family: inherit; padding: 0; text-decoration: underline; margin-top: 4px; display: block; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .spinning { animation: spin 1s linear infinite; display: inline-block; }
+@keyframes borderPulse { 0%,100% { border-color: #2a2a2a; } 50% { border-color: #fff; } }
 .tabs { display: flex; gap: 0; margin-bottom: 14px; border-bottom: 1px solid var(--sep); }
 .tab-btn { padding: 8px 14px; background: none; border: none; font-family: inherit; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; color: var(--text3); border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; }
 .tab-btn.active { color: var(--text); border-bottom-color: var(--text); }
@@ -457,6 +458,7 @@ function renderMLInPanel(panel,color){
     if(dev.needsReview) borderColor = "#fbbf24";
     if(dev.returnStatusKey === "dispute") borderColor = "#f87171";
     card.style.borderLeftColor=borderColor;card.style.borderLeftWidth="3px";
+    if(cardUrgent) card.style.animation="borderPulse 1.5s ease-in-out infinite";
 
     // Badge de status
     let statusBadgeHtml="";
@@ -469,14 +471,19 @@ function renderMLInPanel(panel,color){
 
     // Badge de prazo
     let dueBadgeHtml="";
+    let cardUrgent=false;
     if(dev.dueDate){
       try{
         const d=new Date(dev.dueDate);const today=new Date();
+        today.setHours(0,0,0,0);d.setHours(0,0,0,0);
         const diff=Math.ceil((d-today)/(1000*60*60*24));
-        const label=diff<=0?"HOJE":diff===1?"amanhã":`em ${diff}d`;
-        const urgentColor=diff<=1?"#f87171":diff<=2?"#fbbf24":"#888";
-        const pulse=diff<=1?`animation:pulse 1s infinite;`:"";
-        dueBadgeHtml=`<span class="ml-badge" style="background:${urgentColor}22;color:${urgentColor};border:1px solid ${urgentColor}44;${pulse}">⏱ revisar até ${d.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"})} (${label})</span>`;
+        if(diff<=0){
+          cardUrgent=true;
+          dueBadgeHtml=`<span class="ml-badge" style="background:#a3e63515;color:#a3e635;border:1px solid #a3e63533">até hoje</span>`;
+        } else {
+          const label=`até ${d.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"})}`;
+          dueBadgeHtml=`<span class="ml-badge" style="background:#38bdf815;color:#38bdf8;border:1px solid #38bdf833">${label}</span>`;
+        }
       }catch{}
     }
 
