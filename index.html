@@ -345,6 +345,7 @@ function startTabFlash(msg,color){let alt=false,flashes=0;if(tabFlashInterval)cl
 // ---- ML ----
 let mlSubTab="canceladas";
 let mlCanceladas=null,mlDevolucoes=null,mlReclamacoes=null,mlLoadingTab=null;
+let finData=null,finLoading=false,finMonth=new Date().toISOString().slice(0,7);
 
 async function fetchMLData(tab){
   mlLoadingTab=tab;render();
@@ -382,6 +383,122 @@ function returnStatusStyle(key){
     default:  {bg:"#88888822",color:"#888",border:"#88888844"},
   };
   return map[key||"default"]||map.default;
+}
+
+async function fetchFinanceiro(month){
+  finLoading=true;render();
+  try{
+    const token=state.ml_token?.access_token;
+    if(!token){finData={error:"token ausente"};finLoading=false;render();return;}
+    const r=await fetch(`${VERCEL_BACKEND}/api/ml-financeiro?token=${token}&month=${month}`);
+    finData=await r.json();
+  }catch(e){finData={error:e.message};}
+  finLoading=false;render();
+}
+
+function renderFinanceiroTab(panel,color){
+  // Header com mês e total
+  if(!finData&&!finLoading&&state.ml_token?.access_token){
+    fetchFinanceiro(finMonth);
+  }
+
+  // Seletor de mês
+  const header=document.createElement("div");
+  header.style.cssText="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;";
+
+  const monthWrap=document.createElement("div");
+  monthWrap.style.cssText="display:flex;align-items:center;gap:8px;";
+  const prevBtn=document.createElement("button");
+  prevBtn.textContent="‹";
+  prevBtn.style.cssText=`background:none;border:1px solid var(--border2);color:var(--text2);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:16px;`;
+  const monthLabel=document.createElement("span");
+  monthLabel.style.cssText="font-size:11px;color:var(--text);letter-spacing:2px;";
+  const [y,m]=finMonth.split("-");
+  const monthNames=["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+  monthLabel.textContent=`${monthNames[Number(m)-1]} ${y}`;
+  const nextBtn=document.createElement("button");
+  nextBtn.textContent="›";
+  nextBtn.style.cssText=`background:none;border:1px solid var(--border2);color:var(--text2);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:16px;`;
+
+  prevBtn.addEventListener("click",()=>{
+    const d=new Date(`${finMonth}-01`);d.setMonth(d.getMonth()-1);
+    finMonth=d.toISOString().slice(0,7);finData=null;fetchFinanceiro(finMonth);
+  });
+  nextBtn.addEventListener("click",()=>{
+    const d=new Date(`${finMonth}-01`);d.setMonth(d.getMonth()+1);
+    finMonth=d.toISOString().slice(0,7);finData=null;fetchFinanceiro(finMonth);
+  });
+
+  monthWrap.appendChild(prevBtn);monthWrap.appendChild(monthLabel);monthWrap.appendChild(nextBtn);
+
+  const refBtn=document.createElement("button");
+  refBtn.style.cssText=`background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:4px 10px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:1px;`;
+  refBtn.textContent="↻ Atualizar";
+  refBtn.addEventListener("click",()=>{finData=null;fetchFinanceiro(finMonth);});
+
+  header.appendChild(monthWrap);header.appendChild(refBtn);
+  panel.appendChild(header);
+
+  if(finLoading){
+    const loading=document.createElement("div");
+    loading.style.cssText="text-align:center;padding:40px;color:var(--text3);font-size:12px;";
+    loading.innerHTML='<span class="spinning">↻</span> Carregando...';
+    panel.appendChild(loading);return;
+  }
+
+  if(!finData||finData.error){
+    if(!state.ml_token?.access_token||finData?.error==="token ausente"){
+      const msg=document.createElement("p");msg.style.cssText="font-size:11px;color:var(--text3);margin-bottom:12px;";msg.textContent="Conecte o Mercado Livre no card da Larissa.";panel.appendChild(msg);
+    }else{
+      const err=document.createElement("p");err.style.cssText="color:#f87171;font-size:12px;padding:20px 0;";err.textContent=finData?.error||"Erro ao carregar";panel.appendChild(err);
+    }
+    return;
+  }
+
+  // Card de total
+  const totalCard=document.createElement("div");
+  totalCard.style.cssText=`background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;`;
+  const totalLabel=document.createElement("div");
+  totalLabel.innerHTML=`<div style="font-size:9px;color:var(--text3);letter-spacing:2px;margin-bottom:4px">CUSTO DE DEVOLUÇÕES</div><div style="font-size:9px;color:var(--text3);letter-spacing:1px">${finData.count} devoluções concluídas</div>`;
+  const totalValue=document.createElement("div");
+  totalValue.style.cssText=`font-size:22px;font-family:'Bebas Neue',sans-serif;letter-spacing:2px;color:${finData.totalCost>0?"#f87171":"#4ade80"};`;
+  totalValue.textContent=`-R$ ${finData.totalCost.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+  totalCard.appendChild(totalLabel);totalCard.appendChild(totalValue);
+  panel.appendChild(totalCard);
+
+  if(!finData.data?.length){
+    const empty=document.createElement("p");empty.style.cssText="color:#4ade80;text-align:center;padding:30px 0;font-size:13px;";empty.textContent="✓ Nenhuma devolução no período";panel.appendChild(empty);return;
+  }
+
+  // Lista de devoluções
+  const grid=document.createElement("div");
+  grid.style.cssText="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px;";
+  panel.appendChild(grid);
+
+  finData.data.forEach(dev=>{
+    const card=document.createElement("div");
+    card.className="ml-card";
+    const hasCost=dev.refundedAmount>0;
+    card.style.borderLeftColor=hasCost?"#f87171":"#4ade80";
+    card.style.borderLeftWidth="3px";
+
+    const date=dev.closedAt?new Date(dev.closedAt).toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"}):"—";
+
+    card.innerHTML=`
+      <div style="flex:1">
+        <div style="font-size:12px;color:var(--text);margin-bottom:4px;line-height:1.4">${dev.product}</div>
+        <div style="font-size:10px;color:var(--text3);margin-bottom:6px">
+          ${dev.buyer} · <span style="color:var(--text3)">${date}</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <span class="ml-badge" style="background:${hasCost?"#f8717122":"#4ade8022"};color:${hasCost?"#f87171":"#4ade80"};border:1px solid ${hasCost?"#f8717144":"#4ade8044"}">
+            ${hasCost?`-R$ ${dev.refundedAmount.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}`:"R$ 0,00"}
+          </span>
+          <a href="${dev.permalink}" target="_blank" class="ml-link" style="margin-top:0">Ver →</a>
+        </div>
+      </div>`;
+    grid.appendChild(card);
+  });
 }
 
 function renderMLInPanel(panel,color){
@@ -606,9 +723,9 @@ function render(){
         if(member.locked){
           if(!window._diogotab)window._diogotab="tarefas";
           const tabs=document.createElement("div");tabs.className="tabs";
-          ["tarefas","concluidas","conversas"].forEach(tab=>{
+          ["tarefas","concluidas","conversas","financeiro"].forEach(tab=>{
             const btn=document.createElement("button");btn.className="tab-btn"+(window._diogotab===tab?" active":"");
-            btn.textContent=tab==="tarefas"?"Minhas Tarefas":tab==="concluidas"?"Concluídas Equipe":"Conversas";
+            btn.textContent=tab==="tarefas"?"Minhas Tarefas":tab==="concluidas"?"Concluídas Equipe":tab==="conversas"?"Conversas":"Financeiro";
             btn.addEventListener("click",()=>{window._diogotab=tab;render();});tabs.appendChild(btn);
           });
           panel.appendChild(tabs);
@@ -662,6 +779,8 @@ function render(){
               Object.entries(completionAlerts).forEach(([id,a])=>{const row=document.createElement("div");row.className="alert-row";row.innerHTML=`<span style="font-size:10px;color:${themeColor(a.member)};letter-spacing:1px">${a.member}</span><span style="flex:1;font-size:12px;color:var(--text2);text-decoration:line-through;margin:0 8px">${a.text}</span>`;const ok=document.createElement("button");ok.textContent="OK";ok.style.cssText="background:#00e676;color:#000;border:none;border-radius:3px;padding:3px 10px;font-size:9px;letter-spacing:1.5px;cursor:pointer;font-family:inherit;font-weight:700;";ok.addEventListener("click",()=>{delete completionAlerts[id];render();});row.appendChild(ok);sec.appendChild(row);});panel.appendChild(sec);
             }
             if(Object.keys(completionAlerts).length===0){const e=document.createElement("p");e.style.cssText="font-size:11px;color:var(--text3);text-align:center;padding:14px 0;";e.textContent="Nenhuma conclusão nova";panel.appendChild(e);}
+          }else if(window._diogotab==="financeiro"){
+            renderFinanceiroTab(panel,color);
           }else if(window._diogotab==="conversas"){
             const todayMsgs=Object.entries(state.messages||{}).filter(([,m])=>m!=null&&(m.ts_raw>=todayStart.getTime()||!m.ts_raw)).map(([id,m])=>({...m,id})).sort((a,b)=>b.ts_raw-a.ts_raw);
             if(todayMsgs.length===0){const e=document.createElement("p");e.style.cssText="font-size:11px;color:var(--text3);text-align:center;padding:14px 0;";e.textContent="Nenhuma conversa hoje";panel.appendChild(e);}
