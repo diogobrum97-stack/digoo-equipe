@@ -434,34 +434,53 @@ function renderMLInPanel(panel,color){
   cardsGrid.style.cssText="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px;";
   panel.appendChild(cardsGrid);
 
-  data.data.forEach(dev=>{
+  // Para devoluções: filtra só pendentes de revisão, resto mostra tudo
+  const displayData = mlSubTab === "devolucoes"
+    ? data.data.filter(d => d.needsReview)
+    : data.data;
+
+  if(mlSubTab === "devolucoes" && displayData.length === 0){
+    const empty=document.createElement("p");empty.style.cssText="color:#4ade80;text-align:center;padding:30px 0;font-size:13px;";empty.textContent="✓ Nenhuma devolução pendente de revisão";panel.appendChild(empty);
+    const refBtn2=document.createElement("button");refBtn2.style.cssText="margin-top:8px;background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:6px 14px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:1px;width:100%;";refBtn2.textContent="↻ Atualizar";refBtn2.addEventListener("click",()=>fetchMLData(mlSubTab));panel.appendChild(refBtn2);return;
+  }
+
+  displayData.forEach(dev=>{
     const stageColors={"waiting_seller":"#f87171","seller":"#f87171","buyer":"#fbbf24","dispute":"#ff2222","resolved":"#4ade80"};
     const stageLabels={"waiting_seller":"Aguarda você","seller":"Aguarda você","buyer":"Aguarda comprador","dispute":"Em disputa","resolved":"Resolvida"};
     const sc=stageColors[dev.stage]||"#888";
     const sl=stageLabels[dev.stage]||dev.stage||dev.status;
 
     const card=document.createElement("div");card.className="ml-card";
-    card.style.borderLeftColor=sc;card.style.borderLeftWidth="3px";
 
-    // Badge de status da devolução (só para sub-aba devoluções, não duplica com stage)
-    let returnBadgeHtml="";
-    if(mlSubTab==="devolucoes"&&dev.returnStatusLabel&&dev.returnStatusKey!=="default"){
+    // Cor da borda pelo status de revisão
+    let borderColor = sc;
+    if(dev.needsReview) borderColor = "#fbbf24";
+    if(dev.returnStatusKey === "dispute") borderColor = "#f87171";
+    card.style.borderLeftColor=borderColor;card.style.borderLeftWidth="3px";
+
+    // Badge de status
+    let statusBadgeHtml="";
+    if(dev.returnStatusLabel&&dev.returnStatusKey!=="default"){
       const rs=returnStatusStyle(dev.returnStatusKey);
-      returnBadgeHtml=`<span class="ml-badge" style="background:${rs.bg};color:${rs.color};border:1px solid ${rs.border}">${dev.returnStatusLabel}</span>`;
+      statusBadgeHtml=`<span class="ml-badge" style="background:${rs.bg};color:${rs.color};border:1px solid ${rs.border}">${dev.returnStatusLabel}</span>`;
+    }else{
+      statusBadgeHtml=`<span class="ml-badge" style="background:${sc}22;color:${sc};border:1px solid ${sc}44">${sl}</span>`;
     }
 
     // Badge de prazo
     let dueBadgeHtml="";
     if(dev.dueDate){
       try{
-        const d=new Date(dev.dueDate);
-        const today=new Date();
+        const d=new Date(dev.dueDate);const today=new Date();
         const diff=Math.ceil((d-today)/(1000*60*60*24));
-        const label=`até ${d.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"})}`;
-        const urgentColor=diff<=2?"#f87171":diff<=5?"#fbbf24":"#888";
-        dueBadgeHtml=`<span class="ml-badge" style="background:${urgentColor}22;color:${urgentColor};border:1px solid ${urgentColor}44">${label}</span>`;
+        const label=diff<=0?"HOJE":diff===1?"amanhã":`${diff}d`;
+        const urgentColor=diff<=1?"#f87171":diff<=3?"#fbbf24":"#888";
+        dueBadgeHtml=`<span class="ml-badge" style="background:${urgentColor}22;color:${urgentColor};border:1px solid ${urgentColor}44">até ${d.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"})} (${label})</span>`;
       }catch{}
     }
+
+    // Botões de ação para devoluções pendentes
+    const actionBtnsId = `dev-actions-${dev.id}`;
 
     card.innerHTML=`
       <div style="flex:1">
@@ -470,16 +489,42 @@ function renderMLInPanel(panel,color){
           Comprador: <span style="color:var(--text2)">${dev.buyer}</span>
           ${dev.valor?` · <span style="color:#fbbf24">R$ ${Number(dev.valor).toFixed(2)}</span>`:""}
         </div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-          ${mlSubTab==="devolucoes"&&returnBadgeHtml ? returnBadgeHtml : `<span class="ml-badge" style="background:${sc}22;color:${sc};border:1px solid ${sc}44">${sl}</span>`}
-          ${mlSubTab!=="devolucoes" ? "" : ""}
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px;">
+          ${statusBadgeHtml}
           ${dueBadgeHtml}
-          ${dev.reason&&dev.reason!=="—"?`<span class="ml-badge" style="background:var(--bg2);color:var(--text3);border:1px solid var(--border)">${dev.reason}</span>`:""}
         </div>
-        <a href="${dev.permalink}" target="_blank" class="ml-link">Abrir no ML →</a>
+        ${dev.needsReview ? `<div id="${actionBtnsId}" style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button onclick="window._reviewDev('${dev.id}','ok')" style="background:#4ade8022;border:1px solid #4ade8066;color:#4ade80;border-radius:4px;padding:5px 12px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:1px;">✓ Chegou ok</button>
+          <button onclick="window._reviewDev('${dev.id}','fail')" style="background:#f8717122;border:1px solid #f8717166;color:#f87171;border-radius:4px;padding:5px 12px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:1px;">✗ Reportar problema</button>
+        </div>` : `<a href="${dev.permalink}" target="_blank" class="ml-link">Abrir no ML →</a>`}
       </div>`;
     cardsGrid.appendChild(card);
   });
+
+  // Função global para revisar devolução
+  window._reviewDev = async function(claimId, action) {
+    const token = state.ml_token?.access_token;
+    if (!token) return alert("Token não encontrado");
+    const btn = document.querySelector(`#dev-actions-${claimId}`);
+    if (btn) btn.innerHTML = '<span style="font-size:11px;color:var(--text3)">Processando...</span>';
+    try {
+      const r = await fetch(`${VERCEL_BACKEND}/api/ml-revisar`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, claim_id: claimId, action }),
+      });
+      const data = await r.json();
+      if (data.ok) {
+        if (btn) btn.innerHTML = `<span style="font-size:11px;color:#4ade80">✓ ${data.message}</span>`;
+        // Atualiza a lista após 2s
+        setTimeout(() => { mlDevolucoes = null; fetchMLData("devolucoes"); }, 2000);
+      } else {
+        if (btn) btn.innerHTML = `<span style="font-size:11px;color:#f87171">Erro: ${data.error}</span>`;
+      }
+    } catch(e) {
+      if (btn) btn.innerHTML = `<span style="font-size:11px;color:#f87171">Erro: ${e.message}</span>`;
+    }
+  };
 
   const refBtn=document.createElement("button");
   refBtn.style.cssText="margin-top:16px;background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:6px 14px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:1px;width:100%;";
