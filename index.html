@@ -458,7 +458,6 @@ function renderMLInPanel(panel,color){
     if(dev.needsReview) borderColor = "#fbbf24";
     if(dev.returnStatusKey === "dispute") borderColor = "#f87171";
     card.style.borderLeftColor=borderColor;card.style.borderLeftWidth="3px";
-    if(cardUrgent) card.style.animation="borderPulse 1.5s ease-in-out infinite";
 
     // Badge de status
     let statusBadgeHtml="";
@@ -486,6 +485,7 @@ function renderMLInPanel(panel,color){
         }
       }catch{}
     }
+    if(cardUrgent) card.style.animation="borderPulse 1.5s ease-in-out infinite";
 
     // Botões de ação para devoluções pendentes
     const actionBtnsId = `dev-actions-${dev.id}`;
