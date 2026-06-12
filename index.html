@@ -490,7 +490,6 @@ function toggleTask(id, done) {
   setSyncing(true);
   update(ref(db, `/tasks/${id}`), { done: !done });
   if (!done) {
-    // Marking as done — notify the delegator if it's a team member
     const task = state.tasks && state.tasks[id];
     if (task && task.delegatedBy && task.delegatedBy !== "Diogo" && task.delegatedBy !== task.member) {
       push(ref(db, "/notices"), {
@@ -502,7 +501,6 @@ function toggleTask(id, done) {
       });
       set(ref(db, `/flashes/${task.delegatedBy}`), { ts: Date.now(), msg: `${task.member} concluiu sua tarefa!` });
     }
-    // Mark messages as closed after 30s
     setTimeout(() => {
       Object.entries(state.messages || {}).forEach(([msgId, msg]) => {
         if (msg != null && msg.taskId === id) update(ref(db, `/messages/${msgId}`), { closed: true });
@@ -583,17 +581,30 @@ function startTabFlash(msg, color) {
 }
 function stopTabFlash() { if(tabFlashInterval){clearInterval(tabFlashInterval);tabFlashInterval=null;} document.title=origTitle; }
 
-// Render
 // ---- ML INTEGRATION ----
+const VERCEL_BACKEND = "https://digoo-backend.vercel.app";
 let mlSubTab = "canceladas";
 let mlCanceladas = null, mlDevolucoes = null, mlReclamacoes = null;
 let mlLoadingTab = null;
+let mlData = null;
+let mlLoading = false;
+let mlAutoInterval = null;
 
+// CORRIGIDO: passa o token na query string
 async function fetchMLData(tab) {
   mlLoadingTab = tab;
   render();
   try {
-    const r = await fetch(`${VERCEL_BACKEND}/api/ml-${tab}`);
+    const token = state.ml_token?.access_token;
+    if (!token) {
+      if (tab === "canceladas") mlCanceladas = { error: "token ausente" };
+      else if (tab === "devolucoes") mlDevolucoes = { error: "token ausente" };
+      else if (tab === "reclamacoes") mlReclamacoes = { error: "token ausente" };
+      mlLoadingTab = null;
+      render();
+      return;
+    }
+    const r = await fetch(`${VERCEL_BACKEND}/api/ml-${tab}?token=${token}`);
     const data = await r.json();
     if (tab === "canceladas") mlCanceladas = data;
     else if (tab === "devolucoes") mlDevolucoes = data;
@@ -610,7 +621,6 @@ async function fetchMLData(tab) {
 function renderMLInPanel(panel, color) {
   const body = panel;
 
-  // Sub-tabs
   const subTabs = document.createElement("div");
   subTabs.className = "ml-subtabs";
 
@@ -619,6 +629,7 @@ function renderMLInPanel(panel, color) {
     { id: "devolucoes", label: "Devoluções", data: mlDevolucoes },
     { id: "reclamacoes", label: "Reclamações", data: mlReclamacoes },
   ];
+
   // Auto-load current sub-tab if not loaded and connected
   const currentDataMap = { canceladas: mlCanceladas, devolucoes: mlDevolucoes, reclamacoes: mlReclamacoes };
   if (!currentDataMap[mlSubTab] && mlLoadingTab !== mlSubTab && state.ml_token?.access_token) {
@@ -633,13 +644,12 @@ function renderMLInPanel(panel, color) {
     btn.addEventListener("click", () => {
       mlSubTab = t.id;
       if (!t.data) fetchMLData(t.id);
-      else renderMLModal(color);
+      else render();
     });
     subTabs.appendChild(btn);
   });
   body.appendChild(subTabs);
 
-  // Content
   const currentTab = tabs.find(t => t.id === mlSubTab);
   const data = currentTab?.data;
 
@@ -649,14 +659,26 @@ function renderMLInPanel(panel, color) {
     loading.innerHTML = '<span class="spinning">↻</span> Carregando...';
     body.appendChild(loading);
   } else if (!data) {
-    const loadBtn = document.createElement("button");
-    loadBtn.className = "ml-connect-btn";
-    loadBtn.textContent = `↻ Carregar ${currentTab?.label}`;
-    loadBtn.addEventListener("click", () => fetchMLData(mlSubTab));
-    body.appendChild(loadBtn);
+    // Sem token: mostra botão de conectar
+    if (!state.ml_token?.access_token) {
+      const msg = document.createElement("p");
+      msg.style.cssText = "font-size:11px;color:var(--text3);margin-bottom:12px;line-height:1.6;";
+      msg.textContent = "Conecte sua conta do Mercado Livre para ver os dados.";
+      body.appendChild(msg);
+      const btn = document.createElement("button");
+      btn.className = "ml-connect-btn";
+      btn.textContent = "Conectar Mercado Livre";
+      btn.addEventListener("click", () => { window.open(`${VERCEL_BACKEND}/api/ml-auth`, "_blank"); });
+      body.appendChild(btn);
+    } else {
+      const loadBtn = document.createElement("button");
+      loadBtn.className = "ml-connect-btn";
+      loadBtn.textContent = `↻ Carregar ${currentTab?.label}`;
+      loadBtn.addEventListener("click", () => fetchMLData(mlSubTab));
+      body.appendChild(loadBtn);
+    }
   } else if (data.error) {
-    // If not connected, show connect button instead of error
-    if (data.error.toLowerCase().includes("conectado") || data.error.toLowerCase().includes("token") || data.error.toLowerCase().includes("not valid json") || data.error.toLowerCase().includes("unexpected")) {
+    if (data.error === "token ausente" || data.error.toLowerCase().includes("token") || data.error.toLowerCase().includes("not valid json") || data.error.toLowerCase().includes("unexpected")) {
       const msg = document.createElement("p");
       msg.style.cssText = "font-size:11px;color:var(--text3);margin-bottom:12px;line-height:1.6;";
       msg.textContent = "Conecte sua conta do Mercado Livre para ver os dados.";
@@ -678,7 +700,6 @@ function renderMLInPanel(panel, color) {
     empty.textContent = "✓ Nenhum item encontrado";
     body.appendChild(empty);
   } else {
-    // Updated at
     if (data.updated_at) {
       const upd = document.createElement("div");
       upd.style.cssText = "font-size:9px;color:var(--text3);margin-bottom:12px;";
@@ -686,7 +707,6 @@ function renderMLInPanel(panel, color) {
       body.appendChild(upd);
     }
 
-    // Cards grid
     const cardsGrid = document.createElement("div");
     cardsGrid.style.cssText = "display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px;";
     body.appendChild(cardsGrid);
@@ -716,31 +736,24 @@ function renderMLInPanel(panel, color) {
       cardsGrid.appendChild(card);
     });
 
-    // Refresh button
     const refBtn = document.createElement("button");
     refBtn.style.cssText = `margin-top:16px;background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:6px 14px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:1px;width:100%;`;
     refBtn.textContent = "↻ Atualizar";
     refBtn.addEventListener("click", () => fetchMLData(mlSubTab));
     body.appendChild(refBtn);
   }
-
 }
-
-// ---- ML INTEGRATION ----
-const VERCEL_BACKEND = "https://digoo-backend.vercel.app";
-let mlData = null;
-let mlLoading = false;
-let mlAutoInterval = null;
 
 async function fetchDevolucoes() {
   mlLoading = true;
-  if (window._diogotab === "ml") render();
+  if (window._larissatab === "ml") render();
   try {
-    const r = await fetch(`${VERCEL_BACKEND}/api/ml-devolucoes`);
+    const token = state.ml_token?.access_token;
+    if (!token) { mlLoading = false; render(); return; }
+    const r = await fetch(`${VERCEL_BACKEND}/api/ml-devolucoes?token=${token}`);
     const data = await r.json();
     if (data.ok) {
       mlData = data;
-      // Save to Firebase so all devices see it
       set(ref(db, "/ml_cache"), { data: data.data, updated_at: data.updated_at });
     } else {
       mlData = { error: data.error };
@@ -755,130 +768,7 @@ async function fetchDevolucoes() {
 function startMLAutoRefresh() {
   if (mlAutoInterval) clearInterval(mlAutoInterval);
   fetchDevolucoes();
-  mlAutoInterval = setInterval(fetchDevolucoes, 5 * 60 * 1000); // every 5 min
-}
-
-function renderMLTab(panel, color) {
-  const wrap = document.createElement("div");
-  wrap.className = "ml-tab";
-
-  // Check if connected (ml_token exists in Firebase)
-  const mlToken = state.ml_token;
-
-  if (!mlToken || !mlToken.access_token) {
-    // Not connected
-    const msg = document.createElement("p");
-    msg.style.cssText = "font-size:11px;color:var(--text3);margin-bottom:12px;line-height:1.6;";
-    msg.textContent = "Conecte sua conta do Mercado Livre para ver as devoluções em tempo real.";
-    wrap.appendChild(msg);
-    const btn = document.createElement("button");
-    btn.className = "ml-connect-btn";
-    btn.textContent = "🔗 Conectar Mercado Livre";
-    btn.addEventListener("click", () => {
-      window.open(`${VERCEL_BACKEND}/api/ml-auth`, "_blank");
-    });
-    wrap.appendChild(btn);
-    panel.appendChild(wrap);
-    return;
-  }
-
-  // Connected - show devoluções
-  const header = document.createElement("div");
-  header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;";
-
-  const title = document.createElement("div");
-  title.style.cssText = "font-size:9px;color:var(--text2);letter-spacing:2px;text-transform:uppercase;";
-
-  const refreshBtn = document.createElement("button");
-  refreshBtn.style.cssText = `background:none;border:1px solid ${color}44;color:${color};border-radius:4px;padding:3px 10px;font-size:9px;cursor:pointer;font-family:inherit;letter-spacing:1px;`;
-  refreshBtn.innerHTML = mlLoading ? '<span class="spinning">↻</span> Atualizando...' : "↻ Atualizar";
-  refreshBtn.addEventListener("click", fetchDevolucoes);
-
-  header.appendChild(title);
-  header.appendChild(refreshBtn);
-  wrap.appendChild(header);
-
-  if (mlLoading) {
-    title.textContent = "Buscando devoluções...";
-    panel.appendChild(wrap);
-    return;
-  }
-
-  // Load from Firebase cache if no local data
-  const devolucoes = mlData?.data || (state.ml_cache?.data) || null;
-  const updatedAt = mlData?.updated_at || state.ml_cache?.updated_at;
-
-  if (!devolucoes) {
-    title.textContent = "Devoluções";
-    const loadBtn = document.createElement("button");
-    loadBtn.className = "ml-connect-btn";
-    loadBtn.textContent = "↻ Carregar Devoluções";
-    loadBtn.addEventListener("click", startMLAutoRefresh);
-    wrap.appendChild(loadBtn);
-    panel.appendChild(wrap);
-    if (!mlAutoInterval) startMLAutoRefresh();
-    return;
-  }
-
-  if (mlData?.error) {
-    title.textContent = "Devoluções";
-    const err = document.createElement("p");
-    err.style.cssText = "font-size:11px;color:#f87171;margin-bottom:8px;";
-    err.textContent = mlData.error;
-    wrap.appendChild(err);
-    panel.appendChild(wrap);
-    return;
-  }
-
-  title.textContent = `${devolucoes.length} devoluções abertas`;
-  if (updatedAt) {
-    const upd = document.createElement("div");
-    upd.style.cssText = "font-size:9px;color:var(--text3);margin-bottom:10px;";
-    upd.textContent = "Atualizado: " + new Date(updatedAt).toLocaleTimeString("pt-BR", {hour:"2-digit",minute:"2-digit"});
-    wrap.appendChild(upd);
-  }
-
-  if (devolucoes.length === 0) {
-    const empty = document.createElement("p");
-    empty.style.cssText = "font-size:12px;color:#4ade80;text-align:center;padding:20px 0;";
-    empty.textContent = "✓ Nenhuma devolução aberta";
-    wrap.appendChild(empty);
-  }
-
-  devolucoes.forEach(dev => {
-    const stageColors = { "waiting_seller": "#f87171", "seller": "#f87171", "buyer": "#fbbf24", "dispute": "#ff2222", "resolved": "#4ade80" };
-    const stageLabels = { "waiting_seller": "Aguarda você", "seller": "Aguarda você", "buyer": "Aguarda comprador", "dispute": "Em disputa", "resolved": "Resolvida" };
-    const stageColor = stageColors[dev.stage] || "#888";
-    const stageLabel = stageLabels[dev.stage] || dev.stage;
-
-    const card = document.createElement("div");
-    card.className = "ml-card";
-    card.style.borderLeftColor = stageColor;
-    card.style.borderLeftWidth = "3px";
-
-    const info = document.createElement("div");
-    info.style.flex = "1";
-    info.innerHTML = `
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap;">
-        <span style="font-size:12px;color:var(--text);font-weight:500">${dev.product}</span>
-      </div>
-      <div style="font-size:10px;color:var(--text3);margin-bottom:6px;">
-        Comprador: <span style="color:var(--text2)">${dev.buyer}</span>
-        ${dev.valor ? ` · <span style="color:#fbbf24">R$ ${Number(dev.valor).toFixed(2)}</span>` : ""}
-      </div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-        <span class="ml-badge" style="background:${stageColor}22;color:${stageColor};border:1px solid ${stageColor}44">${stageLabel}</span>
-        <span class="ml-badge" style="background:var(--bg2);color:var(--text3);border:1px solid var(--border)">${dev.reason}</span>
-      </div>
-      <button class="ml-link" onclick="window.open('${dev.permalink}','_blank')">Abrir no ML →</button>`;
-    card.appendChild(info);
-    wrap.appendChild(card);
-  });
-
-  // Start auto-refresh if not started
-  if (!mlAutoInterval) startMLAutoRefresh();
-
-  panel.appendChild(wrap);
+  mlAutoInterval = setInterval(fetchDevolucoes, 5 * 60 * 1000);
 }
 
 function render() {
@@ -887,13 +777,10 @@ function render() {
   const container = document.getElementById("cards");
   container.innerHTML = "";
 
-  // Favicon: team members flash when pending tasks, Diogo flashes when new task delegated to him
   const pendingMembers = MEMBERS.filter(m => !m.locked && Object.values(state.tasks||{}).some(t=>t!=null&&t.member===m.name&&!t.done));
-  // Favicon only for Bruno/Larissa pending tasks — Diogo's favicon never flashes
   if (pendingMembers.length > 0) startFaviconCycle(pendingMembers.map(m=>themeColor(m.name)));
   else stopFaviconFlash();
 
-  // User label
   const lbl = document.getElementById("user-label");
   if (lbl) lbl.textContent = currentUser ? `logado como ${currentUser} · trocar` : "";
 
@@ -904,7 +791,7 @@ function render() {
     const done   = tasksFor(member.name).filter(t=>t.done);
     const isOpen = openCard === member.name;
     const isFlashing = !member.locked && !!flashQueue[member.name];
-    const hasPending = !member.locked && active.length > 0; // Diogo's card never flashes
+    const hasPending = !member.locked && active.length > 0;
     const unreadMsgs = !member.locked ? msgsFor(member.name).filter(m=>!m.read) : [];
 
     const card = document.createElement("div");
@@ -912,7 +799,6 @@ function render() {
     card.style.setProperty("--c", color);
     card.style.borderColor = isOpen ? color+"88" : (hasPending||isFlashing) ? color : "var(--border)";
 
-    // Header
     const header = document.createElement("div");
     header.className = "card-header";
     header.style.background = hbg;
@@ -943,7 +829,6 @@ function render() {
       ud.style.cssText=`background:${color};box-shadow:0 0 8px ${color};`; header.appendChild(ud);
     }
 
-
     const chev=document.createElement("span"); chev.className="chevron"+(isOpen?" open":""); chev.textContent="▼"; header.appendChild(chev);
 
     header.addEventListener("click", ()=>{
@@ -968,7 +853,6 @@ function render() {
         },50);
       } else {
         if (member.locked) {
-          // --- TABS for Diogo ---
           if (!window._diogotab) window._diogotab = "tarefas";
           const tabs = document.createElement("div"); tabs.className = "tabs";
           ["tarefas","concluidas","conversas"].forEach(tab => {
@@ -985,7 +869,6 @@ function render() {
             const ownTasks = active.filter(t => !t.delegatedBy || t.delegatedBy === "Diogo");
             const teamTasks = active.filter(t => t.delegatedBy && t.delegatedBy !== "Diogo");
 
-            // Own tasks
             if (ownTasks.length === 0) {
               const e=document.createElement("p"); e.style.cssText="font-size:11px;color:var(--text3);padding:10px 0 4px;"; e.textContent="Nenhuma tarefa sua ainda"; panel.appendChild(e);
             }
@@ -1006,29 +889,21 @@ function render() {
               panel.appendChild(row);
             });
 
-            // Add/delegate buttons
-            // Team delegated tasks section (shown before add buttons)
             if (teamTasks.length > 0) {
               const divider = document.createElement("div"); divider.className = "section";
               divider.innerHTML = `<div class="section-label">Mensagem da equipe</div>`;
               teamTasks.forEach(task => {
                 const pc = themePrio(task.prio);
-                const card = document.createElement("div");
-                card.style.cssText = `background:var(--bg3);border:1px solid ${themeColor(task.delegatedBy)}44;border-left:3px solid ${themeColor(task.delegatedBy)};border-radius:6px;padding:10px 12px;margin-bottom:6px;`;
-
-                // Header
+                const card2 = document.createElement("div");
+                card2.style.cssText = `background:var(--bg3);border:1px solid ${themeColor(task.delegatedBy)}44;border-left:3px solid ${themeColor(task.delegatedBy)};border-radius:6px;padding:10px 12px;margin-bottom:6px;`;
                 const hdr = document.createElement("div");
                 hdr.style.cssText = `display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;`;
                 hdr.innerHTML = `<span style="font-size:10px;color:${themeColor(task.delegatedBy)};letter-spacing:1px;font-weight:500">${task.delegatedBy}</span><span style="font-size:9px;color:var(--text3)">${PRIO[task.prio].label}</span>`;
-                card.appendChild(hdr);
-
-                // Task text
+                card2.appendChild(hdr);
                 const tt2 = document.createElement("div");
                 tt2.style.cssText = "font-size:13px;color:var(--text);line-height:1.4;margin-bottom:8px;";
                 tt2.textContent = task.text;
-                card.appendChild(tt2);
-
-                // Conversation thread inline
+                card2.appendChild(tt2);
                 const threadMsgs = Object.values(state.messages||{}).filter(m=>m!=null&&m.taskId===task.id).sort((a,b)=>(a.ts_raw||0)-(b.ts_raw||0));
                 if (threadMsgs.length > 0) {
                   const thread = document.createElement("div");
@@ -1043,10 +918,8 @@ function render() {
                     mEl.appendChild(bubble);
                     thread.appendChild(mEl);
                   });
-                  card.appendChild(thread);
+                  card2.appendChild(thread);
                 }
-
-                // Actions
                 const actions = document.createElement("div");
                 actions.style.cssText = "display:flex;gap:6px;";
                 const replyBtn = document.createElement("button");
@@ -1056,25 +929,14 @@ function render() {
                 closeBtn.textContent = "✓ Encerrar";
                 closeBtn.style.cssText = `background:none;border:1px solid #4ade8066;color:#4ade80;border-radius:4px;padding:4px 10px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:1px;`;
                 closeBtn.addEventListener("click", () => {
-                  // Notify the delegator that task is concluded
-                  push(ref(db, "/notices"), {
-                    forMember: task.delegatedBy,
-                    text: task.text,
-                    by: "Diogo",
-                    ts: new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}),
-                    ts_raw: Date.now()
-                  });
+                  push(ref(db, "/notices"), { forMember: task.delegatedBy, text: task.text, by: "Diogo", ts: new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}), ts_raw: Date.now() });
                   set(ref(db, `/flashes/${task.delegatedBy}`), { ts: Date.now(), msg: `Diogo concluiu sua tarefa!` });
-                  // Clean up messages for this task
                   Object.entries(state.messages||{}).forEach(([mid,m])=>{ if(m!=null&&m.taskId===task.id) remove(ref(db,`/messages/${mid}`)); });
                   deleteTask(task.id);
                 });
                 actions.appendChild(replyBtn); actions.appendChild(closeBtn);
-                card.appendChild(actions);
-
-                // Reply form
-                const mf = document.createElement("div");
-                mf.style.cssText = "display:none;margin-top:8px;";
+                card2.appendChild(actions);
+                const mf = document.createElement("div"); mf.style.cssText = "display:none;margin-top:8px;";
                 const mi = document.createElement("input"); mi.placeholder = "Sua resposta...";
                 mi.style.cssText = "width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:6px 8px;color:var(--text);font-size:12px;font-family:inherit;outline:none;margin-bottom:6px;";
                 const mbr = document.createElement("div"); mbr.style.cssText = "display:flex;gap:6px;";
@@ -1084,36 +946,23 @@ function render() {
                 const cb = document.createElement("button"); cb.className = "btn-cancel"; cb.textContent = "✕";
                 mbr.appendChild(sb); mbr.appendChild(cb);
                 mf.appendChild(mi); mf.appendChild(mbr);
-                const submit = () => {
-                  if (!mi.value.trim()) return;
-                  sendMessage("Diogo", mi.value.trim(), task.id, task.text, task.delegatedBy, task.delegatedBy);
-                  mi.value = ""; mf.style.display = "none";
-                };
+                const submit = () => { if (!mi.value.trim()) return; sendMessage("Diogo", mi.value.trim(), task.id, task.text, task.delegatedBy, task.delegatedBy); mi.value = ""; mf.style.display = "none"; };
                 sb.addEventListener("click", submit);
                 cb.addEventListener("click", () => { mf.style.display = "none"; replyBtn.textContent = "↩ Responder"; });
                 mi.addEventListener("keydown", e => { if (e.key === "Enter") submit(); if (e.key === "Escape") { mf.style.display = "none"; } });
-                replyBtn.addEventListener("click", () => {
-                  const vis = mf.style.display !== "none";
-                  mf.style.display = vis ? "none" : "block";
-                  replyBtn.textContent = vis ? "↩ Responder" : "✕ Cancelar";
-                  if (!vis) setTimeout(() => mi.focus(), 50);
-                });
-                card.appendChild(mf);
-                divider.appendChild(card);
+                replyBtn.addEventListener("click", () => { const vis = mf.style.display !== "none"; mf.style.display = vis ? "none" : "block"; replyBtn.textContent = vis ? "↩ Responder" : "✕ Cancelar"; if (!vis) setTimeout(() => mi.focus(), 50); });
+                card2.appendChild(mf);
+                divider.appendChild(card2);
               });
               panel.appendChild(divider);
             }
 
-            // Add/delegate buttons at the very bottom
             appendAddTask(panel, color, "Minhas tarefas", "+ minha tarefa", null, (text,prio)=>addTask("Diogo",text,prio), true);
             appendDelegate(panel, color, true);
-
-            // Skip the generic active tasks loop below for Diogo
             active.length = 0;
             window._diogoteamtasks = [];
 
           } else if (window._diogotab === "concluidas") {
-            // Completion alerts + all done tasks
             if (Object.keys(completionAlerts).length > 0) {
               const sec=document.createElement("div"); sec.style.marginBottom="12px";
               sec.innerHTML=`<div class="section-label" style="color:#00e676;margin-bottom:8px">Novas conclusões</div>`;
@@ -1129,13 +978,11 @@ function render() {
             }
             if (Object.keys(completionAlerts).length===0) { const e=document.createElement("p"); e.style.cssText="font-size:11px;color:var(--text3);text-align:center;padding:14px 0;"; e.textContent="Nenhuma conclusão nova"; panel.appendChild(e); }
           } else if (window._diogotab === "conversas") {
-            // Today's messages - all messages involving the team
             const todayMsgs = Object.entries(state.messages||{})
               .filter(([,m])=>m!=null && (m.ts_raw >= todayStart.getTime() || !m.ts_raw))
               .map(([id,m])=>({...m,id}))
               .sort((a,b)=>b.ts_raw-a.ts_raw);
             if (todayMsgs.length===0) { const e=document.createElement("p"); e.style.cssText="font-size:11px;color:var(--text3);text-align:center;padding:14px 0;"; e.textContent="Nenhuma conversa hoje"; panel.appendChild(e); }
-            // Group by taskId for Diogo's thread view
             const dThreads = {};
             todayMsgs.forEach(msg => {
               const key = msg.taskId || "general";
@@ -1146,30 +993,21 @@ function render() {
               const tw = document.createElement("div");
               tw.style.cssText="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:8px;";
               {
-                const hdr=document.createElement("div");
-                hdr.style.cssText="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--sep);";
-                const hdrText=document.createElement("div");
-                hdrText.style.cssText="font-size:9px;color:var(--text3);flex:1;";
+                const hdr=document.createElement("div"); hdr.style.cssText="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--sep);";
+                const hdrText=document.createElement("div"); hdrText.style.cssText="font-size:9px;color:var(--text3);flex:1;";
                 hdrText.innerHTML=thread.taskText?`re: <span style="color:var(--text2)">${thread.taskText}</span>${thread.delegatedBy?` <span style="opacity:0.6">· de ${thread.delegatedBy}</span>`:""}` : "Conversa";
-                const closeBtn=document.createElement("button");
-                closeBtn.textContent="×";
-                closeBtn.style.cssText="background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:0 0 0 8px;line-height:1;opacity:0.6;";
+                const closeBtn=document.createElement("button"); closeBtn.textContent="×"; closeBtn.style.cssText="background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:0 0 0 8px;line-height:1;opacity:0.6;";
                 closeBtn.addEventListener("click",()=>{ thread.msgs.forEach(msg=>deleteMsg(msg.id)); });
                 hdr.appendChild(hdrText); hdr.appendChild(closeBtn); tw.appendChild(hdr);
               }
               thread.msgs.forEach(msg => {
                 const isDiogo = msg.from === "Diogo";
-                const me=document.createElement("div");
-                me.style.cssText=`display:flex;flex-direction:${isDiogo?"row-reverse":"row"};gap:6px;margin-bottom:6px;`;
-                const nameEl=document.createElement("div");
-                nameEl.style.cssText=`font-size:9px;color:${themeColor(msg.from)};align-self:flex-end;white-space:nowrap;`;
-                nameEl.textContent=msg.from;
-                const bubble=document.createElement("div");
-                bubble.style.cssText=`max-width:70%;padding:6px 10px;border-radius:10px;background:${isDiogo?themeColor("Diogo")+"22":"var(--bg2)"};border:1px solid ${isDiogo?themeColor("Diogo")+"44":"var(--border)"};`;
+                const me=document.createElement("div"); me.style.cssText=`display:flex;flex-direction:${isDiogo?"row-reverse":"row"};gap:6px;margin-bottom:6px;`;
+                const nameEl=document.createElement("div"); nameEl.style.cssText=`font-size:9px;color:${themeColor(msg.from)};align-self:flex-end;white-space:nowrap;`; nameEl.textContent=msg.from;
+                const bubble=document.createElement("div"); bubble.style.cssText=`max-width:70%;padding:6px 10px;border-radius:10px;background:${isDiogo?themeColor("Diogo")+"22":"var(--bg2)"};border:1px solid ${isDiogo?themeColor("Diogo")+"44":"var(--border)"};`;
                 bubble.innerHTML=`<div style="font-size:12px;color:var(--text);line-height:1.4">${msg.text}</div><div style="font-size:9px;color:var(--text3);margin-top:2px">${msg.ts}${msg.recipient&&msg.recipient!=="Diogo"?` → <span style="color:${themeColor(msg.recipient)}">${msg.recipient}</span>`:""}</div>`;
                 me.appendChild(nameEl); me.appendChild(bubble); tw.appendChild(me);
               });
-              // Diogo can reply in thread
               const rw=document.createElement("div"); rw.style.cssText="display:flex;gap:6px;margin-top:8px;padding-top:6px;border-top:1px solid var(--sep);";
               const ri=document.createElement("input"); ri.placeholder="Responder..."; ri.style.cssText="flex:1;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:5px 8px;color:var(--text);font-size:11px;font-family:inherit;outline:none;";
               const rb=document.createElement("button"); rb.textContent="↑"; rb.style.cssText=`background:${themeColor("Diogo")};color:#000;border:none;border-radius:4px;padding:5px 10px;cursor:pointer;font-size:13px;font-weight:700;`;
@@ -1182,15 +1020,13 @@ function render() {
             });
           }
         } else {
-          // Non-locked: Larissa gets ML tab first
+          // Larissa: abas Tarefas e Mercado Livre
           if (member.name === "Larissa") {
             if (!window._larissatab) window._larissatab = "tarefas";
-            const lTabs = document.createElement("div");
-            lTabs.className = "tabs";
+            const lTabs = document.createElement("div"); lTabs.className = "tabs";
             ["tarefas", "ml"].forEach(tab => {
               const btn = document.createElement("button");
               btn.className = "tab-btn" + (window._larissatab === tab ? " active" : "");
-              if (window._larissatab === tab) { btn.style.color = member.color; btn.style.borderBottomColor = member.color; }
               btn.textContent = tab === "tarefas" ? "Tarefas" : "Mercado Livre";
               btn.addEventListener("click", () => { window._larissatab = tab; render(); });
               lTabs.appendChild(btn);
@@ -1201,7 +1037,7 @@ function render() {
               card.style.gridColumn = "1 / -1";
               panel.style.maxHeight = "75vh";
               panel.style.overflowY = "auto";
-              renderMLInPanel(panel, member.color);
+              renderMLInPanel(panel, color);
               card.appendChild(panel);
               container.appendChild(card);
               return;
@@ -1212,13 +1048,11 @@ function render() {
             }
           }
 
-          // Tasks tab (or non-Larissa members)
           if (active.length===0&&done.length===0) {
             const e=document.createElement("p"); e.style.cssText="font-size:11px;color:var(--text3);text-align:center;padding:14px 0;"; e.textContent="Nenhuma tarefa delegada"; panel.appendChild(e);
           }
         }
 
-        // Non-locked members: render active tasks with message button
         if (!member.locked) {
           active.forEach(task=>{
             const pc=themePrio(task.prio);
@@ -1230,7 +1064,6 @@ function render() {
             const tt=document.createElement("div"); tt.className="task-text"; tt.textContent=task.text; tw.appendChild(tt);
             if(task.delegatedBy){const dbb=document.createElement("div");dbb.style.cssText=`font-size:9px;color:${themeColor(task.delegatedBy)};margin-top:3px;letter-spacing:1px;`;dbb.textContent=`de ${task.delegatedBy}`;tw.appendChild(dbb);}
             row.appendChild(chk); row.appendChild(tw);
-
             const taskMsgs=Object.values(state.messages||{}).filter(m=>m!=null&&m.taskId===task.id);
             const mb=document.createElement("button"); mb.className="msg-btn"+(taskMsgs.length>0?" has-msg":""); mb.textContent=taskMsgs.length>0?`💬 ${taskMsgs.length}`:"💬";
             const mf=document.createElement("div"); mf.className="task-msg-form"; mf.style.display="none";
@@ -1247,7 +1080,6 @@ function render() {
             const rw=document.createElement("div"); rw.appendChild(row); rw.appendChild(mf); panel.appendChild(rw);
           });
 
-          // Done section
           if (done.length>0) {
             const sec=document.createElement("div"); sec.className="section";
             sec.innerHTML=`<div class="done-header"><span class="done-label">CONCLUÍDAS</span><button class="clear-btn" id="clr-${member.name}">LIMPAR</button></div>`;
@@ -1262,7 +1094,6 @@ function render() {
           }
         }
 
-        // Team: completion notices for this member
         if (!member.locked) {
           const myNotices = Object.entries(state.notices||{})
             .filter(([,n])=>n!=null && n.forMember===member.name)
@@ -1284,81 +1115,46 @@ function render() {
           }
         }
 
-        // Team: incoming messages for this member
         if (!member.locked) {
-          // Thread view: group all messages by taskId for this member
           const threadMsgs = Object.entries(state.messages||{})
             .filter(([,m])=>m!=null&&!m.closed&&(m.recipient===member.name||m.from===member.name))
             .map(([id,m])=>({...m,id}))
             .sort((a,b)=>(a.ts_raw||0)-(b.ts_raw||0));
-          
-          // Group by taskId
           const threads = {};
           threadMsgs.forEach(msg => {
             const key = msg.taskId || "general";
             if (!threads[key]) threads[key] = { taskText: msg.taskText, delegatedBy: msg.delegatedBy, msgs: [] };
             threads[key].msgs.push(msg);
           });
-
           if (Object.keys(threads).length > 0) {
             const sec=document.createElement("div"); sec.className="section";
             sec.innerHTML=`<div class="section-label">Mensagens</div>`;
             Object.entries(threads).forEach(([taskId, thread]) => {
               const threadWrap = document.createElement("div");
               threadWrap.style.cssText="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:8px;";
-              
-              // Thread header
               {
-                const hdr = document.createElement("div");
-                hdr.style.cssText="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--sep);";
-                const hdrText = document.createElement("div");
-                hdrText.style.cssText="font-size:9px;color:var(--text3);letter-spacing:0.5px;flex:1;";
+                const hdr = document.createElement("div"); hdr.style.cssText="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--sep);";
+                const hdrText = document.createElement("div"); hdrText.style.cssText="font-size:9px;color:var(--text3);letter-spacing:0.5px;flex:1;";
                 hdrText.innerHTML = thread.taskText ? `re: <span style="color:var(--text2)">${thread.taskText}</span>${thread.delegatedBy?` <span style="opacity:0.6">· de ${thread.delegatedBy}</span>`:""}` : "Conversa";
-                const closeBtn = document.createElement("button");
-                closeBtn.textContent = "×";
-                closeBtn.style.cssText="background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:0 0 0 8px;line-height:1;opacity:0.6;";
-                closeBtn.addEventListener("click", () => {
-                  // Delete all messages in this thread
-                  thread.msgs.forEach(msg => deleteMsg(msg.id));
-                });
-                hdr.appendChild(hdrText); hdr.appendChild(closeBtn);
-                threadWrap.appendChild(hdr);
+                const closeBtn = document.createElement("button"); closeBtn.textContent = "×"; closeBtn.style.cssText="background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:0 0 0 8px;line-height:1;opacity:0.6;";
+                closeBtn.addEventListener("click", () => { thread.msgs.forEach(msg => deleteMsg(msg.id)); });
+                hdr.appendChild(hdrText); hdr.appendChild(closeBtn); threadWrap.appendChild(hdr);
               }
-
-              // Messages in thread
               thread.msgs.forEach(msg => {
                 const isMine = msg.from === member.name;
-                const msgEl = document.createElement("div");
-                msgEl.style.cssText=`display:flex;flex-direction:${isMine?"row-reverse":"row"};gap:6px;margin-bottom:6px;align-items:flex-end;`;
-                const bubble = document.createElement("div");
-                bubble.style.cssText=`max-width:75%;padding:6px 10px;border-radius:${isMine?"10px 10px 2px 10px":"10px 10px 10px 2px"};background:${isMine?themeColor(member.name)+"22":"var(--bg2)"};border:1px solid ${isMine?themeColor(member.name)+"44":"var(--border)"};`;
+                const msgEl = document.createElement("div"); msgEl.style.cssText=`display:flex;flex-direction:${isMine?"row-reverse":"row"};gap:6px;margin-bottom:6px;align-items:flex-end;`;
+                const bubble = document.createElement("div"); bubble.style.cssText=`max-width:75%;padding:6px 10px;border-radius:${isMine?"10px 10px 2px 10px":"10px 10px 10px 2px"};background:${isMine?themeColor(member.name)+"22":"var(--bg2)"};border:1px solid ${isMine?themeColor(member.name)+"44":"var(--border)"};`;
                 bubble.innerHTML=`<div style="font-size:12px;color:var(--text);line-height:1.4">${msg.text}</div><div style="font-size:9px;color:var(--text3);margin-top:2px;text-align:${isMine?"right":"left"}">${msg.ts}</div>`;
-                msgEl.appendChild(bubble);
-                threadWrap.appendChild(msgEl);
+                msgEl.appendChild(bubble); threadWrap.appendChild(msgEl);
               });
-
-              // Reply input
-              const replyWrap = document.createElement("div");
-              replyWrap.style.cssText="display:flex;gap:6px;margin-top:8px;padding-top:6px;border-top:1px solid var(--sep);";
-              const replyInp = document.createElement("input");
-              replyInp.placeholder="Responder...";
-              replyInp.style.cssText="flex:1;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:5px 8px;color:var(--text);font-size:11px;font-family:inherit;outline:none;";
-              const replyBtn = document.createElement("button");
-              replyBtn.textContent="↑";
-              replyBtn.style.cssText=`background:${themeColor(member.name)};color:#000;border:none;border-radius:4px;padding:5px 10px;cursor:pointer;font-size:13px;font-weight:700;`;
-              
+              const replyWrap = document.createElement("div"); replyWrap.style.cssText="display:flex;gap:6px;margin-top:8px;padding-top:6px;border-top:1px solid var(--sep);";
+              const replyInp = document.createElement("input"); replyInp.placeholder="Responder..."; replyInp.style.cssText="flex:1;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:5px 8px;color:var(--text);font-size:11px;font-family:inherit;outline:none;";
+              const replyBtn = document.createElement("button"); replyBtn.textContent="↑"; replyBtn.style.cssText=`background:${themeColor(member.name)};color:#000;border:none;border-radius:4px;padding:5px 10px;cursor:pointer;font-size:13px;font-weight:700;`;
               const lastMsg = thread.msgs[thread.msgs.length-1];
               const replyTo = lastMsg.from === member.name ? lastMsg.recipient : lastMsg.from;
-              
-              const doReply = () => {
-                if (!replyInp.value.trim()) return;
-                sendMessage(member.name, replyInp.value.trim(), taskId, thread.taskText, replyTo, thread.delegatedBy);
-                replyInp.value = "";
-              };
-              replyBtn.addEventListener("click", doReply);
-              replyInp.addEventListener("keydown", e => { if (e.key==="Enter") doReply(); });
-              replyWrap.appendChild(replyInp); replyWrap.appendChild(replyBtn);
-              threadWrap.appendChild(replyWrap);
+              const doReply = () => { if (!replyInp.value.trim()) return; sendMessage(member.name, replyInp.value.trim(), taskId, thread.taskText, replyTo, thread.delegatedBy); replyInp.value = ""; };
+              replyBtn.addEventListener("click", doReply); replyInp.addEventListener("keydown", e => { if (e.key==="Enter") doReply(); });
+              replyWrap.appendChild(replyInp); replyWrap.appendChild(replyBtn); threadWrap.appendChild(replyWrap);
               sec.appendChild(threadWrap);
             });
             panel.appendChild(sec);
@@ -1440,18 +1236,8 @@ function appendCornerDelegate(container, color, senderName) {
 // User label click
 document.getElementById("user-label").addEventListener("click", ()=>{
   localStorage.removeItem(STORAGE_KEY); currentUser=null;
-  const s=document.getElementById("identity-screen"); s.innerHTML=""; s.style.display="flex"; // Handle ML OAuth callback
-const urlParams = new URLSearchParams(window.location.search);
-if (urlParams.get("ml_connected") === "1") {
-  window.history.replaceState({}, "", window.location.pathname);
-  startMLAutoRefresh();
-}
-if (urlParams.get("ml_error")) {
-  alert("Erro ao conectar ML: " + urlParams.get("ml_error"));
-  window.history.replaceState({}, "", window.location.pathname);
-}
-
-setupIdentityScreen();
+  const s=document.getElementById("identity-screen"); s.innerHTML=""; s.style.display="flex";
+  setupIdentityScreen();
 });
 
 // Handle ML OAuth callback
