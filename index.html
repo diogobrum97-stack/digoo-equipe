@@ -522,7 +522,7 @@ function renderDiogoDevTab(panel, color) {
         <div style="font-size:9px;color:var(--text3);margin-top:2px;">${dev.buyer} · ${date}</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;margin-left:8px;flex-shrink:0;">
-        <span style="font-size:11px;color:${dev.refundedAmount>0?"#f87171":"#4ade80"};">${dev.refundedAmount>0?`-R$ ${dev.refundedAmount.toFixed(2).replace(".",",")`:"R$ 0,00"}</span>
+        <span style="font-size:11px;color:${dev.refundedAmount>0?'#f87171':'#4ade80'};">${dev.refundedAmount>0?'-R$ '+dev.refundedAmount.toFixed(2).replace('.',','):'R$ 0,00'}</span>
         <a href="${dev.permalink}" target="_blank" style="color:#fff155;font-size:10px;text-decoration:none;">→</a>
       </div>`;
     grid.appendChild(card);
