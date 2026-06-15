@@ -969,9 +969,9 @@ function render(){
         if(member.locked){
           if(!window._diogotab)window._diogotab="tarefas";
           const tabs=document.createElement("div");tabs.className="tabs";
-          ["tarefas","concluidas","conversas","financeiro"].forEach(tab=>{
+          ["tarefas","concluidas","conversas"].forEach(tab=>{
             const btn=document.createElement("button");btn.className="tab-btn"+(window._diogotab===tab?" active":"");
-            btn.textContent=tab==="tarefas"?"Minhas Tarefas":tab==="concluidas"?"Concluídas Equipe":tab==="conversas"?"Conversas":"Financeiro";
+            btn.textContent=tab==="tarefas"?"Minhas Tarefas":tab==="concluidas"?"Concluídas Equipe":"Conversas";
             btn.addEventListener("click",()=>{window._diogotab=tab;render();});tabs.appendChild(btn);
           });
           panel.appendChild(tabs);
@@ -1018,7 +1018,6 @@ function render(){
             }
             appendAddTask(panel,color,"Minhas tarefas","+ minha tarefa",null,(text,prio)=>addTask("Diogo",text,prio),true);
             appendDelegate(panel,color,true);
-            renderDiogoML(panel,color);
             active.length=0;
           }else if(window._diogotab==="concluidas"){
             if(Object.keys(completionAlerts).length>0){
@@ -1026,8 +1025,6 @@ function render(){
               Object.entries(completionAlerts).forEach(([id,a])=>{const row=document.createElement("div");row.className="alert-row";row.innerHTML=`<span style="font-size:10px;color:${themeColor(a.member)};letter-spacing:1px">${a.member}</span><span style="flex:1;font-size:12px;color:var(--text2);text-decoration:line-through;margin:0 8px">${a.text}</span>`;const ok=document.createElement("button");ok.textContent="OK";ok.style.cssText="background:#00e676;color:#000;border:none;border-radius:3px;padding:3px 10px;font-size:9px;letter-spacing:1.5px;cursor:pointer;font-family:inherit;font-weight:700;";ok.addEventListener("click",()=>{delete completionAlerts[id];render();});row.appendChild(ok);sec.appendChild(row);});panel.appendChild(sec);
             }
             if(Object.keys(completionAlerts).length===0){const e=document.createElement("p");e.style.cssText="font-size:11px;color:var(--text3);text-align:center;padding:14px 0;";e.textContent="Nenhuma conclusão nova";panel.appendChild(e);}
-          }else if(window._diogotab==="financeiro"){
-            renderFinanceiroTab(panel,color);
           }else if(window._diogotab==="conversas"){
             const todayMsgs=Object.entries(state.messages||{}).filter(([,m])=>m!=null&&(m.ts_raw>=todayStart.getTime()||!m.ts_raw)).map(([id,m])=>({...m,id})).sort((a,b)=>b.ts_raw-a.ts_raw);
             if(todayMsgs.length===0){const e=document.createElement("p");e.style.cssText="font-size:11px;color:var(--text3);text-align:center;padding:14px 0;";e.textContent="Nenhuma conversa hoje";panel.appendChild(e);}
@@ -1105,8 +1102,66 @@ function render(){
           appendCornerDelegate(panel,color,member.name);
         }
       }
+      // Botão ML no canto inferior direito — só para Diogo
+      if(member.locked && diogoPinUnlocked) {
+        const mlCorner = document.createElement("button");
+        mlCorner.style.cssText = `position:absolute;bottom:10px;right:12px;background:none;border:1px solid #fff15544;border-radius:4px;padding:3px 10px;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:#fff155;cursor:pointer;transition:all 0.15s;`;
+        mlCorner.textContent = "ML";
+        mlCorner.addEventListener("mouseenter",()=>{mlCorner.style.background="#fff15511";});
+        mlCorner.addEventListener("mouseleave",()=>{mlCorner.style.background="none";});
+        mlCorner.addEventListener("click",(e)=>{
+          e.stopPropagation();
+          digoMLOpen=!digoMLOpen;
+          if(digoMLOpen&&!diogoDevolucoes&&!diogoDevolLoading) fetchDiogoDevolucoes();
+          render();
+        });
+        panel.style.position="relative";
+        panel.style.paddingBottom="36px";
+        panel.appendChild(mlCorner);
+      }
+
       card.appendChild(panel);
     }
+
+    // Card ML expandido do Diogo
+    if(member.locked && diogoPinUnlocked && digoMLOpen) {
+      const mlCard = document.createElement("div");
+      mlCard.style.cssText = "grid-column:1 / -1;background:var(--bg2);border:1px solid #fff15533;border-radius:10px;overflow:hidden;margin-top:-10px;";
+
+      const mlHeader = document.createElement("div");
+      mlHeader.style.cssText = "padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--sep);background:#0a0a00;";
+      mlHeader.innerHTML = `<span style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:3px;color:#fff155;">MERCADO LIVRE</span>`;
+      const closeML = document.createElement("button");
+      closeML.textContent = "✕";
+      closeML.style.cssText = "background:none;border:none;color:#fff155;font-size:16px;cursor:pointer;opacity:0.7;";
+      closeML.addEventListener("click",()=>{digoMLOpen=false;render();});
+      mlHeader.appendChild(closeML);
+      mlCard.appendChild(mlHeader);
+
+      const mlBody = document.createElement("div");
+      mlBody.style.cssText = "padding:16px;max-height:70vh;overflow-y:auto;";
+
+      // Sub-abas
+      const subTabs = document.createElement("div");
+      subTabs.style.cssText = "display:flex;gap:0;border-bottom:1px solid var(--sep);margin-bottom:16px;";
+      ["devolucoes","custos"].forEach(tab => {
+        const btn = document.createElement("button");
+        btn.style.cssText = `padding:8px 16px;background:none;border:none;font-family:inherit;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:${diogomltab===tab?"#fff155":"var(--text3)"};border-bottom:2px solid ${diogomltab===tab?"#fff155":"transparent"};margin-bottom:-1px;transition:all 0.15s;`;
+        btn.textContent = tab==="devolucoes"?"Devoluções":"Custo de Devoluções";
+        btn.addEventListener("click",()=>{diogomltab=tab;render();});
+        subTabs.appendChild(btn);
+      });
+      mlBody.appendChild(subTabs);
+
+      if(diogomltab==="devolucoes") renderDiogoDevTab(mlBody,color);
+      else renderDiogoCustoTab(mlBody,color);
+
+      mlCard.appendChild(mlBody);
+      container.appendChild(card);
+      container.appendChild(mlCard);
+      return;
+    }
+
     container.appendChild(card);
   });
   }catch(e){console.error("Render error:",e);}
