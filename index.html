@@ -135,6 +135,13 @@ h1 { font-family: 'Bebas Neue', sans-serif; font-size: 44px; letter-spacing: 5px
 .id-btn:hover { filter: brightness(1.2); transform: translateX(4px); }
 .id-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; letter-spacing: 1px; flex-shrink: 0; font-family: 'IBM Plex Mono', monospace; }
 .alert-row { display: flex; align-items: center; gap: 10px; padding: 9px 10px; margin-bottom: 4px; border-radius: 5px; background: var(--bg3); border: 1px solid rgba(0,255,119,0.3); }
+#ml-modal { position:fixed;inset:0;background:var(--bg);z-index:9000;display:none;flex-direction:column; }
+#ml-modal.open { display:flex; }
+#ml-modal-header { padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #fff15533;background:#0a0900;flex-shrink:0; }
+#ml-modal-body { flex:1;overflow-y:auto;padding:20px; }
+.ml-modal-tab { padding:8px 18px;background:none;border:none;font-family:inherit;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s; }
+.ml-modal-tab.active { color:#fff155;border-bottom-color:#fff155; }
+.ml-modal-subtabs { display:flex;border-bottom:1px solid var(--sep);margin-bottom:20px; }
 footer { margin-top: 40px; text-align: center; font-size: 10px; color: var(--text); letter-spacing: 3px; text-transform: uppercase; opacity: 0.5; }
 #user-label { cursor: pointer; color: var(--text); opacity: 0.5; }
 ::-webkit-scrollbar { width: 3px; }
@@ -163,6 +170,22 @@ footer { margin-top: 40px; text-align: center; font-size: 10px; color: var(--tex
 <div class="grid" id="cards"></div>
 
 <footer>Digoo Brasil · Porto Alegre<br><span id="user-label"></span></footer>
+
+<!-- ML Modal Fullscreen -->
+<div id="ml-modal">
+  <div id="ml-modal-header">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+        <rect width="32" height="32" rx="6" fill="#fff155" opacity="0.1"/>
+        <ellipse cx="16" cy="16" rx="12" ry="8" stroke="#fff155" stroke-width="1.5" fill="none"/>
+        <path d="M8 16 Q12 10 16 16 Q20 22 24 16" stroke="#fff155" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </svg>
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:4px;color:#fff155;">MERCADO LIVRE</span>
+    </div>
+    <button onclick="fecharML()" style="background:none;border:1px solid #fff15544;border-radius:50%;width:30px;height:30px;color:#fff155;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+  </div>
+  <div id="ml-modal-body"></div>
+</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -386,6 +409,39 @@ function returnStatusStyle(key){
     default:  {bg:"#88888822",color:"#888",border:"#88888844"},
   };
   return map[key||"default"]||map.default;
+}
+
+window.fecharML = function() {
+  digoMLOpen = false;
+  document.getElementById("ml-modal").classList.remove("open");
+};
+
+window.abrirML = function() {
+  digoMLOpen = true;
+  if(!diogoDevolucoes && !diogoDevolLoading) fetchDiogoDevolucoes();
+  renderMLModal();
+  document.getElementById("ml-modal").classList.add("open");
+};
+
+function renderMLModal() {
+  const body = document.getElementById("ml-modal-body");
+  if(!body) return;
+  body.innerHTML = "";
+
+  // Sub-abas
+  const subTabs = document.createElement("div");
+  subTabs.className = "ml-modal-subtabs";
+  ["devolucoes","custos"].forEach(tab => {
+    const btn = document.createElement("button");
+    btn.className = "ml-modal-tab" + (diogomltab===tab?" active":"");
+    btn.textContent = tab==="devolucoes"?"Devoluções":"Custo de Devoluções";
+    btn.addEventListener("click", () => { diogomltab=tab; renderMLModal(); });
+    subTabs.appendChild(btn);
+  });
+  body.appendChild(subTabs);
+
+  if(diogomltab==="devolucoes") renderDiogoDevTab(body, "#fff155");
+  else renderDiogoCustoTab(body, "#fff155");
 }
 
 async function fetchDiogoDevolucoes(){
@@ -1106,14 +1162,16 @@ function render(){
       if(member.locked && diogoPinUnlocked) {
         const mlCorner = document.createElement("button");
         mlCorner.style.cssText = `position:absolute;bottom:10px;right:12px;background:none;border:1px solid #fff15544;border-radius:4px;padding:3px 10px;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:#fff155;cursor:pointer;transition:all 0.15s;`;
-        mlCorner.textContent = "ML";
-        mlCorner.addEventListener("mouseenter",()=>{mlCorner.style.background="#fff15511";});
-        mlCorner.addEventListener("mouseleave",()=>{mlCorner.style.background="none";});
+        mlCorner.innerHTML = `<svg width="18" height="18" viewBox="0 0 60 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M30 4C16.7 4 6 13.4 6 25s10.7 21 24 21 24-9.4 24-21S43.3 4 30 4z" fill="#fff155" opacity="0.15" stroke="#fff155" stroke-width="2"/>
+          <path d="M12 25 Q18 14 24 25 Q30 36 36 25 Q42 14 48 25" stroke="#fff155" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>`;
+        mlCorner.title = "Mercado Livre";
+        mlCorner.addEventListener("mouseenter",()=>{mlCorner.style.background="#fff15511";mlCorner.style.borderColor="#fff155aa";});
+        mlCorner.addEventListener("mouseleave",()=>{mlCorner.style.background="none";mlCorner.style.borderColor="#fff15544";});
         mlCorner.addEventListener("click",(e)=>{
           e.stopPropagation();
-          digoMLOpen=!digoMLOpen;
-          if(digoMLOpen&&!diogoDevolucoes&&!diogoDevolLoading) fetchDiogoDevolucoes();
-          render();
+          window.abrirML();
         });
         panel.style.position="relative";
         panel.style.paddingBottom="36px";
@@ -1121,45 +1179,6 @@ function render(){
       }
 
       card.appendChild(panel);
-    }
-
-    // Card ML expandido do Diogo
-    if(member.locked && diogoPinUnlocked && digoMLOpen) {
-      const mlCard = document.createElement("div");
-      mlCard.style.cssText = "grid-column:1 / -1;background:var(--bg2);border:1px solid #fff15533;border-radius:10px;overflow:hidden;margin-top:-10px;";
-
-      const mlHeader = document.createElement("div");
-      mlHeader.style.cssText = "padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--sep);background:#0a0a00;";
-      mlHeader.innerHTML = `<span style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:3px;color:#fff155;">MERCADO LIVRE</span>`;
-      const closeML = document.createElement("button");
-      closeML.textContent = "✕";
-      closeML.style.cssText = "background:none;border:none;color:#fff155;font-size:16px;cursor:pointer;opacity:0.7;";
-      closeML.addEventListener("click",()=>{digoMLOpen=false;render();});
-      mlHeader.appendChild(closeML);
-      mlCard.appendChild(mlHeader);
-
-      const mlBody = document.createElement("div");
-      mlBody.style.cssText = "padding:16px;max-height:70vh;overflow-y:auto;";
-
-      // Sub-abas
-      const subTabs = document.createElement("div");
-      subTabs.style.cssText = "display:flex;gap:0;border-bottom:1px solid var(--sep);margin-bottom:16px;";
-      ["devolucoes","custos"].forEach(tab => {
-        const btn = document.createElement("button");
-        btn.style.cssText = `padding:8px 16px;background:none;border:none;font-family:inherit;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:${diogomltab===tab?"#fff155":"var(--text3)"};border-bottom:2px solid ${diogomltab===tab?"#fff155":"transparent"};margin-bottom:-1px;transition:all 0.15s;`;
-        btn.textContent = tab==="devolucoes"?"Devoluções":"Custo de Devoluções";
-        btn.addEventListener("click",()=>{diogomltab=tab;render();});
-        subTabs.appendChild(btn);
-      });
-      mlBody.appendChild(subTabs);
-
-      if(diogomltab==="devolucoes") renderDiogoDevTab(mlBody,color);
-      else renderDiogoCustoTab(mlBody,color);
-
-      mlCard.appendChild(mlBody);
-      container.appendChild(card);
-      container.appendChild(mlCard);
-      return;
     }
 
     container.appendChild(card);
