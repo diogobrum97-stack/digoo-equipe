@@ -346,6 +346,9 @@ function startTabFlash(msg,color){let alt=false,flashes=0;if(tabFlashInterval)cl
 let mlSubTab="canceladas";
 let mlCanceladas=null,mlDevolucoes=null,mlReclamacoes=null,mlLoadingTab=null;
 let finData=null,finLoading=false,finMonth=new Date().toISOString().slice(0,7);
+let diogomltab="devolucoes", diogoDevolucoes=null, diogoDevolLoading=false;
+let diogoCustoData=null; // dados processados do Excel
+let digoMLOpen=false;
 
 async function fetchMLData(tab){
   mlLoadingTab=tab;render();
@@ -385,6 +388,17 @@ function returnStatusStyle(key){
   return map[key||"default"]||map.default;
 }
 
+async function fetchDiogoDevolucoes(){
+  diogoDevolLoading=true; render();
+  try {
+    const token = state.ml_token?.access_token;
+    if(!token){ diogoDevolucoes={error:"token ausente"}; diogoDevolLoading=false; render(); return; }
+    const r = await fetch(`${VERCEL_BACKEND}/api/ml-financeiro?token=${token}&month=${finMonth}`);
+    diogoDevolucoes = await r.json();
+  } catch(e){ diogoDevolucoes={error:e.message}; }
+  diogoDevolLoading=false; render();
+}
+
 async function fetchFinanceiro(month){
   finLoading=true;render();
   try{
@@ -394,6 +408,238 @@ async function fetchFinanceiro(month){
     finData=await r.json();
   }catch(e){finData={error:e.message};}
   finLoading=false;render();
+}
+
+function renderDiogoML(container, color) {
+  // Botão discreto com logo ML
+  const mlBtn = document.createElement("button");
+  mlBtn.style.cssText = `display:flex;align-items:center;gap:6px;background:none;border:1px solid #fff15533;border-radius:5px;padding:5px 12px;cursor:pointer;font-family:inherit;font-size:10px;color:#fff155;letter-spacing:1px;margin-top:12px;transition:all 0.15s;`;
+  mlBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="4" fill="#fff155" opacity="0.15"/><text x="16" y="22" text-anchor="middle" font-size="14" font-weight="700" fill="#fff155">ML</text></svg> MERCADO LIVRE`;
+  mlBtn.addEventListener("mouseenter", () => { mlBtn.style.background="#fff15511"; });
+  mlBtn.addEventListener("mouseleave", () => { mlBtn.style.background="none"; });
+  mlBtn.addEventListener("click", () => {
+    digoMLOpen = !digoMLOpen;
+    if(digoMLOpen && !diogoDevolucoes && !diogoDevolLoading) fetchDiogoDevolucoes();
+    render();
+  });
+  container.appendChild(mlBtn);
+
+  if(!digoMLOpen) return;
+
+  // Painel ML
+  const mlPanel = document.createElement("div");
+  mlPanel.style.cssText = "background:var(--bg3);border:1px solid #fff15533;border-radius:6px;padding:14px;margin-top:8px;";
+
+  // Sub-abas
+  const subTabs = document.createElement("div");
+  subTabs.style.cssText = "display:flex;gap:0;border-bottom:1px solid var(--sep);margin-bottom:14px;";
+  ["devolucoes","custos"].forEach(tab => {
+    const btn = document.createElement("button");
+    btn.style.cssText = `padding:6px 14px;background:none;border:none;font-family:inherit;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:${diogomltab===tab?"#fff155":"var(--text3)"};border-bottom:2px solid ${diogomltab===tab?"#fff155":"transparent"};margin-bottom:-1px;transition:all 0.15s;`;
+    btn.textContent = tab === "devolucoes" ? "Devoluções" : "Custo de Devoluções";
+    btn.addEventListener("click", () => { diogomltab = tab; render(); });
+    subTabs.appendChild(btn);
+  });
+  mlPanel.appendChild(subTabs);
+
+  if(diogomltab === "devolucoes") {
+    renderDiogoDevTab(mlPanel, color);
+  } else {
+    renderDiogoCustoTab(mlPanel, color);
+  }
+
+  container.appendChild(mlPanel);
+}
+
+function renderDiogoDevTab(panel, color) {
+  // Seletor de mês
+  const header = document.createElement("div");
+  header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;";
+  const monthWrap = document.createElement("div");
+  monthWrap.style.cssText = "display:flex;align-items:center;gap:8px;";
+  const prevBtn = document.createElement("button");
+  prevBtn.textContent = "‹";
+  prevBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text2);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:16px;";
+  const monthLabel = document.createElement("span");
+  monthLabel.style.cssText = "font-size:11px;color:var(--text);letter-spacing:2px;";
+  const [y,m] = finMonth.split("-");
+  const monthNames = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+  monthLabel.textContent = `${monthNames[Number(m)-1]} ${y}`;
+  const nextBtn = document.createElement("button");
+  nextBtn.textContent = "›";
+  nextBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text2);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:16px;";
+  prevBtn.addEventListener("click", () => {
+    const d = new Date(`${finMonth}-01`); d.setMonth(d.getMonth()-1);
+    finMonth = d.toISOString().slice(0,7); diogoDevolucoes=null; fetchDiogoDevolucoes();
+  });
+  nextBtn.addEventListener("click", () => {
+    const d = new Date(`${finMonth}-01`); d.setMonth(d.getMonth()+1);
+    finMonth = d.toISOString().slice(0,7); diogoDevolucoes=null; fetchDiogoDevolucoes();
+  });
+  const refBtn = document.createElement("button");
+  refBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:4px 10px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:1px;";
+  refBtn.textContent = "↻";
+  refBtn.addEventListener("click", () => { diogoDevolucoes=null; fetchDiogoDevolucoes(); });
+  monthWrap.appendChild(prevBtn); monthWrap.appendChild(monthLabel); monthWrap.appendChild(nextBtn);
+  header.appendChild(monthWrap); header.appendChild(refBtn);
+  panel.appendChild(header);
+
+  if(diogoDevolLoading) {
+    const l = document.createElement("div");
+    l.style.cssText = "text-align:center;padding:30px;color:var(--text3);font-size:12px;";
+    l.innerHTML = '<span class="spinning">↻</span> Carregando...';
+    panel.appendChild(l); return;
+  }
+  if(!diogoDevolucoes || diogoDevolucoes.error) {
+    const err = document.createElement("p");
+    err.style.cssText = "color:#f87171;font-size:12px;padding:14px 0;";
+    err.textContent = diogoDevolucoes?.error || "Erro ao carregar";
+    panel.appendChild(err); return;
+  }
+  if(!diogoDevolucoes.data?.length) {
+    const e = document.createElement("p");
+    e.style.cssText = "color:#4ade80;text-align:center;padding:20px 0;font-size:12px;";
+    e.textContent = "✓ Nenhuma devolução no período";
+    panel.appendChild(e); return;
+  }
+
+  // Total
+  const totalDiv = document.createElement("div");
+  totalDiv.style.cssText = "display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--bg2);border-radius:5px;margin-bottom:12px;";
+  totalDiv.innerHTML = `<span style="font-size:10px;color:var(--text3);letter-spacing:1px">${diogoDevolucoes.count} devoluções</span><span style="font-size:16px;font-family:'Bebas Neue',sans-serif;color:#f87171;letter-spacing:2px;">-R$ ${diogoDevolucoes.totalCost.toLocaleString("pt-BR",{minimumFractionDigits:2})}</span>`;
+  panel.appendChild(totalDiv);
+
+  // Lista
+  const grid = document.createElement("div");
+  grid.style.cssText = "display:flex;flex-direction:column;gap:6px;";
+  diogoDevolucoes.data.forEach(dev => {
+    const card = document.createElement("div");
+    card.style.cssText = `display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--bg2);border-radius:4px;border-left:2px solid ${dev.refundedAmount>0?"#f87171":"#4ade80"};`;
+    const date = dev.closedAt ? new Date(dev.closedAt).toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"}) : "—";
+    card.innerHTML = `
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${dev.product}</div>
+        <div style="font-size:9px;color:var(--text3);margin-top:2px;">${dev.buyer} · ${date}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-left:8px;flex-shrink:0;">
+        <span style="font-size:11px;color:${dev.refundedAmount>0?"#f87171":"#4ade80"};">${dev.refundedAmount>0?`-R$ ${dev.refundedAmount.toFixed(2).replace(".",",")`:"R$ 0,00"}</span>
+        <a href="${dev.permalink}" target="_blank" style="color:#fff155;font-size:10px;text-decoration:none;">→</a>
+      </div>`;
+    grid.appendChild(card);
+  });
+  panel.appendChild(grid);
+}
+
+function renderDiogoCustoTab(panel, color) {
+  // Upload da planilha
+  const uploadSection = document.createElement("div");
+  uploadSection.style.cssText = "margin-bottom:14px;";
+
+  const uploadLabel = document.createElement("p");
+  uploadLabel.style.cssText = "font-size:10px;color:var(--text3);letter-spacing:1px;margin-bottom:8px;";
+  uploadLabel.textContent = "Faça upload do Excel de vendas do ML (filtrado por Devoluções)";
+  uploadSection.appendChild(uploadLabel);
+
+  const uploadBtn = document.createElement("label");
+  uploadBtn.style.cssText = "display:inline-block;padding:7px 14px;background:none;border:1px dashed #fff15566;border-radius:5px;color:#fff155;font-size:10px;letter-spacing:1.5px;cursor:pointer;font-family:inherit;transition:all 0.15s;";
+  uploadBtn.textContent = diogoCustoData ? "↑ Trocar planilha" : "↑ Importar planilha";
+  const fileInput = document.createElement("input");
+  fileInput.type = "file";
+  fileInput.accept = ".xlsx,.xls";
+  fileInput.style.display = "none";
+  fileInput.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    processarPlanilhaML(file);
+  });
+  uploadBtn.appendChild(fileInput);
+  uploadSection.appendChild(uploadBtn);
+
+  if(diogoCustoData?.fileName) {
+    const fname = document.createElement("span");
+    fname.style.cssText = "font-size:9px;color:var(--text3);margin-left:10px;";
+    fname.textContent = diogoCustoData.fileName;
+    uploadSection.appendChild(fname);
+  }
+  panel.appendChild(uploadSection);
+
+  if(!diogoCustoData) return;
+
+  // Resultado
+  const totalCard = document.createElement("div");
+  totalCard.style.cssText = "display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--bg2);border-radius:6px;margin-bottom:12px;";
+  totalCard.innerHTML = `
+    <div>
+      <div style="font-size:9px;color:var(--text3);letter-spacing:2px;margin-bottom:4px">CUSTO REAL DE DEVOLUÇÕES</div>
+      <div style="font-size:9px;color:var(--text3);">${diogoCustoData.negCount} devoluções com frete negativo</div>
+    </div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;color:#f87171;">
+      R$ ${Math.abs(diogoCustoData.totalNeg).toLocaleString("pt-BR",{minimumFractionDigits:2})}
+    </div>`;
+  panel.appendChild(totalCard);
+
+  // Lista das negativas
+  if(diogoCustoData.negItems?.length) {
+    const grid = document.createElement("div");
+    grid.style.cssText = "display:flex;flex-direction:column;gap:5px;";
+    diogoCustoData.negItems.forEach(item => {
+      const row = document.createElement("div");
+      row.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--bg2);border-radius:4px;border-left:2px solid #f87171;";
+      row.innerHTML = `
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.titulo}</div>
+          <div style="font-size:9px;color:var(--text3);margin-top:2px;">${item.status} · ${item.data}</div>
+        </div>
+        <span style="font-size:12px;color:#f87171;margin-left:8px;flex-shrink:0;">R$ ${Math.abs(item.total).toLocaleString("pt-BR",{minimumFractionDigits:2})}</span>`;
+      grid.appendChild(row);
+    });
+    panel.appendChild(grid);
+  }
+}
+
+async function processarPlanilhaML(file) {
+  // Usa SheetJS para ler o Excel no browser
+  const arrayBuffer = await file.arrayBuffer();
+  const XLSX = await import("https://cdn.jsdelivr.net/npm/xlsx@0.18.5/+esm");
+  const wb = XLSX.read(arrayBuffer, { type: "array" });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+
+  // Encontra linha de header (tem "N.º de venda")
+  let headerIdx = -1;
+  for(let i=0; i<rows.length; i++) {
+    if(rows[i].some(c => String(c||"").includes("N.º de venda"))) { headerIdx=i; break; }
+  }
+  if(headerIdx === -1) { alert("Formato de planilha não reconhecido"); return; }
+
+  const headers = rows[headerIdx];
+  const colTotal = headers.findIndex(h => String(h||"").includes("Total (BRL)"));
+  const colStatus = headers.findIndex(h => String(h||"") === "Estado");
+  const colTitulo = headers.findIndex(h => String(h||"").includes("Título do anúncio"));
+  const colData = headers.findIndex(h => String(h||"").includes("Data da venda"));
+  const colCancel = headers.findIndex(h => String(h||"").includes("Cancelamentos e reembolsos"));
+
+  const dataRows = rows.slice(headerIdx+1).filter(r => r[colTotal] !== undefined && r[colTotal] !== "");
+  const negItems = dataRows
+    .filter(r => Number(r[colTotal]) < 0)
+    .map(r => ({
+      titulo: String(r[colTitulo]||"—").slice(0,50),
+      status: String(r[colStatus]||"—"),
+      data: r[colData] ? String(r[colData]).slice(0,10) : "—",
+      total: Number(r[colTotal]),
+      cancel: Number(r[colCancel]||0),
+    }))
+    .sort((a,b) => a.total - b.total);
+
+  const totalNeg = negItems.reduce((s,i) => s + i.total, 0);
+
+  diogoCustoData = {
+    fileName: file.name,
+    negCount: negItems.length,
+    totalNeg: Math.round(totalNeg*100)/100,
+    negItems,
+  };
+  render();
 }
 
 function renderFinanceiroTab(panel,color){
@@ -772,6 +1018,7 @@ function render(){
             }
             appendAddTask(panel,color,"Minhas tarefas","+ minha tarefa",null,(text,prio)=>addTask("Diogo",text,prio),true);
             appendDelegate(panel,color,true);
+            renderDiogoML(panel,color);
             active.length=0;
           }else if(window._diogotab==="concluidas"){
             if(Object.keys(completionAlerts).length>0){
