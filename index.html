@@ -1025,14 +1025,27 @@ function render(){
         if(member.locked){
           if(!window._diogotab)window._diogotab="tarefas";
           const tabs=document.createElement("div");tabs.className="tabs";
-          ["tarefas","concluidas","conversas"].forEach(tab=>{
-            const btn=document.createElement("button");btn.className="tab-btn"+(window._diogotab===tab?" active":"");
-            btn.textContent=tab==="tarefas"?"Minhas Tarefas":tab==="concluidas"?"Concluídas Equipe":"Conversas";
-            btn.addEventListener("click",()=>{window._diogotab=tab;render();});tabs.appendChild(btn);
+          ["tarefas","concluidas","conversas","mercadolivre"].forEach(tab=>{
+            const btn=document.createElement("button");
+            btn.className="tab-btn"+(window._diogotab===tab?" active":"");
+            if(tab==="mercadolivre"){
+              btn.innerHTML='<span style="line-height:1.3;display:inline-block;text-align:center;">Mercado<br>Livre</span>';
+              if(window._diogotab===tab){btn.style.color="#fff155";btn.style.borderBottomColor="#fff155";}
+              else{btn.style.color="#fff15566";}
+            } else if(tab==="concluidas"){
+              btn.innerHTML='<span style="line-height:1.3;display:inline-block;text-align:center;">Concluidas<br>Equipe</span>';
+            } else if(tab==="tarefas"){
+              btn.textContent="Minhas Tarefas";
+            } else {
+              btn.textContent="Conversas";
+            }
+            btn.addEventListener("click",()=>{window._diogotab=tab;render();});
+            tabs.appendChild(btn);
           });
           panel.appendChild(tabs);
           const todayStart=new Date();todayStart.setHours(0,0,0,0);
 
+          if(window._diogotab!=="mercadolivre"){ card.style.gridColumn=""; panel.style.maxHeight=""; panel.style.overflowY=""; }
           if(window._diogotab==="tarefas"){
             const ownTasks=active.filter(t=>!t.delegatedBy||t.delegatedBy==="Diogo");
             const teamTasks=active.filter(t=>t.delegatedBy&&t.delegatedBy!=="Diogo");
@@ -1081,6 +1094,27 @@ function render(){
               Object.entries(completionAlerts).forEach(([id,a])=>{const row=document.createElement("div");row.className="alert-row";row.innerHTML=`<span style="font-size:10px;color:${themeColor(a.member)};letter-spacing:1px">${a.member}</span><span style="flex:1;font-size:12px;color:var(--text2);text-decoration:line-through;margin:0 8px">${a.text}</span>`;const ok=document.createElement("button");ok.textContent="OK";ok.style.cssText="background:#00e676;color:#000;border:none;border-radius:3px;padding:3px 10px;font-size:9px;letter-spacing:1.5px;cursor:pointer;font-family:inherit;font-weight:700;";ok.addEventListener("click",()=>{delete completionAlerts[id];render();});row.appendChild(ok);sec.appendChild(row);});panel.appendChild(sec);
             }
             if(Object.keys(completionAlerts).length===0){const e=document.createElement("p");e.style.cssText="font-size:11px;color:var(--text3);text-align:center;padding:14px 0;";e.textContent="Nenhuma conclusão nova";panel.appendChild(e);}
+          }else if(window._diogotab==="mercadolivre"){
+            // Expande card full width
+            card.style.gridColumn="1 / -1";
+            panel.style.maxHeight="70vh";
+            panel.style.overflowY="auto";
+
+            // Sub-abas ML
+            const mlSubTabs=document.createElement("div");
+            mlSubTabs.style.cssText="display:flex;border-bottom:1px solid var(--sep);margin-bottom:16px;";
+            ["devolucoes","custos"].forEach(t=>{
+              const b=document.createElement("button");
+              b.className="ml-modal-tab"+(diogomltab===t?" active":"");
+              b.textContent=t==="devolucoes"?"Devoluções":"Custo de Devoluções";
+              b.addEventListener("click",()=>{diogomltab=t;render();});
+              mlSubTabs.appendChild(b);
+            });
+            panel.appendChild(mlSubTabs);
+
+            if(diogomltab==="devolucoes") renderDiogoDevTab(panel,"#fff155");
+            else renderDiogoCustoTab(panel,"#fff155");
+
           }else if(window._diogotab==="conversas"){
             const todayMsgs=Object.entries(state.messages||{}).filter(([,m])=>m!=null&&(m.ts_raw>=todayStart.getTime()||!m.ts_raw)).map(([id,m])=>({...m,id})).sort((a,b)=>b.ts_raw-a.ts_raw);
             if(todayMsgs.length===0){const e=document.createElement("p");e.style.cssText="font-size:11px;color:var(--text3);text-align:center;padding:14px 0;";e.textContent="Nenhuma conversa hoje";panel.appendChild(e);}
@@ -1158,26 +1192,6 @@ function render(){
           appendCornerDelegate(panel,color,member.name);
         }
       }
-      // Botão ML no canto inferior direito — só para Diogo
-      if(member.locked && diogoPinUnlocked) {
-        const mlCorner = document.createElement("button");
-        mlCorner.style.cssText = `position:absolute;bottom:10px;right:12px;background:none;border:1px solid #fff15544;border-radius:4px;padding:3px 10px;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:#fff155;cursor:pointer;transition:all 0.15s;`;
-        mlCorner.innerHTML = `<svg width="18" height="18" viewBox="0 0 60 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M30 4C16.7 4 6 13.4 6 25s10.7 21 24 21 24-9.4 24-21S43.3 4 30 4z" fill="#fff155" opacity="0.15" stroke="#fff155" stroke-width="2"/>
-          <path d="M12 25 Q18 14 24 25 Q30 36 36 25 Q42 14 48 25" stroke="#fff155" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>`;
-        mlCorner.title = "Mercado Livre";
-        mlCorner.addEventListener("mouseenter",()=>{mlCorner.style.background="#fff15511";mlCorner.style.borderColor="#fff155aa";});
-        mlCorner.addEventListener("mouseleave",()=>{mlCorner.style.background="none";mlCorner.style.borderColor="#fff15544";});
-        mlCorner.addEventListener("click",(e)=>{
-          e.stopPropagation();
-          window.abrirML();
-        });
-        panel.style.position="relative";
-        panel.style.paddingBottom="36px";
-        panel.appendChild(mlCorner);
-      }
-
       card.appendChild(panel);
     }
 
