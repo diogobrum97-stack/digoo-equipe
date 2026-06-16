@@ -142,6 +142,53 @@ h1 { font-family: 'Bebas Neue', sans-serif; font-size: 44px; letter-spacing: 5px
 .ml-modal-tab { padding:8px 18px;background:none;border:none;font-family:inherit;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s; }
 .ml-modal-tab.active { color:#fff155;border-bottom-color:#fff155; }
 .ml-modal-subtabs { display:flex;border-bottom:1px solid var(--sep);margin-bottom:20px; }
+/* Chat assistente */
+.chat-modal {
+  position:fixed; bottom:0; width:340px; max-height:500px;
+  background:var(--bg3); border:1px solid var(--border2);
+  border-radius:12px 12px 0 0; box-shadow:0 -4px 30px rgba(0,0,0,0.5);
+  display:flex; flex-direction:column; z-index:7000;
+  transition:transform 0.2s ease;
+}
+.chat-modal.hidden { transform:translateY(100%); }
+.chat-header {
+  padding:10px 14px; display:flex; align-items:center;
+  justify-content:space-between; border-bottom:1px solid var(--sep);
+  flex-shrink:0; border-radius:12px 12px 0 0;
+}
+.chat-messages {
+  flex:1; overflow-y:auto; padding:12px; display:flex;
+  flex-direction:column; gap:8px;
+}
+.chat-bubble {
+  max-width:80%; padding:8px 12px; border-radius:10px;
+  font-size:12px; line-height:1.5;
+}
+.chat-bubble.user { align-self:flex-end; }
+.chat-bubble.assistant { align-self:flex-start; background:var(--bg2); color:var(--text); border:1px solid var(--border); }
+.chat-input-row {
+  display:flex; gap:6px; padding:10px 12px;
+  border-top:1px solid var(--sep); flex-shrink:0;
+}
+.chat-input {
+  flex:1; background:var(--bg2); border:1px solid var(--border2);
+  border-radius:6px; padding:7px 10px; color:var(--text);
+  font-size:12px; font-family:inherit; outline:none; resize:none;
+}
+.chat-send {
+  border:none; border-radius:6px; padding:7px 12px;
+  font-size:13px; cursor:pointer; flex-shrink:0; font-weight:700;
+}
+.chat-btn {
+  position:absolute; bottom:10px; left:12px;
+  width:26px; height:26px; border-radius:50%;
+  border:1.5px solid; background:none; cursor:pointer;
+  font-size:13px; display:flex; align-items:center;
+  justify-content:center; transition:all 0.15s; z-index:10;
+}
+.chat-btn:hover { transform:scale(1.15); }
+.chat-typing { font-size:11px; color:var(--text3); padding:4px 12px; }
+
 #ml-fullscreen { position:fixed;inset:0;background:var(--bg);z-index:8000;display:none;flex-direction:column; }
 #ml-fullscreen.open { display:flex; }
 #ml-fullscreen-header { padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #fff15533;background:#0a0900;flex-shrink:0; }
@@ -174,6 +221,11 @@ footer { margin-top: 40px; text-align: center; font-size: 10px; color: var(--tex
 <div class="grid" id="cards"></div>
 
 <footer>Digoo Brasil · Porto Alegre<br><span id="user-label"></span></footer>
+
+<!-- Chat Modals por membro -->
+<div id="chat-Diogo" class="chat-modal hidden" style="left:20px;"></div>
+<div id="chat-Bruno" class="chat-modal hidden" style="left:calc(33.33% + 20px);"></div>
+<div id="chat-Larissa" class="chat-modal hidden" style="left:calc(66.66% + 20px);"></div>
 
 <!-- ML Fullscreen Panel -->
 <div id="ml-fullscreen">
@@ -391,6 +443,8 @@ let diogomltab="devolucoes", diogoDevolucoes=null, diogoDevolLoading=false;
 let diogoCustoData=null; // dados processados do Excel
 let digoMLOpen=false;
 let digoMLMax=false; // modo fullscreen
+// Chat por membro: { messages: [], open: false, loading: false }
+let chatState = { Diogo:{messages:[],open:false,loading:false}, Bruno:{messages:[],open:false,loading:false}, Larissa:{messages:[],open:false,loading:false} };
 
 async function fetchMLData(tab){
   mlLoadingTab=tab;render();
@@ -1026,6 +1080,158 @@ function renderMLInPanel(panel,color){
   panel.appendChild(refBtn);
 }
 
+// ---- CHAT ASSISTENTE ----
+function buildContext(memberName) {
+  const tasks = tasksFor(memberName);
+  const active = tasks.filter(t=>!t.done);
+  const done = tasks.filter(t=>t.done);
+  let ctx = `Membro: ${memberName}
+`;
+  ctx += `Tarefas ativas (${active.length}): ${active.map(t=>`"${t.text}" [${t.prio}]`).join(", ") || "nenhuma"}
+`;
+  ctx += `Tarefas concluídas hoje (${done.length}): ${done.map(t=>`"${t.text}"`).join(", ") || "nenhuma"}
+`;
+
+  if(memberName === "Diogo") {
+    if(diogoDevolucoes?.data) {
+      ctx += `
+Devoluções do mês: ${diogoDevolucoes.count} devoluções, custo total R$ ${diogoDevolucoes.totalCost?.toFixed(2)}
+`;
+      const urgent = diogoDevolucoes.data.filter(d=>d.refundedAmount>0).length;
+      ctx += `Com custo: ${urgent}
+`;
+    }
+    if(mlReclamacoes?.data) {
+      const aguarda = mlReclamacoes.data.filter(d=>d.stage==="waiting_seller"||d.returnStatusKey==="waiting");
+      ctx += `
+Reclamações abertas: ${mlReclamacoes.data.length} total, ${aguarda.length} aguardando você
+`;
+    }
+    if(mlCanceladas?.data) {
+      ctx += `Cancelamentos abertos: ${mlCanceladas.data.length}
+`;
+    }
+  }
+  if(memberName === "Larissa") {
+    if(mlDevolucoes?.data) {
+      const pendentes = mlDevolucoes.data.filter(d=>d.needsReview);
+      ctx += `
+Devoluções pendentes de revisão: ${pendentes.length}
+`;
+      pendentes.forEach(d=>{ ctx += `- ${d.product} (${d.buyer})${d.dueDate?`, prazo: ${new Date(d.dueDate).toLocaleDateString("pt-BR")}`:""})
+`; });
+    }
+    if(mlReclamacoes?.data) {
+      ctx += `
+Reclamações abertas: ${mlReclamacoes.data.length}
+`;
+    }
+  }
+  return ctx;
+}
+
+function renderChatModal(memberName, color) {
+  const modal = document.getElementById(`chat-${memberName}`);
+  if(!modal) return;
+  const cs = chatState[memberName];
+  if(!cs.open) { modal.classList.add("hidden"); return; }
+  modal.classList.remove("hidden");
+  modal.innerHTML = "";
+
+  // Header
+  const header = document.createElement("div");
+  header.className = "chat-header";
+  header.style.background = `${color}11`;
+  header.innerHTML = `<div style="display:flex;align-items:center;gap:8px;"><span style="color:${color};font-size:14px;">✦</span><span style="font-size:11px;letter-spacing:2px;color:${color};">ASSISTENTE · ${memberName.toUpperCase()}</span></div>`;
+  const closeBtn = document.createElement("button");
+  closeBtn.textContent = "✕";
+  closeBtn.style.cssText = "background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;";
+  closeBtn.addEventListener("click", () => { cs.open=false; renderChatModal(memberName,color); });
+  header.appendChild(closeBtn);
+  modal.appendChild(header);
+
+  // Messages
+  const msgs = document.createElement("div");
+  msgs.className = "chat-messages";
+  msgs.id = `chat-msgs-${memberName}`;
+
+  if(cs.messages.length === 0) {
+    const welcome = document.createElement("div");
+    welcome.className = "chat-bubble assistant";
+    welcome.textContent = `Olá${memberName==="Diogo"?", Diogo":memberName==="Larissa"?", Lari":""} 👋 Como posso ajudar?`;
+    msgs.appendChild(welcome);
+  }
+
+  cs.messages.forEach(msg => {
+    const bubble = document.createElement("div");
+    bubble.className = `chat-bubble ${msg.role}`;
+    if(msg.role === "user") {
+      bubble.style.cssText = `background:${color}22;color:${color};border:1px solid ${color}44;align-self:flex-end;`;
+    }
+    bubble.textContent = msg.content;
+    msgs.appendChild(bubble);
+  });
+
+  if(cs.loading) {
+    const typing = document.createElement("div");
+    typing.className = "chat-typing";
+    typing.innerHTML = '<span class="spinning">↻</span> Digitando...';
+    msgs.appendChild(typing);
+  }
+
+  modal.appendChild(msgs);
+  setTimeout(() => { msgs.scrollTop = msgs.scrollHeight; }, 50);
+
+  // Input
+  const inputRow = document.createElement("div");
+  inputRow.className = "chat-input-row";
+  const input = document.createElement("textarea");
+  input.className = "chat-input";
+  input.placeholder = "Mensagem...";
+  input.rows = 1;
+  input.style.maxHeight = "80px";
+  input.addEventListener("input", () => { input.style.height="auto"; input.style.height=input.scrollHeight+"px"; });
+  const sendBtn = document.createElement("button");
+  sendBtn.className = "chat-send";
+  sendBtn.style.cssText = `background:${color};color:#000;`;
+  sendBtn.textContent = "↑";
+  sendBtn.disabled = cs.loading;
+
+  const doSend = async () => {
+    const text = input.value.trim();
+    if(!text || cs.loading) return;
+    input.value = ""; input.style.height="auto";
+    cs.messages.push({ role:"user", content:text });
+    cs.loading = true;
+    renderChatModal(memberName, color);
+
+    try {
+      const r = await fetch(`${VERCEL_BACKEND}/api/claude-chat`, {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+          member: memberName,
+          message: text,
+          history: cs.messages.slice(-10),
+          context: buildContext(memberName),
+        }),
+      });
+      const data = await r.json();
+      cs.messages.push({ role:"assistant", content: data.reply || data.error || "Erro" });
+    } catch(e) {
+      cs.messages.push({ role:"assistant", content:"Erro de conexão. Tente novamente." });
+    }
+    cs.loading = false;
+    renderChatModal(memberName, color);
+  };
+
+  sendBtn.addEventListener("click", doSend);
+  input.addEventListener("keydown", e => { if(e.key==="Enter" && !e.shiftKey) { e.preventDefault(); doSend(); } });
+  inputRow.appendChild(input); inputRow.appendChild(sendBtn);
+  modal.appendChild(inputRow);
+  setTimeout(()=>input.focus(), 100);
+}
+
 function render(){
   try{
   setSyncing(false);
@@ -1063,6 +1269,28 @@ function render(){
     }
     nameWrap.appendChild(nameEl);nameWrap.appendChild(dotsEl);header.appendChild(avatar);header.appendChild(nameWrap);
     if(unreadMsgs.length>0&&!isOpen){const ud=document.createElement("span");ud.className="unread-dot";ud.style.cssText=`background:${color};box-shadow:0 0 8px ${color};`;header.appendChild(ud);}
+
+    // Botão chat assistente — só quando card está aberto e é o usuário atual
+    if(isOpen && currentUser===member.name) {
+      setTimeout(()=>{
+        const panel2=document.querySelector(`#cards .panel.open`);
+        if(panel2&&!panel2.querySelector(".chat-btn")){
+          panel2.style.position="relative";
+          panel2.style.paddingBottom="38px";
+          const chatBtn=document.createElement("button");
+          chatBtn.className="chat-btn";
+          chatBtn.style.cssText=`position:absolute;bottom:10px;left:12px;width:26px;height:26px;border-radius:50%;border:1.5px solid ${color}66;color:${color};background:none;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;z-index:10;`;
+          chatBtn.textContent="✦";
+          chatBtn.title="Assistente Claude";
+          chatBtn.addEventListener("click",(e)=>{
+            e.stopPropagation();
+            chatState[member.name].open=!chatState[member.name].open;
+            renderChatModal(member.name,color);
+          });
+          panel2.appendChild(chatBtn);
+        }
+      },50);
+    }
     const chev=document.createElement("span");chev.className="chevron"+(isOpen?" open":"");chev.textContent="▼";header.appendChild(chev);
     header.addEventListener("click",()=>{openCard=openCard===member.name?null:member.name;if(!isOpen&&member.locked)diogoPinUnlocked=false;if(flashQueue[member.name]){delete flashQueue[member.name];remove(ref(db,`/flashes/${member.name}`));}render();});
     card.appendChild(header);
