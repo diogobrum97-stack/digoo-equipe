@@ -393,18 +393,20 @@ function addTask(member,text,prio,sender){
   if(member!=="Diogo"){const from=sender||"Diogo";set(ref(db,`/flashes/${member}`),{ts:Date.now(),msg:`Nova tarefa de ${from}!`});startTabFlash(`Tarefa delegada para ${member}!`,themeColor(member));}
   else if(member==="Diogo"&&sender)set(ref(db,`/flashes/Diogo`),{ts:Date.now(),msg:`Nova tarefa de ${sender}!`});
 }
-function toggleTask(id,done,progress){
+function toggleTask(id,done,progress,isRecorrente){
   setSyncing(true);
-  if(progress){
+  if(done){
+    // concluído -> pendente (só via botão reabrir para recorrentes)
+    if(!isRecorrente){
+      update(ref(db,`/tasks/${id}`),{done:false,progress:false});
+    }
+    return;
+  } else if(progress){
     // progresso -> concluído
     update(ref(db,`/tasks/${id}`),{done:true,progress:false});
-  } else if(!done&&!progress){
+  } else {
     // pendente -> em progresso
     update(ref(db,`/tasks/${id}`),{done:false,progress:true});
-    return;
-  } else {
-    // concluído -> pendente
-    update(ref(db,`/tasks/${id}`),{done:false,progress:false});
     return;
   }
   if(!done){
@@ -1621,7 +1623,7 @@ function render(){
                 if(task.done) chk.style.background="#3b82f6";
                 else if(task.progress) chk.style.background=`linear-gradient(to top, #3b82f6 50%, transparent 50%)`;
                 else chk.style.background="none";
-                chk.addEventListener("click",()=>toggleTask(task.id,task.done,task.progress));
+                chk.addEventListener("click",()=>toggleTask(task.id,task.done,task.progress,true));
                 const tw=document.createElement("div");tw.style.flex="1";
                 const tt=document.createElement("div");tt.className="task-text"+(task.done?" done":"");tt.textContent=task.text;tw.appendChild(tt);
                 // Botão reabrir quando concluída
