@@ -1279,9 +1279,11 @@ function render(){
           panel2.style.paddingBottom="38px";
           const chatBtn=document.createElement("button");
           chatBtn.className="chat-btn";
-          chatBtn.style.cssText=`position:absolute;bottom:10px;left:12px;width:26px;height:26px;border-radius:50%;border:1.5px solid ${color}66;color:${color};background:none;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;z-index:10;`;
+          chatBtn.style.cssText="position:absolute;bottom:10px;right:12px;width:24px;height:24px;border-radius:50%;border:1.5px solid #333;color:#555;background:#0a0a0a;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;z-index:10;";
           chatBtn.textContent="✦";
           chatBtn.title="Assistente Claude";
+          chatBtn.addEventListener("mouseenter",()=>{chatBtn.style.borderColor="#555";chatBtn.style.color="#888";});
+          chatBtn.addEventListener("mouseleave",()=>{chatBtn.style.borderColor="#333";chatBtn.style.color="#555";});
           chatBtn.addEventListener("click",(e)=>{
             e.stopPropagation();
             chatState[member.name].open=!chatState[member.name].open;
@@ -1315,8 +1317,8 @@ function render(){
             btn.className="tab-btn"+(window._diogotab===tab?" active":"");
             if(tab==="mercadolivre"){
               btn.innerHTML='<span style="line-height:1.3;display:inline-block;text-align:center;">Mercado<br>Livre</span>';
-              if(window._diogotab===tab){btn.style.color="#fff155";btn.style.borderBottomColor="#fff155";}
-              else{btn.style.color="#fff15566";}
+              if(window._diogotab===tab){btn.style.color="#fff155";btn.style.borderBottomColor="#fff155";btn.style.textShadow="0 0 8px #fff15588";}
+              else{btn.style.color="#fff155";btn.style.opacity="0.55";}
             } else if(tab==="concluidas"){
               btn.innerHTML='<span style="line-height:1.3;display:inline-block;text-align:center;">Concluidas<br>Equipe</span>';
             } else if(tab==="tarefas"){
@@ -1374,8 +1376,16 @@ function render(){
               });
               panel.appendChild(divider);
             }
-            appendAddTask(panel,color,"Minhas tarefas","+ minha tarefa",null,(text,prio)=>addTask("Diogo",text,prio),true);
-            appendDelegate(panel,color,true);
+            // Wrapper lado a lado
+            const btnWrapper=document.createElement("div");
+            btnWrapper.style.cssText="display:flex;gap:8px;margin-top:14px;border-top:1px solid var(--sep);padding-top:12px;";
+            const taskSec=document.createElement("div");taskSec.style.flex="1";
+            const delSec=document.createElement("div");delSec.style.flex="1";
+            appendAddTask(taskSec,color,"","+ minha tarefa",null,(text,prio)=>addTask("Diogo",text,prio),true);
+            appendDelegate(delSec,color,true);
+            btnWrapper.appendChild(taskSec);
+            btnWrapper.appendChild(delSec);
+            panel.appendChild(btnWrapper);
             active.length=0;
           }else if(window._diogotab==="concluidas"){
             if(Object.keys(completionAlerts).length>0){
@@ -1498,7 +1508,7 @@ function render(){
 function makeAddBtn(color,label){const btn=document.createElement("button");btn.className="add-dashed";btn.textContent=label;btn.style.cssText=`border-color:${color};color:${color};opacity:0.85;text-shadow:0 0 8px ${color}88;box-shadow:inset 0 0 12px ${color}11;`;btn.addEventListener("mouseenter",()=>{btn.style.opacity="1";btn.style.boxShadow=`inset 0 0 20px ${color}22`;});btn.addEventListener("mouseleave",()=>{btn.style.opacity="0.85";btn.style.boxShadow=`inset 0 0 12px ${color}11`;});return btn;}
 
 function appendAddTask(container,color,sectionLabel,btnLabel,who,onAdd){
-  const sec=document.createElement("div");sec.className="section";sec.innerHTML=`<div class="section-label">${sectionLabel}</div>`;
+  const sec=document.createElement("div");sec.className="section";sec.innerHTML="";
   const btn=makeAddBtn(color,btnLabel);const form=document.createElement("div");form.className="input-box";form.style.display="none";let prio="importante";
   form.innerHTML=`<input placeholder="Descrição..."><div class="prio-row">${Object.entries(PRIO).map(([k])=>`<button class="prio-btn" data-p="${k}" style="border-color:${k==="importante"?themePrio(k)+"66":"var(--border2)"};color:${k==="importante"?themePrio(k):"var(--text3)"};background:${k==="importante"?themePrio(k)+"22":"none"}">${PRIO[k].label}</button>`).join("")}</div><div class="btn-row"><button class="btn-primary" style="background:${color};color:#000">ADICIONAR</button><button class="btn-cancel">✕</button></div>`;
   form.querySelectorAll(".prio-btn").forEach(b=>b.addEventListener("click",()=>{prio=b.dataset.p;form.querySelectorAll(".prio-btn").forEach(x=>{const pc=themePrio(x.dataset.p);x.style.borderColor=x.dataset.p===prio?pc+"66":"var(--border2)";x.style.color=x.dataset.p===prio?pc:"var(--text3)";x.style.background=x.dataset.p===prio?pc+"22":"none";});}));
@@ -1508,7 +1518,7 @@ function appendAddTask(container,color,sectionLabel,btnLabel,who,onAdd){
 }
 
 function appendDelegate(container,color){
-  const sec=document.createElement("div");sec.className="section";sec.innerHTML=`<div class="section-label">Delegar tarefa</div>`;
+  const sec=document.createElement("div");sec.className="section";sec.innerHTML="";
   const btn=makeAddBtn(color,"+ delegar");const form=document.createElement("div");form.className="input-box";form.style.display="none";let prio="importante",who="Bruno";const others=MEMBERS.filter(m=>!m.locked);
   form.innerHTML=`<div class="who-row">${others.map(m=>`<button class="who-btn" data-w="${m.name}" style="border-color:${m.name==="Bruno"?themeColor(m.name)+"66":"var(--border2)"};color:${m.name==="Bruno"?themeColor(m.name):"var(--text3)"};background:${m.name==="Bruno"?themeColor(m.name)+"22":"none"}">${m.name}</button>`).join("")}</div><input placeholder="Descrição..."><div class="prio-row">${Object.entries(PRIO).map(([k])=>`<button class="prio-btn" data-p="${k}" style="border-color:${k==="importante"?themePrio(k)+"66":"var(--border2)"};color:${k==="importante"?themePrio(k):"var(--text3)"};background:${k==="importante"?themePrio(k)+"22":"none"}">${PRIO[k].label}</button>`).join("")}</div><div class="btn-row"><button class="btn-primary btn-del" style="background:${themeColor("Bruno")};color:#000">DELEGAR</button><button class="btn-cancel">✕</button></div>`;
   form.querySelectorAll(".who-btn").forEach(b=>b.addEventListener("click",()=>{who=b.dataset.w;const mc=themeColor(who);form.querySelectorAll(".who-btn").forEach(x=>{const xc=themeColor(x.dataset.w);x.style.borderColor=x.dataset.w===who?xc+"66":"var(--border2)";x.style.color=x.dataset.w===who?xc:"var(--text3)";x.style.background=x.dataset.w===who?xc+"22":"none";});const db2=form.querySelector(".btn-del");if(db2)db2.style.background=mc;}));
