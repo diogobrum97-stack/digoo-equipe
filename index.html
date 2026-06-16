@@ -1597,22 +1597,31 @@ function render(){
               recSec.style.cssText="margin-bottom:14px;";
               const recLabel=document.createElement("div");
               recLabel.style.cssText="font-size:8px;letter-spacing:2px;color:#00ffe544;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;";
-              recLabel.innerHTML='↻ recorrentes de hoje <span style="flex:1;height:1px;background:#ffffff08;display:inline-block;"></span>';
+              recLabel.innerHTML='recorrentes de hoje <span style="flex:1;height:1px;background:#ffffff08;display:inline-block;margin-left:6px;"></span>';
+              recLabel.style.color="var(--text3)";
               recSec.appendChild(recLabel);
               recTasks.forEach(task=>{
                 const pc=themePrio(task.prio);
                 const row=document.createElement("div");row.className="task-row";
                 const chk=document.createElement("button");chk.className="task-check"+(task.done?" done":task.progress?" progress":"");
-                chk.style.borderColor="#00ffe566";
-                if(task.done) chk.style.background="#00ffe5";
-                else if(task.progress) chk.style.background=`linear-gradient(to top, #00ffe5 50%, transparent 50%)`;
+                chk.style.borderColor="#3b82f6";
+                if(task.done) chk.style.background="#3b82f6";
+                else if(task.progress) chk.style.background=`linear-gradient(to top, #3b82f6 50%, transparent 50%)`;
                 else chk.style.background="none";
                 chk.addEventListener("click",()=>toggleTask(task.id,task.done,task.progress));
                 const tw=document.createElement("div");tw.style.flex="1";
                 const tt=document.createElement("div");tt.className="task-text"+(task.done?" done":"");tt.textContent=task.text;tw.appendChild(tt);
-                const pf=document.createElement("div");pf.style.cssText=`font-size:8px;color:#00ffe544;margin-top:2px;`;
-                pf.textContent=task.frequency==="weekly"?"↻ semanal":task.frequency==="monthly"?"↻ mensal":"↻ diária";
-                tw.appendChild(pf);
+                // Botão reabrir quando concluída
+                if(task.done){
+                  const reopen=document.createElement("button");
+                  reopen.style.cssText="background:none;border:none;color:#3b82f644;font-size:10px;cursor:pointer;margin-left:4px;padding:0;letter-spacing:1px;font-family:inherit;";
+                  reopen.textContent="reabrir";
+                  reopen.addEventListener("mouseenter",()=>{reopen.style.color="#3b82f6aa";});
+                  reopen.addEventListener("mouseleave",()=>{reopen.style.color="#3b82f644";});
+                  reopen.addEventListener("click",(e)=>{e.stopPropagation();update(ref(db,`/tasks/${task.id}`),{done:false,progress:false});});
+                  tw.appendChild(reopen);
+                }
+
                 row.appendChild(chk);row.appendChild(tw);
                 recSec.appendChild(row);
               });
