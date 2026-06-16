@@ -1286,9 +1286,9 @@ function render(){
           chatBtn.style.width="30px";
           chatBtn.style.height="30px";
           chatBtn.style.borderRadius="50%";
-          chatBtn.style.border="1.5px solid #333";
-          chatBtn.style.color="#555";
-          chatBtn.style.background="#0a0a0a";
+          chatBtn.style.border="1.5px solid #da7756";
+          chatBtn.style.color="#da7756";
+          chatBtn.style.background="#da775611";
           chatBtn.style.cursor="pointer";
           chatBtn.style.fontSize="13px";
           chatBtn.style.display="flex";
@@ -1298,8 +1298,8 @@ function render(){
           chatBtn.style.zIndex="10";
           chatBtn.textContent="✦";
           chatBtn.title="Assistente Claude";
-          chatBtn.addEventListener("mouseenter",()=>{chatBtn.style.borderColor="#555";chatBtn.style.color="#888";});
-          chatBtn.addEventListener("mouseleave",()=>{chatBtn.style.borderColor="#333";chatBtn.style.color="#555";});
+          chatBtn.addEventListener("mouseenter",()=>{chatBtn.style.background="#da775622";chatBtn.style.boxShadow="0 0 8px #da775644";});
+          chatBtn.addEventListener("mouseleave",()=>{chatBtn.style.background="#da775611";chatBtn.style.boxShadow="none";});
           chatBtn.addEventListener("click",(e)=>{
             e.stopPropagation();
             chatState[member.name].open=!chatState[member.name].open;
