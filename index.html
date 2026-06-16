@@ -443,6 +443,7 @@ let diogomltab="devolucoes", diogoDevolucoes=null, diogoDevolLoading=false;
 let diogoCustoData=null; // dados processados do Excel
 let digoMLOpen=false;
 let digoMLMax=false; // modo fullscreen
+let vendasData=null, vendasLoading=false, vendasDays=7;
 // Chat por membro: { messages: [], open: false, loading: false }
 let chatState = { Diogo:{messages:[],open:false,loading:false}, Bruno:{messages:[],open:false,loading:false}, Larissa:{messages:[],open:false,loading:false} };
 
@@ -609,6 +610,181 @@ function renderDiogoML(container, color) {
   }
 
   container.appendChild(mlPanel);
+}
+
+async function fetchVendas(days) {
+  vendasLoading=true; render();
+  try {
+    const token=state.ml_token?.access_token;
+    if(!token){vendasData={error:"token ausente"};vendasLoading=false;render();return;}
+    const r=await fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${token}&days=${days}`);
+    vendasData=await r.json();
+  }catch(e){vendasData={error:e.message};}
+  vendasLoading=false; render();
+}
+
+function renderVendasTab(panel, color) {
+  if(!vendasData&&!vendasLoading&&state.ml_token?.access_token) fetchVendas(vendasDays);
+
+  // Filtro de período
+  const header=document.createElement("div");
+  header.style.cssText="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;";
+  const filterWrap=document.createElement("div");
+  filterWrap.style.cssText="display:flex;gap:6px;";
+  [7,14,30].forEach(d=>{
+    const btn=document.createElement("button");
+    btn.textContent=d===7?"7 dias":d===14?"14 dias":"30 dias";
+    btn.style.cssText=`padding:4px 12px;background:${vendasDays===d?"#fff15522":"none"};border:1px solid ${vendasDays===d?"#fff155":"var(--border2)"};color:${vendasDays===d?"#fff155":"var(--text3)"};border-radius:4px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:1px;`;
+    btn.addEventListener("click",()=>{vendasDays=d;vendasData=null;fetchVendas(d);});
+    filterWrap.appendChild(btn);
+  });
+  const refBtn=document.createElement("button");
+  refBtn.style.cssText="background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:4px 10px;font-size:10px;cursor:pointer;font-family:inherit;";
+  refBtn.textContent="↻";
+  refBtn.addEventListener("click",()=>{vendasData=null;fetchVendas(vendasDays);});
+  header.appendChild(filterWrap);header.appendChild(refBtn);
+  panel.appendChild(header);
+
+  if(vendasLoading){
+    const l=document.createElement("div");l.style.cssText="text-align:center;padding:40px;color:var(--text3);font-size:12px;";
+    l.innerHTML='<span class="spinning">↻</span> Carregando...';panel.appendChild(l);return;
+  }
+  if(!vendasData||vendasData.error){
+    const err=document.createElement("p");err.style.cssText="color:#f87171;font-size:12px;padding:14px 0;";
+    err.textContent=vendasData?.error||"Erro ao carregar";panel.appendChild(err);return;
+  }
+
+  // Cards de resumo
+  const summaryGrid=document.createElement("div");
+  summaryGrid.style.cssText="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;";
+  [
+    {label:"FATURAMENTO",value:`R$ ${vendasData.summary.totalRevenue.toLocaleString("pt-BR",{minimumFractionDigits:2})}`,color:"#4ade80"},
+    {label:"PEDIDOS",value:vendasData.summary.totalOrders,color:"#38bdf8"},
+    {label:"TICKET MÉDIO",value:`R$ ${vendasData.summary.avgTicket.toLocaleString("pt-BR",{minimumFractionDigits:2})}`,color:"#a78bfa"},
+  ].forEach(s=>{
+    const card=document.createElement("div");
+    card.style.cssText=`background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;border-top:2px solid ${s.color};`;
+    card.innerHTML=`<div style="font-size:8px;color:var(--text3);letter-spacing:2px;margin-bottom:6px;">${s.label}</div><div style="font-size:18px;font-family:'Bebas Neue',sans-serif;letter-spacing:2px;color:${s.color};">${s.value}</div>`;
+    summaryGrid.appendChild(card);
+  });
+  panel.appendChild(summaryGrid);
+
+  // Gráfico de barras
+  if(vendasData.dailyEvolution?.length){
+    const chartWrap=document.createElement("div");
+    chartWrap.style.cssText="margin-bottom:20px;";
+    const chartTitle=document.createElement("div");
+    chartTitle.style.cssText="font-size:9px;color:var(--text3);letter-spacing:2px;margin-bottom:10px;";
+    chartTitle.textContent="FATURAMENTO POR DIA";
+    chartWrap.appendChild(chartTitle);
+
+    const maxRev=Math.max(...vendasData.dailyEvolution.map(d=>d.revenue),1);
+    const chartArea=document.createElement("div");
+    chartArea.style.cssText="display:flex;align-items:flex-end;gap:4px;height:120px;padding-bottom:20px;position:relative;";
+
+    vendasData.dailyEvolution.forEach(day=>{
+      const barWrap=document.createElement("div");
+      barWrap.style.cssText="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;position:relative;";
+      const pct=day.revenue/maxRev;
+      const bar=document.createElement("div");
+      bar.style.cssText=`width:100%;background:linear-gradient(to top,#fff15544,#fff15522);border:1px solid #fff15566;border-radius:3px 3px 0 0;height:${Math.max(pct*100,2)}%;transition:height 0.3s;cursor:default;position:relative;`;
+      bar.title=`${day.label}: R$ ${day.revenue.toLocaleString("pt-BR",{minimumFractionDigits:2})}`;
+      // Tooltip on hover
+      bar.addEventListener("mouseenter",()=>{
+        bar.style.background="linear-gradient(to top,#fff15588,#fff15544)";
+        const tip=document.createElement("div");
+        tip.id="chart-tip";
+        tip.style.cssText="position:absolute;bottom:105%;left:50%;transform:translateX(-50%);background:#0a0a0a;border:1px solid #fff15544;border-radius:4px;padding:4px 8px;font-size:9px;color:#fff155;white-space:nowrap;z-index:100;";
+        tip.textContent=`R$ ${day.revenue.toLocaleString("pt-BR",{minimumFractionDigits:2})}`;
+        bar.appendChild(tip);
+      });
+      bar.addEventListener("mouseleave",()=>{
+        bar.style.background="linear-gradient(to top,#fff15544,#fff15522)";
+        const tip=bar.querySelector("#chart-tip");if(tip)tip.remove();
+      });
+      const label=document.createElement("div");
+      label.style.cssText="position:absolute;bottom:-18px;font-size:8px;color:var(--text3);white-space:nowrap;";
+      label.textContent=day.label;
+      barWrap.appendChild(bar);barWrap.appendChild(label);
+      chartArea.appendChild(barWrap);
+    });
+    chartWrap.appendChild(chartArea);
+    panel.appendChild(chartWrap);
+  }
+
+  // Top Sellers
+  if(vendasData.topSellers?.length){
+    const sec=document.createElement("div");sec.style.cssText="margin-bottom:20px;";
+    const t=document.createElement("div");t.style.cssText="font-size:9px;color:var(--text3);letter-spacing:2px;margin-bottom:10px;";t.textContent="🏆 CAMPEÕES DE VENDAS";
+    sec.appendChild(t);
+    vendasData.topSellers.slice(0,5).forEach((p,i)=>{
+      const row=document.createElement("div");
+      row.style.cssText="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg2);border-radius:5px;margin-bottom:5px;border-left:2px solid #4ade80;";
+      row.innerHTML=`
+        <span style="font-size:11px;color:#4ade8066;width:16px;text-align:center;">${i+1}</span>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.title}</div>
+          <div style="font-size:9px;color:var(--text3);margin-top:2px;">${p.sku!=="—"?p.sku:""}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-size:12px;color:#4ade80;font-weight:500;">${p.qty} un.</div>
+          <div style="font-size:9px;color:var(--text3);">R$ ${p.revenue.toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
+        </div>`;
+      sec.appendChild(row);
+    });
+    panel.appendChild(sec);
+  }
+
+  // Produtos parados
+  if(vendasData.stoppedItems?.length){
+    const sec=document.createElement("div");sec.style.cssText="margin-bottom:20px;";
+    const t=document.createElement("div");t.style.cssText="font-size:9px;color:var(--text3);letter-spacing:2px;margin-bottom:10px;";t.textContent="⚠ ANÚNCIOS SEM VENDA NO PERÍODO";
+    sec.appendChild(t);
+    vendasData.stoppedItems.slice(0,5).forEach(p=>{
+      const row=document.createElement("div");
+      row.style.cssText="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg2);border-radius:5px;margin-bottom:5px;border-left:2px solid #f87171;";
+      row.innerHTML=`
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.title}</div>
+          <div style="font-size:9px;color:var(--text3);margin-top:2px;">Estoque: ${p.available_quantity} · Total vendido: ${p.sold_quantity}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-size:12px;color:#f87171;">R$ ${p.price?.toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
+        </div>`;
+      sec.appendChild(row);
+    });
+    panel.appendChild(sec);
+  }
+
+  // Botão analisar com Claude
+  if(vendasData.summary){
+    const claudeBtn=document.createElement("button");
+    claudeBtn.style.cssText="width:100%;padding:10px;background:#da775611;border:1px solid #da7756;border-radius:6px;color:#da7756;font-family:inherit;font-size:10px;letter-spacing:2px;cursor:pointer;margin-top:8px;transition:all 0.15s;";
+    claudeBtn.textContent="✦ ANALISAR COM CLAUDE";
+    claudeBtn.addEventListener("click",()=>{
+      const resumo=`Analise os dados de vendas dos últimos ${vendasDays} dias:
+- Faturamento: R$ ${vendasData.summary.totalRevenue.toLocaleString("pt-BR",{minimumFractionDigits:2})}
+- Pedidos: ${vendasData.summary.totalOrders}
+- Ticket médio: R$ ${vendasData.summary.avgTicket.toLocaleString("pt-BR",{minimumFractionDigits:2})}
+- Top produto: ${vendasData.topSellers?.[0]?.title} (${vendasData.topSellers?.[0]?.qty} un.)
+- Anúncios parados: ${vendasData.stoppedItems?.length}
+Dê insights e recomendações.`;
+      chatState["Diogo"].messages.push({role:"user",content:resumo});
+      chatState["Diogo"].open=true;
+      renderChatModal("Diogo","#00ffe5");
+      // Dispara a resposta do Claude
+      setTimeout(async()=>{
+        chatState["Diogo"].loading=true;renderChatModal("Diogo","#00ffe5");
+        try{
+          const r=await fetch(`${VERCEL_BACKEND}/api/claude-chat`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({member:"Diogo",message:resumo,history:[],context:buildContext("Diogo")})});
+          const data=await r.json();
+          chatState["Diogo"].messages.push({role:"assistant",content:data.reply||data.error});
+        }catch(e){chatState["Diogo"].messages.push({role:"assistant",content:"Erro de conexão."});}
+        chatState["Diogo"].loading=false;renderChatModal("Diogo","#00ffe5");
+      },100);
+    });
+    panel.appendChild(claudeBtn);
+  }
 }
 
 function renderDiogoDevTab(panel, color) {
@@ -1424,17 +1600,18 @@ function render(){
             // Sub-abas ML
             const mlSubTabs=document.createElement("div");
             mlSubTabs.style.cssText="display:flex;border-bottom:1px solid var(--sep);margin-bottom:16px;";
-            ["devolucoes","custos"].forEach(t=>{
+            ["devolucoes","custos","vendas"].forEach(t=>{
               const b=document.createElement("button");
               b.className="ml-modal-tab"+(diogomltab===t?" active":"");
-              b.textContent=t==="devolucoes"?"Devoluções":"Custo de Devoluções";
+              b.textContent=t==="devolucoes"?"Devoluções":t==="custos"?"Custo de Devoluções":"Vendas";
               b.addEventListener("click",()=>{diogomltab=t;render();});
               mlSubTabs.appendChild(b);
             });
             panel.appendChild(mlSubTabs);
 
             if(diogomltab==="devolucoes") renderDiogoDevTab(panel,"#fff155");
-            else renderDiogoCustoTab(panel,"#fff155");
+            else if(diogomltab==="custos") renderDiogoCustoTab(panel,"#fff155");
+            else renderVendasTab(panel,"#fff155");
 
           }else if(window._diogotab==="conversas"){
             const todayMsgs=Object.entries(state.messages||{}).filter(([,m])=>m!=null&&(m.ts_raw>=todayStart.getTime()||!m.ts_raw)).map(([id,m])=>({...m,id})).sort((a,b)=>b.ts_raw-a.ts_raw);
