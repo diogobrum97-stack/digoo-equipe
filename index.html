@@ -1279,7 +1279,23 @@ function render(){
           panel2.style.paddingBottom="52px";
           const chatBtn=document.createElement("button");
           chatBtn.className="chat-btn";
-          chatBtn.style.cssText="position:absolute;bottom:14px;right:14px;width:30px;height:30px;border-radius:50%;border:1.5px solid #333;color:#555;background:#0a0a0a;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;z-index:10;";
+          chatBtn.style.position="absolute";
+          chatBtn.style.bottom="14px";
+          chatBtn.style.right="14px";
+          chatBtn.style.left="auto";
+          chatBtn.style.width="30px";
+          chatBtn.style.height="30px";
+          chatBtn.style.borderRadius="50%";
+          chatBtn.style.border="1.5px solid #333";
+          chatBtn.style.color="#555";
+          chatBtn.style.background="#0a0a0a";
+          chatBtn.style.cursor="pointer";
+          chatBtn.style.fontSize="13px";
+          chatBtn.style.display="flex";
+          chatBtn.style.alignItems="center";
+          chatBtn.style.justifyContent="center";
+          chatBtn.style.transition="all 0.15s";
+          chatBtn.style.zIndex="10";
           chatBtn.textContent="✦";
           chatBtn.title="Assistente Claude";
           chatBtn.addEventListener("mouseenter",()=>{chatBtn.style.borderColor="#555";chatBtn.style.color="#888";});
@@ -1378,7 +1394,7 @@ function render(){
             }
             // Wrapper lado a lado
             const btnWrapper=document.createElement("div");
-            btnWrapper.style.cssText="display:flex;gap:8px;margin-top:14px;border-top:1px solid var(--sep);padding-top:12px;";
+            btnWrapper.style.cssText="display:flex;gap:8px;margin-top:20px;border-top:1px solid #1a1a1a;padding-top:12px;";
             const taskSec=document.createElement("div");taskSec.style.flex="1";
             const delSec=document.createElement("div");delSec.style.flex="1";
             appendAddTask(taskSec,color,"","+ minha tarefa",null,(text,prio)=>addTask("Diogo",text,prio),true);
@@ -1508,7 +1524,7 @@ function render(){
 function makeAddBtn(color,label){const btn=document.createElement("button");btn.className="add-dashed";btn.textContent=label;btn.style.cssText=`border-color:${color};color:${color};opacity:0.85;text-shadow:0 0 8px ${color}88;box-shadow:inset 0 0 12px ${color}11;`;btn.addEventListener("mouseenter",()=>{btn.style.opacity="1";btn.style.boxShadow=`inset 0 0 20px ${color}22`;});btn.addEventListener("mouseleave",()=>{btn.style.opacity="0.85";btn.style.boxShadow=`inset 0 0 12px ${color}11`;});return btn;}
 
 function appendAddTask(container,color,sectionLabel,btnLabel,who,onAdd){
-  const sec=document.createElement("div");sec.className="section";sec.innerHTML="";
+  const sec=document.createElement("div");sec.style.cssText="";sec.innerHTML="";
   const btn=makeAddBtn(color,btnLabel);const form=document.createElement("div");form.className="input-box";form.style.display="none";let prio="importante";
   form.innerHTML=`<input placeholder="Descrição..."><div class="prio-row">${Object.entries(PRIO).map(([k])=>`<button class="prio-btn" data-p="${k}" style="border-color:${k==="importante"?themePrio(k)+"66":"var(--border2)"};color:${k==="importante"?themePrio(k):"var(--text3)"};background:${k==="importante"?themePrio(k)+"22":"none"}">${PRIO[k].label}</button>`).join("")}</div><div class="btn-row"><button class="btn-primary" style="background:${color};color:#000">ADICIONAR</button><button class="btn-cancel">✕</button></div>`;
   form.querySelectorAll(".prio-btn").forEach(b=>b.addEventListener("click",()=>{prio=b.dataset.p;form.querySelectorAll(".prio-btn").forEach(x=>{const pc=themePrio(x.dataset.p);x.style.borderColor=x.dataset.p===prio?pc+"66":"var(--border2)";x.style.color=x.dataset.p===prio?pc:"var(--text3)";x.style.background=x.dataset.p===prio?pc+"22":"none";});}));
@@ -1518,7 +1534,7 @@ function appendAddTask(container,color,sectionLabel,btnLabel,who,onAdd){
 }
 
 function appendDelegate(container,color){
-  const sec=document.createElement("div");sec.className="section";sec.innerHTML="";
+  const sec=document.createElement("div");sec.style.cssText="";sec.innerHTML="";
   const btn=makeAddBtn(color,"+ delegar");const form=document.createElement("div");form.className="input-box";form.style.display="none";let prio="importante",who="Bruno";const others=MEMBERS.filter(m=>!m.locked);
   form.innerHTML=`<div class="who-row">${others.map(m=>`<button class="who-btn" data-w="${m.name}" style="border-color:${m.name==="Bruno"?themeColor(m.name)+"66":"var(--border2)"};color:${m.name==="Bruno"?themeColor(m.name):"var(--text3)"};background:${m.name==="Bruno"?themeColor(m.name)+"22":"none"}">${m.name}</button>`).join("")}</div><input placeholder="Descrição..."><div class="prio-row">${Object.entries(PRIO).map(([k])=>`<button class="prio-btn" data-p="${k}" style="border-color:${k==="importante"?themePrio(k)+"66":"var(--border2)"};color:${k==="importante"?themePrio(k):"var(--text3)"};background:${k==="importante"?themePrio(k)+"22":"none"}">${PRIO[k].label}</button>`).join("")}</div><div class="btn-row"><button class="btn-primary btn-del" style="background:${themeColor("Bruno")};color:#000">DELEGAR</button><button class="btn-cancel">✕</button></div>`;
   form.querySelectorAll(".who-btn").forEach(b=>b.addEventListener("click",()=>{who=b.dataset.w;const mc=themeColor(who);form.querySelectorAll(".who-btn").forEach(x=>{const xc=themeColor(x.dataset.w);x.style.borderColor=x.dataset.w===who?xc+"66":"var(--border2)";x.style.color=x.dataset.w===who?xc:"var(--text3)";x.style.background=x.dataset.w===who?xc+"22":"none";});const db2=form.querySelector(".btn-del");if(db2)db2.style.background=mc;}));
