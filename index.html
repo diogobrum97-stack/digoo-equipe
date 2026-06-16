@@ -984,12 +984,19 @@ function render(){
   if(pendingMembers.length>0)startFaviconCycle(pendingMembers.map(m=>themeColor(m.name)));else stopFaviconFlash();
   const lbl=document.getElementById("user-label");if(lbl)lbl.textContent=currentUser?`logado como ${currentUser} · trocar`:"";
 
+  // Esconde outros cards quando Diogo está em Mercado Livre
+  const diogoPinOk = diogoPinUnlocked;
+  const diogIsML = openCard==="Diogo" && diogoPinOk && window._diogotab==="mercadolivre";
+
   MEMBERS.forEach(member=>{
     const color=themeColor(member.name),hbg=themeHbg(member.name);
     const active=tasksFor(member.name).filter(t=>!t.done),done=tasksFor(member.name).filter(t=>t.done);
     const isOpen=openCard===member.name,isFlashing=!member.locked&&!!flashQueue[member.name];
     const hasPending=!member.locked&&active.filter(t=>!t.progress).length>0;
     const unreadMsgs=!member.locked?msgsFor(member.name).filter(m=>!m.read):[];
+
+    // Esconde Bruno e Larissa quando Diogo está na aba ML
+    if(diogIsML && member.name !== "Diogo") return;
 
     const card=document.createElement("div");card.className="card"+(hasPending||isFlashing?" flashing":"");
     card.style.setProperty("--c",color);
@@ -1045,7 +1052,11 @@ function render(){
           panel.appendChild(tabs);
           const todayStart=new Date();todayStart.setHours(0,0,0,0);
 
-          if(window._diogotab!=="mercadolivre"){ card.style.gridColumn=""; panel.style.maxHeight=""; panel.style.overflowY=""; }
+          if(window._diogotab==="mercadolivre"){
+            card.style.gridColumn="1 / -1";
+          } else {
+            card.style.gridColumn="";
+          }
           if(window._diogotab==="tarefas"){
             const ownTasks=active.filter(t=>!t.delegatedBy||t.delegatedBy==="Diogo");
             const teamTasks=active.filter(t=>t.delegatedBy&&t.delegatedBy!=="Diogo");
@@ -1095,8 +1106,6 @@ function render(){
             }
             if(Object.keys(completionAlerts).length===0){const e=document.createElement("p");e.style.cssText="font-size:11px;color:var(--text3);text-align:center;padding:14px 0;";e.textContent="Nenhuma conclusão nova";panel.appendChild(e);}
           }else if(window._diogotab==="mercadolivre"){
-            // Expande card full width
-            card.style.gridColumn="1 / -1";
             panel.style.maxHeight="70vh";
             panel.style.overflowY="auto";
 
