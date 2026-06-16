@@ -659,7 +659,7 @@ function renderVendasTab(panel, color) {
   summaryGrid.style.cssText="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;";
   [
     {label:"FATURAMENTO",value:`R$ ${vendasData.summary.totalRevenue.toLocaleString("pt-BR",{minimumFractionDigits:2})}`,color:"#4ade80"},
-    {label:"PEDIDOS",value:vendasData.summary.totalOrders,color:"#38bdf8"},
+    {label:"VENDAS",value:vendasData.summary.totalOrders,color:"#38bdf8"},
     {label:"TICKET MÉDIO",value:`R$ ${vendasData.summary.avgTicket.toLocaleString("pt-BR",{minimumFractionDigits:2})}`,color:"#a78bfa"},
   ].forEach(s=>{
     const card=document.createElement("div");
