@@ -1626,10 +1626,11 @@ function render(){
                 chk.addEventListener("click",()=>toggleTask(task.id,task.done,task.progress,true));
                 const tw=document.createElement("div");tw.style.flex="1";
                 const tt=document.createElement("div");tt.className="task-text"+(task.done?" done":"");tt.textContent=task.text;tw.appendChild(tt);
-                // Botões reabrir + OK quando concluída
+                row.appendChild(chk);row.appendChild(tw);
+                // Botões reabrir + OK quando concluída — na ponta direita
                 if(task.done){
                   const btnWrap=document.createElement("div");
-                  btnWrap.style.cssText="display:flex;gap:5px;flex-shrink:0;margin-left:6px;";
+                  btnWrap.style.cssText="display:flex;gap:5px;flex-shrink:0;";
                   const reopen=document.createElement("button");
                   reopen.style.cssText="background:none;border:1px solid #3b82f644;border-radius:3px;color:#3b82f677;font-size:8px;letter-spacing:1px;padding:2px 7px;cursor:pointer;font-family:inherit;";
                   reopen.textContent="Reabrir";
@@ -1641,8 +1642,6 @@ function render(){
                   btnWrap.appendChild(reopen);btnWrap.appendChild(okBtn);
                   row.appendChild(btnWrap);
                 }
-
-                row.appendChild(chk);row.appendChild(tw);
                 recSec.appendChild(row);
               });
               panel.appendChild(recSec);
