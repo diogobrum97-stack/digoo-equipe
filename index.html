@@ -1626,15 +1626,20 @@ function render(){
                 chk.addEventListener("click",()=>toggleTask(task.id,task.done,task.progress,true));
                 const tw=document.createElement("div");tw.style.flex="1";
                 const tt=document.createElement("div");tt.className="task-text"+(task.done?" done":"");tt.textContent=task.text;tw.appendChild(tt);
-                // Botão reabrir quando concluída
+                // Botões reabrir + OK quando concluída
                 if(task.done){
+                  const btnWrap=document.createElement("div");
+                  btnWrap.style.cssText="display:flex;gap:5px;flex-shrink:0;margin-left:6px;";
                   const reopen=document.createElement("button");
-                  reopen.style.cssText="background:none;border:none;color:#3b82f644;font-size:10px;cursor:pointer;margin-left:4px;padding:0;letter-spacing:1px;font-family:inherit;";
-                  reopen.textContent="reabrir";
-                  reopen.addEventListener("mouseenter",()=>{reopen.style.color="#3b82f6aa";});
-                  reopen.addEventListener("mouseleave",()=>{reopen.style.color="#3b82f644";});
+                  reopen.style.cssText="background:none;border:1px solid #3b82f644;border-radius:3px;color:#3b82f677;font-size:8px;letter-spacing:1px;padding:2px 7px;cursor:pointer;font-family:inherit;";
+                  reopen.textContent="Reabrir";
                   reopen.addEventListener("click",(e)=>{e.stopPropagation();update(ref(db,`/tasks/${task.id}`),{done:false,progress:false});});
-                  tw.appendChild(reopen);
+                  const okBtn=document.createElement("button");
+                  okBtn.style.cssText="background:#3b82f6;border:none;border-radius:3px;color:#000;font-size:8px;font-weight:700;letter-spacing:1px;padding:2px 7px;cursor:pointer;font-family:inherit;";
+                  okBtn.textContent="OK";
+                  okBtn.addEventListener("click",(e)=>{e.stopPropagation();remove(ref(db,`/tasks/${task.id}`));});
+                  btnWrap.appendChild(reopen);btnWrap.appendChild(okBtn);
+                  row.appendChild(btnWrap);
                 }
 
                 row.appendChild(chk);row.appendChild(tw);
