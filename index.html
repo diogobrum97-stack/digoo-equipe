@@ -447,7 +447,7 @@ let estoqueExcelData=null;
 let estoqueBlingData=null;
 let estoqueBlingLoading=false;
 let estoqueBlingErro=null;
-const BLING_PROXY="http://localhost:5000";
+const BLING_PROXY="https://digoo-backend.vercel.app";
 let digoMLOpen=false;
 let digoMLMax=false; // modo fullscreen
 let vendasData=null, vendasLoading=false, vendasDays=7;
@@ -1876,7 +1876,7 @@ async function fetchBlingProdutos() {
   render();
 
   try {
-    const r = await fetch(`${BLING_PROXY}/produtos`);
+    const r = await fetch(`${BLING_PROXY}/bling-produtos`);
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const data = await r.json();
 
