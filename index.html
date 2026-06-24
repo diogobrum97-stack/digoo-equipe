@@ -1844,17 +1844,28 @@ async function processarExcelEstoque(file) {
   const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
 
   const dados = [];
-  for (let i = 12; i < rows.length; i++) {
+  // Encontra a linha de início dos dados (primeira linha com SKU real)
+  let startRow = 10; // começa a procurar da linha 10
+  for (let i = 10; i < Math.min(rows.length, 20); i++) {
+    const val = String(rows[i][3] || "").trim();
+    if (val && val !== "SKU" && val.length > 3) { startRow = i; break; }
+  }
+  for (let i = startRow; i < rows.length; i++) {
     const row = rows[i];
     const sku = String(row[3] || "").trim();
-    const produto = String(row[6] || "").trim();
+    if (!sku || sku === "SKU") continue;
+
+    // Produto: col G(6), se vazia tenta F(5)
+    let produto = String(row[6] || "").trim();
+    if (!produto || produto.length < 3) produto = String(row[5] || "").trim();
+    if (!produto) produto = sku;
+
     const aptas = Number(row[18]) || 0;
     const transf = Number(row[16]) || 0;
     const pendente = Number(row[15]) || 0;
 
-    // Linha vazia ou sem SKU → para
-    if (!sku && !produto) break;
-    if (!sku) continue;
+    // Linha vazia → para
+    if (!sku) break;
 
     dados.push({ sku, produto, aptas, transf, pendente });
   }
