@@ -1844,7 +1844,7 @@ async function processarExcelEstoque(file) {
   const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
 
   const dados = [];
-  for (let i = 11; i < rows.length; i++) {
+  for (let i = 12; i < rows.length; i++) {
     const row = rows[i];
     const sku = String(row[3] || "").trim();
     const produto = String(row[6] || "").trim();
