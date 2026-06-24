@@ -1842,62 +1842,38 @@ async function processarExcelEstoque(file) {
   const wb = XLSX.read(arrayBuffer, { type: "array" });
   const ws = wb.Sheets[wb.SheetNames[0]];
 
-  // Usa sheet_to_json com header nomeado para evitar problemas de índice
-  // Primeiro encontra a linha do header principal (onde col 0 ou 1 = "Código ML")
-  const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
+  // SheetJS com defval:"" pula linhas vazias e entrega só linhas com dado
+  // A planilha ML tem os dados direto sem precisar pular headers
+  const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
 
-  // Encontra linha do header: tem "SKU" em alguma célula
-  let hRow = -1;
+  // Encontra a primeira linha onde idx 3 parece um SKU real
+  // (não é número puro, não é header de texto)
+  let startIdx = 0;
   for (let i = 0; i < raw.length; i++) {
-    if (raw[i].some(c => String(c||"").trim() === "SKU")) { hRow = i; break; }
-  }
-  if (hRow < 0) { alert("Header SKU não encontrado na planilha"); return; }
-
-  // Monta mapa de nome de coluna → índice a partir do header
-  const headers = raw[hRow].map(c => String(c||"").trim());
-  const col = name => headers.indexOf(name);
-
-  // Índices por nome — robusto a mudanças de posição
-  const iSKU     = col("SKU");
-  const iProduto = col("Produto");
-
-  // "Aptas para venda" pode estar em subheader (linha hRow+1 ou hRow+2)
-  // Procura nas próximas 3 linhas
-  let iAptas = -1, iTransf = -1, iPend = -1;
-  for (let offset = 0; offset <= 2; offset++) {
-    const sub = (raw[hRow + offset] || []).map(c => String(c||"").trim());
-    if (iAptas  < 0) { const f = sub.findIndex(c => c === "Aptas para venda");  if (f >= 0) iAptas  = f; }
-    if (iTransf < 0) { const f = sub.findIndex(c => c === "Em transferência");  if (f >= 0) iTransf = f; }
-    if (iPend   < 0) { const f = sub.findIndex(c => c === "Entrada pendente" && sub.indexOf(c) > 10); if (f >= 0) iPend = f; }
+    const v = String(raw[i][3] || "").trim();
+    // SKU real: tem letras, não é "SKU", não é "Código ML" etc
+    if (v && v !== "SKU" && /[A-Za-z]/.test(v) && !v.includes("Código") && !v.includes("Status") && !v.includes("Boa")) {
+      startIdx = i;
+      break;
+    }
   }
 
-  // Fallback para índices conhecidos se não encontrar por nome
-  if (iSKU     < 0) { console.warn("SKU não encontrado por nome, usando idx 3");     }
-  if (iProduto < 0) { console.warn("Produto não encontrado por nome, usando idx 6"); }
+  console.log("startIdx:", startIdx, "primeira linha:", raw[startIdx]?.slice(0,8));
 
-  const skuIdx     = iSKU     >= 0 ? iSKU     : 3;
-  const prodIdx    = iProduto >= 0 ? iProduto : 6;
-  const aptasIdx   = iAptas   >= 0 ? iAptas   : 18;
-  const transfIdx  = iTransf  >= 0 ? iTransf  : 16;
-  const pendIdx    = iPend    >= 0 ? iPend    : 15;
-
-  console.log("Índices detectados:", {skuIdx, prodIdx, aptasIdx, transfIdx, pendIdx});
-
-  // Dados começam 3 linhas após o header (subheaders + linha vazia)
-  const startIdx = hRow + 3;
   const dados = [];
   for (let i = startIdx; i < raw.length; i++) {
     const row = raw[i];
-    const sku     = String(row[skuIdx]  || "").trim();
-    const produto = String(row[prodIdx] || "").trim();
-    if (!sku || !produto) continue;
-    const aptas    = Number(row[aptasIdx])  || 0;
-    const transf   = Number(row[transfIdx]) || 0;
-    const pendente = Number(row[pendIdx])   || 0;
+    const sku     = String(row[3] || "").trim();
+    const produto = String(row[6] || "").trim();
+    if (!sku || !produto || sku === "SKU") continue;
+
+    const aptas    = Number(row[18]) || 0;
+    const transf   = Number(row[16]) || 0;
+    const pendente = Number(row[15]) || 0;
     dados.push({ sku, produto, aptas, transf, pendente });
   }
 
-  console.log("Primeiros 3 dados:", dados.slice(0,3));
+  console.log("Total dados:", dados.length, "primeiro:", dados[0]);
 
   estoqueExcelData = { fileName: file.name, rows: dados };
   if (!estoqueBlingData && !estoqueBlingLoading) await fetchBlingProdutos();
