@@ -443,6 +443,11 @@ let mlCanceladas=null,mlDevolucoes=null,mlReclamacoes=null,mlLoadingTab=null;
 let finData=null,finLoading=false,finMonth=new Date().toISOString().slice(0,7);
 let diogomltab="devolucoes", diogoDevolucoes=null, diogoDevolLoading=false;
 let diogoCustoData=null; // dados processados do Excel
+let estoqueExcelData=null;
+let estoqueBlingData=null;
+let estoqueBlingLoading=false;
+let estoqueBlingErro=null;
+const BLING_PROXY="http://localhost:5000";
 let digoMLOpen=false;
 let digoMLMax=false; // modo fullscreen
 let vendasData=null, vendasLoading=false, vendasDays=7;
@@ -1574,13 +1579,15 @@ function render(){
         if(member.locked){
           if(!window._diogotab)window._diogotab="tarefas";
           const tabs=document.createElement("div");tabs.className="tabs";
-          ["tarefas","concluidas","conversas"].forEach(tab=>{
+          ["tarefas","concluidas","conversas","estoque"].forEach(tab=>{
             const btn=document.createElement("button");
             btn.className="tab-btn"+(window._diogotab===tab?" active":"");
             if(tab==="concluidas"){
               btn.innerHTML='<span style="line-height:1.3;display:inline-block;text-align:center;">Concluidas<br>Equipe</span>';
             } else if(tab==="tarefas"){
               btn.textContent="Minhas Tarefas";
+            } else if(tab==="estoque") {
+              btn.textContent="Estoque";
             } else {
               btn.textContent="Conversas";
             }
@@ -1691,7 +1698,9 @@ function render(){
               });
               panel.appendChild(divider);
             }
-            // Wrapper lado a lado
+            }else if(window._diogotab==="estoque"){
+            renderEstoqueTab(panel, color);
+          // Wrapper lado a lado
             const btnWrapper=document.createElement("div");
             btnWrapper.style.cssText="display:flex;gap:8px;margin-top:20px;border-top:1px solid #1a1a1a;padding-top:12px;";
             const taskSec=document.createElement("div");taskSec.style.flex="1";
@@ -1826,6 +1835,260 @@ function appendCornerDelegate(container,color,senderName){
   form.querySelector(".btn-del").addEventListener("click",submit);form.querySelector(".btn-cancel").addEventListener("click",cancel);inp.addEventListener("keydown",e=>{if(e.key==="Enter")submit();if(e.key==="Escape")cancel();});
   btn.addEventListener("click",()=>{const vis=form.style.display!=="none";form.style.display=vis?"none":"block";if(!vis)setTimeout(()=>inp.focus(),60);});container.appendChild(btn);container.appendChild(form);
 }
+
+async function processarExcelEstoque(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const XLSX = await import("https://cdn.jsdelivr.net/npm/xlsx@0.18.5/+esm");
+  const wb = XLSX.read(arrayBuffer, { type: "array" });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
+
+  const dados = [];
+  for (let i = 11; i < rows.length; i++) {
+    const row = rows[i];
+    const sku = String(row[3] || "").trim();
+    const produto = String(row[6] || "").trim();
+    const aptas = Number(row[18]) || 0;
+    const transf = Number(row[16]) || 0;
+    const pendente = Number(row[15]) || 0;
+
+    // Linha vazia ou sem SKU → para
+    if (!sku && !produto) break;
+    if (!sku) continue;
+
+    dados.push({ sku, produto, aptas, transf, pendente });
+  }
+
+  estoqueExcelData = { fileName: file.name, rows: dados };
+
+  // Dispara busca Bling automaticamente
+  if (!estoqueBlingData && !estoqueBlingLoading) {
+    await fetchBlingProdutos();
+  }
+
+  render();
+}
+
+// ── BLING /produtos ──────────────────────────────────────────
+async function fetchBlingProdutos() {
+  estoqueBlingLoading = true;
+  estoqueBlingErro = null;
+  render();
+
+  try {
+    const r = await fetch(`${BLING_PROXY}/produtos`);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data = await r.json();
+
+    if (data.erro) throw new Error(data.erro);
+
+    // Monta mapa SKU → precoCusto
+    const mapa = {};
+    (data.data || []).forEach(p => {
+      const sku = String(p.codigo || "").trim();
+      const custo = Number(p.precoCusto) || 0;
+      if (sku) mapa[sku] = custo;
+    });
+
+    estoqueBlingData = mapa;
+  } catch (e) {
+    estoqueBlingErro = e.message;
+  }
+
+  estoqueBlingLoading = false;
+  render();
+}
+
+// ── RENDER CARD ESTOQUE ──────────────────────────────────────
+function renderEstoqueTab(panel, color) {
+  // ── Upload ──
+  const uploadWrap = document.createElement("div");
+  uploadWrap.style.cssText = "margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;";
+
+  const uploadLabel = document.createElement("label");
+  uploadLabel.style.cssText = `display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:none;border:1px dashed ${color}66;border-radius:5px;color:${color};font-size:10px;letter-spacing:1.5px;cursor:pointer;font-family:inherit;transition:all 0.15s;`;
+  uploadLabel.innerHTML = `↑ ${estoqueExcelData ? "Trocar planilha" : "Importar Excel Full ML"}`;
+  const fileInput = document.createElement("input");
+  fileInput.type = "file";
+  fileInput.accept = ".xlsx,.xls";
+  fileInput.style.display = "none";
+  fileInput.addEventListener("change", e => {
+    const f = e.target.files[0];
+    if (f) processarExcelEstoque(f);
+  });
+  uploadLabel.appendChild(fileInput);
+  uploadWrap.appendChild(uploadLabel);
+
+  if (estoqueExcelData?.fileName) {
+    const fname = document.createElement("span");
+    fname.style.cssText = "font-size:9px;color:var(--text3);";
+    fname.textContent = estoqueExcelData.fileName;
+    uploadWrap.appendChild(fname);
+  }
+
+  // Status Bling
+  const blingStatus = document.createElement("div");
+  blingStatus.style.cssText = "display:flex;align-items:center;gap:6px;margin-left:auto;";
+
+  if (estoqueBlingLoading) {
+    blingStatus.innerHTML = `<span class="spinning" style="color:var(--text3)">↻</span><span style="font-size:9px;color:var(--text3);letter-spacing:1px;">Buscando custos...</span>`;
+  } else if (estoqueBlingErro) {
+    blingStatus.innerHTML = `<span style="font-size:9px;color:#f87171;">⚠ Bling: ${estoqueBlingErro}</span>`;
+    const retryBtn = document.createElement("button");
+    retryBtn.textContent = "↻";
+    retryBtn.style.cssText = "background:none;border:1px solid #f8717166;color:#f87171;border-radius:3px;padding:2px 7px;font-size:10px;cursor:pointer;";
+    retryBtn.addEventListener("click", () => { estoqueBlingData = null; estoqueBlingErro = null; fetchBlingProdutos(); });
+    blingStatus.appendChild(retryBtn);
+  } else if (estoqueBlingData) {
+    const total = Object.keys(estoqueBlingData).length;
+    blingStatus.innerHTML = `<span style="width:7px;height:7px;border-radius:50%;background:#00ff77;display:inline-block;box-shadow:0 0 8px #00ff77;"></span><span style="font-size:9px;color:var(--text3);letter-spacing:1px;">${total} SKUs Bling</span>`;
+    const refBtn = document.createElement("button");
+    refBtn.textContent = "↻";
+    refBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:3px;padding:2px 7px;font-size:10px;cursor:pointer;";
+    refBtn.addEventListener("click", () => { estoqueBlingData = null; fetchBlingProdutos(); });
+    blingStatus.appendChild(refBtn);
+  } else {
+    blingStatus.innerHTML = `<span style="width:7px;height:7px;border-radius:50%;background:#f87171;display:inline-block;"></span><span style="font-size:9px;color:var(--text3);">Proxy offline</span>`;
+    const connectBtn = document.createElement("button");
+    connectBtn.textContent = "Conectar";
+    connectBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer;letter-spacing:1px;";
+    connectBtn.addEventListener("click", () => fetchBlingProdutos());
+    blingStatus.appendChild(connectBtn);
+  }
+
+  uploadWrap.appendChild(blingStatus);
+  panel.appendChild(uploadWrap);
+
+  if (!estoqueExcelData) {
+    const hint = document.createElement("div");
+    hint.style.cssText = "text-align:center;padding:40px 0;color:var(--text3);font-size:11px;line-height:1.8;";
+    hint.innerHTML = `Importe a planilha Full ML (Filial SP)<br><span style="font-size:9px;opacity:0.6;">SKU · Produto · Aptas · Transferências · Pendentes</span>`;
+    panel.appendChild(hint);
+    return;
+  }
+
+  const rows = estoqueExcelData.rows;
+  if (!rows.length) {
+    const e = document.createElement("p");
+    e.style.cssText = "color:#f87171;font-size:12px;padding:14px 0;";
+    e.textContent = "Nenhum dado encontrado. Verifique se a planilha é do Full ML.";
+    panel.appendChild(e);
+    return;
+  }
+
+  // ── Cruza dados ──
+  let totalValor = 0;
+  let skusSemCusto = 0;
+  let totalAptas = 0;
+
+  const enriched = rows.map(r => {
+    const custo = estoqueBlingData ? (estoqueBlingData[r.sku] || 0) : null;
+    const valor = custo !== null ? r.aptas * custo : null;
+    if (custo === 0 || custo === null) skusSemCusto++;
+    if (valor !== null) totalValor += valor;
+    totalAptas += r.aptas;
+    return { ...r, custo, valor };
+  });
+
+  // ── Header resumo ──
+  const resumo = document.createElement("div");
+  resumo.style.cssText = "display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;";
+
+  [
+    {
+      label: "VALOR EM ESTOQUE",
+      value: estoqueBlingData
+        ? `R$ ${totalValor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`
+        : "—",
+      color: "#00ff77",
+      sub: skusSemCusto > 0 ? `${skusSemCusto} SKUs sem custo` : "todos com custo"
+    },
+    {
+      label: "UNIDADES APTAS",
+      value: totalAptas.toLocaleString("pt-BR"),
+      color: color,
+      sub: `${rows.length} SKUs`
+    },
+    {
+      label: "CUSTO MÉDIO/UN",
+      value: estoqueBlingData && totalAptas > 0
+        ? `R$ ${(totalValor / totalAptas).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`
+        : "—",
+      color: "#a78bfa",
+      sub: "ponderado"
+    },
+  ].forEach(s => {
+    const card = document.createElement("div");
+    card.style.cssText = `background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px 12px;border-top:2px solid ${s.color};`;
+    card.innerHTML = `
+      <div style="font-size:8px;color:var(--text3);letter-spacing:2px;margin-bottom:6px;">${s.label}</div>
+      <div style="font-size:16px;font-family:'Bebas Neue',sans-serif;letter-spacing:2px;color:${s.color};">${s.value}</div>
+      <div style="font-size:8px;color:var(--text3);margin-top:3px;">${s.sub}</div>`;
+    resumo.appendChild(card);
+  });
+  panel.appendChild(resumo);
+
+  // ── Tabela ──
+  const tableWrap = document.createElement("div");
+  tableWrap.style.cssText = "overflow-x:auto;";
+
+  const table = document.createElement("table");
+  table.style.cssText = "width:100%;border-collapse:collapse;font-size:11px;";
+
+  // Cabeçalho
+  const thead = document.createElement("thead");
+  thead.innerHTML = `
+    <tr style="border-bottom:1px solid var(--sep);">
+      <th style="text-align:left;padding:6px 8px;font-size:9px;letter-spacing:1.5px;color:var(--text3);font-weight:500;">SKU</th>
+      <th style="text-align:left;padding:6px 8px;font-size:9px;letter-spacing:1.5px;color:var(--text3);font-weight:500;">PRODUTO</th>
+      <th style="text-align:center;padding:6px 8px;font-size:9px;letter-spacing:1.5px;color:var(--text3);font-weight:500;">APTAS</th>
+      <th style="text-align:center;padding:6px 8px;font-size:9px;letter-spacing:1.5px;color:var(--text3);font-weight:500;">TRANSF</th>
+      <th style="text-align:center;padding:6px 8px;font-size:9px;letter-spacing:1.5px;color:var(--text3);font-weight:500;">PEND</th>
+      <th style="text-align:right;padding:6px 8px;font-size:9px;letter-spacing:1.5px;color:var(--text3);font-weight:500;">CUSTO</th>
+      <th style="text-align:right;padding:6px 8px;font-size:9px;letter-spacing:1.5px;color:var(--text3);font-weight:500;">VALOR</th>
+    </tr>`;
+  table.appendChild(thead);
+
+  const tbody = document.createElement("tbody");
+  enriched
+    .sort((a, b) => (b.valor || 0) - (a.valor || 0))
+    .forEach(r => {
+      const tr = document.createElement("tr");
+      tr.style.cssText = "border-bottom:1px solid var(--sep);transition:background 0.1s;";
+      tr.addEventListener("mouseenter", () => tr.style.background = "var(--bg3)");
+      tr.addEventListener("mouseleave", () => tr.style.background = "");
+
+      const semCusto = r.custo === 0 || r.custo === null;
+      const custoStr = r.custo !== null
+        ? `R$ ${r.custo.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`
+        : "—";
+      const valorStr = r.valor !== null
+        ? `R$ ${r.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`
+        : "—";
+
+      tr.innerHTML = `
+        <td style="padding:7px 8px;color:${color};font-size:10px;white-space:nowrap;">${r.sku}</td>
+        <td style="padding:7px 8px;color:var(--text2);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.produto}</td>
+        <td style="padding:7px 8px;text-align:center;color:var(--text);font-weight:500;">${r.aptas}</td>
+        <td style="padding:7px 8px;text-align:center;color:var(--text3);">${r.transf || "—"}</td>
+        <td style="padding:7px 8px;text-align:center;color:${r.pendente > 0 ? "#fbbf24" : "var(--text3)"};">${r.pendente || "—"}</td>
+        <td style="padding:7px 8px;text-align:right;color:${semCusto ? "#f87171" : "var(--text3)"};">${custoStr}</td>
+        <td style="padding:7px 8px;text-align:right;color:${semCusto ? "var(--text3)" : "#00ff77"};font-weight:${semCusto ? "400" : "500"};">${valorStr}</td>`;
+      tbody.appendChild(tr);
+    });
+  table.appendChild(tbody);
+  tableWrap.appendChild(table);
+  panel.appendChild(tableWrap);
+
+  // Aviso SKUs sem custo
+  if (skusSemCusto > 0 && estoqueBlingData) {
+    const warn = document.createElement("div");
+    warn.style.cssText = "margin-top:10px;padding:8px 10px;background:#f8717111;border:1px solid #f8717133;border-radius:4px;font-size:10px;color:#f87171;";
+    warn.textContent = `⚠ ${skusSemCusto} SKU${skusSemCusto > 1 ? "s" : ""} sem custo no Bling — verifique o campo "Preço de Custo" no cadastro do produto.`;
+    panel.appendChild(warn);
+  }
+}
+
 
 document.getElementById("user-label").addEventListener("click",()=>{localStorage.removeItem(STORAGE_KEY);currentUser=null;const s=document.getElementById("identity-screen");s.innerHTML="";s.style.display="flex";setupIdentityScreen();});
 
