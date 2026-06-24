@@ -1841,39 +1841,34 @@ async function processarExcelEstoque(file) {
   const XLSX = await import("https://cdn.jsdelivr.net/npm/xlsx@0.18.5/+esm");
   const wb = XLSX.read(arrayBuffer, { type: "array" });
   const ws = wb.Sheets[wb.SheetNames[0]];
-
-  // SheetJS com defval:"" pula linhas vazias e entrega só linhas com dado
-  // A planilha ML tem os dados direto sem precisar pular headers
   const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
 
-  // Encontra a primeira linha onde idx 3 parece um SKU real
-  // (não é número puro, não é header de texto)
+  // SheetJS ignora col A vazia → tudo deslocado -1
+  // idx 2 = SKU (col D), idx 5 = Produto (col G)
+  // idx 17 = Aptas (col S), idx 15 = Transf (col Q), idx 14 = Pendente (col P)
+
+  // Encontra primeira linha com SKU real em idx 2
   let startIdx = 0;
   for (let i = 0; i < raw.length; i++) {
-    const v = String(raw[i][3] || "").trim();
-    // SKU real: tem letras, não é "SKU", não é "Código ML" etc
-    if (v && v !== "SKU" && /[A-Za-z]/.test(v) && !v.includes("Código") && !v.includes("Status") && !v.includes("Boa")) {
+    const v = String(raw[i][2] || "").trim();
+    if (v && /[A-Za-z]/.test(v) && !["SKU","Código ML","Status","Boa","Total","Produto"].includes(v)) {
       startIdx = i;
       break;
     }
   }
 
-  console.log("startIdx:", startIdx, "primeira linha:", raw[startIdx]?.slice(0,8));
-
   const dados = [];
   for (let i = startIdx; i < raw.length; i++) {
     const row = raw[i];
-    const sku     = String(row[3] || "").trim();
-    const produto = String(row[6] || "").trim();
-    if (!sku || !produto || sku === "SKU") continue;
+    const sku     = String(row[2]  || "").trim();
+    const produto = String(row[5]  || "").trim();
+    if (!sku || !produto) continue;
 
-    const aptas    = Number(row[18]) || 0;
-    const transf   = Number(row[16]) || 0;
-    const pendente = Number(row[15]) || 0;
+    const aptas    = Number(row[17]) || 0;
+    const transf   = Number(row[15]) || 0;
+    const pendente = Number(row[14]) || 0;
     dados.push({ sku, produto, aptas, transf, pendente });
   }
-
-  console.log("Total dados:", dados.length, "primeiro:", dados[0]);
 
   estoqueExcelData = { fileName: file.name, rows: dados };
   if (!estoqueBlingData && !estoqueBlingLoading) await fetchBlingProdutos();
