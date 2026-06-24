@@ -1698,10 +1698,7 @@ function render(){
               });
               panel.appendChild(divider);
             }
-            }else if(window._diogotab==="estoque"){
-            renderEstoqueTab(panel, color);
-            }else{
-          // Wrapper lado a lado
+            // Wrapper lado a lado
             const btnWrapper=document.createElement("div");
             btnWrapper.style.cssText="display:flex;gap:8px;margin-top:20px;border-top:1px solid #1a1a1a;padding-top:12px;";
             const taskSec=document.createElement("div");taskSec.style.flex="1";
@@ -1712,7 +1709,8 @@ function render(){
             btnWrapper.appendChild(delSec);
             panel.appendChild(btnWrapper);
             active.length=0;
-            }
+          }else if(window._diogotab==="estoque"){
+            renderEstoqueTab(panel, color);
           }else if(window._diogotab==="concluidas"){
             if(Object.keys(completionAlerts).length>0){
               const sec=document.createElement("div");sec.style.marginBottom="12px";sec.innerHTML=`<div class="section-label" style="color:#00e676;margin-bottom:8px">Novas conclusões</div>`;
@@ -1878,7 +1876,7 @@ async function fetchBlingProdutos() {
   render();
 
   try {
-    const r = await fetch(`${BLING_PROXY}/bling-produtos`);
+    const r = await fetch(`${BLING_PROXY}/produtos`);
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const data = await r.json();
 
