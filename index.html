@@ -1700,7 +1700,7 @@ function render(){
             }
             }else if(window._diogotab==="estoque"){
             renderEstoqueTab(panel, color);
-          } else {
+            }else{
           // Wrapper lado a lado
             const btnWrapper=document.createElement("div");
             btnWrapper.style.cssText="display:flex;gap:8px;margin-top:20px;border-top:1px solid #1a1a1a;padding-top:12px;";
@@ -1712,7 +1712,7 @@ function render(){
             btnWrapper.appendChild(delSec);
             panel.appendChild(btnWrapper);
             active.length=0;
-          }
+            }
           }else if(window._diogotab==="concluidas"){
             if(Object.keys(completionAlerts).length>0){
               const sec=document.createElement("div");sec.style.marginBottom="12px";sec.innerHTML=`<div class="section-label" style="color:#00e676;margin-bottom:8px">Novas conclusões</div>`;
