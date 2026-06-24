@@ -1876,7 +1876,7 @@ async function fetchBlingProdutos() {
   render();
 
   try {
-    const r = await fetch(`${BLING_PROXY}/produtos`);
+    const r = await fetch(`${BLING_PROXY}/api/bling-produtos`);
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const data = await r.json();
 
