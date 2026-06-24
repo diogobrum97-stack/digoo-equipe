@@ -1841,41 +1841,31 @@ async function processarExcelEstoque(file) {
   const XLSX = await import("https://cdn.jsdelivr.net/npm/xlsx@0.18.5/+esm");
   const wb = XLSX.read(arrayBuffer, { type: "array" });
   const ws = wb.Sheets[wb.SheetNames[0]];
-  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
+  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: true });
+
+  // Encontra a linha onde col D = "SKU" (linha 10 no Excel = idx 9)
+  // Dados começam 3 linhas depois (idx 12)
+  let headerIdx = -1;
+  for (let i = 0; i < rows.length; i++) {
+    if (String(rows[i][3] || "").trim() === "SKU") { headerIdx = i; break; }
+  }
+  const startIdx = headerIdx >= 0 ? headerIdx + 3 : 12;
 
   const dados = [];
-  // Procura a primeira linha onde col D tem SKU real (não é header)
-  // e col G tem o nome do produto (texto longo)
-  let startRow = 0;
-  for (let i = 0; i < Math.min(rows.length, 25); i++) {
-    const d = String(rows[i][3] || "").trim();
-    const g = String(rows[i][6] || "").trim();
-    // SKU real: não é "SKU", não é vazio, col G tem produto com espaço
-    if (d && d !== "SKU" && d !== "Produto" && g && g.includes(" ")) {
-      startRow = i;
-      break;
-    }
-  }
-  for (let i = startRow; i < rows.length; i++) {
+  for (let i = startIdx; i < rows.length; i++) {
     const row = rows[i];
-    const sku = String(row[3] || "").trim();
-    if (!sku || sku === "SKU") continue;
+    const sku     = String(row[3] || "").trim();
+    const produto = String(row[6] || "").trim();
+    if (!sku || !produto) continue;
 
-    const produto = String(row[6] || "").trim() || sku;
-    const aptas   = Number(row[18]) || 0;
-    const transf  = Number(row[16]) || 0;
-    const pendente= Number(row[15]) || 0;
-
+    const aptas    = Number(row[18]) || 0;
+    const transf   = Number(row[16]) || 0;
+    const pendente = Number(row[15]) || 0;
     dados.push({ sku, produto, aptas, transf, pendente });
   }
 
   estoqueExcelData = { fileName: file.name, rows: dados };
-
-  // Dispara busca Bling automaticamente
-  if (!estoqueBlingData && !estoqueBlingLoading) {
-    await fetchBlingProdutos();
-  }
-
+  if (!estoqueBlingData && !estoqueBlingLoading) await fetchBlingProdutos();
   render();
 }
 
