@@ -1508,7 +1508,7 @@ function render(){
 
     const card=document.createElement("div");card.className="card"+(hasPending||isFlashing?" flashing":"");
     card.style.setProperty("--c",color);
-    if(member.locked&&isOpen&&window._diogotab==="estoque"&&estoqueExpanded){card.style.gridColumn="1 / -1";panel.style.maxHeight="none";}else if(member.locked){card.style.gridColumn="";}
+    if(member.locked&&isOpen&&window._diogotab==="estoque"&&estoqueExpanded){card.style.gridColumn="1 / -1";}else if(member.locked){card.style.gridColumn="";}
     card.style.borderColor=isOpen?color+"88":(hasPending||isFlashing)?color:"var(--border)";
 
     const header=document.createElement("div");header.className="card-header";header.style.background=hbg;
