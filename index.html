@@ -1508,7 +1508,6 @@ function render(){
 
     const card=document.createElement("div");card.className="card"+(hasPending||isFlashing?" flashing":"");
     card.style.setProperty("--c",color);
-    if(member.locked&&isOpen&&window._diogotab==="estoque"&&estoqueExpanded){card.style.gridColumn="1 / -1";}else if(member.locked){card.style.gridColumn="";}
     card.style.borderColor=isOpen?color+"88":(hasPending||isFlashing)?color:"var(--border)";
 
     const header=document.createElement("div");header.className="card-header";header.style.background=hbg;
@@ -1722,8 +1721,7 @@ function render(){
             panel.appendChild(btnWrapper);
             active.length=0;
           }else if(window._diogotab==="estoque"){
-            panel.style.maxHeight="80vh";
-            panel.style.overflowY="auto";
+            if(estoqueExpanded){card.style.gridColumn="1 / -1";panel.style.maxHeight="75vh";panel.style.overflowY="auto";}else{card.style.gridColumn="";panel.style.maxHeight="";panel.style.overflowY="";}
             renderEstoqueTab(panel, color);
           }else if(window._diogotab==="concluidas"){
             if(Object.keys(completionAlerts).length>0){
