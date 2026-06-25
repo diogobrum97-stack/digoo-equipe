@@ -1527,11 +1527,11 @@ function render(){
 
     // Botão chat assistente — só quando card está aberto e é o usuário atual
     
-    const chev=document.createElement("span");chev.className="chevron"+(isOpen?" open":"");chev.textContent="▼";
+    const chev=document.createElement("span");chev.className="chevron"+(isOpen?" open":"");chev.textContent="";
     // Botão Claude no header
     if(isOpen&&currentUser===member.name){
       const chatBtn=document.createElement("button");
-      chatBtn.style.cssText="background:none;border:1.5px solid #da7756;border-radius:50%;width:26px;height:26px;color:#da7756;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-right:6px;flex-shrink:0;transition:all 0.15s;";
+      chatBtn.style.cssText="background:none;border:0.5px solid rgba(255,255,255,0.25);border-radius:50%;width:26px;height:26px;color:rgba(255,255,255,0.4);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-right:6px;flex-shrink:0;transition:all 0.15s;";
       chatBtn.textContent="✦";
       chatBtn.title="Assistente Claude";
       chatBtn.addEventListener("click",(e)=>{e.stopPropagation();chatState[member.name].open=!chatState[member.name].open;renderChatModal(member.name,color);});
@@ -1540,7 +1540,7 @@ function render(){
     // Botão expandir estoque
     if(member.locked&&isOpen&&window._diogotab==="estoque"){
       const expBtn=document.createElement("button");
-      expBtn.style.cssText=`background:none;border:1px solid ${color}44;border-radius:4px;padding:2px 8px;color:${color};font-size:12px;cursor:pointer;font-family:inherit;margin-right:6px;`;
+      expBtn.style.cssText="background:none;border:0.5px solid rgba(255,255,255,0.25);border-radius:4px;padding:2px 8px;color:rgba(255,255,255,0.4);font-size:12px;cursor:pointer;font-family:inherit;margin-right:6px;";
       expBtn.textContent=estoqueExpanded?"⤡":"⤢";
       expBtn.title=estoqueExpanded?"Minimizar":"Expandir";
       expBtn.addEventListener("click",(e)=>{e.stopPropagation();estoqueExpanded=!estoqueExpanded;render();});
@@ -2144,7 +2144,28 @@ function renderEstoqueTab(panel, color) {
   canvas.setAttribute("aria-label","Pareto de valor em estoque por SKU");
   canvasWrap.appendChild(canvas);
   paretoWrap.appendChild(canvasWrap);
+
+  // Card de detalhe ao clicar
+  const detailCard = document.createElement("div");
+  detailCard.id = "pareto-detail-" + Date.now();
+  detailCard.style.cssText = "display:none;margin-top:14px;padding:14px 16px;background:var(--bg3);border-radius:8px;border-left:3px solid #3dd68c;";
+  detailCard.innerHTML = `
+    <div style="font-size:13px;font-weight:600;color:#e8e8e8;margin-bottom:10px;font-family:'IBM Plex Mono',monospace;" id="${detailCard.id}-sku"></div>
+    <div style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:10px;">
+      <div><div style="font-size:10px;color:var(--text3);letter-spacing:1px;margin-bottom:3px;">VALOR EM ESTOQUE</div><div style="font-size:16px;font-weight:600;color:#3dd68c;font-family:'IBM Plex Mono',monospace;" id="${detailCard.id}-valor"></div></div>
+      <div><div style="font-size:10px;color:var(--text3);letter-spacing:1px;margin-bottom:3px;">% DO TOTAL</div><div style="font-size:16px;font-weight:600;color:var(--text2);font-family:'IBM Plex Mono',monospace;" id="${detailCard.id}-pct"></div></div>
+      <div><div style="font-size:10px;color:var(--text3);letter-spacing:1px;margin-bottom:3px;">% ACUMULADO</div><div style="font-size:16px;font-weight:600;color:#EF9F27;font-family:'IBM Plex Mono',monospace;" id="${detailCard.id}-acc"></div></div>
+      <div><div style="font-size:10px;color:var(--text3);letter-spacing:1px;margin-bottom:3px;">ZONA</div><div style="font-size:13px;font-weight:500;font-family:system-ui,sans-serif;" id="${detailCard.id}-zona"></div></div>
+    </div>
+    <div style="font-size:12px;color:var(--text3);font-family:system-ui,sans-serif;line-height:1.5;" id="${detailCard.id}-acao"></div>
+  `;
+  paretoWrap.appendChild(detailCard);
   panel.appendChild(paretoWrap);
+
+  // Guarda referência para usar no onClick
+  window._paretoDetail = detailCard;
+  window._paretoData = paretoData;
+  window._paretoTotal = totalValorPareto;
 
   // Renderiza Chart.js (já carregado no head)
   const renderChart = () => {
@@ -2185,6 +2206,34 @@ function renderEstoqueTab(panel, color) {
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        onClick: (e, els) => {
+          if (!els.length) return;
+          const i = els[0].index;
+          const d = window._paretoData[i];
+          const tot = window._paretoTotal;
+          const det = window._paretoDetail;
+          if (!det || !d) return;
+          const pct = Math.round(d.valor / tot * 100);
+          const barColor = d.pctAcc <= 80 ? "#3dd68c" : d.pctAcc <= 95 ? "#EF9F27" : "#E24B4A";
+          const zona = d.pctAcc <= 80
+            ? "🟢 Top 80% — prioridade máxima"
+            : d.pctAcc <= 95 ? "🟡 80–95% — atenção secundária"
+            : "🔴 Cauda — menor impacto";
+          const acao = d.pctAcc <= 80
+            ? "Este produto trava muito capital. Garanta que está girando rápido. Se estiver parado, considere promoção, bundle ou ajuste de preço."
+            : d.pctAcc <= 95
+            ? "Capital moderado. Monitore o giro e evite repor em excesso até girar o atual."
+            : "Pouco impacto no capital total. Reabasteça em quantidades menores e com menos frequência.";
+          det.style.display = "block";
+          det.style.borderLeftColor = barColor;
+          det.querySelector(`#${det.id}-sku`).textContent = d.sku;
+          det.querySelector(`#${det.id}-valor`).textContent = "R$ " + d.valor.toLocaleString("pt-BR", {minimumFractionDigits:2});
+          det.querySelector(`#${det.id}-pct`).textContent = pct + "%";
+          det.querySelector(`#${det.id}-acc`).textContent = d.pctAcc + "%";
+          det.querySelector(`#${det.id}-zona`).textContent = zona;
+          det.querySelector(`#${det.id}-zona`).style.color = barColor;
+          det.querySelector(`#${det.id}-acao`).textContent = acao;
+        },
         plugins: {
           legend: { display: false },
           tooltip: {
