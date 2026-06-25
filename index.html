@@ -1507,6 +1507,7 @@ function render(){
 
     const card=document.createElement("div");card.className="card"+(hasPending||isFlashing?" flashing":"");
     card.style.setProperty("--c",color);
+    if(member.locked&&isOpen&&window._diogotab==="estoque"){card.style.gridColumn="1 / -1";}else{card.style.gridColumn="";}
     card.style.borderColor=isOpen?color+"88":(hasPending||isFlashing)?color:"var(--border)";
 
     const header=document.createElement("div");header.className="card-header";header.style.background=hbg;
@@ -1710,13 +1711,9 @@ function render(){
             panel.appendChild(btnWrapper);
             active.length=0;
           }else if(window._diogotab==="estoque"){
-            card.style.gridColumn="1 / -1";
             panel.style.maxHeight="80vh";
             panel.style.overflowY="auto";
             renderEstoqueTab(panel, color);
-          card.style.gridColumn="";
-            panel.style.maxHeight="";
-            panel.style.overflowY="";
           }else if(window._diogotab==="concluidas"){
             if(Object.keys(completionAlerts).length>0){
               const sec=document.createElement("div");sec.style.marginBottom="12px";sec.innerHTML=`<div class="section-label" style="color:#00e676;margin-bottom:8px">Novas conclusões</div>`;
