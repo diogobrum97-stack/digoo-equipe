@@ -2011,7 +2011,7 @@ function renderEstoqueTab(panel, color) {
       value: estoqueBlingData
         ? `R$ ${totalValor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`
         : "—",
-      color: "#22ff88",
+      color: "#3dd68c",
       sub: skusSemCusto > 0 ? `${skusSemCusto} SKUs sem custo` : "todos com custo"
     },
     {
@@ -2078,13 +2078,13 @@ function renderEstoqueTab(panel, color) {
         : "—";
 
       tr.innerHTML = `
-        <td style="padding:8px 8px;color:#7ec8c8;font-size:11px;white-space:nowrap;font-family:'IBM Plex Mono',monospace;">${r.sku}</td>
+        <td style="padding:8px 8px;color:#e8e8e8;font-weight:600;font-size:11px;white-space:nowrap;font-family:'IBM Plex Mono',monospace;">${r.sku}</td>
         <td style="padding:8px 8px;color:var(--text2);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;">${r.produto}</td>
         <td style="padding:8px 8px;text-align:center;color:${r.aptas>0?'var(--text)':'var(--text3)'};font-weight:${r.aptas>0?'500':'400'};font-family:'IBM Plex Mono',monospace;">${r.aptas||'—'}</td>
         <td style="padding:8px 8px;text-align:center;color:var(--text3);font-family:'IBM Plex Mono',monospace;">${r.transf||'—'}</td>
         <td style="padding:8px 8px;text-align:center;color:${r.pendente>0?'#fbbf24':'var(--text3)'};font-weight:${r.pendente>0?'500':'400'};font-family:'IBM Plex Mono',monospace;">${r.pendente||'—'}</td>
         <td style="padding:8px 8px;text-align:right;color:${semCusto?'#f87171':'var(--text2)'};font-family:'IBM Plex Mono',monospace;">${custoStr}</td>
-        <td style="padding:8px 8px;text-align:right;color:${semCusto?'var(--text3)':r.valor>5000?'#22ff88':r.valor>1000?'#4ade80':'var(--text2)'};font-weight:500;font-family:'IBM Plex Mono',monospace;">${valorStr}</td>`;
+        <td style="padding:8px 8px;text-align:right;color:${semCusto?'var(--text3)':r.valor>5000?'#3dd68c':r.valor>1000?'#3dd68c':'var(--text2)'};font-weight:500;font-family:'IBM Plex Mono',monospace;">${valorStr}</td>`;
       tbody.appendChild(tr);
     });
   table.appendChild(tbody);
@@ -2124,7 +2124,7 @@ function renderEstoqueTab(panel, color) {
   const leg = document.createElement("div");
   leg.style.cssText = "display:flex;gap:16px;margin-bottom:12px;font-size:11px;flex-wrap:wrap;";
   [
-    {color:"#1D9E75", label:"Top 80% — foco aqui"},
+    {color:"#3dd68c", label:"Top 80% — foco aqui"},
     {color:"#EF9F27", label:"80–95%"},
     {color:"#E24B4A", label:"Cauda >95%"},
   ].forEach(({color:c, label}) => {
@@ -2149,7 +2149,7 @@ function renderEstoqueTab(panel, color) {
   // Renderiza Chart.js (já carregado no head)
   const renderChart = () => {
     if (!window.Chart) { setTimeout(renderChart, 100); return; }
-    const barColors = paretoData.map(d => d.pctAcc <= 80 ? "#1D9E75" : d.pctAcc <= 95 ? "#EF9F27" : "#E24B4A");
+    const barColors = paretoData.map(d => d.pctAcc <= 80 ? "#3dd68c" : d.pctAcc <= 95 ? "#EF9F27" : "#E24B4A");
     new Chart(canvas, {
       type: "bar",
       data: {
@@ -2239,7 +2239,7 @@ function renderEstoqueTab(panel, color) {
           const val = paretoData[i]?.valor;
           if (!val || val < 500) return;
           const label = "R$" + (val >= 1000 ? Math.round(val/1000) + "k" : Math.round(val));
-          const barColor = paretoData[i].pctAcc <= 80 ? "#1D9E75" : paretoData[i].pctAcc <= 95 ? "#EF9F27" : "#E24B4A";
+          const barColor = paretoData[i].pctAcc <= 80 ? "#3dd68c" : paretoData[i].pctAcc <= 95 ? "#EF9F27" : "#E24B4A";
           ctx.fillStyle = barColor;
           ctx.fillText(label, bar.x, bar.y - 4);
         });
