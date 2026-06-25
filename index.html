@@ -1562,7 +1562,17 @@ function render(){
         }
       },50);
     }
-    const chev=document.createElement("span");chev.className="chevron"+(isOpen?" open":"");chev.textContent="▼";header.appendChild(chev);
+    const chev=document.createElement("span");chev.className="chevron"+(isOpen?" open":"");chev.textContent="▼";
+    // Botão expandir estoque — só aparece quando card está aberto na aba estoque
+    if(member.locked&&isOpen&&window._diogotab==="estoque"){
+      const expBtn=document.createElement("button");
+      expBtn.style.cssText=`background:none;border:1px solid ${color}44;border-radius:4px;padding:2px 8px;color:${color};font-size:12px;cursor:pointer;font-family:inherit;margin-right:6px;`;
+      expBtn.textContent=estoqueExpanded?"⤡":"⤢";
+      expBtn.title=estoqueExpanded?"Minimizar":"Expandir";
+      expBtn.addEventListener("click",(e)=>{e.stopPropagation();estoqueExpanded=!estoqueExpanded;render();});
+      header.appendChild(expBtn);
+    }
+    header.appendChild(chev);
     header.addEventListener("click",()=>{openCard=openCard===member.name?null:member.name;if(!isOpen&&member.locked)diogoPinUnlocked=false;if(flashQueue[member.name]){delete flashQueue[member.name];remove(ref(db,`/flashes/${member.name}`));}render();});
     card.appendChild(header);
 
@@ -1929,15 +1939,6 @@ async function fetchBlingProdutos() {
 
 // ── RENDER CARD ESTOQUE ──────────────────────────────────────
 function renderEstoqueTab(panel, color) {
-  // ── Botão expandir ──
-  const expandBtn = document.createElement("button");
-  expandBtn.style.cssText = `position:absolute;top:10px;right:10px;background:none;border:1px solid ${color}44;border-radius:4px;padding:3px 8px;color:${color};font-size:12px;cursor:pointer;font-family:inherit;z-index:5;`;
-  expandBtn.textContent = estoqueExpanded ? "⤡" : "⤢";
-  expandBtn.title = estoqueExpanded ? "Minimizar" : "Expandir";
-  expandBtn.addEventListener("click", () => { estoqueExpanded = !estoqueExpanded; render(); });
-  panel.style.position = "relative";
-  panel.appendChild(expandBtn);
-
   // ── Upload ──
   const uploadWrap = document.createElement("div");
   uploadWrap.style.cssText = "margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;";
