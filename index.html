@@ -2126,17 +2126,9 @@ function renderEstoqueTab(panel, color) {
     panel.appendChild(warn);
   }
 
-  // ── PARETO ──────────────────────────────────────────────────
+  // ── PARETO Chart.js ─────────────────────────────────────────
   const comValor = enriched.filter(r => r.valor > 0).sort((a,b) => b.valor - a.valor);
   if (comValor.length < 2) return;
-
-  const paretoWrap = document.createElement("div");
-  paretoWrap.style.cssText = "margin-top:28px;";
-
-  const paretoTitle = document.createElement("div");
-  paretoTitle.style.cssText = "font-size:9px;color:var(--text3);letter-spacing:2px;margin-bottom:16px;text-transform:uppercase;";
-  paretoTitle.textContent = "Pareto — Valor em Estoque por SKU";
-  paretoWrap.appendChild(paretoTitle);
 
   const totalValorPareto = comValor.reduce((s,r) => s + r.valor, 0);
   let acc = 0;
@@ -2145,146 +2137,158 @@ function renderEstoqueTab(panel, color) {
     return { ...r, pctAcc: Math.round(acc / totalValorPareto * 100) };
   });
 
-  const n = paretoData.length;
-  const paddingL = 60;
-  const paddingR = 50;
-  const paddingT = 40;
-  const paddingB = 80;
-  const chartH   = 220;
-  const barW     = Math.max(24, Math.min(52, Math.floor((900 - paddingL - paddingR) / n) - 4));
-  const gap      = Math.max(3, Math.min(8, Math.floor(400 / n)));
-  const svgW     = paddingL + n * (barW + gap) + paddingR;
-  const svgH     = chartH + paddingB + paddingT;
-  const maxValor = paretoData[0].valor;
+  // Wrapper
+  const paretoWrap = document.createElement("div");
+  paretoWrap.style.cssText = "margin-top:28px;";
 
-  const svg = document.createElementNS("http://www.w3.org/2000/svg","svg");
-  svg.setAttribute("viewBox",`0 0 ${svgW} ${svgH}`);
-  svg.setAttribute("width","100%");
-  svg.style.cssText = "overflow:visible;display:block;";
-
-  // Fundo do gráfico
-  const bg = document.createElementNS("http://www.w3.org/2000/svg","rect");
-  bg.setAttribute("x",paddingL); bg.setAttribute("y",paddingT);
-  bg.setAttribute("width",svgW-paddingL-paddingR); bg.setAttribute("height",chartH);
-  bg.setAttribute("fill","rgba(255,255,255,0.02)"); bg.setAttribute("rx","4");
-  svg.appendChild(bg);
-
-  // Grid + labels eixo Y
-  [0,25,50,75,100].forEach(pct => {
-    const y = paddingT + chartH - (pct/100)*chartH;
-    const gl = document.createElementNS("http://www.w3.org/2000/svg","line");
-    gl.setAttribute("x1",paddingL); gl.setAttribute("x2",svgW-paddingR);
-    gl.setAttribute("y1",y); gl.setAttribute("y2",y);
-    gl.setAttribute("stroke",pct===0?"rgba(255,255,255,0.15)":"rgba(255,255,255,0.06)");
-    gl.setAttribute("stroke-width","1");
-    svg.appendChild(gl);
-    // Label % direita
-    const tr = document.createElementNS("http://www.w3.org/2000/svg","text");
-    tr.setAttribute("x",svgW-paddingR+8); tr.setAttribute("y",y+4);
-    tr.setAttribute("font-size","10"); tr.setAttribute("fill","rgba(255,200,0,0.6)");
-    tr.textContent = pct+"%";
-    svg.appendChild(tr);
-    // Label valor esquerda
-    if(pct>0){
-      const valLabel = Math.round(maxValor*(pct/100));
-      const tl = document.createElementNS("http://www.w3.org/2000/svg","text");
-      tl.setAttribute("x",paddingL-8); tl.setAttribute("y",y+4);
-      tl.setAttribute("text-anchor","end"); tl.setAttribute("font-size","9");
-      tl.setAttribute("fill","rgba(255,255,255,0.3)");
-      tl.textContent = "R$"+Math.round(valLabel/1000)+"k";
-      svg.appendChild(tl);
-    }
-  });
-
-  // Barras + linha acumulada
-  const linePoints = [];
-  paretoData.forEach((r,i) => {
-    const x    = paddingL + i*(barW+gap);
-    const barH = Math.max(4,(r.valor/maxValor)*chartH);
-    const y    = paddingT + chartH - barH;
-    const barColor = r.pctAcc<=80 ? color : r.pctAcc<=95 ? "#fbbf24" : "#f87171";
-
-    const rect = document.createElementNS("http://www.w3.org/2000/svg","rect");
-    rect.setAttribute("x",x); rect.setAttribute("y",y);
-    rect.setAttribute("width",barW); rect.setAttribute("height",barH);
-    rect.setAttribute("fill",barColor+"99"); rect.setAttribute("rx","3");
-    rect.setAttribute("stroke",barColor+"44"); rect.setAttribute("stroke-width","1");
-    const title = document.createElementNS("http://www.w3.org/2000/svg","title");
-    title.textContent = r.sku+"\nR$ "+r.valor.toLocaleString("pt-BR",{minimumFractionDigits:2})+" ("+r.pctAcc+"% acum.)\n"+r.aptas+" un × R$ "+r.custo.toLocaleString("pt-BR",{minimumFractionDigits:2});
-    rect.appendChild(title);
-    svg.appendChild(rect);
-
-    // Valor em cima da barra
-    const vl = document.createElementNS("http://www.w3.org/2000/svg","text");
-    vl.setAttribute("x",x+barW/2); vl.setAttribute("y",y-6);
-    vl.setAttribute("text-anchor","middle"); vl.setAttribute("font-size","9");
-    vl.setAttribute("fill",barColor+"cc");
-    vl.textContent = "R$"+Math.round(r.valor/1000)+"k";
-    svg.appendChild(vl);
-
-    // SKU embaixo — horizontal se barW largo, rotacionado se estreito
-    const lbl = document.createElementNS("http://www.w3.org/2000/svg","text");
-    const lx = x+barW/2; const ly = paddingT+chartH+14;
-    lbl.setAttribute("x",lx); lbl.setAttribute("y",ly);
-    lbl.setAttribute("text-anchor","end");
-    lbl.setAttribute("transform",`rotate(-40,${lx},${ly})`);
-    lbl.setAttribute("font-size","9"); lbl.setAttribute("fill","rgba(255,255,255,0.55)");
-    const skuShort = r.sku.replace(/-PRETO$||-BRANCO$|-CINZA$/,"");
-    lbl.textContent = skuShort.length>18?skuShort.slice(0,18)+"…":skuShort;
-    svg.appendChild(lbl);
-
-    linePoints.push([x+barW/2, paddingT+chartH-(r.pctAcc/100)*chartH]);
-  });
-
-  // Linha acumulada
-  const poly = document.createElementNS("http://www.w3.org/2000/svg","polyline");
-  poly.setAttribute("points",linePoints.map(p=>p.join(",")).join(" "));
-  poly.setAttribute("fill","none"); poly.setAttribute("stroke","#fbbf24");
-  poly.setAttribute("stroke-width","2.5"); poly.setAttribute("stroke-linejoin","round");
-  svg.appendChild(poly);
-  linePoints.forEach(([px,py],i)=>{
-    const c=document.createElementNS("http://www.w3.org/2000/svg","circle");
-    c.setAttribute("cx",px); c.setAttribute("cy",py); c.setAttribute("r","3.5");
-    c.setAttribute("fill","#fbbf24"); c.setAttribute("stroke","#000"); c.setAttribute("stroke-width","1");
-    const t=document.createElementNS("http://www.w3.org/2000/svg","title");
-    t.textContent=paretoData[i].pctAcc+"% acumulado";
-    c.appendChild(t); svg.appendChild(c);
-  });
-
-  // Linha 80%
-  const y80 = paddingT + chartH*0.2;
-  const l80 = document.createElementNS("http://www.w3.org/2000/svg","line");
-  l80.setAttribute("x1",paddingL); l80.setAttribute("x2",svgW-paddingR);
-  l80.setAttribute("y1",y80); l80.setAttribute("y2",y80);
-  l80.setAttribute("stroke","#f87171"); l80.setAttribute("stroke-width","1.5");
-  l80.setAttribute("stroke-dasharray","6,4"); svg.appendChild(l80);
-  const lbl80=document.createElementNS("http://www.w3.org/2000/svg","text");
-  lbl80.setAttribute("x",paddingL+6); lbl80.setAttribute("y",y80-6);
-  lbl80.setAttribute("font-size","10"); lbl80.setAttribute("fill","#f87171");
-  lbl80.textContent="80% do valor — foco aqui";
-  svg.appendChild(lbl80);
+  // Título
+  const paretoTitle = document.createElement("div");
+  paretoTitle.style.cssText = "font-size:9px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;";
+  paretoTitle.textContent = "Pareto — Valor em Estoque por SKU";
+  paretoWrap.appendChild(paretoTitle);
 
   // Legenda
-  const legY = paddingT + chartH + paddingB - 16;
+  const leg = document.createElement("div");
+  leg.style.cssText = "display:flex;gap:16px;margin-bottom:12px;font-size:11px;flex-wrap:wrap;";
   [
-    {color:color, label:"Top 80% (prioridade alta)"},
-    {color:"#fbbf24", label:"80–95%"},
-    {color:"#f87171", label:"Cauda (>95%)"},
-  ].forEach(({color:c,label},i)=>{
-    const lx = paddingL + i*160;
-    const dot = document.createElementNS("http://www.w3.org/2000/svg","rect");
-    dot.setAttribute("x",lx); dot.setAttribute("y",legY-8);
-    dot.setAttribute("width",12); dot.setAttribute("height",12);
-    dot.setAttribute("fill",c+"99"); dot.setAttribute("rx","2");
-    svg.appendChild(dot);
-    const lt = document.createElementNS("http://www.w3.org/2000/svg","text");
-    lt.setAttribute("x",lx+16); lt.setAttribute("y",legY+2);
-    lt.setAttribute("font-size","9"); lt.setAttribute("fill","rgba(255,255,255,0.5)");
-    lt.textContent=label; svg.appendChild(lt);
+    {color:"#1D9E75", label:"Top 80% — foco aqui"},
+    {color:"#EF9F27", label:"80–95%"},
+    {color:"#E24B4A", label:"Cauda >95%"},
+  ].forEach(({color:c, label}) => {
+    const s = document.createElement("span");
+    s.style.cssText = "display:flex;align-items:center;gap:5px;color:var(--text3);";
+    s.innerHTML = `<span style="width:10px;height:10px;border-radius:2px;background:${c};display:inline-block;flex-shrink:0;"></span>${label}`;
+    leg.appendChild(s);
   });
+  paretoWrap.appendChild(leg);
 
-  paretoWrap.appendChild(svg);
+  // Canvas
+  const canvasWrap = document.createElement("div");
+  canvasWrap.style.cssText = "position:relative;width:100%;height:280px;";
+  const canvas = document.createElement("canvas");
+  canvas.id = "pareto-chart-" + Date.now();
+  canvas.setAttribute("role","img");
+  canvas.setAttribute("aria-label","Pareto de valor em estoque por SKU");
+  canvasWrap.appendChild(canvas);
+  paretoWrap.appendChild(canvasWrap);
   panel.appendChild(paretoWrap);
+
+  // Carrega Chart.js e renderiza
+  const existingScript = document.getElementById("chartjs-script");
+  const renderChart = () => {
+    const barColors = paretoData.map(d => d.pctAcc <= 80 ? "#1D9E75" : d.pctAcc <= 95 ? "#EF9F27" : "#E24B4A");
+    new Chart(canvas, {
+      type: "bar",
+      data: {
+        labels: paretoData.map(d => d.sku),
+        datasets: [
+          {
+            type: "bar",
+            label: "Valor",
+            data: paretoData.map(d => d.valor),
+            backgroundColor: barColors,
+            borderColor: barColors.map(c => c + "88"),
+            borderWidth: 1,
+            borderRadius: 3,
+            yAxisID: "y",
+            order: 2,
+          },
+          {
+            type: "line",
+            label: "% acumulado",
+            data: paretoData.map(d => d.pctAcc),
+            borderColor: "#EF9F27",
+            backgroundColor: "transparent",
+            borderWidth: 2,
+            pointBackgroundColor: "#EF9F27",
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            yAxisID: "y2",
+            order: 1,
+            tension: 0.3,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                if (ctx.dataset.type === "line") return ctx.parsed.y + "% acumulado";
+                return "R$ " + ctx.parsed.y.toLocaleString("pt-BR", {minimumFractionDigits: 0});
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            ticks: { font:{size:9}, color:"rgba(180,180,180,0.8)", maxRotation:40, autoSkip:false },
+            grid: { display:false },
+          },
+          y: {
+            position: "left",
+            ticks: {
+              font:{size:10}, color:"rgba(180,180,180,0.7)",
+              callback: v => "R$" + Math.round(v/1000) + "k",
+            },
+            grid: { color:"rgba(255,255,255,0.05)" },
+          },
+          y2: {
+            position: "right",
+            min: 0, max: 100,
+            ticks: {
+              font:{size:10}, color:"#EF9F27",
+              callback: v => v + "%",
+            },
+            grid: { display:false },
+            // Linha dos 80%
+            afterDataLimits: (axis) => { axis.max = 100; },
+          }
+        },
+        animation: { duration: 400 },
+      }
+    });
+
+    // Linha 80% manual via plugin
+    Chart.register({
+      id: "line80",
+      afterDraw(chart) {
+        const {ctx, scales: {y2}} = chart;
+        if (!y2) return;
+        const y = y2.getPixelForValue(80);
+        const {left, right} = chart.chartArea;
+        ctx.save();
+        ctx.beginPath();
+        ctx.setLineDash([6,4]);
+        ctx.strokeStyle = "#E24B4A";
+        ctx.lineWidth = 1.5;
+        ctx.moveTo(left, y); ctx.lineTo(right, y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = "#E24B4A";
+        ctx.font = "10px monospace";
+        ctx.textAlign = "right";
+        ctx.fillText("80%", right - 2, y - 4);
+        ctx.restore();
+      }
+    });
+  };
+
+  if (existingScript && window.Chart) {
+    renderChart();
+  } else if (!existingScript) {
+    const sc = document.createElement("script");
+    sc.id = "chartjs-script";
+    sc.src = "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js";
+    sc.onload = renderChart;
+    document.head.appendChild(sc);
+  } else {
+    // Script carregando, aguarda
+    const wait = setInterval(() => { if(window.Chart){ clearInterval(wait); renderChart(); }}, 100);
+  }
 
 }
 
