@@ -1843,9 +1843,8 @@ async function processarExcelEstoque(file) {
   const ws = wb.Sheets[wb.SheetNames[0]];
   const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
 
-  // SheetJS ignora col A vazia → tudo deslocado -1
-  // idx 2 = SKU (col D), idx 5 = Produto (col G)
-  // idx 17 = Aptas (col S), idx 15 = Transf (col Q), idx 14 = Pendente (col P)
+  // SheetJS ignora col A vazia → índices deslocados -1
+  // idx 2=SKU, idx 5=Produto, idx 17=Aptas, idx 15=Transf, idx 14=Pendente
 
   // Encontra primeira linha com SKU real em idx 2
   let startIdx = 0;
@@ -1858,16 +1857,35 @@ async function processarExcelEstoque(file) {
   }
 
   const dados = [];
+  let lastSku = "";
   for (let i = startIdx; i < raw.length; i++) {
-    const row = raw[i];
-    const sku     = String(row[2]  || "").trim();
-    const produto = String(row[5]  || "").trim();
-    if (!sku || !produto) continue;
+    const row   = raw[i];
+    const sku     = String(row[2] || "").trim();
+    const produto = String(row[5] || "").trim();
+
+    // SKU vazio mas produto preenchido = célula mesclada no Excel
+    // usa SKU da linha anterior ou gera um a partir do produto
+    const skuReal = sku || lastSku + "_v2";
+    if (sku) lastSku = sku;
+
+    if (!produto) continue;
 
     const aptas    = Number(row[17]) || 0;
     const transf   = Number(row[15]) || 0;
     const pendente = Number(row[14]) || 0;
-    dados.push({ sku, produto, aptas, transf, pendente });
+
+    // Só inclui se tem produto válido
+    if (!skuReal) continue;
+
+    // Agrega linhas com mesmo SKU (células mescladas aparecem em linhas separadas)
+    const existing = dados.find(d => d.sku === skuReal);
+    if (existing) {
+      existing.aptas    += aptas;
+      existing.transf   += transf;
+      existing.pendente += pendente;
+    } else {
+      dados.push({ sku: skuReal, produto, aptas, transf, pendente });
+    }
   }
 
   estoqueExcelData = { fileName: file.name, rows: dados };
