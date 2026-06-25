@@ -2039,13 +2039,13 @@ function renderEstoqueTab(panel, color) {
       value: estoqueBlingData
         ? `R$ ${totalValor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`
         : "—",
-      color: "#00ff77",
+      color: "#1D9E75",
       sub: skusSemCusto > 0 ? `${skusSemCusto} SKUs sem custo` : "todos com custo"
     },
     {
       label: "UNIDADES APTAS",
       value: totalAptas.toLocaleString("pt-BR"),
-      color: color,
+      color: "#378ADD",
       sub: `${rows.length} SKUs`
     },
     {
@@ -2053,16 +2053,16 @@ function renderEstoqueTab(panel, color) {
       value: estoqueBlingData && totalAptas > 0
         ? `R$ ${(totalValor / totalAptas).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`
         : "—",
-      color: "#a78bfa",
+      color: "#7F77DD",
       sub: "ponderado"
     },
   ].forEach(s => {
     const card = document.createElement("div");
-    card.style.cssText = `background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px 12px;border-top:2px solid ${s.color};`;
+    card.style.cssText = `background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;border-top:2px solid ${s.color};`;
     card.innerHTML = `
-      <div style="font-size:8px;color:var(--text3);letter-spacing:2px;margin-bottom:6px;">${s.label}</div>
-      <div style="font-size:16px;font-family:'Bebas Neue',sans-serif;letter-spacing:2px;color:${s.color};">${s.value}</div>
-      <div style="font-size:8px;color:var(--text3);margin-top:3px;">${s.sub}</div>`;
+      <div style="font-size:10px;color:var(--text3);letter-spacing:2px;margin-bottom:8px;text-transform:uppercase;">${s.label}</div>
+      <div style="font-size:22px;font-weight:500;color:${s.color};letter-spacing:0;">${s.value}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px;">${s.sub}</div>`;
     resumo.appendChild(card);
   });
   panel.appendChild(resumo);
@@ -2250,6 +2250,28 @@ function renderEstoqueTab(panel, color) {
           }
         },
         animation: { duration: 400 },
+      }
+    });
+
+    // Labels em cima das barras
+    Chart.register({
+      id: "barLabels",
+      afterDatasetsDraw(chart) {
+        const {ctx, data, scales: {y}} = chart;
+        const ds = chart.data.datasets[0];
+        if (!ds || ds.type === "line") return;
+        ctx.save();
+        ctx.font = "bold 9px monospace";
+        ctx.textAlign = "center";
+        chart.getDatasetMeta(0).data.forEach((bar, i) => {
+          const val = paretoData[i]?.valor;
+          if (!val || val < 500) return;
+          const label = "R$" + (val >= 1000 ? Math.round(val/1000) + "k" : Math.round(val));
+          const barColor = paretoData[i].pctAcc <= 80 ? "#1D9E75" : paretoData[i].pctAcc <= 95 ? "#EF9F27" : "#E24B4A";
+          ctx.fillStyle = barColor;
+          ctx.fillText(label, bar.x, bar.y - 4);
+        });
+        ctx.restore();
       }
     });
 
