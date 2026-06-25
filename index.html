@@ -2111,6 +2111,130 @@ function renderEstoqueTab(panel, color) {
     warn.textContent = `⚠ ${skusSemCusto} SKU${skusSemCusto > 1 ? "s" : ""} sem custo no Bling — verifique o campo "Preço de Custo" no cadastro do produto.`;
     panel.appendChild(warn);
   }
+
+  // ── PARETO ──────────────────────────────────────────────────
+  const comValor = enriched.filter(r => r.valor > 0).sort((a,b) => b.valor - a.valor);
+  if (comValor.length < 2) return;
+
+  const paretoWrap = document.createElement("div");
+  paretoWrap.style.cssText = "margin-top:20px;";
+
+  const paretoTitle = document.createElement("div");
+  paretoTitle.style.cssText = "font-size:9px;color:var(--text3);letter-spacing:2px;margin-bottom:12px;text-transform:uppercase;";
+  paretoTitle.textContent = "Pareto — Valor em Estoque por SKU";
+  paretoWrap.appendChild(paretoTitle);
+
+  const totalValorPareto = comValor.reduce((s,r) => s + r.valor, 0);
+  let acc = 0;
+  const paretoData = comValor.map(r => {
+    acc += r.valor;
+    return { ...r, pctAcc: Math.round(acc / totalValorPareto * 100) };
+  });
+
+  const maxValor = paretoData[0].valor;
+  const chartH = 140;
+
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  const barW = Math.max(16, Math.min(32, Math.floor(600 / paretoData.length)));
+  const gap = 4;
+  const paddingL = 48;
+  const paddingB = 48;
+  const paddingT = 16;
+  const svgW = paddingL + paretoData.length * (barW + gap) + 40;
+  const svgH = chartH + paddingB + paddingT;
+
+  svg.setAttribute("viewBox", `0 0 ${svgW} ${svgH}`);
+  svg.setAttribute("width", "100%");
+  svg.style.cssText = "overflow:visible;display:block;";
+
+  // Eixo Y labels
+  [0, 25, 50, 75, 100].forEach(pct => {
+    const y = paddingT + chartH - (pct/100)*chartH;
+    const line = document.createElementNS("http://www.w3.org/2000/svg","line");
+    line.setAttribute("x1", paddingL); line.setAttribute("x2", svgW - 20);
+    line.setAttribute("y1", y); line.setAttribute("y2", y);
+    line.setAttribute("stroke", "rgba(255,255,255,0.06)"); line.setAttribute("stroke-width","1");
+    svg.appendChild(line);
+    const txt = document.createElementNS("http://www.w3.org/2000/svg","text");
+    txt.setAttribute("x", paddingL - 4); txt.setAttribute("y", y + 3);
+    txt.setAttribute("text-anchor","end"); txt.setAttribute("font-size","8");
+    txt.setAttribute("fill","var(--text3)"); txt.textContent = pct + "%";
+    svg.appendChild(txt);
+  });
+
+  // Barras e linha acumulada
+  const linePoints = [];
+  paretoData.forEach((r, i) => {
+    const x = paddingL + i * (barW + gap);
+    const barH = Math.max(2, (r.valor / maxValor) * chartH);
+    const y = paddingT + chartH - barH;
+
+    // Barra
+    const rect = document.createElementNS("http://www.w3.org/2000/svg","rect");
+    rect.setAttribute("x", x); rect.setAttribute("y", y);
+    rect.setAttribute("width", barW); rect.setAttribute("height", barH);
+    rect.setAttribute("fill", color + "88"); rect.setAttribute("rx","2");
+    rect.style.cursor = "default";
+
+    // Tooltip
+    const title = document.createElementNS("http://www.w3.org/2000/svg","title");
+    title.textContent = `${r.sku}
+R$ ${r.valor.toLocaleString("pt-BR",{minimumFractionDigits:2})}
+${r.pctAcc}% acumulado`;
+    rect.appendChild(title);
+    svg.appendChild(rect);
+
+    // Ponto da linha
+    const px = x + barW/2;
+    const py = paddingT + chartH - (r.pctAcc/100)*chartH;
+    linePoints.push([px, py]);
+
+    // Label SKU (rotacionado)
+    const lbl = document.createElementNS("http://www.w3.org/2000/svg","text");
+    lbl.setAttribute("x", x + barW/2); lbl.setAttribute("y", paddingT + chartH + 10);
+    lbl.setAttribute("text-anchor","end");
+    lbl.setAttribute("transform", `rotate(-45, ${x + barW/2}, ${paddingT + chartH + 10})`);
+    lbl.setAttribute("font-size","7"); lbl.setAttribute("fill","var(--text3)");
+    lbl.textContent = r.sku.length > 14 ? r.sku.slice(0,14) + "…" : r.sku;
+    svg.appendChild(lbl);
+  });
+
+  // Linha de % acumulado
+  if (linePoints.length > 1) {
+    const polyline = document.createElementNS("http://www.w3.org/2000/svg","polyline");
+    polyline.setAttribute("points", linePoints.map(p=>p.join(",")).join(" "));
+    polyline.setAttribute("fill","none");
+    polyline.setAttribute("stroke","#fbbf24");
+    polyline.setAttribute("stroke-width","2");
+    polyline.setAttribute("stroke-linejoin","round");
+    svg.appendChild(polyline);
+
+    // Pontos
+    linePoints.forEach(([px,py]) => {
+      const c = document.createElementNS("http://www.w3.org/2000/svg","circle");
+      c.setAttribute("cx",px); c.setAttribute("cy",py); c.setAttribute("r","3");
+      c.setAttribute("fill","#fbbf24");
+      svg.appendChild(c);
+    });
+  }
+
+  // Linha dos 80%
+  const y80 = paddingT + chartH - 0.8 * chartH;
+  const line80 = document.createElementNS("http://www.w3.org/2000/svg","line");
+  line80.setAttribute("x1",paddingL); line80.setAttribute("x2",svgW-20);
+  line80.setAttribute("y1",y80); line80.setAttribute("y2",y80);
+  line80.setAttribute("stroke","#f87171"); line80.setAttribute("stroke-width","1");
+  line80.setAttribute("stroke-dasharray","4,3");
+  svg.appendChild(line80);
+  const lbl80 = document.createElementNS("http://www.w3.org/2000/svg","text");
+  lbl80.setAttribute("x",svgW-18); lbl80.setAttribute("y",y80-3);
+  lbl80.setAttribute("font-size","8"); lbl80.setAttribute("fill","#f87171");
+  lbl80.textContent = "80%";
+  svg.appendChild(lbl80);
+
+  paretoWrap.appendChild(svg);
+  panel.appendChild(paretoWrap);
+
 }
 
 
