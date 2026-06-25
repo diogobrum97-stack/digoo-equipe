@@ -2061,7 +2061,7 @@ function renderEstoqueTab(panel, color) {
     card.style.cssText = `background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;border-top:2px solid ${s.color};`;
     card.innerHTML = `
       <div style="font-size:10px;color:var(--text3);letter-spacing:2px;margin-bottom:8px;text-transform:uppercase;">${s.label}</div>
-      <div style="font-size:22px;font-weight:500;color:${s.color};letter-spacing:0;">${s.value}</div>
+      <div style="font-size:24px;font-weight:600;color:${s.color};letter-spacing:0;text-shadow:0 0 16px ${s.color}66;">${s.value}</div>
       <div style="font-size:11px;color:var(--text3);margin-top:4px;">${s.sub}</div>`;
     resumo.appendChild(card);
   });
@@ -2106,13 +2106,13 @@ function renderEstoqueTab(panel, color) {
         : "—";
 
       tr.innerHTML = `
-        <td style="padding:7px 8px;color:${color};font-size:11px;white-space:nowrap;">${r.sku}</td>
-        <td style="padding:7px 8px;color:var(--text2);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;">${r.produto}</td>
-        <td style="padding:7px 8px;text-align:center;color:${r.aptas>0?'var(--text)':'var(--text3)'};font-weight:${r.aptas>0?'500':'400'};">${r.aptas||'—'}</td>
-        <td style="padding:7px 8px;text-align:center;color:var(--text3);">${r.transf||'—'}</td>
-        <td style="padding:7px 8px;text-align:center;color:${r.pendente>0?'#fbbf24':'var(--text3)'};font-weight:${r.pendente>0?'500':'400'};">${r.pendente||'—'}</td>
-        <td style="padding:7px 8px;text-align:right;color:${semCusto?'#f87171':'var(--text2)'};">${custoStr}</td>
-        <td style="padding:7px 8px;text-align:right;color:${semCusto?'var(--text3)':r.valor>5000?'#4ade80':r.valor>1000?'#86efac':'var(--text2)'};font-weight:500;">${valorStr}</td>`;
+        <td style="padding:8px 8px;color:${color};font-size:11px;white-space:nowrap;font-family:'IBM Plex Mono',monospace;">${r.sku}</td>
+        <td style="padding:8px 8px;color:var(--text2);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;">${r.produto}</td>
+        <td style="padding:8px 8px;text-align:center;color:${r.aptas>0?'var(--text)':'var(--text3)'};font-weight:${r.aptas>0?'500':'400'};font-family:'IBM Plex Mono',monospace;">${r.aptas||'—'}</td>
+        <td style="padding:8px 8px;text-align:center;color:var(--text3);font-family:'IBM Plex Mono',monospace;">${r.transf||'—'}</td>
+        <td style="padding:8px 8px;text-align:center;color:${r.pendente>0?'#fbbf24':'var(--text3)'};font-weight:${r.pendente>0?'500':'400'};font-family:'IBM Plex Mono',monospace;">${r.pendente||'—'}</td>
+        <td style="padding:8px 8px;text-align:right;color:${semCusto?'#f87171':'var(--text2)'};font-family:'IBM Plex Mono',monospace;">${custoStr}</td>
+        <td style="padding:8px 8px;text-align:right;color:${semCusto?'var(--text3)':r.valor>5000?'#4ade80':r.valor>1000?'#86efac':'var(--text2)'};font-weight:500;font-family:'IBM Plex Mono',monospace;">${valorStr}</td>`;
       tbody.appendChild(tr);
     });
   table.appendChild(tbody);
@@ -2226,13 +2226,13 @@ function renderEstoqueTab(panel, color) {
         },
         scales: {
           x: {
-            ticks: { font:{size:9}, color:"rgba(180,180,180,0.8)", maxRotation:40, autoSkip:false },
+            ticks: { font:{size:10, family:"system-ui,-apple-system,sans-serif"}, color:"rgba(200,200,200,0.85)", maxRotation:45, autoSkip:false },
             grid: { display:false },
           },
           y: {
             position: "left",
             ticks: {
-              font:{size:10}, color:"rgba(180,180,180,0.7)",
+              font:{size:11, family:"system-ui,-apple-system,sans-serif"}, color:"rgba(200,200,200,0.7)",
               callback: v => "R$" + Math.round(v/1000) + "k",
             },
             grid: { color:"rgba(255,255,255,0.05)" },
@@ -2241,7 +2241,7 @@ function renderEstoqueTab(panel, color) {
             position: "right",
             min: 0, max: 100,
             ticks: {
-              font:{size:10}, color:"#EF9F27",
+              font:{size:11, family:"system-ui,-apple-system,sans-serif"}, color:"#EF9F27",
               callback: v => v + "%",
             },
             grid: { display:false },
@@ -2261,7 +2261,7 @@ function renderEstoqueTab(panel, color) {
         const ds = chart.data.datasets[0];
         if (!ds || ds.type === "line") return;
         ctx.save();
-        ctx.font = "bold 9px monospace";
+        ctx.font = "600 10px system-ui,-apple-system,sans-serif";
         ctx.textAlign = "center";
         chart.getDatasetMeta(0).data.forEach((bar, i) => {
           const val = paretoData[i]?.valor;
@@ -2292,7 +2292,7 @@ function renderEstoqueTab(panel, color) {
         ctx.stroke();
         ctx.setLineDash([]);
         ctx.fillStyle = "#E24B4A";
-        ctx.font = "10px monospace";
+        ctx.font = "600 11px system-ui,-apple-system,sans-serif";
         ctx.textAlign = "right";
         ctx.fillText("80%", right - 2, y - 4);
         ctx.restore();
