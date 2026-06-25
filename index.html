@@ -199,6 +199,7 @@ footer { margin-top: 40px; text-align: center; font-size: 10px; color: var(--tex
 ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 @media(max-width:700px) { .grid { grid-template-columns: 1fr; } }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 </head>
 <body>
 
@@ -2105,13 +2106,13 @@ function renderEstoqueTab(panel, color) {
         : "—";
 
       tr.innerHTML = `
-        <td style="padding:7px 8px;color:${color};font-size:10px;white-space:nowrap;">${r.sku}</td>
-        <td style="padding:7px 8px;color:var(--text2);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.produto}</td>
-        <td style="padding:7px 8px;text-align:center;color:var(--text);font-weight:500;">${r.aptas}</td>
-        <td style="padding:7px 8px;text-align:center;color:var(--text3);">${r.transf || "—"}</td>
-        <td style="padding:7px 8px;text-align:center;color:${r.pendente > 0 ? "#fbbf24" : "var(--text3)"};">${r.pendente || "—"}</td>
-        <td style="padding:7px 8px;text-align:right;color:${semCusto ? "#f87171" : "var(--text3)"};">${custoStr}</td>
-        <td style="padding:7px 8px;text-align:right;color:${semCusto ? "var(--text3)" : "#00ff77"};font-weight:${semCusto ? "400" : "500"};">${valorStr}</td>`;
+        <td style="padding:7px 8px;color:${color};font-size:11px;white-space:nowrap;">${r.sku}</td>
+        <td style="padding:7px 8px;color:var(--text2);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;">${r.produto}</td>
+        <td style="padding:7px 8px;text-align:center;color:${r.aptas>0?'var(--text)':'var(--text3)'};font-weight:${r.aptas>0?'500':'400'};">${r.aptas||'—'}</td>
+        <td style="padding:7px 8px;text-align:center;color:var(--text3);">${r.transf||'—'}</td>
+        <td style="padding:7px 8px;text-align:center;color:${r.pendente>0?'#fbbf24':'var(--text3)'};font-weight:${r.pendente>0?'500':'400'};">${r.pendente||'—'}</td>
+        <td style="padding:7px 8px;text-align:right;color:${semCusto?'#f87171':'var(--text2)'};">${custoStr}</td>
+        <td style="padding:7px 8px;text-align:right;color:${semCusto?'var(--text3)':r.valor>5000?'#4ade80':r.valor>1000?'#86efac':'var(--text2)'};font-weight:500;">${valorStr}</td>`;
       tbody.appendChild(tr);
     });
   table.appendChild(tbody);
@@ -2173,9 +2174,9 @@ function renderEstoqueTab(panel, color) {
   paretoWrap.appendChild(canvasWrap);
   panel.appendChild(paretoWrap);
 
-  // Carrega Chart.js e renderiza
-  const existingScript = document.getElementById("chartjs-script");
+  // Renderiza Chart.js (já carregado no head)
   const renderChart = () => {
+    if (!window.Chart) { setTimeout(renderChart, 100); return; }
     const barColors = paretoData.map(d => d.pctAcc <= 80 ? "#1D9E75" : d.pctAcc <= 95 ? "#EF9F27" : "#E24B4A");
     new Chart(canvas, {
       type: "bar",
@@ -2277,18 +2278,7 @@ function renderEstoqueTab(panel, color) {
     });
   };
 
-  if (existingScript && window.Chart) {
-    renderChart();
-  } else if (!existingScript) {
-    const sc = document.createElement("script");
-    sc.id = "chartjs-script";
-    sc.src = "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js";
-    sc.onload = renderChart;
-    document.head.appendChild(sc);
-  } else {
-    // Script carregando, aguarda
-    const wait = setInterval(() => { if(window.Chart){ clearInterval(wait); renderChart(); }}, 100);
-  }
+  setTimeout(renderChart, 50);
 
 }
 
