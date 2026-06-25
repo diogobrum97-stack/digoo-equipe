@@ -1495,6 +1495,7 @@ function render(){
   // Esconde outros cards quando Diogo está em Mercado Livre
   const diogoPinOk = diogoPinUnlocked;
   const diogIsML = openCard==="Diogo" && diogoPinOk && window._diogotab==="mercadolivre";
+  const diogIsEstoque = openCard==="Diogo" && diogoPinOk && window._diogotab==="estoque" && estoqueExpanded;
 
   MEMBERS.forEach(member=>{
     const color=themeColor(member.name),hbg=themeHbg(member.name);
@@ -1505,6 +1506,7 @@ function render(){
 
     // Esconde Bruno e Larissa quando Diogo está na aba ML
     if(diogIsML && member.name !== "Diogo") return;
+    if(diogIsEstoque && member.name !== "Diogo") return;
 
     const card=document.createElement("div");card.className="card"+(hasPending||isFlashing?" flashing":"");
     card.style.setProperty("--c",color);
@@ -2129,7 +2131,7 @@ function renderEstoqueTab(panel, color) {
   if (comValor.length < 2) return;
 
   const paretoWrap = document.createElement("div");
-  paretoWrap.style.cssText = "margin-top:24px;";
+  paretoWrap.style.cssText = "margin-top:28px;";
 
   const paretoTitle = document.createElement("div");
   paretoTitle.style.cssText = "font-size:9px;color:var(--text3);letter-spacing:2px;margin-bottom:16px;text-transform:uppercase;";
@@ -2144,13 +2146,13 @@ function renderEstoqueTab(panel, color) {
   });
 
   const n = paretoData.length;
-  const barW = Math.max(20, Math.min(48, Math.floor(900 / n)));
-  const gap  = 6;
-  const paddingL = 56;
-  const paddingR = 40;
-  const paddingB = 64;
-  const paddingT = 20;
-  const chartH   = 200;
+  const paddingL = 60;
+  const paddingR = 50;
+  const paddingT = 40;
+  const paddingB = 80;
+  const chartH   = 220;
+  const barW     = Math.max(24, Math.min(52, Math.floor((900 - paddingL - paddingR) / n) - 4));
+  const gap      = Math.max(3, Math.min(8, Math.floor(400 / n)));
   const svgW     = paddingL + n * (barW + gap) + paddingR;
   const svgH     = chartH + paddingB + paddingT;
   const maxValor = paretoData[0].valor;
@@ -2160,93 +2162,126 @@ function renderEstoqueTab(panel, color) {
   svg.setAttribute("width","100%");
   svg.style.cssText = "overflow:visible;display:block;";
 
-  // Grid lines + eixo Y esquerdo (valor)
+  // Fundo do gráfico
+  const bg = document.createElementNS("http://www.w3.org/2000/svg","rect");
+  bg.setAttribute("x",paddingL); bg.setAttribute("y",paddingT);
+  bg.setAttribute("width",svgW-paddingL-paddingR); bg.setAttribute("height",chartH);
+  bg.setAttribute("fill","rgba(255,255,255,0.02)"); bg.setAttribute("rx","4");
+  svg.appendChild(bg);
+
+  // Grid + labels eixo Y
   [0,25,50,75,100].forEach(pct => {
     const y = paddingT + chartH - (pct/100)*chartH;
     const gl = document.createElementNS("http://www.w3.org/2000/svg","line");
     gl.setAttribute("x1",paddingL); gl.setAttribute("x2",svgW-paddingR);
     gl.setAttribute("y1",y); gl.setAttribute("y2",y);
-    gl.setAttribute("stroke","rgba(255,255,255,0.05)"); gl.setAttribute("stroke-width","1");
+    gl.setAttribute("stroke",pct===0?"rgba(255,255,255,0.15)":"rgba(255,255,255,0.06)");
+    gl.setAttribute("stroke-width","1");
     svg.appendChild(gl);
     // Label % direita
-    const t = document.createElementNS("http://www.w3.org/2000/svg","text");
-    t.setAttribute("x",svgW-paddingR+6); t.setAttribute("y",y+4);
-    t.setAttribute("font-size","9"); t.setAttribute("fill","rgba(255,255,255,0.35)");
-    t.textContent = pct+"%";
-    svg.appendChild(t);
+    const tr = document.createElementNS("http://www.w3.org/2000/svg","text");
+    tr.setAttribute("x",svgW-paddingR+8); tr.setAttribute("y",y+4);
+    tr.setAttribute("font-size","10"); tr.setAttribute("fill","rgba(255,200,0,0.6)");
+    tr.textContent = pct+"%";
+    svg.appendChild(tr);
     // Label valor esquerda
-    const valLabel = pct===0?0:Math.round(maxValor*(pct/100));
-    const tl = document.createElementNS("http://www.w3.org/2000/svg","text");
-    tl.setAttribute("x",paddingL-6); tl.setAttribute("y",y+4);
-    tl.setAttribute("text-anchor","end"); tl.setAttribute("font-size","8");
-    tl.setAttribute("fill","rgba(255,255,255,0.25)");
-    tl.textContent = valLabel>0?"R$"+Math.round(valLabel/1000)+"k":"";
-    svg.appendChild(tl);
+    if(pct>0){
+      const valLabel = Math.round(maxValor*(pct/100));
+      const tl = document.createElementNS("http://www.w3.org/2000/svg","text");
+      tl.setAttribute("x",paddingL-8); tl.setAttribute("y",y+4);
+      tl.setAttribute("text-anchor","end"); tl.setAttribute("font-size","9");
+      tl.setAttribute("fill","rgba(255,255,255,0.3)");
+      tl.textContent = "R$"+Math.round(valLabel/1000)+"k";
+      svg.appendChild(tl);
+    }
   });
 
-  // Barras
+  // Barras + linha acumulada
   const linePoints = [];
   paretoData.forEach((r,i) => {
-    const x   = paddingL + i*(barW+gap);
-    const barH = Math.max(3,(r.valor/maxValor)*chartH);
-    const y   = paddingT + chartH - barH;
+    const x    = paddingL + i*(barW+gap);
+    const barH = Math.max(4,(r.valor/maxValor)*chartH);
+    const y    = paddingT + chartH - barH;
+    const barColor = r.pctAcc<=80 ? color : r.pctAcc<=95 ? "#fbbf24" : "#f87171";
 
-    // Gradiente simulado com dois rects
     const rect = document.createElementNS("http://www.w3.org/2000/svg","rect");
     rect.setAttribute("x",x); rect.setAttribute("y",y);
     rect.setAttribute("width",barW); rect.setAttribute("height",barH);
-    // Cor: verde se pctAcc<=80, amarelo se <=95, vermelho se >95
-    const barColor = r.pctAcc<=80 ? color+"cc" : r.pctAcc<=95 ? "#fbbf24cc" : "#f87171cc";
-    rect.setAttribute("fill",barColor);
-    rect.setAttribute("rx","3");
+    rect.setAttribute("fill",barColor+"99"); rect.setAttribute("rx","3");
+    rect.setAttribute("stroke",barColor+"44"); rect.setAttribute("stroke-width","1");
     const title = document.createElementNS("http://www.w3.org/2000/svg","title");
-    title.textContent = r.sku+"\nR$ "+r.valor.toLocaleString("pt-BR",{minimumFractionDigits:2})+"\n"+r.pctAcc+"% acumulado";
+    title.textContent = r.sku+"\nR$ "+r.valor.toLocaleString("pt-BR",{minimumFractionDigits:2})+" ("+r.pctAcc+"% acum.)\n"+r.aptas+" un × R$ "+r.custo.toLocaleString("pt-BR",{minimumFractionDigits:2});
     rect.appendChild(title);
     svg.appendChild(rect);
 
-    // Ponto linha
-    linePoints.push([x+barW/2, paddingT+chartH-(r.pctAcc/100)*chartH]);
+    // Valor em cima da barra
+    const vl = document.createElementNS("http://www.w3.org/2000/svg","text");
+    vl.setAttribute("x",x+barW/2); vl.setAttribute("y",y-6);
+    vl.setAttribute("text-anchor","middle"); vl.setAttribute("font-size","9");
+    vl.setAttribute("fill",barColor+"cc");
+    vl.textContent = "R$"+Math.round(r.valor/1000)+"k";
+    svg.appendChild(vl);
 
-    // Label SKU rotacionado
+    // SKU embaixo — horizontal se barW largo, rotacionado se estreito
     const lbl = document.createElementNS("http://www.w3.org/2000/svg","text");
-    const lx = x+barW/2; const ly = paddingT+chartH+8;
+    const lx = x+barW/2; const ly = paddingT+chartH+14;
     lbl.setAttribute("x",lx); lbl.setAttribute("y",ly);
     lbl.setAttribute("text-anchor","end");
-    lbl.setAttribute("transform",`rotate(-45,${lx},${ly})`);
-    lbl.setAttribute("font-size","8"); lbl.setAttribute("fill","rgba(255,255,255,0.45)");
-    lbl.textContent = r.sku.length>16?r.sku.slice(0,16)+"…":r.sku;
+    lbl.setAttribute("transform",`rotate(-40,${lx},${ly})`);
+    lbl.setAttribute("font-size","9"); lbl.setAttribute("fill","rgba(255,255,255,0.55)");
+    const skuShort = r.sku.replace(/-PRETO$||-BRANCO$|-CINZA$/,"");
+    lbl.textContent = skuShort.length>18?skuShort.slice(0,18)+"…":skuShort;
     svg.appendChild(lbl);
 
-    // Valor em cima da barra
-    if(barH>20){
-      const vl = document.createElementNS("http://www.w3.org/2000/svg","text");
-      vl.setAttribute("x",x+barW/2); vl.setAttribute("y",y-4);
-      vl.setAttribute("text-anchor","middle"); vl.setAttribute("font-size","7");
-      vl.setAttribute("fill","rgba(255,255,255,0.5)");
-      vl.textContent = "R$"+Math.round(r.valor/1000)+"k";
-      svg.appendChild(vl);
-    }
+    linePoints.push([x+barW/2, paddingT+chartH-(r.pctAcc/100)*chartH]);
   });
 
   // Linha acumulada
   const poly = document.createElementNS("http://www.w3.org/2000/svg","polyline");
   poly.setAttribute("points",linePoints.map(p=>p.join(",")).join(" "));
   poly.setAttribute("fill","none"); poly.setAttribute("stroke","#fbbf24");
-  poly.setAttribute("stroke-width","2"); poly.setAttribute("stroke-linejoin","round");
+  poly.setAttribute("stroke-width","2.5"); poly.setAttribute("stroke-linejoin","round");
   svg.appendChild(poly);
-  linePoints.forEach(([px,py])=>{
+  linePoints.forEach(([px,py],i)=>{
     const c=document.createElementNS("http://www.w3.org/2000/svg","circle");
-    c.setAttribute("cx",px); c.setAttribute("cy",py); c.setAttribute("r","3");
-    c.setAttribute("fill","#fbbf24"); svg.appendChild(c);
+    c.setAttribute("cx",px); c.setAttribute("cy",py); c.setAttribute("r","3.5");
+    c.setAttribute("fill","#fbbf24"); c.setAttribute("stroke","#000"); c.setAttribute("stroke-width","1");
+    const t=document.createElementNS("http://www.w3.org/2000/svg","title");
+    t.textContent=paretoData[i].pctAcc+"% acumulado";
+    c.appendChild(t); svg.appendChild(c);
   });
 
   // Linha 80%
-  const y80 = paddingT + chartH - 0.8*chartH;
+  const y80 = paddingT + chartH*0.2;
   const l80 = document.createElementNS("http://www.w3.org/2000/svg","line");
   l80.setAttribute("x1",paddingL); l80.setAttribute("x2",svgW-paddingR);
   l80.setAttribute("y1",y80); l80.setAttribute("y2",y80);
-  l80.setAttribute("stroke","#f87171"); l80.setAttribute("stroke-width","1");
-  l80.setAttribute("stroke-dasharray","5,3"); svg.appendChild(l80);
+  l80.setAttribute("stroke","#f87171"); l80.setAttribute("stroke-width","1.5");
+  l80.setAttribute("stroke-dasharray","6,4"); svg.appendChild(l80);
+  const lbl80=document.createElementNS("http://www.w3.org/2000/svg","text");
+  lbl80.setAttribute("x",paddingL+6); lbl80.setAttribute("y",y80-6);
+  lbl80.setAttribute("font-size","10"); lbl80.setAttribute("fill","#f87171");
+  lbl80.textContent="80% do valor — foco aqui";
+  svg.appendChild(lbl80);
+
+  // Legenda
+  const legY = paddingT + chartH + paddingB - 16;
+  [
+    {color:color, label:"Top 80% (prioridade alta)"},
+    {color:"#fbbf24", label:"80–95%"},
+    {color:"#f87171", label:"Cauda (>95%)"},
+  ].forEach(({color:c,label},i)=>{
+    const lx = paddingL + i*160;
+    const dot = document.createElementNS("http://www.w3.org/2000/svg","rect");
+    dot.setAttribute("x",lx); dot.setAttribute("y",legY-8);
+    dot.setAttribute("width",12); dot.setAttribute("height",12);
+    dot.setAttribute("fill",c+"99"); dot.setAttribute("rx","2");
+    svg.appendChild(dot);
+    const lt = document.createElementNS("http://www.w3.org/2000/svg","text");
+    lt.setAttribute("x",lx+16); lt.setAttribute("y",legY+2);
+    lt.setAttribute("font-size","9"); lt.setAttribute("fill","rgba(255,255,255,0.5)");
+    lt.textContent=label; svg.appendChild(lt);
+  });
 
   paretoWrap.appendChild(svg);
   panel.appendChild(paretoWrap);
