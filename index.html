@@ -1958,6 +1958,11 @@ function renderEstoqueTab(panel, color) {
     refBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:3px;padding:2px 7px;font-size:10px;cursor:pointer;";
     refBtn.addEventListener("click", () => { estoqueBlingData = null; fetchBlingProdutos(); });
     blingStatus.appendChild(refBtn);
+    const renewBtn = document.createElement("button");
+    renewBtn.textContent = "Renovar token";
+    renewBtn.style.cssText = "background:none;border:1px solid #fbbf2444;color:#fbbf2488;border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer;letter-spacing:1px;margin-left:4px;";
+    renewBtn.addEventListener("click", () => window.open("https://digoo-backend.vercel.app/api/bling-auth", "_blank"));
+    blingStatus.appendChild(renewBtn);
   } else {
     blingStatus.innerHTML = `<span style="width:7px;height:7px;border-radius:50%;background:#f87171;display:inline-block;"></span><span style="font-size:9px;color:var(--text3);">Proxy offline</span>`;
     const connectBtn = document.createElement("button");
@@ -1965,6 +1970,12 @@ function renderEstoqueTab(panel, color) {
     connectBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer;letter-spacing:1px;";
     connectBtn.addEventListener("click", () => fetchBlingProdutos());
     blingStatus.appendChild(connectBtn);
+    // Botão OAuth — abre o fluxo de autorização
+    const authBtn = document.createElement("button");
+    authBtn.textContent = "Autorizar Bling";
+    authBtn.style.cssText = "background:none;border:1px solid #fbbf2466;color:#fbbf24;border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer;letter-spacing:1px;margin-left:4px;";
+    authBtn.addEventListener("click", () => window.open("https://digoo-backend.vercel.app/api/bling-auth", "_blank"));
+    blingStatus.appendChild(authBtn);
   }
 
   uploadWrap.appendChild(blingStatus);
@@ -2007,7 +2018,7 @@ function renderEstoqueTab(panel, color) {
 
   [
     {
-      label: "VALOR EM ESTOQUE",
+      label: temCusto ? "VALOR EM ESTOQUE" : "UNIDADES APTAS",
       value: estoqueBlingData
         ? `R$ ${totalValor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`
         : "—",
@@ -2100,13 +2111,18 @@ function renderEstoqueTab(panel, color) {
   }
 
   // ── PARETO Chart.js ─────────────────────────────────────────
-  const comValor = enriched.filter(r => r.valor > 0).sort((a,b) => b.valor - a.valor);
+  // Se tem custo, ordena por valor; se não tem, ordena por aptas
+  const temCusto = enriched.some(r => r.valor > 0);
+  const paretoBase = temCusto
+    ? enriched.filter(r => r.valor > 0).sort((a,b) => b.valor - a.valor)
+    : enriched.filter(r => r.aptas > 0).sort((a,b) => b.aptas - a.aptas);
+  const comValor = paretoBase;
   if (comValor.length < 2) return;
 
-  const totalValorPareto = comValor.reduce((s,r) => s + r.valor, 0);
+  const totalValorPareto = temCusto ? comValor.reduce((s,r) => s + r.valor, 0) : comValor.reduce((s,r) => s + r.aptas, 0);
   let acc = 0;
   const paretoData = comValor.map(r => {
-    acc += r.valor;
+    acc += temCusto ? r.valor : r.aptas;
     return { ...r, pctAcc: Math.round(acc / totalValorPareto * 100) };
   });
 
@@ -2179,7 +2195,7 @@ function renderEstoqueTab(panel, color) {
           {
             type: "bar",
             label: "Valor",
-            data: paretoData.map(d => d.valor),
+            data: paretoData.map(d => temCusto ? d.valor : d.aptas),
             backgroundColor: barColors,
             borderColor: barColors.map(c => c + "88"),
             borderWidth: 1,
@@ -2227,7 +2243,7 @@ function renderEstoqueTab(panel, color) {
           det.style.display = "block";
           det.style.borderLeftColor = barColor;
           det.querySelector(`#${det.id}-sku`).textContent = d.sku;
-          det.querySelector(`#${det.id}-valor`).textContent = "R$ " + d.valor.toLocaleString("pt-BR", {minimumFractionDigits:2});
+          det.querySelector(`#${det.id}-valor`).textContent = temCusto ? "R$ " + d.valor.toLocaleString("pt-BR", {minimumFractionDigits:2}) : d.aptas + " un";
           det.querySelector(`#${det.id}-pct`).textContent = pct + "%";
           det.querySelector(`#${det.id}-acc`).textContent = d.pctAcc + "%";
           det.querySelector(`#${det.id}-zona`).textContent = zona;
@@ -2240,7 +2256,7 @@ function renderEstoqueTab(panel, color) {
             callbacks: {
               label: (ctx) => {
                 if (ctx.dataset.type === "line") return ctx.parsed.y + "% acumulado";
-                return "R$ " + ctx.parsed.y.toLocaleString("pt-BR", {minimumFractionDigits: 0});
+                return temCusto ? "R$ " + ctx.parsed.y.toLocaleString("pt-BR", {minimumFractionDigits: 0}) : ctx.parsed.y + " un";
               }
             }
           }
@@ -2254,7 +2270,7 @@ function renderEstoqueTab(panel, color) {
             position: "left",
             ticks: {
               font:{size:11, family:"system-ui,-apple-system,sans-serif"}, color:"rgba(200,200,200,0.7)",
-              callback: v => "R$" + Math.round(v/1000) + "k",
+              callback: v => temCusto ? "R$" + Math.round(v/1000) + "k" : Math.round(v) + " un",
             },
             grid: { color:"rgba(255,255,255,0.05)" },
           },
