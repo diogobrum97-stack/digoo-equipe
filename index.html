@@ -1526,46 +1526,18 @@ function render(){
     if(unreadMsgs.length>0&&!isOpen){const ud=document.createElement("span");ud.className="unread-dot";ud.style.cssText=`background:${color};box-shadow:0 0 8px ${color};`;header.appendChild(ud);}
 
     // Botão chat assistente — só quando card está aberto e é o usuário atual
-    if(isOpen && currentUser===member.name) {
-      setTimeout(()=>{
-        const panel2=document.querySelector(`#cards .panel.open`);
-        if(panel2&&!panel2.querySelector(".chat-btn")){
-          panel2.style.position="relative";
-          panel2.style.paddingBottom="52px";
-          const chatBtn=document.createElement("button");
-          chatBtn.className="chat-btn";
-          chatBtn.style.position="absolute";
-          chatBtn.style.bottom="14px";
-          chatBtn.style.right="14px";
-          chatBtn.style.left="auto";
-          chatBtn.style.width="30px";
-          chatBtn.style.height="30px";
-          chatBtn.style.borderRadius="50%";
-          chatBtn.style.border="1.5px solid #da7756";
-          chatBtn.style.color="#da7756";
-          chatBtn.style.background="#da775611";
-          chatBtn.style.cursor="pointer";
-          chatBtn.style.fontSize="13px";
-          chatBtn.style.display="flex";
-          chatBtn.style.alignItems="center";
-          chatBtn.style.justifyContent="center";
-          chatBtn.style.transition="all 0.15s";
-          chatBtn.style.zIndex="10";
-          chatBtn.textContent="✦";
-          chatBtn.title="Assistente Claude";
-          chatBtn.addEventListener("mouseenter",()=>{chatBtn.style.background="#da775622";chatBtn.style.boxShadow="0 0 8px #da775644";});
-          chatBtn.addEventListener("mouseleave",()=>{chatBtn.style.background="#da775611";chatBtn.style.boxShadow="none";});
-          chatBtn.addEventListener("click",(e)=>{
-            e.stopPropagation();
-            chatState[member.name].open=!chatState[member.name].open;
-            renderChatModal(member.name,color);
-          });
-          panel2.appendChild(chatBtn);
-        }
-      },50);
-    }
+    
     const chev=document.createElement("span");chev.className="chevron"+(isOpen?" open":"");chev.textContent="▼";
-    // Botão expandir estoque — só aparece quando card está aberto na aba estoque
+    // Botão Claude no header
+    if(isOpen&&currentUser===member.name){
+      const chatBtn=document.createElement("button");
+      chatBtn.style.cssText="background:none;border:1.5px solid #da7756;border-radius:50%;width:26px;height:26px;color:#da7756;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-right:6px;flex-shrink:0;transition:all 0.15s;";
+      chatBtn.textContent="✦";
+      chatBtn.title="Assistente Claude";
+      chatBtn.addEventListener("click",(e)=>{e.stopPropagation();chatState[member.name].open=!chatState[member.name].open;renderChatModal(member.name,color);});
+      header.appendChild(chatBtn);
+    }
+    // Botão expandir estoque
     if(member.locked&&isOpen&&window._diogotab==="estoque"){
       const expBtn=document.createElement("button");
       expBtn.style.cssText=`background:none;border:1px solid ${color}44;border-radius:4px;padding:2px 8px;color:${color};font-size:12px;cursor:pointer;font-family:inherit;margin-right:6px;`;
@@ -2106,13 +2078,13 @@ function renderEstoqueTab(panel, color) {
         : "—";
 
       tr.innerHTML = `
-        <td style="padding:8px 8px;color:${color};font-size:11px;white-space:nowrap;font-family:'IBM Plex Mono',monospace;">${r.sku}</td>
+        <td style="padding:8px 8px;color:#a8b4c0;font-size:11px;white-space:nowrap;font-family:'IBM Plex Mono',monospace;">${r.sku}</td>
         <td style="padding:8px 8px;color:var(--text2);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;">${r.produto}</td>
         <td style="padding:8px 8px;text-align:center;color:${r.aptas>0?'var(--text)':'var(--text3)'};font-weight:${r.aptas>0?'500':'400'};font-family:'IBM Plex Mono',monospace;">${r.aptas||'—'}</td>
         <td style="padding:8px 8px;text-align:center;color:var(--text3);font-family:'IBM Plex Mono',monospace;">${r.transf||'—'}</td>
         <td style="padding:8px 8px;text-align:center;color:${r.pendente>0?'#fbbf24':'var(--text3)'};font-weight:${r.pendente>0?'500':'400'};font-family:'IBM Plex Mono',monospace;">${r.pendente||'—'}</td>
         <td style="padding:8px 8px;text-align:right;color:${semCusto?'#f87171':'var(--text2)'};font-family:'IBM Plex Mono',monospace;">${custoStr}</td>
-        <td style="padding:8px 8px;text-align:right;color:${semCusto?'var(--text3)':r.valor>5000?'#4ade80':r.valor>1000?'#86efac':'var(--text2)'};font-weight:500;font-family:'IBM Plex Mono',monospace;">${valorStr}</td>`;
+        <td style="padding:8px 8px;text-align:right;color:${semCusto?'var(--text3)':r.valor>5000?'#22ff88':r.valor>1000?'#4ade80':'var(--text2)'};font-weight:500;font-family:'IBM Plex Mono',monospace;">${valorStr}</td>`;
       tbody.appendChild(tr);
     });
   table.appendChild(tbody);
