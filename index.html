@@ -444,6 +444,7 @@ let finData=null,finLoading=false,finMonth=new Date().toISOString().slice(0,7);
 let diogomltab="devolucoes", diogoDevolucoes=null, diogoDevolLoading=false;
 let diogoCustoData=null; // dados processados do Excel
 let estoqueExcelData=null;
+let estoqueExpanded=false;
 let estoqueBlingData=null;
 let estoqueBlingLoading=false;
 let estoqueBlingErro=null;
@@ -1507,7 +1508,7 @@ function render(){
 
     const card=document.createElement("div");card.className="card"+(hasPending||isFlashing?" flashing":"");
     card.style.setProperty("--c",color);
-    if(member.locked&&isOpen&&window._diogotab==="estoque"){card.style.gridColumn="1 / -1";}else{card.style.gridColumn="";}
+    if(member.locked&&isOpen&&window._diogotab==="estoque"&&estoqueExpanded){card.style.gridColumn="1 / -1";panel.style.maxHeight="none";}else if(member.locked){card.style.gridColumn="";}
     card.style.borderColor=isOpen?color+"88":(hasPending||isFlashing)?color:"var(--border)";
 
     const header=document.createElement("div");header.className="card-header";header.style.background=hbg;
@@ -1928,6 +1929,15 @@ async function fetchBlingProdutos() {
 
 // ── RENDER CARD ESTOQUE ──────────────────────────────────────
 function renderEstoqueTab(panel, color) {
+  // ── Botão expandir ──
+  const expandBtn = document.createElement("button");
+  expandBtn.style.cssText = `position:absolute;top:10px;right:10px;background:none;border:1px solid ${color}44;border-radius:4px;padding:3px 8px;color:${color};font-size:12px;cursor:pointer;font-family:inherit;z-index:5;`;
+  expandBtn.textContent = estoqueExpanded ? "⤡" : "⤢";
+  expandBtn.title = estoqueExpanded ? "Minimizar" : "Expandir";
+  expandBtn.addEventListener("click", () => { estoqueExpanded = !estoqueExpanded; render(); });
+  panel.style.position = "relative";
+  panel.appendChild(expandBtn);
+
   // ── Upload ──
   const uploadWrap = document.createElement("div");
   uploadWrap.style.cssText = "margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;";
