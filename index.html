@@ -2011,7 +2011,7 @@ function renderEstoqueTab(panel, color) {
       value: estoqueBlingData
         ? `R$ ${totalValor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`
         : "—",
-      color: "#1D9E75",
+      color: "#22ff88",
       sub: skusSemCusto > 0 ? `${skusSemCusto} SKUs sem custo` : "todos com custo"
     },
     {
@@ -2078,7 +2078,7 @@ function renderEstoqueTab(panel, color) {
         : "—";
 
       tr.innerHTML = `
-        <td style="padding:8px 8px;color:#a8b4c0;font-size:11px;white-space:nowrap;font-family:'IBM Plex Mono',monospace;">${r.sku}</td>
+        <td style="padding:8px 8px;color:#7ec8c8;font-size:11px;white-space:nowrap;font-family:'IBM Plex Mono',monospace;">${r.sku}</td>
         <td style="padding:8px 8px;color:var(--text2);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;">${r.produto}</td>
         <td style="padding:8px 8px;text-align:center;color:${r.aptas>0?'var(--text)':'var(--text3)'};font-weight:${r.aptas>0?'500':'400'};font-family:'IBM Plex Mono',monospace;">${r.aptas||'—'}</td>
         <td style="padding:8px 8px;text-align:center;color:var(--text3);font-family:'IBM Plex Mono',monospace;">${r.transf||'—'}</td>
