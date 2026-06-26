@@ -2152,7 +2152,7 @@ function renderEstoqueTab(panel, color) {
 
     // Ordena por dias decrescente
     const maxDias = 500;
-    const saudeRows = [...rows].map(r => {
+    const saudeRows = [...enriched].map(r => {
       const vendas30 = Number(r.vendas30) || 0;
       const dias = vendas30 > 0 ? Math.round(r.aptas / (vendas30 / 30)) : 999;
       return {...r, vendas30, dias};
@@ -2160,9 +2160,8 @@ function renderEstoqueTab(panel, color) {
 
     const maxD = Math.min(saudeRows[0]?.dias || 500, 500);
 
-    // Card de detalhe
-    const detCard = document.createElement("div");
-    detCard.style.cssText = "display:none;margin-top:12px;padding:12px 14px;background:var(--bg3);border-left:3px solid #3dd68c;border-radius:0 6px 6px 0;";
+    // Card de detalhe inline (aparece abaixo da linha clicada)
+    let activeDetCard = null;
 
     saudeRows.forEach(d => {
       const c = d.dias <= 15 ? "#3dd68c" : d.dias <= 90 ? "#EF9F27" : "#E24B4A";
@@ -2190,8 +2189,13 @@ function renderEstoqueTab(panel, color) {
         </div>`;
 
       row.addEventListener("click", () => {
-        detCard.style.display = "block";
-        detCard.style.borderLeftColor = c;
+        // Remove detalhe anterior se existir
+        if (activeDetCard) activeDetCard.remove();
+        // Toggle: clicou na mesma linha fecha
+        if (activeDetCard && activeDetCard.dataset.sku === d.sku) {
+          activeDetCard = null;
+          return;
+        }
         const msg = d.dias >= 999
           ? "Nenhuma venda nos últimos 30 dias. Avalie promoção ou liquidação."
           : d.dias >= 90
@@ -2199,7 +2203,10 @@ function renderEstoqueTab(panel, color) {
           : d.dias <= 15
           ? `Acabando rápido. Dura só ${d.dias} dias. Considere subir o preço ou antecipar reposição.`
           : `Giro equilibrado. Com ${d.vendas30} vendas/mês dura ~${d.dias} dias.`;
-        detCard.innerHTML = `
+        const det = document.createElement("div");
+        det.dataset.sku = d.sku;
+        det.style.cssText = `margin:4px 0 8px 138px;padding:10px 14px;background:var(--bg3);border-left:3px solid ${c};border-radius:0 6px 6px 0;`;
+        det.innerHTML = `
           <div style="font-size:12px;font-weight:600;color:${c};margin-bottom:8px;">${d.sku}</div>
           <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:8px;">
             <div><div style="font-size:9px;color:var(--text3);margin-bottom:2px;">VALOR</div><div style="font-size:14px;font-weight:500;color:${c};">${d.valor > 0 ? "R$ " + d.valor.toLocaleString("pt-BR") : "—"}</div></div>
@@ -2207,12 +2214,13 @@ function renderEstoqueTab(panel, color) {
             <div><div style="font-size:9px;color:var(--text3);margin-bottom:2px;">DIAS ESTOQUE</div><div style="font-size:14px;font-weight:500;color:${c};">${diasLabel}</div></div>
           </div>
           <div style="font-size:11px;color:var(--text3);line-height:1.5;font-family:system-ui,sans-serif;">${msg}</div>`;
+        row.insertAdjacentElement("afterend", det);
+        activeDetCard = det;
       });
 
       saudeWrap.appendChild(row);
     });
 
-    saudeWrap.appendChild(detCard);
     panel.appendChild(saudeWrap);
   }
 
