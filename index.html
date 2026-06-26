@@ -446,6 +446,7 @@ let diogomltab="devolucoes", diogoDevolucoes=null, diogoDevolLoading=false;
 let diogoCustoData=null; // dados processados do Excel
 let estoqueExcelData=null;
 let estoqueExpanded=false;
+let estoqueFullscreen=false;
 let estoqueBlingData=null;
 let estoqueBlingLoading=false;
 let estoqueBlingErro=null;
@@ -1496,7 +1497,7 @@ function render(){
   // Esconde outros cards quando Diogo está em Mercado Livre
   const diogoPinOk = diogoPinUnlocked;
   const diogIsML = openCard==="Diogo" && diogoPinOk && window._diogotab==="mercadolivre";
-  const diogIsEstoque = openCard==="Diogo" && diogoPinOk && window._diogotab==="estoque" && estoqueExpanded;
+  const diogIsEstoque = openCard==="Diogo" && diogoPinOk && window._diogotab==="estoque" && estoqueFullscreen;
 
   MEMBERS.forEach(member=>{
     const color=themeColor(member.name),hbg=themeHbg(member.name);
@@ -1541,9 +1542,9 @@ function render(){
     if(member.locked&&isOpen&&window._diogotab==="estoque"){
       const expBtn=document.createElement("button");
       expBtn.style.cssText="background:none;border:0.5px solid rgba(255,255,255,0.25);border-radius:4px;padding:2px 8px;color:rgba(255,255,255,0.4);font-size:12px;cursor:pointer;font-family:inherit;margin-right:6px;";
-      expBtn.textContent=estoqueExpanded?"⤡":"⤢";
+      expBtn.textContent=estoqueFullscreen?"⤡":"⤢";
       expBtn.title=estoqueExpanded?"Minimizar":"Expandir";
-      expBtn.addEventListener("click",(e)=>{e.stopPropagation();estoqueExpanded=!estoqueExpanded;render();});
+      expBtn.addEventListener("click",(e)=>{e.stopPropagation();estoqueFullscreen=!estoqueFullscreen;render();});
       header.appendChild(expBtn);
     }
     header.appendChild(chev);
@@ -1696,7 +1697,7 @@ function render(){
             panel.appendChild(btnWrapper);
             active.length=0;
           }else if(window._diogotab==="estoque"){
-            if(estoqueExpanded){card.style.gridColumn="1 / -1";panel.style.maxHeight="75vh";panel.style.overflowY="auto";}else{card.style.gridColumn="";panel.style.maxHeight="";panel.style.overflowY="";}
+            if(estoqueFullscreen){card.style.gridColumn="1 / -1";panel.style.maxHeight="none";panel.style.overflowY="auto";}else{card.style.gridColumn="";panel.style.maxHeight="";panel.style.overflowY="";}
             renderEstoqueTab(panel, color);
           }else if(window._diogotab==="concluidas"){
             if(Object.keys(completionAlerts).length>0){
@@ -2136,6 +2137,7 @@ function renderEstoqueTab(panel, color) {
 
   if (window._estoqueSubTab === "saude") {
     const saudeWrap = document.createElement("div");
+    saudeWrap.style.cssText = "font-family:system-ui,-apple-system,sans-serif;";
 
     // Legenda
     const leg = document.createElement("div");
@@ -2174,7 +2176,7 @@ function renderEstoqueTab(panel, color) {
       const row = document.createElement("div");
       row.style.cssText = "display:flex;align-items:center;gap:8px;margin-bottom:6px;cursor:pointer;";
       row.innerHTML = `
-        <div style="width:130px;font-size:10px;color:var(--text);font-weight:600;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">${d.sku}</div>
+        <div style="width:130px;font-size:10px;color:var(--text3);font-weight:400;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">${d.sku}</div>
         <div style="flex:1;background:var(--bg2);border-radius:4px;height:26px;position:relative;overflow:visible;">
           <div style="position:absolute;left:0;top:0;bottom:0;width:${pct}%;background:${c}25;border-right:2px solid ${c};border-radius:4px 0 0 4px;overflow:hidden;">
             ${badgeInside ? `<div style="position:absolute;right:6px;top:50%;transform:translateY(-50%);">${badge}</div>` : ""}
