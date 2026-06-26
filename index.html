@@ -1870,8 +1870,10 @@ async function processarExcelEstoque(file) {
       existing.aptas    += aptas;
       existing.transf   += transf;
       existing.pendente += pendente;
+      existing.vendas30 = (existing.vendas30||0) + (Number(row[10])||0);
     } else {
-      dados.push({ sku: skuReal, produto, aptas, transf, pendente });
+      const vendas30 = Number(row[10]) || 0;
+      dados.push({ sku: skuReal, produto, aptas, transf, pendente, vendas30 });
     }
   }
 
@@ -2113,233 +2115,99 @@ function renderEstoqueTab(panel, color) {
     panel.appendChild(warn);
   }
 
-  // ── PARETO Chart.js ─────────────────────────────────────────
-  // Se tem custo, ordena por valor; se não tem, ordena por aptas
-  const paretoBase = temCusto
-    ? enriched.filter(r => r.valor > 0).sort((a,b) => b.valor - a.valor)
-    : enriched.filter(r => r.aptas > 0).sort((a,b) => b.aptas - a.aptas);
-  const comValor = paretoBase;
-  if (comValor.length < 2) return;
+  // ── SUB-ABAS ESTOQUE / SAÚDE ───────────────────────────────
+  const subTabWrap = document.createElement("div");
+  subTabWrap.style.cssText = "display:flex;border-bottom:1px solid var(--sep);margin-bottom:14px;margin-top:8px;";
+  
+  if (!window._estoqueSubTab) window._estoqueSubTab = "estoque";
 
-  const totalValorPareto = temCusto ? comValor.reduce((s,r) => s + r.valor, 0) : comValor.reduce((s,r) => s + r.aptas, 0);
-  let acc = 0;
-  const paretoData = comValor.map(r => {
-    acc += temCusto ? r.valor : r.aptas;
-    return { ...r, pctAcc: Math.round(acc / totalValorPareto * 100) };
+  ["estoque","saude"].forEach(st => {
+    const btn = document.createElement("button");
+    btn.style.cssText = `padding:7px 14px;background:none;border:none;font-family:inherit;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:${window._estoqueSubTab===st?"var(--text)":"var(--text3)"};border-bottom:2px solid ${window._estoqueSubTab===st?"var(--text)":"transparent"};margin-bottom:-1px;transition:all 0.15s;`;
+    btn.textContent = st === "estoque" ? "Estoque" : "Saúde";
+    btn.addEventListener("click", () => { window._estoqueSubTab = st; render(); });
+    subTabWrap.appendChild(btn);
   });
+  panel.appendChild(subTabWrap);
 
-  // Wrapper
-  const paretoWrap = document.createElement("div");
-  paretoWrap.style.cssText = "margin-top:28px;";
+  if (window._estoqueSubTab === "saude") {
+    // ── Gráfico de saúde por giro ──
+    const saudeWrap = document.createElement("div");
 
-  // Título
-  const paretoTitle = document.createElement("div");
-  paretoTitle.style.cssText = "font-size:9px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;";
-  paretoTitle.textContent = "Pareto — Valor em Estoque por SKU";
-  paretoWrap.appendChild(paretoTitle);
+    // Legenda
+    const leg = document.createElement("div");
+    leg.style.cssText = "display:flex;gap:14px;margin-bottom:12px;font-size:10px;flex-wrap:wrap;";
+    [{c:"#3dd68c",l:"SUBIR <15d"},{c:"#EF9F27",l:"ACOMPANHAR 15–90d"},{c:"#E24B4A",l:"BAIXAR >90d"}].forEach(({c,l})=>{
+      const s = document.createElement("span");
+      s.style.cssText = "display:flex;align-items:center;gap:4px;color:var(--text3);";
+      s.innerHTML = `<span style="width:8px;height:8px;border-radius:2px;background:${c};display:inline-block;flex-shrink:0;"></span>${l}`;
+      leg.appendChild(s);
+    });
+    saudeWrap.appendChild(leg);
 
-  // Legenda
-  const leg = document.createElement("div");
-  leg.style.cssText = "display:flex;gap:16px;margin-bottom:12px;font-size:11px;flex-wrap:wrap;";
-  [
-    {color:"#3dd68c", label:"Top 80% — foco aqui"},
-    {color:"#EF9F27", label:"80–95%"},
-    {color:"#E24B4A", label:"Cauda >95%"},
-  ].forEach(({color:c, label}) => {
-    const s = document.createElement("span");
-    s.style.cssText = "display:flex;align-items:center;gap:5px;color:var(--text3);";
-    s.innerHTML = `<span style="width:10px;height:10px;border-radius:2px;background:${c};display:inline-block;flex-shrink:0;"></span>${label}`;
-    leg.appendChild(s);
-  });
-  paretoWrap.appendChild(leg);
+    // Calcula dias de estoque por SKU (usa vendas30d col 17 do Excel — idx 10 no array rows)
+    // vendas30d foi lido no parser? Não — precisamos adicionar ao parser
+    // Por ora usa os dados que temos: se row tiver vendas30, usa, senão mostra sem vendas
+    const maxD = 500;
 
-  // Canvas
-  const canvasWrap = document.createElement("div");
-  canvasWrap.style.cssText = "position:relative;width:100%;height:280px;";
-  const canvas = document.createElement("canvas");
-  canvas.id = "pareto-chart-" + Date.now();
-  canvas.setAttribute("role","img");
-  canvas.setAttribute("aria-label","Pareto de valor em estoque por SKU");
-  canvasWrap.appendChild(canvas);
-  paretoWrap.appendChild(canvasWrap);
+    // Ordena por dias decrescente
+    const saudeRows = [...rows].map(r => {
+      const vendas30 = Number(r.vendas30) || 0;
+      const dias = vendas30 > 0 ? Math.round(r.aptas / (vendas30 / 30)) : 999;
+      return {...r, vendas30, dias};
+    }).sort((a,b) => b.dias - a.dias);
 
-  // Card de detalhe ao clicar
-  const detailCard = document.createElement("div");
-  detailCard.id = "pareto-detail-" + Date.now();
-  detailCard.style.cssText = "display:none;margin-top:14px;padding:14px 16px;background:var(--bg3);border-radius:8px;border-left:3px solid #3dd68c;";
-  detailCard.innerHTML = `
-    <div style="font-size:13px;font-weight:600;color:#e8e8e8;margin-bottom:10px;font-family:'IBM Plex Mono',monospace;" id="${detailCard.id}-sku"></div>
-    <div style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:10px;">
-      <div><div style="font-size:10px;color:var(--text3);letter-spacing:1px;margin-bottom:3px;">VALOR EM ESTOQUE</div><div style="font-size:16px;font-weight:600;color:#3dd68c;font-family:'IBM Plex Mono',monospace;" id="${detailCard.id}-valor"></div></div>
-      <div><div style="font-size:10px;color:var(--text3);letter-spacing:1px;margin-bottom:3px;">% DO TOTAL</div><div style="font-size:16px;font-weight:600;color:var(--text2);font-family:'IBM Plex Mono',monospace;" id="${detailCard.id}-pct"></div></div>
-      <div><div style="font-size:10px;color:var(--text3);letter-spacing:1px;margin-bottom:3px;">% ACUMULADO</div><div style="font-size:16px;font-weight:600;color:#EF9F27;font-family:'IBM Plex Mono',monospace;" id="${detailCard.id}-acc"></div></div>
-      <div><div style="font-size:10px;color:var(--text3);letter-spacing:1px;margin-bottom:3px;">ZONA</div><div style="font-size:13px;font-weight:500;font-family:system-ui,sans-serif;" id="${detailCard.id}-zona"></div></div>
-    </div>
-    <div style="font-size:12px;color:var(--text3);font-family:system-ui,sans-serif;line-height:1.5;" id="${detailCard.id}-acao"></div>
-  `;
-  paretoWrap.appendChild(detailCard);
-  panel.appendChild(paretoWrap);
+    const maxDias = Math.min(saudeRows[0]?.dias || 500, 500);
 
-  // Guarda referência para usar no onClick
-  window._paretoDetail = detailCard;
-  window._paretoData = paretoData;
-  window._paretoTotal = totalValorPareto;
+    // Card de detalhe
+    const detCard = document.createElement("div");
+    detCard.style.cssText = "display:none;margin-top:12px;padding:12px 14px;background:var(--bg3);border-left:3px solid #3dd68c;border-radius:0 6px 6px 0;";
 
-  // Renderiza Chart.js (já carregado no head)
-  const renderChart = () => {
-    if (!window.Chart) { setTimeout(renderChart, 100); return; }
-    const barColors = paretoData.map(d => d.pctAcc <= 80 ? "#3dd68c" : d.pctAcc <= 95 ? "#EF9F27" : "#E24B4A");
-    new Chart(canvas, {
-      type: "bar",
-      data: {
-        labels: paretoData.map(d => d.sku),
-        datasets: [
-          {
-            type: "bar",
-            label: "Valor",
-            data: paretoData.map(d => temCusto ? d.valor : d.aptas),
-            backgroundColor: barColors,
-            borderColor: barColors.map(c => c + "88"),
-            borderWidth: 1,
-            borderRadius: 3,
-            yAxisID: "y",
-            order: 2,
-          },
-          {
-            type: "line",
-            label: "% acumulado",
-            data: paretoData.map(d => d.pctAcc),
-            borderColor: "#EF9F27",
-            backgroundColor: "transparent",
-            borderWidth: 2,
-            pointBackgroundColor: "#EF9F27",
-            pointRadius: 3,
-            pointHoverRadius: 5,
-            yAxisID: "y2",
-            order: 1,
-            tension: 0.3,
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        onClick: (e, els) => {
-          if (!els.length) return;
-          const i = els[0].index;
-          const d = window._paretoData[i];
-          const tot = window._paretoTotal;
-          const det = window._paretoDetail;
-          if (!det || !d) return;
-          const pct = Math.round(d.valor / tot * 100);
-          const barColor = d.pctAcc <= 80 ? "#3dd68c" : d.pctAcc <= 95 ? "#EF9F27" : "#E24B4A";
-          const zona = d.pctAcc <= 80
-            ? "🟢 Top 80% — prioridade máxima"
-            : d.pctAcc <= 95 ? "🟡 80–95% — atenção secundária"
-            : "🔴 Cauda — menor impacto";
-          const acao = d.pctAcc <= 80
-            ? "Este produto trava muito capital. Garanta que está girando rápido. Se estiver parado, considere promoção, bundle ou ajuste de preço."
-            : d.pctAcc <= 95
-            ? "Capital moderado. Monitore o giro e evite repor em excesso até girar o atual."
-            : "Pouco impacto no capital total. Reabasteça em quantidades menores e com menos frequência.";
-          det.style.display = "block";
-          det.style.borderLeftColor = barColor;
-          det.querySelector(`#${det.id}-sku`).textContent = d.sku;
-          det.querySelector(`#${det.id}-valor`).textContent = temCusto ? "R$ " + d.valor.toLocaleString("pt-BR", {minimumFractionDigits:2}) : d.aptas + " un";
-          det.querySelector(`#${det.id}-pct`).textContent = pct + "%";
-          det.querySelector(`#${det.id}-acc`).textContent = d.pctAcc + "%";
-          det.querySelector(`#${det.id}-zona`).textContent = zona;
-          det.querySelector(`#${det.id}-zona`).style.color = barColor;
-          det.querySelector(`#${det.id}-acao`).textContent = acao;
-        },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: (ctx) => {
-                if (ctx.dataset.type === "line") return ctx.parsed.y + "% acumulado";
-                return temCusto ? "R$ " + ctx.parsed.y.toLocaleString("pt-BR", {minimumFractionDigits: 0}) : ctx.parsed.y + " un";
-              }
-            }
-          }
-        },
-        scales: {
-          x: {
-            ticks: { font:{size:10, family:"system-ui,-apple-system,sans-serif"}, color:"rgba(200,200,200,0.85)", maxRotation:45, autoSkip:false },
-            grid: { display:false },
-          },
-          y: {
-            position: "left",
-            ticks: {
-              font:{size:11, family:"system-ui,-apple-system,sans-serif"}, color:"rgba(200,200,200,0.7)",
-              callback: v => temCusto ? "R$" + Math.round(v/1000) + "k" : Math.round(v) + " un",
-            },
-            grid: { color:"rgba(255,255,255,0.05)" },
-          },
-          y2: {
-            position: "right",
-            min: 0, max: 100,
-            ticks: {
-              font:{size:11, family:"system-ui,-apple-system,sans-serif"}, color:"#EF9F27",
-              callback: v => v + "%",
-            },
-            grid: { display:false },
-            // Linha dos 80%
-            afterDataLimits: (axis) => { axis.max = 100; },
-          }
-        },
-        animation: { duration: 400 },
-      }
+    saudeRows.forEach(d => {
+      const c = d.dias <= 15 ? "#3dd68c" : d.dias <= 90 ? "#EF9F27" : "#E24B4A";
+      const pct = Math.min(d.dias, 500) / maxDias * 100;
+      const diasLabel = d.dias >= 999 ? "sem vendas" : d.dias + "d";
+      const badgeText = d.dias <= 15 ? "↑ SUBIR" : d.dias <= 90 ? "~ ACOMPANHAR" : "↓ BAIXAR";
+      const valorStr = d.valor > 0 ? "R$" + Math.round(d.valor/1000) + "k" : "—";
+
+      const row = document.createElement("div");
+      row.style.cssText = "display:flex;align-items:center;gap:8px;margin-bottom:6px;cursor:pointer;";
+      row.innerHTML = `
+        <div style="width:130px;font-size:10px;color:#e8e8e8;font-weight:600;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">${d.sku}</div>
+        <div style="flex:1;background:var(--bg2);border-radius:4px;height:24px;overflow:hidden;position:relative;">
+          <div style="width:${pct}%;background:${c}22;border-right:2px solid ${c};height:100%;border-radius:4px 0 0 4px;position:absolute;left:0;top:0;"></div>
+          <div style="position:absolute;left:${pct}%;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:6px;padding-left:6px;white-space:nowrap;">
+            <span style="background:${c}22;color:${c};border:1px solid ${c}55;border-radius:3px;padding:1px 6px;font-size:8px;letter-spacing:1px;">${badgeText}</span>
+            <span style="font-size:9px;color:var(--text3);">${valorStr} · ${diasLabel}</span>
+          </div>
+        </div>`;
+
+      row.addEventListener("click", () => {
+        detCard.style.display = "block";
+        detCard.style.borderLeftColor = c;
+        const msg = d.dias >= 999
+          ? "Nenhuma venda nos últimos 30 dias. Avalie promoção ou liquidação."
+          : d.dias >= 90
+          ? `Com ${d.vendas30} vendas/mês e ${d.aptas} un, leva ~${d.dias} dias pra zerar. Considere reduzir o preço.`
+          : d.dias <= 15
+          ? `Acabando rápido. Com ${d.vendas30} vendas/mês dura só ${d.dias} dias. Considere subir o preço ou antecipar reposição.`
+          : `Giro equilibrado. Com ${d.vendas30} vendas/mês dura ~${d.dias} dias.`;
+        detCard.innerHTML = `
+          <div style="font-size:12px;font-weight:600;color:${c};margin-bottom:8px;">${d.sku}</div>
+          <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:8px;">
+            <div><div style="font-size:9px;color:var(--text3);margin-bottom:2px;">VALOR</div><div style="font-size:14px;font-weight:500;color:${c};">${d.valor>0?"R$ "+d.valor.toLocaleString("pt-BR"):"—"}</div></div>
+            <div><div style="font-size:9px;color:var(--text3);margin-bottom:2px;">VENDAS 30D</div><div style="font-size:14px;color:var(--text);">${d.vendas30} un</div></div>
+            <div><div style="font-size:9px;color:var(--text3);margin-bottom:2px;">DIAS ESTOQUE</div><div style="font-size:14px;font-weight:500;color:${c};">${diasLabel}</div></div>
+          </div>
+          <div style="font-size:11px;color:var(--text3);line-height:1.5;font-family:system-ui,sans-serif;">${msg}</div>`;
+      });
+
+      saudeWrap.appendChild(row);
     });
 
-    // Labels em cima das barras
-    Chart.register({
-      id: "barLabels",
-      afterDatasetsDraw(chart) {
-        const {ctx, data, scales: {y}} = chart;
-        const ds = chart.data.datasets[0];
-        if (!ds || ds.type === "line") return;
-        ctx.save();
-        ctx.font = "600 10px system-ui,-apple-system,sans-serif";
-        ctx.textAlign = "center";
-        chart.getDatasetMeta(0).data.forEach((bar, i) => {
-          const val = paretoData[i]?.valor;
-          if (!val || val < 500) return;
-          const label = "R$" + (val >= 1000 ? Math.round(val/1000) + "k" : Math.round(val));
-          const barColor = paretoData[i].pctAcc <= 80 ? "#3dd68c" : paretoData[i].pctAcc <= 95 ? "#EF9F27" : "#E24B4A";
-          ctx.fillStyle = barColor;
-          ctx.fillText(label, bar.x, bar.y - 4);
-        });
-        ctx.restore();
-      }
-    });
-
-    // Linha 80% manual via plugin
-    Chart.register({
-      id: "line80",
-      afterDraw(chart) {
-        const {ctx, scales: {y2}} = chart;
-        if (!y2) return;
-        const y = y2.getPixelForValue(80);
-        const {left, right} = chart.chartArea;
-        ctx.save();
-        ctx.beginPath();
-        ctx.setLineDash([6,4]);
-        ctx.strokeStyle = "#E24B4A";
-        ctx.lineWidth = 1.5;
-        ctx.moveTo(left, y); ctx.lineTo(right, y);
-        ctx.stroke();
-        ctx.setLineDash([]);
-        ctx.fillStyle = "#E24B4A";
-        ctx.font = "600 11px system-ui,-apple-system,sans-serif";
-        ctx.textAlign = "right";
-        ctx.fillText("80%", right - 2, y - 4);
-        ctx.restore();
-      }
-    });
-  };
-
-  setTimeout(renderChart, 50);
+    saudeWrap.appendChild(detCard);
+    panel.appendChild(saudeWrap);
+  }
 
 }
 
