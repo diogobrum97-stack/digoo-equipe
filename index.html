@@ -2055,7 +2055,24 @@ function renderEstoqueTab(panel, color) {
   });
   panel.appendChild(resumo);
 
-  // ── Tabela ──
+  // ── SUB-ABAS ESTOQUE / SAÚDE ───────────────────────────────
+  const subTabWrap = document.createElement("div");
+  subTabWrap.style.cssText = "display:flex;border-bottom:1px solid var(--sep);margin-bottom:14px;margin-top:8px;";
+  
+  if (!window._estoqueSubTab) window._estoqueSubTab = "estoque";
+
+  ["estoque","saude"].forEach(st => {
+    const btn = document.createElement("button");
+    btn.style.cssText = `padding:7px 14px;background:none;border:none;font-family:inherit;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:${window._estoqueSubTab===st?"var(--text)":"var(--text3)"};border-bottom:2px solid ${window._estoqueSubTab===st?"var(--text)":"transparent"};margin-bottom:-1px;transition:all 0.15s;`;
+    btn.textContent = st === "estoque" ? "Estoque" : "Saúde";
+    btn.addEventListener("click", () => { window._estoqueSubTab = st; render(); });
+    subTabWrap.appendChild(btn);
+  });
+  panel.appendChild(subTabWrap);
+
+
+  // ── Tabela (só na sub-aba estoque) ──
+  if (window._estoqueSubTab !== "saude") {
   const tableWrap = document.createElement("div");
   tableWrap.style.cssText = "overflow-x:auto;";
 
@@ -2107,28 +2124,15 @@ function renderEstoqueTab(panel, color) {
   tableWrap.appendChild(table);
   panel.appendChild(tableWrap);
 
+  } // fecha if estoqueSubTab !== saude
+
   // Aviso SKUs sem custo
-  if (skusSemCusto > 0 && estoqueBlingData) {
+  if (window._estoqueSubTab !== "saude" && skusSemCusto > 0 && estoqueBlingData) {
     const warn = document.createElement("div");
     warn.style.cssText = "margin-top:10px;padding:8px 10px;background:#f8717111;border:1px solid #f8717133;border-radius:4px;font-size:10px;color:#f87171;";
     warn.textContent = `⚠ ${skusSemCusto} SKU${skusSemCusto > 1 ? "s" : ""} sem custo no Bling — verifique o campo "Preço de Custo" no cadastro do produto.`;
     panel.appendChild(warn);
   }
-
-  // ── SUB-ABAS ESTOQUE / SAÚDE ───────────────────────────────
-  const subTabWrap = document.createElement("div");
-  subTabWrap.style.cssText = "display:flex;border-bottom:1px solid var(--sep);margin-bottom:14px;margin-top:8px;";
-  
-  if (!window._estoqueSubTab) window._estoqueSubTab = "estoque";
-
-  ["estoque","saude"].forEach(st => {
-    const btn = document.createElement("button");
-    btn.style.cssText = `padding:7px 14px;background:none;border:none;font-family:inherit;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:${window._estoqueSubTab===st?"var(--text)":"var(--text3)"};border-bottom:2px solid ${window._estoqueSubTab===st?"var(--text)":"transparent"};margin-bottom:-1px;transition:all 0.15s;`;
-    btn.textContent = st === "estoque" ? "Estoque" : "Saúde";
-    btn.addEventListener("click", () => { window._estoqueSubTab = st; render(); });
-    subTabWrap.appendChild(btn);
-  });
-  panel.appendChild(subTabWrap);
 
   if (window._estoqueSubTab === "saude") {
     const saudeWrap = document.createElement("div");
@@ -2136,7 +2140,7 @@ function renderEstoqueTab(panel, color) {
     // Legenda
     const leg = document.createElement("div");
     leg.style.cssText = "display:flex;gap:14px;margin-bottom:12px;font-size:10px;flex-wrap:wrap;";
-    [{c:"#3dd68c",l:"<15d — subir"},{c:"#EF9F27",l:"15–90d — acomp."},{c:"#E24B4A",l:">90d — baixar"}].forEach(({c,l})=>{
+    [{c:"#3dd68c",l:"<15d — subir"},{c:"#EF9F27",l:"15–90d — acompanhar"},{c:"#E24B4A",l:">90d — baixar"}].forEach(({c,l})=>{
       const s = document.createElement("span");
       s.style.cssText = "display:flex;align-items:center;gap:4px;color:var(--text3);";
       s.innerHTML = `<span style="width:8px;height:8px;border-radius:2px;background:${c};display:inline-block;flex-shrink:0;"></span>${l}`;
@@ -2162,7 +2166,7 @@ function renderEstoqueTab(panel, color) {
       const c = d.dias <= 15 ? "#3dd68c" : d.dias <= 90 ? "#EF9F27" : "#E24B4A";
       const pct = Math.min(d.dias, 500) / maxD * 100;
       const diasLabel = d.dias >= 999 ? "sem vendas" : d.dias + "d";
-      const badgeText = d.dias <= 15 ? "↑ subir" : d.dias <= 90 ? "~ acomp." : "↓ baixar";
+      const badgeText = d.dias <= 15 ? "↑ subir" : d.dias <= 90 ? "~ acompanhar" : "↓ baixar";
       const valorStr = d.valor > 0 ? "R$" + Math.round(d.valor/1000) + "k" : "—";
       const badgeInside = pct >= 22;
       const badge = `<span style="background:${c}40;color:${c};border:1px solid ${c}66;border-radius:3px;padding:1px 6px;font-size:9px;white-space:nowrap;">${badgeText}</span>`;
