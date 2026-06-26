@@ -2012,6 +2012,9 @@ function renderEstoqueTab(panel, color) {
     return { ...r, custo, valor };
   });
 
+  // Declara temCusto aqui para estar disponível em toda a função
+  const temCusto = enriched.some(r => r.valor > 0);
+
   // ── Header resumo ──
   const resumo = document.createElement("div");
   resumo.style.cssText = "display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;";
@@ -2112,7 +2115,6 @@ function renderEstoqueTab(panel, color) {
 
   // ── PARETO Chart.js ─────────────────────────────────────────
   // Se tem custo, ordena por valor; se não tem, ordena por aptas
-  const temCusto = enriched.some(r => r.valor > 0);
   const paretoBase = temCusto
     ? enriched.filter(r => r.valor > 0).sort((a,b) => b.valor - a.valor)
     : enriched.filter(r => r.aptas > 0).sort((a,b) => b.aptas - a.aptas);
