@@ -2131,13 +2131,12 @@ function renderEstoqueTab(panel, color) {
   panel.appendChild(subTabWrap);
 
   if (window._estoqueSubTab === "saude") {
-    // ── Gráfico de saúde por giro ──
     const saudeWrap = document.createElement("div");
 
     // Legenda
     const leg = document.createElement("div");
     leg.style.cssText = "display:flex;gap:14px;margin-bottom:12px;font-size:10px;flex-wrap:wrap;";
-    [{c:"#3dd68c",l:"SUBIR <15d"},{c:"#EF9F27",l:"ACOMPANHAR 15–90d"},{c:"#E24B4A",l:"BAIXAR >90d"}].forEach(({c,l})=>{
+    [{c:"#3dd68c",l:"<15d — subir"},{c:"#EF9F27",l:"15–90d — acomp."},{c:"#E24B4A",l:">90d — baixar"}].forEach(({c,l})=>{
       const s = document.createElement("span");
       s.style.cssText = "display:flex;align-items:center;gap:4px;color:var(--text3);";
       s.innerHTML = `<span style="width:8px;height:8px;border-radius:2px;background:${c};display:inline-block;flex-shrink:0;"></span>${l}`;
@@ -2145,19 +2144,15 @@ function renderEstoqueTab(panel, color) {
     });
     saudeWrap.appendChild(leg);
 
-    // Calcula dias de estoque por SKU (usa vendas30d col 17 do Excel — idx 10 no array rows)
-    // vendas30d foi lido no parser? Não — precisamos adicionar ao parser
-    // Por ora usa os dados que temos: se row tiver vendas30, usa, senão mostra sem vendas
-    const maxD = 500;
-
     // Ordena por dias decrescente
+    const maxDias = 500;
     const saudeRows = [...rows].map(r => {
       const vendas30 = Number(r.vendas30) || 0;
       const dias = vendas30 > 0 ? Math.round(r.aptas / (vendas30 / 30)) : 999;
       return {...r, vendas30, dias};
     }).sort((a,b) => b.dias - a.dias);
 
-    const maxDias = Math.min(saudeRows[0]?.dias || 500, 500);
+    const maxD = Math.min(saudeRows[0]?.dias || 500, 500);
 
     // Card de detalhe
     const detCard = document.createElement("div");
@@ -2165,21 +2160,27 @@ function renderEstoqueTab(panel, color) {
 
     saudeRows.forEach(d => {
       const c = d.dias <= 15 ? "#3dd68c" : d.dias <= 90 ? "#EF9F27" : "#E24B4A";
-      const pct = Math.min(d.dias, 500) / maxDias * 100;
+      const pct = Math.min(d.dias, 500) / maxD * 100;
       const diasLabel = d.dias >= 999 ? "sem vendas" : d.dias + "d";
-      const badgeText = d.dias <= 15 ? "↑ SUBIR" : d.dias <= 90 ? "~ ACOMPANHAR" : "↓ BAIXAR";
+      const badgeText = d.dias <= 15 ? "↑ subir" : d.dias <= 90 ? "~ acomp." : "↓ baixar";
       const valorStr = d.valor > 0 ? "R$" + Math.round(d.valor/1000) + "k" : "—";
+      const badgeInside = pct >= 22;
+      const badge = `<span style="background:${c}40;color:${c};border:1px solid ${c}66;border-radius:3px;padding:1px 6px;font-size:9px;white-space:nowrap;">${badgeText}</span>`;
 
       const row = document.createElement("div");
       row.style.cssText = "display:flex;align-items:center;gap:8px;margin-bottom:6px;cursor:pointer;";
       row.innerHTML = `
-        <div style="width:130px;font-size:10px;color:#e8e8e8;font-weight:600;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">${d.sku}</div>
-        <div style="flex:1;background:var(--bg2);border-radius:4px;height:24px;overflow:hidden;position:relative;">
-          <div style="width:${pct}%;background:${c}22;border-right:2px solid ${c};height:100%;border-radius:4px 0 0 4px;position:absolute;left:0;top:0;"></div>
-          <div style="position:absolute;left:${pct}%;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:6px;padding-left:6px;white-space:nowrap;">
-            <span style="background:${c}22;color:${c};border:1px solid ${c}55;border-radius:3px;padding:1px 6px;font-size:8px;letter-spacing:1px;">${badgeText}</span>
-            <span style="font-size:9px;color:var(--text3);">${valorStr} · ${diasLabel}</span>
+        <div style="width:130px;font-size:10px;color:var(--text);font-weight:600;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">${d.sku}</div>
+        <div style="flex:1;background:var(--bg2);border-radius:4px;height:26px;position:relative;overflow:visible;">
+          <div style="position:absolute;left:0;top:0;bottom:0;width:${pct}%;background:${c}25;border-right:2px solid ${c};border-radius:4px 0 0 4px;overflow:hidden;">
+            ${badgeInside ? `<div style="position:absolute;right:6px;top:50%;transform:translateY(-50%);">${badge}</div>` : ""}
           </div>
+          ${!badgeInside ? `<div style="position:absolute;left:calc(${pct}% + 6px);top:50%;transform:translateY(-50%);">${badge}</div>` : ""}
+        </div>
+        <div style="width:110px;flex-shrink:0;white-space:nowrap;font-size:11px;text-align:right;">
+          <span style="color:var(--text3);">${valorStr}</span>
+          <span style="color:var(--text3);margin:0 3px;">·</span>
+          <span style="font-weight:500;color:${c};">${diasLabel}</span>
         </div>`;
 
       row.addEventListener("click", () => {
@@ -2190,12 +2191,12 @@ function renderEstoqueTab(panel, color) {
           : d.dias >= 90
           ? `Com ${d.vendas30} vendas/mês e ${d.aptas} un, leva ~${d.dias} dias pra zerar. Considere reduzir o preço.`
           : d.dias <= 15
-          ? `Acabando rápido. Com ${d.vendas30} vendas/mês dura só ${d.dias} dias. Considere subir o preço ou antecipar reposição.`
+          ? `Acabando rápido. Dura só ${d.dias} dias. Considere subir o preço ou antecipar reposição.`
           : `Giro equilibrado. Com ${d.vendas30} vendas/mês dura ~${d.dias} dias.`;
         detCard.innerHTML = `
           <div style="font-size:12px;font-weight:600;color:${c};margin-bottom:8px;">${d.sku}</div>
           <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:8px;">
-            <div><div style="font-size:9px;color:var(--text3);margin-bottom:2px;">VALOR</div><div style="font-size:14px;font-weight:500;color:${c};">${d.valor>0?"R$ "+d.valor.toLocaleString("pt-BR"):"—"}</div></div>
+            <div><div style="font-size:9px;color:var(--text3);margin-bottom:2px;">VALOR</div><div style="font-size:14px;font-weight:500;color:${c};">${d.valor > 0 ? "R$ " + d.valor.toLocaleString("pt-BR") : "—"}</div></div>
             <div><div style="font-size:9px;color:var(--text3);margin-bottom:2px;">VENDAS 30D</div><div style="font-size:14px;color:var(--text);">${d.vendas30} un</div></div>
             <div><div style="font-size:9px;color:var(--text3);margin-bottom:2px;">DIAS ESTOQUE</div><div style="font-size:14px;font-weight:500;color:${c};">${diasLabel}</div></div>
           </div>
