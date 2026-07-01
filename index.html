@@ -1921,30 +1921,25 @@ async function processarExcelEstoque(file) {
 // ── BLING /produtos ──────────────────────────────────────────
 // ── Parser Matriz RS ──────────────────────────────────────────
 async function processarRelatorioMatriz(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      try {
-        const data = new Uint8Array(e.target.result);
-        const wb = XLSX.read(data, {type:"array"});
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:""});
-        const dados = [];
-        for (let i = 1; i < rows.length; i++) {
-          const row = rows[i];
-          const sku = String(row[0] || "").trim();
-          const produto = String(row[1] || "").trim();
-          if (!produto || produto.includes("Totais")) continue;
-          const qty = Math.round(parseFloat(String(row[3]||"0").replace(/\./g,"").replace(",","."))) || 0;
-          const custo = parseFloat(String(row[4]||"0").replace(/\./g,"").replace(",",".")) || 0;
-          const valor = parseFloat(String(row[5]||"0").replace(/\./g,"").replace(",",".")) || 0;
-          dados.push({ sku: sku||"—", produto, qty, custo, valor });
-        }
-        resolve(dados);
-      } catch(err) { reject(err); }
-    };
-    reader.readAsArrayBuffer(file);
-  });
+  const arrayBuffer = await file.arrayBuffer();
+  const XLSX = await import("https://cdn.jsdelivr.net/npm/xlsx@0.18.5/+esm");
+  const wb = XLSX.read(arrayBuffer, { type: "array" });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
+  const dados = [];
+  for (let i = 1; i < raw.length; i++) {
+    const row = raw[i];
+    const sku = String(row[0] || "").trim();
+    const produto = String(row[1] || "").trim();
+    if (!produto || produto.toLowerCase().includes("totai")) continue;
+    const parseNum = v => parseFloat(String(v||"0").replace(/\./g,"").replace(",",".")) || 0;
+    const qty = Math.round(parseNum(row[3]));
+    const custo = parseNum(row[4]);
+    const valor = parseNum(row[5]);
+    if (qty <= 0) continue; // só produtos com estoque positivo
+    dados.push({ sku: sku || "—", produto, qty, custo, valor });
+  }
+  return dados;
 }
 
 async function fetchBlingProdutos() {
@@ -2160,7 +2155,7 @@ function renderFilialSP(panel, color) {
     }
   } else {
     // ── Saúde (filial SP) ────────────────────────────────────────
-    renderSaudeChart(panel, enriched);
+    renderSaudeChart(panel, enriched.filter(r => r.aptas > 0));
   }
 }
 
@@ -2277,7 +2272,7 @@ function renderMatrizRS(panel, color) {
       custo: r.custo,
       valor: r.valor,
     }));
-    renderSaudeChart(panel, matrizEnriched);
+    renderSaudeChart(panel, matrizEnriched.filter(r => (r.aptas||r.qty||0) > 0));
   }
 }
 
