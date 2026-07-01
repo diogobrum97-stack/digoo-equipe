@@ -450,6 +450,9 @@ let estoqueFullscreen=false;
 let estoqueBlingData=null;
 let estoqueBlingLoading=false;
 let estoqueBlingErro=null;
+let estoqueLoc="filial"; // "filial" ou "matriz"
+let matrizRows=[]; // dados do relatório Bling Matriz RS
+let matrizFileName="";
 const BLING_PROXY="https://digoo-backend.vercel.app";
 let digoMLOpen=false;
 let digoMLMax=false; // modo fullscreen
@@ -1384,6 +1387,29 @@ Reclamações abertas: ${mlReclamacoes.data.length}
   return ctx;
 }
 
+function formatChatMsg(text) {
+  // Converte markdown básico para HTML limpo
+  return text
+    // Títulos viram texto em negrito separado
+    .replace(/^#{1,3} (.+)$/gm, '<div style="font-weight:500;color:var(--text);margin:10px 0 4px;">$1</div>')
+    // **negrito**
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    // *itálico*
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    // `código`
+    .replace(/`([^`]+)`/g, '<code style="background:var(--bg2);padding:1px 5px;border-radius:3px;font-size:11px;font-family:monospace;">$1</code>')
+    // Linhas com - ou • viram itens separados com margem
+    .replace(/^[-•] (.+)$/gm, '<div style="padding:2px 0 2px 12px;border-left:2px solid var(--border);margin:3px 0;color:var(--text2);">$1</div>')
+    // --- separador
+    .replace(/^---+$/gm, '<hr style="border:none;border-top:1px solid var(--border);margin:8px 0;">')
+    // Parágrafos: quebras de linha duplas viram espaço
+    .replace(/
+{2,}/g, '<div style="height:8px;"></div>')
+    // Quebra simples
+    .replace(/
+/g, '<br>');
+}
+
 function renderChatModal(memberName, color) {
   const modal = document.getElementById(`chat-${memberName}`);
   if(!modal) return;
@@ -1422,7 +1448,7 @@ function renderChatModal(memberName, color) {
     if(msg.role === "user") {
       bubble.style.cssText = `background:${color}22;color:${color};border:1px solid ${color}44;align-self:flex-end;`;
     }
-    bubble.textContent = msg.content;
+    bubble.innerHTML = formatChatMsg(msg.content);
     msgs.appendChild(bubble);
   });
 
@@ -1884,6 +1910,34 @@ async function processarExcelEstoque(file) {
 }
 
 // ── BLING /produtos ──────────────────────────────────────────
+// ── Parser Matriz RS ──────────────────────────────────────────
+async function processarRelatorioMatriz(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const wb = XLSX.read(data, {type:"array"});
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:""});
+        const dados = [];
+        for (let i = 1; i < rows.length; i++) {
+          const row = rows[i];
+          const sku = String(row[0] || "").trim();
+          const produto = String(row[1] || "").trim();
+          if (!produto || produto.includes("Totais")) continue;
+          const qty = Math.round(parseFloat(String(row[3]||"0").replace(/\./g,"").replace(",","."))) || 0;
+          const custo = parseFloat(String(row[4]||"0").replace(/\./g,"").replace(",",".")) || 0;
+          const valor = parseFloat(String(row[5]||"0").replace(/\./g,"").replace(",",".")) || 0;
+          dados.push({ sku: sku||"—", produto, qty, custo, valor });
+        }
+        resolve(dados);
+      } catch(err) { reject(err); }
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
 async function fetchBlingProdutos() {
   estoqueBlingLoading = true;
   estoqueBlingErro = null;
@@ -1915,47 +1969,67 @@ async function fetchBlingProdutos() {
 
 // ── RENDER CARD ESTOQUE ──────────────────────────────────────
 function renderEstoqueTab(panel, color) {
-  // ── Upload ──
+
+  // ── Abas de localização: Filial SP / Matriz RS ──────────────
+  const locWrap = document.createElement("div");
+  locWrap.style.cssText = "display:flex;border-bottom:1px solid var(--sep);margin-bottom:14px;";
+  ["filial","matriz"].forEach(loc => {
+    const btn = document.createElement("button");
+    const active = estoqueLoc === loc;
+    btn.style.cssText = `padding:8px 16px;background:none;border:none;font-family:inherit;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:${active?"var(--text)":"var(--text3)"};border-bottom:2px solid ${active?"var(--text)":"transparent"};margin-bottom:-1px;transition:all 0.15s;`;
+    btn.textContent = loc === "filial" ? "Filial SP" : "Matriz RS";
+    btn.addEventListener("click", () => { estoqueLoc = loc; render(); });
+    locWrap.appendChild(btn);
+  });
+  panel.appendChild(locWrap);
+
+  if (estoqueLoc === "filial") {
+    renderFilialSP(panel, color);
+  } else {
+    renderMatrizRS(panel, color);
+  }
+}
+
+function renderFilialSP(panel, color) {
+  // ── Upload planilha Full ML ──────────────────────────────────
   const uploadWrap = document.createElement("div");
   uploadWrap.style.cssText = "margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;";
 
   const uploadLabel = document.createElement("label");
-  uploadLabel.style.cssText = `display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:none;border:1px dashed ${color}66;border-radius:5px;color:${color};font-size:10px;letter-spacing:1.5px;cursor:pointer;font-family:inherit;transition:all 0.15s;`;
-  uploadLabel.innerHTML = `↑ ${estoqueExcelData ? "Trocar planilha" : "Importar Excel Full ML"}`;
+  uploadLabel.style.cssText = `display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:none;border:1px dashed ${color}66;border-radius:5px;color:${color};font-size:10px;letter-spacing:1.5px;cursor:pointer;`;
+  uploadLabel.innerHTML = `<span>↑</span><span>Trocar planilha</span>`;
   const fileInput = document.createElement("input");
-  fileInput.type = "file";
-  fileInput.accept = ".xlsx,.xls";
-  fileInput.style.display = "none";
-  fileInput.addEventListener("change", e => {
-    const f = e.target.files[0];
-    if (f) processarExcelEstoque(f);
+  fileInput.type = "file"; fileInput.accept = ".xlsx,.xls"; fileInput.style.display = "none";
+  fileInput.addEventListener("change", async e => {
+    const file = e.target.files[0]; if (!file) return;
+    await processarExcelEstoque(file);
   });
   uploadLabel.appendChild(fileInput);
   uploadWrap.appendChild(uploadLabel);
 
   if (estoqueExcelData?.fileName) {
-    const fname = document.createElement("span");
-    fname.style.cssText = "font-size:9px;color:var(--text3);";
-    fname.textContent = estoqueExcelData.fileName;
-    uploadWrap.appendChild(fname);
+    const fn = document.createElement("span");
+    fn.style.cssText = "font-size:9px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:260px;";
+    fn.textContent = estoqueExcelData.fileName;
+    uploadWrap.appendChild(fn);
   }
 
   // Status Bling
   const blingStatus = document.createElement("div");
-  blingStatus.style.cssText = "display:flex;align-items:center;gap:6px;margin-left:auto;";
+  blingStatus.style.cssText = "display:flex;align-items:center;gap:6px;margin-left:auto;font-size:9px;";
 
   if (estoqueBlingLoading) {
-    blingStatus.innerHTML = `<span class="spinning" style="color:var(--text3)">↻</span><span style="font-size:9px;color:var(--text3);letter-spacing:1px;">Buscando custos...</span>`;
+    blingStatus.innerHTML = `<span class="spinning" style="color:var(--text3)">↻</span><span style="color:var(--text3)">Carregando Bling...</span>`;
   } else if (estoqueBlingErro) {
-    blingStatus.innerHTML = `<span style="font-size:9px;color:#f87171;">⚠ Bling: ${estoqueBlingErro}</span>`;
-    const retryBtn = document.createElement("button");
-    retryBtn.textContent = "↻";
-    retryBtn.style.cssText = "background:none;border:1px solid #f8717166;color:#f87171;border-radius:3px;padding:2px 7px;font-size:10px;cursor:pointer;";
-    retryBtn.addEventListener("click", () => { estoqueBlingData = null; estoqueBlingErro = null; fetchBlingProdutos(); });
-    blingStatus.appendChild(retryBtn);
+    blingStatus.innerHTML = `<span style="color:#f87171">⚠ Bling: ${estoqueBlingErro}</span>`;
+    const authBtn = document.createElement("button");
+    authBtn.textContent = "Renovar token";
+    authBtn.style.cssText = "background:none;border:1px solid #fbbf2466;color:#fbbf24;border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer;letter-spacing:1px;margin-left:4px;";
+    authBtn.addEventListener("click", () => window.open("https://digoo-backend.vercel.app/api/bling-auth", "_blank"));
+    blingStatus.appendChild(authBtn);
   } else if (estoqueBlingData) {
-    const total = Object.keys(estoqueBlingData).length;
-    blingStatus.innerHTML = `<span style="width:7px;height:7px;border-radius:50%;background:#00ff77;display:inline-block;box-shadow:0 0 8px #00ff77;"></span><span style="font-size:9px;color:var(--text3);letter-spacing:1px;">${total} SKUs Bling</span>`;
+    const count = Object.keys(estoqueBlingData).length;
+    blingStatus.innerHTML = `<span style="color:#3dd68c">●</span><span style="color:var(--text3)">${count} SKUs Bling</span>`;
     const refBtn = document.createElement("button");
     refBtn.textContent = "↻";
     refBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:3px;padding:2px 7px;font-size:10px;cursor:pointer;";
@@ -1967,13 +2041,12 @@ function renderEstoqueTab(panel, color) {
     renewBtn.addEventListener("click", () => window.open("https://digoo-backend.vercel.app/api/bling-auth", "_blank"));
     blingStatus.appendChild(renewBtn);
   } else {
-    blingStatus.innerHTML = `<span style="width:7px;height:7px;border-radius:50%;background:#f87171;display:inline-block;"></span><span style="font-size:9px;color:var(--text3);">Proxy offline</span>`;
+    blingStatus.innerHTML = `<span style="color:var(--text3)">Bling desconectado</span>`;
     const connectBtn = document.createElement("button");
     connectBtn.textContent = "Conectar";
     connectBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer;letter-spacing:1px;";
     connectBtn.addEventListener("click", () => fetchBlingProdutos());
     blingStatus.appendChild(connectBtn);
-    // Botão OAuth — abre o fluxo de autorização
     const authBtn = document.createElement("button");
     authBtn.textContent = "Autorizar Bling";
     authBtn.style.cssText = "background:none;border:1px solid #fbbf2466;color:#fbbf24;border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer;letter-spacing:1px;margin-left:4px;";
@@ -1984,28 +2057,21 @@ function renderEstoqueTab(panel, color) {
   uploadWrap.appendChild(blingStatus);
   panel.appendChild(uploadWrap);
 
-  if (!estoqueExcelData) {
-    const hint = document.createElement("div");
-    hint.style.cssText = "text-align:center;padding:40px 0;color:var(--text3);font-size:11px;line-height:1.8;";
-    hint.innerHTML = `Importe a planilha Full ML (Filial SP)<br><span style="font-size:9px;opacity:0.6;">SKU · Produto · Aptas · Transferências · Pendentes</span>`;
-    panel.appendChild(hint);
+  if (!estoqueExcelData || !estoqueExcelData.rows || estoqueExcelData.rows.length === 0) {
+    const empty = document.createElement("div");
+    empty.style.cssText = "text-align:center;padding:40px 0;color:var(--text3);font-size:11px;";
+    empty.textContent = "Importe a planilha Full ML para ver o estoque";
+    panel.appendChild(empty);
     return;
   }
 
   const rows = estoqueExcelData.rows;
-  if (!rows.length) {
-    const e = document.createElement("p");
-    e.style.cssText = "color:#f87171;font-size:12px;padding:14px 0;";
-    e.textContent = "Nenhum dado encontrado. Verifique se a planilha é do Full ML.";
-    panel.appendChild(e);
-    return;
-  }
 
-  // ── Cruza dados ──
-  let totalValor = 0;
-  let skusSemCusto = 0;
-  let totalAptas = 0;
-
+  // ── Cards resumo ─────────────────────────────────────────────
+  const resumo = document.createElement("div");
+  resumo.style.cssText = "display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;";
+  let totalValor = 0, totalAptas = 0, skusSemCusto = 0;
+  const temCusto = rows.some(r => estoqueBlingData && estoqueBlingData[r.sku]);
   const enriched = rows.map(r => {
     const custo = estoqueBlingData ? (estoqueBlingData[r.sku] || 0) : null;
     const valor = custo !== null ? r.aptas * custo : null;
@@ -2015,216 +2081,276 @@ function renderEstoqueTab(panel, color) {
     return { ...r, custo, valor };
   });
 
-  // Declara temCusto aqui para estar disponível em toda a função
-  const temCusto = enriched.some(r => r.valor > 0);
-
-  // ── Header resumo ──
-  const resumo = document.createElement("div");
-  resumo.style.cssText = "display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;";
-
   [
-    {
-      label: temCusto ? "VALOR EM ESTOQUE" : "UNIDADES APTAS",
-      value: estoqueBlingData
-        ? `R$ ${totalValor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`
-        : "—",
-      color: "#3dd68c",
-      sub: skusSemCusto > 0 ? `${skusSemCusto} SKUs sem custo` : "todos com custo"
-    },
-    {
-      label: "UNIDADES APTAS",
-      value: totalAptas.toLocaleString("pt-BR"),
-      color: "#378ADD",
-      sub: `${rows.length} SKUs`
-    },
-    {
-      label: "CUSTO MÉDIO/UN",
-      value: estoqueBlingData && totalAptas > 0
-        ? `R$ ${(totalValor / totalAptas).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`
-        : "—",
-      color: "#7F77DD",
-      sub: "ponderado"
-    },
+    { label:"VALOR EM ESTOQUE", value: estoqueBlingData ? `R$ ${totalValor.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : "—", color:"#3dd68c", sub: skusSemCusto > 0 ? `${skusSemCusto} SKUs sem custo` : "todos com custo" },
+    { label:"UNIDADES APTAS", value: totalAptas.toLocaleString("pt-BR"), color:"#378ADD", sub:`${rows.length} SKUs` },
+    { label:"CUSTO MÉDIO/UN", value: estoqueBlingData && totalAptas > 0 ? `R$ ${(totalValor/totalAptas).toLocaleString("pt-BR",{minimumFractionDigits:2})}` : "—", color:"#7F77DD", sub:"ponderado" },
   ].forEach(s => {
     const card = document.createElement("div");
     card.style.cssText = `background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;border-top:2px solid ${s.color};`;
-    card.innerHTML = `
-      <div style="font-size:10px;color:var(--text3);letter-spacing:2px;margin-bottom:8px;text-transform:uppercase;">${s.label}</div>
-      <div style="font-size:24px;font-weight:600;color:${s.color};letter-spacing:0;text-shadow:0 0 16px ${s.color}66;">${s.value}</div>
-      <div style="font-size:11px;color:var(--text3);margin-top:4px;">${s.sub}</div>`;
+    card.innerHTML = `<div style="font-size:10px;color:var(--text3);letter-spacing:2px;margin-bottom:8px;text-transform:uppercase;">${s.label}</div><div style="font-size:24px;font-weight:600;color:${s.color};text-shadow:0 0 16px ${s.color}66;">${s.value}</div><div style="font-size:11px;color:var(--text3);margin-top:4px;">${s.sub}</div>`;
     resumo.appendChild(card);
   });
   panel.appendChild(resumo);
 
-  // ── SUB-ABAS ESTOQUE / SAÚDE ───────────────────────────────
-  const subTabWrap = document.createElement("div");
-  subTabWrap.style.cssText = "display:flex;border-bottom:1px solid var(--sep);margin-bottom:14px;margin-top:8px;";
-  
+  // ── Sub-abas Estoque / Saúde ──────────────────────────────────
   if (!window._estoqueSubTab) window._estoqueSubTab = "estoque";
-
+  const subTabWrap = document.createElement("div");
+  subTabWrap.style.cssText = "display:flex;border-bottom:1px solid var(--sep);margin-bottom:14px;";
   ["estoque","saude"].forEach(st => {
     const btn = document.createElement("button");
-    btn.style.cssText = `padding:7px 14px;background:none;border:none;font-family:inherit;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:${window._estoqueSubTab===st?"var(--text)":"var(--text3)"};border-bottom:2px solid ${window._estoqueSubTab===st?"var(--text)":"transparent"};margin-bottom:-1px;transition:all 0.15s;`;
+    const active = window._estoqueSubTab === st;
+    btn.style.cssText = `padding:7px 14px;background:none;border:none;font-family:inherit;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:${active?"var(--text)":"var(--text3)"};border-bottom:2px solid ${active?"var(--text)":"transparent"};margin-bottom:-1px;transition:all 0.15s;`;
     btn.textContent = st === "estoque" ? "Estoque" : "Saúde";
     btn.addEventListener("click", () => { window._estoqueSubTab = st; render(); });
     subTabWrap.appendChild(btn);
   });
   panel.appendChild(subTabWrap);
 
-
-  // ── Tabela (só na sub-aba estoque) ──
   if (window._estoqueSubTab !== "saude") {
-  const tableWrap = document.createElement("div");
-  tableWrap.style.cssText = "overflow-x:auto;";
+    // ── Tabela estoque ───────────────────────────────────────────
+    const tableWrap = document.createElement("div");
+    tableWrap.style.cssText = "overflow-x:auto;";
+    const table = document.createElement("table");
+    table.style.cssText = "width:100%;border-collapse:collapse;";
+    table.innerHTML = `<thead><tr style="border-bottom:1px solid var(--sep);">
+      <th style="text-align:left;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">SKU</th>
+      <th style="text-align:left;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">PRODUTO</th>
+      <th style="text-align:center;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">APTAS</th>
+      <th style="text-align:center;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">TRANSF</th>
+      <th style="text-align:center;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">PEND</th>
+      <th style="text-align:right;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">CUSTO</th>
+      <th style="text-align:right;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">VALOR</th>
+    </tr></thead><tbody id="estoque-tbody"></tbody>`;
+    tableWrap.appendChild(table);
+    panel.appendChild(tableWrap);
 
-  const table = document.createElement("table");
-  table.style.cssText = "width:100%;border-collapse:collapse;font-size:11px;";
-
-  // Cabeçalho
-  const thead = document.createElement("thead");
-  thead.innerHTML = `
-    <tr style="border-bottom:1px solid var(--sep);">
-      <th style="text-align:left;padding:6px 8px;font-size:9px;letter-spacing:1.5px;color:var(--text3);font-weight:500;">SKU</th>
-      <th style="text-align:left;padding:6px 8px;font-size:9px;letter-spacing:1.5px;color:var(--text3);font-weight:500;">PRODUTO</th>
-      <th style="text-align:center;padding:6px 8px;font-size:9px;letter-spacing:1.5px;color:var(--text3);font-weight:500;">APTAS</th>
-      <th style="text-align:center;padding:6px 8px;font-size:9px;letter-spacing:1.5px;color:var(--text3);font-weight:500;">TRANSF</th>
-      <th style="text-align:center;padding:6px 8px;font-size:9px;letter-spacing:1.5px;color:var(--text3);font-weight:500;">PEND</th>
-      <th style="text-align:right;padding:6px 8px;font-size:9px;letter-spacing:1.5px;color:var(--text3);font-weight:500;">CUSTO</th>
-      <th style="text-align:right;padding:6px 8px;font-size:9px;letter-spacing:1.5px;color:var(--text3);font-weight:500;">VALOR</th>
-    </tr>`;
-  table.appendChild(thead);
-
-  const tbody = document.createElement("tbody");
-  enriched
-    .sort((a, b) => (b.valor || 0) - (a.valor || 0))
-    .forEach(r => {
+    const tbody = table.querySelector("#estoque-tbody");
+    enriched.forEach(r => {
+      const semCusto = !r.custo;
+      const custoStr = r.custo > 0 ? `R$ ${r.custo.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : `<span style="color:#f87171;font-size:9px;">sem custo</span>`;
+      const valorStr = r.valor > 0 ? `R$ ${r.valor.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : "—";
       const tr = document.createElement("tr");
-      tr.style.cssText = "border-bottom:1px solid var(--sep);transition:background 0.1s;";
-      tr.addEventListener("mouseenter", () => tr.style.background = "var(--bg3)");
-      tr.addEventListener("mouseleave", () => tr.style.background = "");
-
-      const semCusto = r.custo === 0 || r.custo === null;
-      const custoStr = r.custo !== null
-        ? `R$ ${r.custo.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`
-        : "—";
-      const valorStr = r.valor !== null
-        ? `R$ ${r.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`
-        : "—";
-
+      tr.style.borderBottom = "1px solid var(--sep2)";
       tr.innerHTML = `
-        <td style="padding:8px 8px;color:#e8e8e8;font-weight:600;font-size:11px;white-space:nowrap;font-family:'IBM Plex Mono',monospace;">${r.sku}</td>
-        <td style="padding:8px 8px;color:var(--text2);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;">${r.produto}</td>
-        <td style="padding:8px 8px;text-align:center;color:${r.aptas>0?'var(--text)':'var(--text3)'};font-weight:${r.aptas>0?'500':'400'};font-family:'IBM Plex Mono',monospace;">${r.aptas||'—'}</td>
-        <td style="padding:8px 8px;text-align:center;color:var(--text3);font-family:'IBM Plex Mono',monospace;">${r.transf||'—'}</td>
-        <td style="padding:8px 8px;text-align:center;color:${r.pendente>0?'#fbbf24':'var(--text3)'};font-weight:${r.pendente>0?'500':'400'};font-family:'IBM Plex Mono',monospace;">${r.pendente||'—'}</td>
-        <td style="padding:8px 8px;text-align:right;color:${semCusto?'#f87171':'var(--text2)'};font-family:'IBM Plex Mono',monospace;">${custoStr}</td>
-        <td style="padding:8px 8px;text-align:right;color:${semCusto?'var(--text3)':r.valor>5000?'#3dd68c':r.valor>1000?'#3dd68c':'var(--text2)'};font-weight:500;font-family:'IBM Plex Mono',monospace;">${valorStr}</td>`;
+        <td style="padding:8px 8px;color:#e8e8e8;font-size:11px;white-space:nowrap;font-weight:600;">${r.sku}</td>
+        <td style="padding:8px 8px;color:var(--text2);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;">${r.produto}</td>
+        <td style="padding:8px 8px;text-align:center;color:${r.aptas>0?"var(--text)":"var(--text3)"};font-weight:${r.aptas>0?"500":"400"};">${r.aptas||"—"}</td>
+        <td style="padding:8px 8px;text-align:center;color:var(--text3);">${r.transf||"—"}</td>
+        <td style="padding:8px 8px;text-align:center;color:${r.pendente>0?"#fbbf24":"var(--text3)"};font-weight:${r.pendente>0?"500":"400"};">${r.pendente||"—"}</td>
+        <td style="padding:8px 8px;text-align:right;color:${semCusto?"#f87171":"var(--text2)"};">${custoStr}</td>
+        <td style="padding:8px 8px;text-align:right;color:${semCusto?"var(--text3)":r.valor>5000?"#3dd68c":r.valor>1000?"#3dd68c":"var(--text2)"};font-weight:500;">${valorStr}</td>`;
       tbody.appendChild(tr);
     });
-  table.appendChild(tbody);
-  tableWrap.appendChild(table);
-  panel.appendChild(tableWrap);
 
-  } // fecha if estoqueSubTab !== saude
-
-  // Aviso SKUs sem custo
-  if (window._estoqueSubTab !== "saude" && skusSemCusto > 0 && estoqueBlingData) {
-    const warn = document.createElement("div");
-    warn.style.cssText = "margin-top:10px;padding:8px 10px;background:#f8717111;border:1px solid #f8717133;border-radius:4px;font-size:10px;color:#f87171;";
-    warn.textContent = `⚠ ${skusSemCusto} SKU${skusSemCusto > 1 ? "s" : ""} sem custo no Bling — verifique o campo "Preço de Custo" no cadastro do produto.`;
-    panel.appendChild(warn);
+    if (skusSemCusto > 0 && estoqueBlingData) {
+      const warn = document.createElement("div");
+      warn.style.cssText = "margin-top:12px;padding:8px 12px;background:#f8711408;border:1px solid #f8711422;border-radius:5px;font-size:10px;color:#f87171;";
+      warn.textContent = `⚠ ${skusSemCusto} SKUs sem custo no Bling — verifique o campo "Preço de Custo" no cadastro do produto.`;
+      panel.appendChild(warn);
+    }
+  } else {
+    // ── Saúde (filial SP) ────────────────────────────────────────
+    renderSaudeChart(panel, enriched);
   }
-
-  if (window._estoqueSubTab === "saude") {
-    const saudeWrap = document.createElement("div");
-    saudeWrap.style.cssText = "font-family:system-ui,-apple-system,sans-serif;";
-
-    // Legenda
-    const leg = document.createElement("div");
-    leg.style.cssText = "display:flex;gap:14px;margin-bottom:12px;font-size:10px;flex-wrap:wrap;";
-    [{c:"#3dd68c",l:"<15d — subir"},{c:"#EF9F27",l:"15–90d — acompanhar"},{c:"#E24B4A",l:">90d — baixar"}].forEach(({c,l})=>{
-      const s = document.createElement("span");
-      s.style.cssText = "display:flex;align-items:center;gap:4px;color:var(--text3);";
-      s.innerHTML = `<span style="width:8px;height:8px;border-radius:2px;background:${c};display:inline-block;flex-shrink:0;"></span>${l}`;
-      leg.appendChild(s);
-    });
-    saudeWrap.appendChild(leg);
-
-    // Ordena por dias decrescente
-    const maxDias = 500;
-    const saudeRows = [...enriched].map(r => {
-      const vendas30 = Number(r.vendas30) || 0;
-      const dias = vendas30 > 0 ? Math.round(r.aptas / (vendas30 / 30)) : 999;
-      return {...r, vendas30, dias};
-    }).sort((a,b) => b.dias - a.dias);
-
-    const maxD = Math.min(saudeRows[0]?.dias || 500, 500);
-
-    // Card de detalhe inline (aparece abaixo da linha clicada)
-    let activeDetCard = null;
-
-    saudeRows.forEach(d => {
-      const c = d.dias <= 15 ? "#3dd68c" : d.dias <= 90 ? "#EF9F27" : "#E24B4A";
-      const pct = Math.min(d.dias, 500) / maxD * 100;
-      const diasLabel = d.dias >= 999 ? "sem vendas" : d.dias + "d";
-      const badgeText = d.dias <= 15 ? "↑ subir" : d.dias <= 90 ? "~ acompanhar" : "↓ baixar";
-      const valorStr = d.valor > 0 ? "R$" + Math.round(d.valor/1000) + "k" : "—";
-      const badgeInside = pct >= 22;
-      const badge = `<span style="background:${c}40;color:${c};border:1px solid ${c}66;border-radius:3px;padding:1px 6px;font-size:9px;white-space:nowrap;">${badgeText}</span>`;
-
-      const row = document.createElement("div");
-      row.style.cssText = "display:flex;align-items:center;gap:8px;margin-bottom:6px;cursor:pointer;";
-      row.innerHTML = `
-        <div style="width:130px;font-size:10px;color:var(--text3);font-weight:400;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">${d.sku}</div>
-        <div style="flex:1;background:var(--bg2);border-radius:4px;height:26px;position:relative;overflow:visible;">
-          <div style="position:absolute;left:0;top:0;bottom:0;width:${pct}%;background:${c}25;border-right:2px solid ${c};border-radius:4px 0 0 4px;overflow:hidden;">
-            ${badgeInside ? `<div style="position:absolute;right:6px;top:50%;transform:translateY(-50%);">${badge}</div>` : ""}
-          </div>
-          ${!badgeInside ? `<div style="position:absolute;left:calc(${pct}% + 6px);top:50%;transform:translateY(-50%);">${badge}</div>` : ""}
-        </div>
-        <div style="width:110px;flex-shrink:0;white-space:nowrap;font-size:11px;text-align:right;">
-          <span style="color:var(--text3);">${valorStr}</span>
-          <span style="color:var(--text3);margin:0 3px;">·</span>
-          <span style="font-weight:500;color:${c};">${diasLabel}</span>
-        </div>`;
-
-      row.addEventListener("click", () => {
-        // Remove detalhe anterior se existir
-        if (activeDetCard) activeDetCard.remove();
-        // Toggle: clicou na mesma linha fecha
-        if (activeDetCard && activeDetCard.dataset.sku === d.sku) {
-          activeDetCard = null;
-          return;
-        }
-        const msg = d.dias >= 999
-          ? "Nenhuma venda nos últimos 30 dias. Avalie promoção ou liquidação."
-          : d.dias >= 90
-          ? `Com ${d.vendas30} vendas/mês e ${d.aptas} un, leva ~${d.dias} dias pra zerar. Considere reduzir o preço.`
-          : d.dias <= 15
-          ? `Acabando rápido. Dura só ${d.dias} dias. Considere subir o preço ou antecipar reposição.`
-          : `Giro equilibrado. Com ${d.vendas30} vendas/mês dura ~${d.dias} dias.`;
-        const det = document.createElement("div");
-        det.dataset.sku = d.sku;
-        det.style.cssText = `margin:4px 0 8px 138px;padding:10px 14px;background:var(--bg3);border-left:3px solid ${c};border-radius:0 6px 6px 0;`;
-        det.innerHTML = `
-          <div style="font-size:12px;font-weight:600;color:${c};margin-bottom:8px;">${d.sku}</div>
-          <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:8px;">
-            <div><div style="font-size:9px;color:var(--text3);margin-bottom:2px;">VALOR</div><div style="font-size:14px;font-weight:500;color:${c};">${d.valor > 0 ? "R$ " + d.valor.toLocaleString("pt-BR") : "—"}</div></div>
-            <div><div style="font-size:9px;color:var(--text3);margin-bottom:2px;">VENDAS 30D</div><div style="font-size:14px;color:var(--text);">${d.vendas30} un</div></div>
-            <div><div style="font-size:9px;color:var(--text3);margin-bottom:2px;">DIAS ESTOQUE</div><div style="font-size:14px;font-weight:500;color:${c};">${diasLabel}</div></div>
-          </div>
-          <div style="font-size:11px;color:var(--text3);line-height:1.5;font-family:system-ui,sans-serif;">${msg}</div>`;
-        row.insertAdjacentElement("afterend", det);
-        activeDetCard = det;
-      });
-
-      saudeWrap.appendChild(row);
-    });
-
-    panel.appendChild(saudeWrap);
-  }
-
 }
+
+function renderMatrizRS(panel, color) {
+  // ── Upload relatório Bling Matriz ────────────────────────────
+  const uploadWrap = document.createElement("div");
+  uploadWrap.style.cssText = "margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;";
+
+  const uploadLabel = document.createElement("label");
+  uploadLabel.style.cssText = `display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:none;border:1px dashed ${color}66;border-radius:5px;color:${color};font-size:10px;letter-spacing:1.5px;cursor:pointer;`;
+  uploadLabel.innerHTML = `<span>↑</span><span>Trocar relatório</span>`;
+  const fileInput = document.createElement("input");
+  fileInput.type = "file"; fileInput.accept = ".xlsx,.xls"; fileInput.style.display = "none";
+  fileInput.addEventListener("change", async e => {
+    const file = e.target.files[0]; if (!file) return;
+    matrizFileName = file.name;
+    try {
+      matrizRows = await processarRelatorioMatriz(file);
+      render();
+    } catch(err) {
+      console.error("Erro ao ler relatório:", err);
+    }
+  });
+  uploadLabel.appendChild(fileInput);
+  uploadWrap.appendChild(uploadLabel);
+
+  if (matrizFileName) {
+    const fn = document.createElement("span");
+    fn.style.cssText = "font-size:9px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:260px;";
+    fn.textContent = matrizFileName;
+    uploadWrap.appendChild(fn);
+  }
+  panel.appendChild(uploadWrap);
+
+  if (!matrizRows || matrizRows.length === 0) {
+    const empty = document.createElement("div");
+    empty.style.cssText = "text-align:center;padding:40px 0;color:var(--text3);font-size:11px;";
+    empty.textContent = "Importe o relatório de estoque do Bling (Matriz RS)";
+    panel.appendChild(empty);
+    return;
+  }
+
+  // ── Cards resumo Matriz ──────────────────────────────────────
+  const totalValor = matrizRows.reduce((s,r) => s + r.valor, 0);
+  const totalQty   = matrizRows.reduce((s,r) => s + r.qty, 0);
+  const custoMedio = totalQty > 0 ? totalValor / totalQty : 0;
+  const resumo = document.createElement("div");
+  resumo.style.cssText = "display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;";
+  [
+    { label:"VALOR EM ESTOQUE", value:`R$ ${totalValor.toLocaleString("pt-BR",{minimumFractionDigits:2})}`, color:"#3dd68c", sub:`${matrizRows.length} SKUs` },
+    { label:"UNIDADES", value: totalQty.toLocaleString("pt-BR"), color:"#378ADD", sub:"peças" },
+    { label:"CUSTO MÉDIO/UN", value:`R$ ${custoMedio.toLocaleString("pt-BR",{minimumFractionDigits:2})}`, color:"#7F77DD", sub:"ponderado" },
+  ].forEach(s => {
+    const card = document.createElement("div");
+    card.style.cssText = `background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;border-top:2px solid ${s.color};`;
+    card.innerHTML = `<div style="font-size:10px;color:var(--text3);letter-spacing:2px;margin-bottom:8px;text-transform:uppercase;">${s.label}</div><div style="font-size:24px;font-weight:600;color:${s.color};text-shadow:0 0 16px ${s.color}66;">${s.value}</div><div style="font-size:11px;color:var(--text3);margin-top:4px;">${s.sub}</div>`;
+    resumo.appendChild(card);
+  });
+  panel.appendChild(resumo);
+
+  // ── Sub-abas Estoque / Saúde Matriz ──────────────────────────
+  if (!window._matrizSubTab) window._matrizSubTab = "estoque";
+  const subTabWrap = document.createElement("div");
+  subTabWrap.style.cssText = "display:flex;border-bottom:1px solid var(--sep);margin-bottom:14px;";
+  ["estoque","saude"].forEach(st => {
+    const btn = document.createElement("button");
+    const active = window._matrizSubTab === st;
+    btn.style.cssText = `padding:7px 14px;background:none;border:none;font-family:inherit;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:${active?"var(--text)":"var(--text3)"};border-bottom:2px solid ${active?"var(--text)":"transparent"};margin-bottom:-1px;transition:all 0.15s;`;
+    btn.textContent = st === "estoque" ? "Estoque" : "Saúde";
+    btn.addEventListener("click", () => { window._matrizSubTab = st; render(); });
+    subTabWrap.appendChild(btn);
+  });
+  panel.appendChild(subTabWrap);
+
+  if (window._matrizSubTab !== "saude") {
+    // ── Tabela estoque Matriz ────────────────────────────────────
+    const tableWrap = document.createElement("div");
+    tableWrap.style.cssText = "overflow-x:auto;";
+    const table = document.createElement("table");
+    table.style.cssText = "width:100%;border-collapse:collapse;";
+    table.innerHTML = `<thead><tr style="border-bottom:1px solid var(--sep);">
+      <th style="text-align:left;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">SKU</th>
+      <th style="text-align:left;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">PRODUTO</th>
+      <th style="text-align:center;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">QTD</th>
+      <th style="text-align:right;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">CUSTO</th>
+      <th style="text-align:right;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">VALOR</th>
+    </tr></thead><tbody></tbody>`;
+    tableWrap.appendChild(table);
+    panel.appendChild(tableWrap);
+
+    const tbody = table.querySelector("tbody");
+    [...matrizRows].sort((a,b) => b.valor - a.valor).forEach(r => {
+      const tr = document.createElement("tr");
+      tr.style.borderBottom = "1px solid var(--sep2)";
+      tr.innerHTML = `
+        <td style="padding:8px 8px;color:#e8e8e8;font-size:11px;white-space:nowrap;font-weight:600;">${r.sku}</td>
+        <td style="padding:8px 8px;color:var(--text2);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;">${r.produto}</td>
+        <td style="padding:8px 8px;text-align:center;color:${r.qty>0?"var(--text)":"var(--text3)"};font-weight:${r.qty>0?"500":"400"};">${r.qty||"—"}</td>
+        <td style="padding:8px 8px;text-align:right;color:var(--text2);">${r.custo>0?`R$ ${r.custo.toLocaleString("pt-BR",{minimumFractionDigits:2})}`:"—"}</td>
+        <td style="padding:8px 8px;text-align:right;color:${r.valor>5000?"#3dd68c":r.valor>1000?"#3dd68c":"var(--text2)"};font-weight:500;">${r.valor>0?`R$ ${r.valor.toLocaleString("pt-BR",{minimumFractionDigits:2})}`:"—"}</td>`;
+      tbody.appendChild(tr);
+    });
+  } else {
+    // ── Saúde Matriz ─────────────────────────────────────────────
+    // Usa vendas da filial SP como referência de giro
+    const filialVendas = {};
+    if (estoqueExcelData?.rows) {
+      estoqueExcelData.rows.forEach(r => { filialVendas[r.sku] = r.vendas30 || 0; });
+    }
+    const matrizEnriched = matrizRows.map(r => ({
+      ...r,
+      aptas: r.qty,
+      vendas30: filialVendas[r.sku] || 0,
+      custo: r.custo,
+      valor: r.valor,
+    }));
+    renderSaudeChart(panel, matrizEnriched);
+  }
+}
+
+function renderSaudeChart(panel, enriched) {
+  const saudeWrap = document.createElement("div");
+  saudeWrap.style.cssText = "font-family:system-ui,-apple-system,sans-serif;";
+
+  const leg = document.createElement("div");
+  leg.style.cssText = "display:flex;gap:14px;margin-bottom:12px;font-size:10px;flex-wrap:wrap;";
+  [{c:"#3dd68c",l:"<15d — subir"},{c:"#EF9F27",l:"15–90d — acompanhar"},{c:"#E24B4A",l:">90d — baixar"}].forEach(({c,l})=>{
+    const s = document.createElement("span");
+    s.style.cssText = "display:flex;align-items:center;gap:4px;color:var(--text3);";
+    s.innerHTML = `<span style="width:8px;height:8px;border-radius:2px;background:${c};display:inline-block;flex-shrink:0;"></span>${l}`;
+    leg.appendChild(s);
+  });
+  saudeWrap.appendChild(leg);
+
+  const saudeRows = [...enriched].map(r => {
+    const vendas30 = Number(r.vendas30) || 0;
+    const dias = vendas30 > 0 ? Math.round((r.aptas || r.qty || 0) / (vendas30 / 30)) : 999;
+    return {...r, vendas30, dias};
+  }).sort((a,b) => b.dias - a.dias);
+
+  const maxD = Math.min(saudeRows[0]?.dias || 500, 500);
+  let activeDetCard = null;
+
+  saudeRows.forEach(d => {
+    const c = d.dias <= 15 ? "#3dd68c" : d.dias <= 90 ? "#EF9F27" : "#E24B4A";
+    const pct = Math.min(d.dias, 500) / maxD * 100;
+    const diasLabel = d.dias >= 999 ? "sem vendas" : d.dias + "d";
+    const badgeText = d.dias <= 15 ? "↑ subir" : d.dias <= 90 ? "~ acompanhar" : "↓ baixar";
+    const valorStr = d.valor > 0 ? "R$" + Math.round(d.valor/1000) + "k" : "—";
+    const badgeInside = pct >= 22;
+    const badge = `<span style="background:${c}40;color:${c};border:1px solid ${c}66;border-radius:3px;padding:1px 6px;font-size:9px;white-space:nowrap;">${badgeText}</span>`;
+
+    const row = document.createElement("div");
+    row.style.cssText = "display:flex;align-items:center;gap:8px;margin-bottom:6px;cursor:pointer;";
+    row.innerHTML = `
+      <div style="width:130px;font-size:10px;color:var(--text3);font-weight:400;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">${d.sku}</div>
+      <div style="flex:1;background:var(--bg2);border-radius:4px;height:26px;position:relative;overflow:visible;">
+        <div style="position:absolute;left:0;top:0;bottom:0;width:${pct}%;background:${c}25;border-right:2px solid ${c};border-radius:4px 0 0 4px;overflow:hidden;">
+          ${badgeInside ? `<div style="position:absolute;right:6px;top:50%;transform:translateY(-50%);">${badge}</div>` : ""}
+        </div>
+        ${!badgeInside ? `<div style="position:absolute;left:calc(${pct}% + 6px);top:50%;transform:translateY(-50%);">${badge}</div>` : ""}
+      </div>
+      <div style="width:110px;flex-shrink:0;white-space:nowrap;font-size:11px;text-align:right;">
+        <span style="color:var(--text3);">${valorStr}</span>
+        <span style="color:var(--text3);margin:0 3px;">·</span>
+        <span style="font-weight:500;color:${c};">${diasLabel}</span>
+      </div>`;
+
+    row.addEventListener("click", () => {
+      if (activeDetCard) activeDetCard.remove();
+      if (activeDetCard && activeDetCard.dataset.sku === d.sku) { activeDetCard = null; return; }
+      const msg = d.dias >= 999
+        ? "Nenhuma venda nos últimos 30 dias. Avalie promoção ou liquidação."
+        : d.dias >= 90
+        ? `Com ${d.vendas30} vendas/mês e ${d.aptas||d.qty} un, leva ~${d.dias} dias pra zerar. Considere reduzir o preço.`
+        : d.dias <= 15
+        ? `Acabando rápido. Dura só ${d.dias} dias. Considere subir o preço ou antecipar reposição.`
+        : `Giro equilibrado. Com ${d.vendas30} vendas/mês dura ~${d.dias} dias.`;
+      const det = document.createElement("div");
+      det.dataset.sku = d.sku;
+      det.style.cssText = `margin:4px 0 8px 138px;padding:10px 14px;background:var(--bg3);border-left:3px solid ${c};border-radius:0 6px 6px 0;`;
+      det.innerHTML = `
+        <div style="font-size:12px;font-weight:600;color:${c};margin-bottom:8px;">${d.sku}</div>
+        <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:8px;">
+          <div><div style="font-size:9px;color:var(--text3);margin-bottom:2px;">VALOR</div><div style="font-size:14px;font-weight:500;color:${c};">${d.valor>0?"R$ "+d.valor.toLocaleString("pt-BR"):"—"}</div></div>
+          <div><div style="font-size:9px;color:var(--text3);margin-bottom:2px;">VENDAS 30D</div><div style="font-size:14px;color:var(--text);">${d.vendas30} un</div></div>
+          <div><div style="font-size:9px;color:var(--text3);margin-bottom:2px;">DIAS ESTOQUE</div><div style="font-size:14px;font-weight:500;color:${c};">${diasLabel}</div></div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);line-height:1.5;font-family:system-ui,sans-serif;">${msg}</div>`;
+      row.insertAdjacentElement("afterend", det);
+      activeDetCard = det;
+    });
+
+    saudeWrap.appendChild(row);
+  });
+
+  panel.appendChild(saudeWrap);
+}
+
 
 
 document.getElementById("user-label").addEventListener("click",()=>{localStorage.removeItem(STORAGE_KEY);currentUser=null;const s=document.getElementById("identity-screen");s.innerHTML="";s.style.display="flex";setupIdentityScreen();});
