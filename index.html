@@ -2280,78 +2280,87 @@ function renderSaudeChart(panel, enriched) {
   const saudeWrap = document.createElement("div");
   saudeWrap.style.cssText = "font-family:system-ui,-apple-system,sans-serif;";
 
+  // Legenda
   const leg = document.createElement("div");
-  leg.style.cssText = "display:flex;gap:14px;margin-bottom:12px;font-size:10px;flex-wrap:wrap;";
-  [{c:"#3dd68c",l:"<15d — subir"},{c:"#EF9F27",l:"15–90d — acompanhar"},{c:"#E24B4A",l:">90d — baixar"}].forEach(({c,l})=>{
+  leg.style.cssText = "display:flex;gap:14px;margin-bottom:14px;font-size:10px;flex-wrap:wrap;";
+  [{c:"#3dd68c",l:"<15d — subir"},{c:"#EF9F27",l:"15–90d — acompanhar"},{c:"#E24B4A",l:">90d — baixar"}].forEach(({c,l}) => {
     const s = document.createElement("span");
     s.style.cssText = "display:flex;align-items:center;gap:4px;color:var(--text3);";
-    s.innerHTML = `<span style="width:8px;height:8px;border-radius:2px;background:${c};display:inline-block;flex-shrink:0;"></span>${l}`;
+    s.innerHTML = '<span style="width:8px;height:8px;border-radius:2px;background:' + c + ';display:inline-block;flex-shrink:0;"></span>' + l;
     leg.appendChild(s);
   });
   saudeWrap.appendChild(leg);
 
+  // Grade de chips
+  const grade = document.createElement("div");
+  grade.style.cssText = "display:flex;flex-wrap:wrap;gap:6px;";
+
+  // Card de detalhe (aparece abaixo da grade)
+  const detWrap = document.createElement("div");
+
   const saudeRows = [...enriched].map(r => {
     const vendas30 = Number(r.vendas30) || 0;
-    const dias = vendas30 > 0 ? Math.round((r.aptas || r.qty || 0) / (vendas30 / 30)) : 999;
-    return {...r, vendas30, dias};
+    const aptas = Number(r.aptas || r.qty || 0);
+    const dias = vendas30 > 0 ? Math.round(aptas / (vendas30 / 30)) : 999;
+    return {...r, vendas30, aptas, dias};
   }).sort((a,b) => b.dias - a.dias);
 
-  const maxD = Math.min(saudeRows[0]?.dias || 500, 500);
-  let activeDetCard = null;
+  const cor = d => d.dias <= 15 ? "#3dd68c" : d.dias <= 90 ? "#EF9F27" : "#E24B4A";
+  const badgeText = d => d.dias <= 15 ? "↑ SUBIR" : d.dias <= 90 ? "~ ACOMPANHAR" : "↓ BAIXAR";
+  const diasLabel = d => d.dias >= 999 ? "sem vendas" : d.dias + "d";
+
+  let activeChip = null;
+  let activeDet = null;
 
   saudeRows.forEach(d => {
-    const c = d.dias <= 15 ? "#3dd68c" : d.dias <= 90 ? "#EF9F27" : "#E24B4A";
-    const pct = Math.min(d.dias, 500) / maxD * 100;
-    const diasLabel = d.dias >= 999 ? "sem vendas" : d.dias + "d";
-    const badgeText = d.dias <= 15 ? "↑ subir" : d.dias <= 90 ? "~ acompanhar" : "↓ baixar";
-    const valorStr = d.valor > 0 ? "R$" + Math.round(d.valor/1000) + "k" : "—";
-    const badgeInside = pct >= 22;
-    const badge = `<span style="background:${c}40;color:${c};border:1px solid ${c}66;border-radius:3px;padding:1px 6px;font-size:9px;white-space:nowrap;">${badgeText}</span>`;
+    const c = cor(d);
+    const chip = document.createElement("div");
+    chip.style.cssText = "display:flex;flex-direction:column;gap:3px;padding:8px 10px;border-radius:6px;border:1px solid " + c + "44;background:" + c + "10;cursor:pointer;min-width:110px;transition:all 0.15s;";
+    chip.innerHTML =
+      '<div style="font-size:9px;color:' + c + ';font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px;">' + d.sku + '</div>' +
+      '<div style="font-size:12px;font-weight:600;color:' + c + ';">' + diasLabel(d) + '</div>' +
+      '<div style="font-size:9px;color:var(--text3);">R$' + Math.round(d.valor / 1000) + 'k · ' + d.vendas30 + '/mês</div>';
 
-    const row = document.createElement("div");
-    row.style.cssText = "display:flex;align-items:center;gap:8px;margin-bottom:6px;cursor:pointer;";
-    row.innerHTML = `
-      <div style="width:130px;font-size:10px;color:var(--text3);font-weight:400;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">${d.sku}</div>
-      <div style="flex:1;background:var(--bg2);border-radius:4px;height:26px;position:relative;overflow:visible;">
-        <div style="position:absolute;left:0;top:0;bottom:0;width:${pct}%;background:${c}25;border-right:2px solid ${c};border-radius:4px 0 0 4px;overflow:hidden;">
-          ${badgeInside ? `<div style="position:absolute;right:6px;top:50%;transform:translateY(-50%);">${badge}</div>` : ""}
-        </div>
-        ${!badgeInside ? `<div style="position:absolute;left:calc(${pct}% + 6px);top:50%;transform:translateY(-50%);">${badge}</div>` : ""}
-      </div>
-      <div style="width:110px;flex-shrink:0;white-space:nowrap;font-size:11px;text-align:right;">
-        <span style="color:var(--text3);">${valorStr}</span>
-        <span style="color:var(--text3);margin:0 3px;">·</span>
-        <span style="font-weight:500;color:${c};">${diasLabel}</span>
-      </div>`;
+    chip.addEventListener("click", () => {
+      if (activeDet) activeDet.remove();
+      if (activeChip) activeChip.style.outline = "none";
+      if (activeChip === chip) { activeChip = null; activeDet = null; return; }
 
-    row.addEventListener("click", () => {
-      if (activeDetCard) activeDetCard.remove();
-      if (activeDetCard && activeDetCard.dataset.sku === d.sku) { activeDetCard = null; return; }
+      chip.style.outline = "2px solid " + c;
+      activeChip = chip;
+
       const msg = d.dias >= 999
         ? "Nenhuma venda nos últimos 30 dias. Avalie promoção ou liquidação."
         : d.dias >= 90
-        ? `Com ${d.vendas30} vendas/mês e ${d.aptas||d.qty} un, leva ~${d.dias} dias pra zerar. Considere reduzir o preço.`
+        ? "Com " + d.vendas30 + " vendas/mês e " + d.aptas + " un, leva ~" + d.dias + " dias pra zerar. Considere reduzir o preço."
         : d.dias <= 15
-        ? `Acabando rápido. Dura só ${d.dias} dias. Considere subir o preço ou antecipar reposição.`
-        : `Giro equilibrado. Com ${d.vendas30} vendas/mês dura ~${d.dias} dias.`;
+        ? "Acabando rápido. Dura só " + d.dias + " dias. Considere subir o preço ou antecipar reposição."
+        : "Giro equilibrado. Com " + d.vendas30 + " vendas/mês dura ~" + d.dias + " dias.";
+
       const det = document.createElement("div");
-      det.dataset.sku = d.sku;
-      det.style.cssText = `margin:4px 0 8px 138px;padding:10px 14px;background:var(--bg3);border-left:3px solid ${c};border-radius:0 6px 6px 0;`;
-      det.innerHTML = `
-        <div style="font-size:12px;font-weight:600;color:${c};margin-bottom:8px;">${d.sku}</div>
-        <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:8px;">
-          <div><div style="font-size:9px;color:var(--text3);margin-bottom:2px;">VALOR</div><div style="font-size:14px;font-weight:500;color:${c};">${d.valor>0?"R$ "+d.valor.toLocaleString("pt-BR"):"—"}</div></div>
-          <div><div style="font-size:9px;color:var(--text3);margin-bottom:2px;">VENDAS 30D</div><div style="font-size:14px;color:var(--text);">${d.vendas30} un</div></div>
-          <div><div style="font-size:9px;color:var(--text3);margin-bottom:2px;">DIAS ESTOQUE</div><div style="font-size:14px;font-weight:500;color:${c};">${diasLabel}</div></div>
-        </div>
-        <div style="font-size:11px;color:var(--text3);line-height:1.5;font-family:system-ui,sans-serif;">${msg}</div>`;
-      row.insertAdjacentElement("afterend", det);
-      activeDetCard = det;
+      det.style.cssText = "margin-top:12px;padding:12px 16px;background:var(--bg3);border-left:3px solid " + c + ";border-radius:0 8px 8px 0;";
+      det.innerHTML =
+        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;">' +
+          '<div style="font-size:13px;font-weight:600;color:' + c + ';">' + d.sku + '</div>' +
+          '<span style="background:' + c + '22;color:' + c + ';border:1px solid ' + c + '55;border-radius:4px;padding:3px 10px;font-size:10px;letter-spacing:1px;font-weight:500;">' + badgeText(d) + '</span>' +
+        '</div>' +
+        '<div style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:10px;">' +
+          '<div><div style="font-size:9px;color:var(--text3);letter-spacing:1px;margin-bottom:3px;">VALOR EM ESTOQUE</div><div style="font-size:16px;font-weight:600;color:' + c + ';">' + (d.valor > 0 ? "R$ " + d.valor.toLocaleString("pt-BR") : "—") + '</div></div>' +
+          '<div><div style="font-size:9px;color:var(--text3);letter-spacing:1px;margin-bottom:3px;">VENDAS 30D</div><div style="font-size:16px;font-weight:500;color:var(--text);">' + d.vendas30 + ' un</div></div>' +
+          '<div><div style="font-size:9px;color:var(--text3);letter-spacing:1px;margin-bottom:3px;">DIAS ESTOQUE</div><div style="font-size:16px;font-weight:600;color:' + c + ';">' + diasLabel(d) + '</div></div>' +
+          '<div><div style="font-size:9px;color:var(--text3);letter-spacing:1px;margin-bottom:3px;">UNIDADES</div><div style="font-size:16px;font-weight:500;color:var(--text);">' + d.aptas + '</div></div>' +
+        '</div>' +
+        '<div style="font-size:12px;color:var(--text3);line-height:1.6;font-family:system-ui,sans-serif;">' + msg + '</div>';
+
+      detWrap.appendChild(det);
+      activeDet = det;
     });
 
-    saudeWrap.appendChild(row);
+    grade.appendChild(chip);
   });
 
+  saudeWrap.appendChild(grade);
+  saudeWrap.appendChild(detWrap);
   panel.appendChild(saudeWrap);
 }
 
