@@ -145,12 +145,13 @@ h1 { font-family: 'Bebas Neue', sans-serif; font-size: 44px; letter-spacing: 5px
 .ml-modal-subtabs { display:flex;border-bottom:1px solid var(--sep);margin-bottom:20px; }
 /* Chat assistente */
 .chat-modal {
-  position:fixed; bottom:0; width:340px; max-height:500px;
+  position:fixed; bottom:0; width:460px; max-height:680px; height:680px;
   background:var(--bg3); border:1px solid var(--border2);
   border-radius:12px 12px 0 0; box-shadow:0 -4px 30px rgba(0,0,0,0.5);
   display:flex; flex-direction:column; z-index:7000;
   transition:transform 0.2s ease;
 }
+@media(max-width:960px) { .chat-modal { width:92vw; left:4vw !important; } }
 .chat-modal.hidden { transform:translateY(100%); }
 .chat-header {
   padding:10px 14px; display:flex; align-items:center;
@@ -162,8 +163,8 @@ h1 { font-family: 'Bebas Neue', sans-serif; font-size: 44px; letter-spacing: 5px
   flex-direction:column; gap:8px;
 }
 .chat-bubble {
-  max-width:80%; padding:8px 12px; border-radius:10px;
-  font-size:12px; line-height:1.5;
+  max-width:88%; padding:10px 14px; border-radius:10px;
+  font-size:13px; line-height:1.65;
 }
 .chat-bubble.user { align-self:flex-end; }
 .chat-bubble.assistant { align-self:flex-start; background:var(--bg2); color:var(--text); border:1px solid var(--border); }
@@ -1367,6 +1368,38 @@ Reclamações abertas: ${mlReclamacoes.data.length} total, ${aguarda.length} agu
     }
     if(mlCanceladas?.data) {
       ctx += `Cancelamentos abertos: ${mlCanceladas.data.length}
+`;
+    }
+    if(estoqueExcelData?.rows?.length) {
+      const rows = estoqueExcelData.rows;
+      let totalValor=0, totalAptas=0, semCusto=0;
+      const enriched = rows.map(r=>{
+        const custo = estoqueBlingData ? (estoqueBlingData[r.sku]||0) : 0;
+        const valor = custo * r.aptas;
+        if(!custo) semCusto++;
+        totalValor += valor; totalAptas += r.aptas;
+        const vendas30 = r.vendas30||0;
+        const dias = vendas30>0 ? Math.round(r.aptas/(vendas30/30)) : 999;
+        return {...r, custo, valor, dias};
+      });
+      ctx += `
+ESTOQUE Filial SP (ML Full): ${rows.length} SKUs, valor total R$ ${totalValor.toFixed(2)}, ${totalAptas} unidades aptas, ${semCusto} SKUs sem custo cadastrado no Bling
+`;
+      const parados = enriched.filter(r=>r.dias>=999 && r.aptas>0).slice(0,10);
+      if(parados.length) ctx += `Sem venda nos últimos 30 dias (${parados.length}): ${parados.map(r=>r.sku).join(", ")}
+`;
+      const acabando = enriched.filter(r=>r.dias<=15 && r.aptas>0).sort((a,b)=>a.dias-b.dias).slice(0,10);
+      if(acabando.length) ctx += `Estoque acabando rápido (<=15 dias de giro): ${acabando.map(r=>`${r.sku} (${r.dias}d)`).join(", ")}
+`;
+    } else {
+      ctx += `
+ESTOQUE Filial SP: nenhuma planilha importada ainda na aba Estoque.
+`;
+    }
+    if(matrizRows?.length) {
+      const totalValorM = matrizRows.reduce((s,r)=>s+r.valor,0);
+      const totalQtyM = matrizRows.reduce((s,r)=>s+r.qty,0);
+      ctx += `ESTOQUE Matriz RS: ${matrizRows.length} SKUs, valor total R$ ${totalValorM.toFixed(2)}, ${totalQtyM} unidades
 `;
     }
   }
