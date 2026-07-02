@@ -151,7 +151,7 @@ h1 { font-family: 'Bebas Neue', sans-serif; font-size: 44px; letter-spacing: 5px
   display:flex; flex-direction:column; z-index:7000;
   transition:transform 0.2s ease;
 }
-@media(max-width:960px) { .chat-modal { width:92vw; left:4vw !important; } }
+@media(max-width:960px) { .chat-modal { width:92vw; right:4vw !important; } }
 .chat-modal.hidden { transform:translateY(100%); }
 .chat-header {
   padding:10px 14px; display:flex; align-items:center;
@@ -226,9 +226,9 @@ footer { margin-top: 40px; text-align: center; font-size: 10px; color: var(--tex
 <footer>Digoo Brasil · Porto Alegre<br><span id="user-label"></span></footer>
 
 <!-- Chat Modals por membro -->
-<div id="chat-Diogo" class="chat-modal hidden" style="left:20px;"></div>
-<div id="chat-Bruno" class="chat-modal hidden" style="left:calc(33.33% + 20px);"></div>
-<div id="chat-Larissa" class="chat-modal hidden" style="left:calc(66.66% + 20px);"></div>
+<div id="chat-Diogo" class="chat-modal hidden" style="right:20px;"></div>
+<div id="chat-Bruno" class="chat-modal hidden" style="right:20px;"></div>
+<div id="chat-Larissa" class="chat-modal hidden" style="right:20px;"></div>
 
 <!-- ML Fullscreen Panel -->
 <div id="ml-fullscreen">
@@ -1427,28 +1427,33 @@ function formatChatMsg(text) {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     if (line.trim() === "") {
-      if (out.length > 0) out.push('<div style="height:6px;"></div>');
+      if (out.length > 0) out.push('<div style="height:16px;"></div>');
       continue;
     }
     if (/^---+$/.test(line.trim())) {
-      out.push('<hr style="border:none;border-top:1px solid var(--border);margin:8px 0;">');
+      out.push('<hr style="border:none;border-top:1px solid var(--border);margin:14px 0;">');
       continue;
     }
     const hMatch = line.match(/^#{1,3} (.+)$/);
     if (hMatch) {
-      out.push('<div style="font-weight:500;color:var(--text);margin:10px 0 4px;">' + hMatch[1] + '</div>');
+      out.push('<div style="font-weight:500;color:var(--text);margin:14px 0 6px;">' + hMatch[1] + '</div>');
       continue;
     }
     const liMatch = line.match(/^[-•] (.+)$/);
     if (liMatch) {
-      out.push('<div style="padding:2px 0 2px 12px;border-left:2px solid var(--border);margin:3px 0;color:var(--text2);">' + liMatch[1] + '</div>');
+      out.push('<div style="padding:4px 0 4px 12px;border-left:2px solid var(--border);margin:6px 0;color:var(--text2);">' + liMatch[1] + '</div>');
+      continue;
+    }
+    const numMatch = line.match(/^(\d+)\.\s+(.+)$/);
+    if (numMatch) {
+      out.push('<div style="padding:4px 0 4px 12px;border-left:2px solid var(--border);margin:6px 0;color:var(--text2);"><strong style="color:var(--text);">' + numMatch[1] + '.</strong> ' + numMatch[2] + '</div>');
       continue;
     }
     let l = line
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.+?)\*/g, '<em>$1</em>')
       .replace(/`([^`]+)`/g, '<code style="background:var(--bg2);padding:1px 5px;border-radius:3px;font-size:11px;font-family:monospace;">$1</code>');
-    out.push('<div style="line-height:1.6;">' + l + '</div>');
+    out.push('<div style="line-height:1.75;">' + l + '</div>');
   }
   return out.join("");
 }
