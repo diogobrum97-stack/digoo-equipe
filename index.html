@@ -285,7 +285,7 @@ const MEMBERS = [
   { name:"Bruno",   initials:"BR", locked:false, phone:null },
   { name:"Larissa", initials:"LA", locked:false, phone:"55991774483" },
 ];
-const PRIO = { urgente:{label:"Urgente"}, importante:{label:"Importante"}, normal:{label:"Normal"} };
+const PRIO = { superurgente:{label:"Super Urgente"}, urgente:{label:"Urgente"}, importante:{label:"Importante"}, normal:{label:"Normal"} };
 
 function themeColor(name) {
   const light = document.body.classList.contains("light");
@@ -297,7 +297,7 @@ function themeHbg(name) {
 }
 function themePrio(p) {
   const light = document.body.classList.contains("light");
-  return ({urgente:light?"#cc0000":"#ff0000",importante:light?"#cc8800":"#ffe600",normal:light?"#007744":"#00ff77"})[p]||"#aaa";
+  return ({superurgente:light?"#e6004c":"#ff0055",urgente:light?"#cc0000":"#ff0000",importante:light?"#cc8800":"#ffe600",normal:light?"#007744":"#00ff77"})[p]||"#aaa";
 }
 
 window.toggleTheme = function() {
@@ -427,7 +427,7 @@ function sendMessage(from,text,taskId,taskText,recipient,delegatedBy){
   set(ref(db,`/flashes/${rcpt}`),{ts:Date.now(),msg:`Mensagem de ${from}!`});
 }
 function deleteMsg(id){setSyncing(true);remove(ref(db,`/messages/${id}`));}
-function tasksFor(name){return Object.entries(state.tasks).filter(([,t])=>t!=null&&t.member===name).map(([id,t])=>({...t,id})).sort((a,b)=>({urgente:0,importante:1,normal:2}[a.prio]-{urgente:0,importante:1,normal:2}[b.prio]));}
+function tasksFor(name){return Object.entries(state.tasks).filter(([,t])=>t!=null&&t.member===name).map(([id,t])=>({...t,id})).sort((a,b)=>({superurgente:0,urgente:1,importante:2,normal:3}[a.prio]-{superurgente:0,urgente:1,importante:2,normal:3}[b.prio]));}
 function msgsFor(name){return Object.entries(state.messages).filter(([,m])=>m!=null&&m.from===name).map(([id,m])=>({...m,id})).sort((a,b)=>b.ts_raw-a.ts_raw);}
 
 function makeIcon(color,size){const c=document.createElement("canvas");c.width=c.height=size;const ctx=c.getContext("2d");const r=size/2;ctx.shadowColor=color;ctx.shadowBlur=size*0.25;ctx.beginPath();ctx.arc(r,r,r*0.75,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();return c.toDataURL();}
@@ -1555,7 +1555,7 @@ function render(){
     const nameEl=document.createElement("div");nameEl.className="member-name";nameEl.style.color=color;nameEl.textContent=member.name;
     const dotsEl=document.createElement("div");dotsEl.className="dots";
     if(active.length>0||done.length>0){
-      ["urgente","importante","normal"].forEach(p=>{active.filter(t=>t.prio===p).slice(0,5).forEach(()=>{const d=document.createElement("span");d.className="dot";const pc=themePrio(p);d.style.cssText=`background:${pc};box-shadow:0 0 8px ${pc};`;dotsEl.appendChild(d);});});
+      ["superurgente","urgente","importante","normal"].forEach(p=>{active.filter(t=>t.prio===p).slice(0,5).forEach(()=>{const d=document.createElement("span");d.className="dot";const pc=themePrio(p);d.style.cssText=`background:${pc};box-shadow:0 0 8px ${pc};${p==="superurgente"?"animation:pulse 1s infinite;":""}`;dotsEl.appendChild(d);});});
       if(done.length>0&&active.length===0){const s=document.createElement("span");s.style.cssText=`font-size:10px;color:${color}88;`;s.textContent="✓";dotsEl.appendChild(s);}
     }
     nameWrap.appendChild(nameEl);nameWrap.appendChild(dotsEl);header.appendChild(avatar);header.appendChild(nameWrap);
@@ -1694,7 +1694,7 @@ function render(){
               else chk.style.background="none";
               chk.addEventListener("click",()=>toggleTask(task.id,task.done,task.progress));
               const tw=document.createElement("div");tw.style.flex="1";const tt=document.createElement("div");tt.className="task-text";tt.textContent=task.text;tw.appendChild(tt);
-              const pb=document.createElement("div");pb.className="task-prio";pb.innerHTML=`<span class="dot" style="background:${pc}"></span><span style="color:${pc}">${PRIO[task.prio].label}</span>`;tw.appendChild(pb);
+              const pb=document.createElement("div");pb.className="task-prio";const puls=task.prio==="superurgente"?"animation:pulse 1s infinite;":"";pb.innerHTML=`<span class="dot" style="background:${pc};${puls}"></span><span style="color:${pc};font-weight:${task.prio==="superurgente"?"700":"400"}">${PRIO[task.prio].label}</span>`;tw.appendChild(pb);
               const del=document.createElement("button");del.className="del-btn";del.textContent="×";del.addEventListener("click",()=>deleteTask(task.id));
               row.appendChild(chk);row.appendChild(tw);row.appendChild(del);panel.appendChild(row);
             });
