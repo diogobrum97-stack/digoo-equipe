@@ -1742,10 +1742,10 @@ function render(){
             // Wrapper lado a lado
             const btnWrapper=document.createElement("div");
             btnWrapper.style.cssText="display:flex;gap:8px;margin-top:20px;border-top:1px solid #1a1a1a;padding-top:12px;";
-            const taskSec=document.createElement("div");taskSec.style.flex="1";
-            const delSec=document.createElement("div");delSec.style.flex="1";
-            appendAddTask(taskSec,color,"","+ minha tarefa",null,(text,prio)=>addTask("Diogo",text,prio),true);
-            appendDelegate(delSec,color,true);
+            const taskSec=document.createElement("div");taskSec.style.cssText="flex:1;transition:flex 0.15s;";
+            const delSec=document.createElement("div");delSec.style.cssText="flex:1;transition:flex 0.15s;";
+            appendAddTask(taskSec,color,"","+ minha tarefa",null,(text,prio)=>addTask("Diogo",text,prio),true,delSec);
+            appendDelegate(delSec,color,true,taskSec);
             btnWrapper.appendChild(taskSec);
             btnWrapper.appendChild(delSec);
             panel.appendChild(btnWrapper);
@@ -1846,25 +1846,29 @@ function render(){
 
 function makeAddBtn(color,label){const btn=document.createElement("button");btn.className="add-dashed";btn.textContent=label;btn.style.cssText=`border-color:${color};color:${color};opacity:0.85;text-shadow:0 0 8px ${color}88;box-shadow:inset 0 0 12px ${color}11;`;btn.addEventListener("mouseenter",()=>{btn.style.opacity="1";btn.style.boxShadow=`inset 0 0 20px ${color}22`;});btn.addEventListener("mouseleave",()=>{btn.style.opacity="0.85";btn.style.boxShadow=`inset 0 0 12px ${color}11`;});return btn;}
 
-function appendAddTask(container,color,sectionLabel,btnLabel,who,onAdd){
+function appendAddTask(container,color,sectionLabel,btnLabel,who,onAdd,_unused,sibling){
   const sec=document.createElement("div");sec.style.cssText="";sec.innerHTML="";
   const btn=makeAddBtn(color,btnLabel);const form=document.createElement("div");form.className="input-box";form.style.display="none";let prio="importante";
   form.innerHTML=`<input placeholder="Descrição..."><div class="prio-row">${Object.entries(PRIO).map(([k])=>`<button class="prio-btn" data-p="${k}" style="border-color:${k==="importante"?themePrio(k)+"66":"var(--border2)"};color:${k==="importante"?themePrio(k):"var(--text3)"};background:${k==="importante"?themePrio(k)+"22":"none"}">${PRIO[k].label}</button>`).join("")}</div><div class="btn-row"><button class="btn-primary" style="background:${color};color:#000">ADICIONAR</button><button class="btn-cancel">✕</button></div>`;
   form.querySelectorAll(".prio-btn").forEach(b=>b.addEventListener("click",()=>{prio=b.dataset.p;form.querySelectorAll(".prio-btn").forEach(x=>{const pc=themePrio(x.dataset.p);x.style.borderColor=x.dataset.p===prio?pc+"66":"var(--border2)";x.style.color=x.dataset.p===prio?pc:"var(--text3)";x.style.background=x.dataset.p===prio?pc+"22":"none";});}));
-  const inp=form.querySelector("input");const submit=()=>{if(inp.value.trim()){onAdd(inp.value.trim(),prio);inp.value="";form.style.display="none";btn.style.display="";}};const cancel=()=>{form.style.display="none";btn.style.display="";inp.value="";};
+  const inp=form.querySelector("input");
+  const closeExpanded=()=>{if(sibling)sibling.style.display="";container.style.flex="1";};
+  const submit=()=>{if(inp.value.trim()){onAdd(inp.value.trim(),prio);inp.value="";form.style.display="none";btn.style.display="";closeExpanded();}};const cancel=()=>{form.style.display="none";btn.style.display="";inp.value="";closeExpanded();};
   form.querySelector(".btn-primary").addEventListener("click",submit);form.querySelector(".btn-cancel").addEventListener("click",cancel);inp.addEventListener("keydown",e=>{if(e.key==="Enter")submit();if(e.key==="Escape")cancel();});
-  btn.addEventListener("click",()=>{btn.style.display="none";form.style.display="block";setTimeout(()=>inp.focus(),50);});sec.appendChild(btn);sec.appendChild(form);container.appendChild(sec);
+  btn.addEventListener("click",()=>{btn.style.display="none";form.style.display="block";if(sibling)sibling.style.display="none";container.style.flex="1 1 100%";setTimeout(()=>inp.focus(),50);});sec.appendChild(btn);sec.appendChild(form);container.appendChild(sec);
 }
 
-function appendDelegate(container,color){
+function appendDelegate(container,color,_unused,sibling){
   const sec=document.createElement("div");sec.style.cssText="";sec.innerHTML="";
   const btn=makeAddBtn(color,"+ delegar");const form=document.createElement("div");form.className="input-box";form.style.display="none";let prio="importante",who="Bruno";const others=MEMBERS.filter(m=>!m.locked);
   form.innerHTML=`<div class="who-row">${others.map(m=>`<button class="who-btn" data-w="${m.name}" style="border-color:${m.name==="Bruno"?themeColor(m.name)+"66":"var(--border2)"};color:${m.name==="Bruno"?themeColor(m.name):"var(--text3)"};background:${m.name==="Bruno"?themeColor(m.name)+"22":"none"}">${m.name}</button>`).join("")}</div><input placeholder="Descrição..."><div class="prio-row">${Object.entries(PRIO).map(([k])=>`<button class="prio-btn" data-p="${k}" style="border-color:${k==="importante"?themePrio(k)+"66":"var(--border2)"};color:${k==="importante"?themePrio(k):"var(--text3)"};background:${k==="importante"?themePrio(k)+"22":"none"}">${PRIO[k].label}</button>`).join("")}</div><div class="btn-row"><button class="btn-primary btn-del" style="background:${themeColor("Bruno")};color:#000">DELEGAR</button><button class="btn-cancel">✕</button></div>`;
   form.querySelectorAll(".who-btn").forEach(b=>b.addEventListener("click",()=>{who=b.dataset.w;const mc=themeColor(who);form.querySelectorAll(".who-btn").forEach(x=>{const xc=themeColor(x.dataset.w);x.style.borderColor=x.dataset.w===who?xc+"66":"var(--border2)";x.style.color=x.dataset.w===who?xc:"var(--text3)";x.style.background=x.dataset.w===who?xc+"22":"none";});const db2=form.querySelector(".btn-del");if(db2)db2.style.background=mc;}));
   form.querySelectorAll(".prio-btn").forEach(b=>b.addEventListener("click",()=>{prio=b.dataset.p;form.querySelectorAll(".prio-btn").forEach(x=>{const pc=themePrio(x.dataset.p);x.style.borderColor=x.dataset.p===prio?pc+"66":"var(--border2)";x.style.color=x.dataset.p===prio?pc:"var(--text3)";x.style.background=x.dataset.p===prio?pc+"22":"none";});}));
-  const inp=form.querySelector("input");const submit=()=>{if(inp.value.trim()){addTask(who,inp.value.trim(),prio,"Diogo");inp.value="";form.style.display="none";btn.style.display="";}};const cancel=()=>{form.style.display="none";btn.style.display="";inp.value="";};
+  const inp=form.querySelector("input");
+  const closeExpanded=()=>{if(sibling)sibling.style.display="";container.style.flex="1";};
+  const submit=()=>{if(inp.value.trim()){addTask(who,inp.value.trim(),prio,"Diogo");inp.value="";form.style.display="none";btn.style.display="";closeExpanded();}};const cancel=()=>{form.style.display="none";btn.style.display="";inp.value="";closeExpanded();};
   form.querySelector(".btn-del").addEventListener("click",submit);form.querySelector(".btn-cancel").addEventListener("click",cancel);inp.addEventListener("keydown",e=>{if(e.key==="Enter")submit();if(e.key==="Escape")cancel();});
-  btn.addEventListener("click",()=>{btn.style.display="none";form.style.display="block";setTimeout(()=>inp.focus(),50);});sec.appendChild(btn);sec.appendChild(form);container.appendChild(sec);
+  btn.addEventListener("click",()=>{btn.style.display="none";form.style.display="block";if(sibling)sibling.style.display="none";container.style.flex="1 1 100%";setTimeout(()=>inp.focus(),50);});sec.appendChild(btn);sec.appendChild(form);container.appendChild(sec);
 }
 
 function appendCornerDelegate(container,color,senderName){
