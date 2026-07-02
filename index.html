@@ -1544,8 +1544,13 @@ function renderChatModal(memberName, color) {
           context: buildContext(memberName),
         }),
       });
-      const data = await r.json();
-      cs.messages.push({ role:"assistant", content: data.reply || data.error || "Erro" });
+      let data;
+      try { data = await r.json(); } catch { data = null; }
+      if(!r.ok) {
+        cs.messages.push({ role:"assistant", content: data?.error || `Erro ${r.status} no servidor. Tente uma pergunta mais curta ou tente de novo em instantes.` });
+      } else {
+        cs.messages.push({ role:"assistant", content: data?.reply || data?.error || "Erro" });
+      }
     } catch(e) {
       cs.messages.push({ role:"assistant", content:"Erro de conexão. Tente novamente." });
     }
