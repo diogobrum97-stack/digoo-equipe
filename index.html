@@ -45,6 +45,7 @@ header { text-align: center; margin-bottom: 24px; }
 h1 { font-family: 'Bebas Neue', sans-serif; font-size: 44px; letter-spacing: 5px; color: var(--text); }
 .sync { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--pn); margin-left: 10px; vertical-align: middle; box-shadow: 0 0 10px var(--pn); animation: pulse 2s infinite; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+@keyframes siren { 0%,100%{opacity:1} 50%{opacity:0.15} }
 .grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; max-width: 1280px; margin: 0 auto; align-items: start; }
 .card { border-radius: 10px; border: 1px solid var(--border); overflow: hidden; transition: border-color 0.3s, box-shadow 0.3s; }
 @keyframes cardFlash { 0%,100% { box-shadow: none; } 50% { box-shadow: 0 0 40px var(--c), 0 0 80px var(--c); border-color: var(--c) !important; } }
@@ -297,7 +298,7 @@ function themeHbg(name) {
 }
 function themePrio(p) {
   const light = document.body.classList.contains("light");
-  return ({superurgente:light?"#e6004c":"#ff0055",urgente:light?"#cc0000":"#ff0000",importante:light?"#cc8800":"#ffe600",normal:light?"#007744":"#00ff77"})[p]||"#aaa";
+  return ({superurgente:light?"#e6003c":"#ff0033",urgente:light?"#cc0000":"#ff0000",importante:light?"#cc8800":"#ffe600",normal:light?"#007744":"#00ff77"})[p]||"#aaa";
 }
 
 window.toggleTheme = function() {
@@ -1555,7 +1556,7 @@ function render(){
     const nameEl=document.createElement("div");nameEl.className="member-name";nameEl.style.color=color;nameEl.textContent=member.name;
     const dotsEl=document.createElement("div");dotsEl.className="dots";
     if(active.length>0||done.length>0){
-      ["superurgente","urgente","importante","normal"].forEach(p=>{active.filter(t=>t.prio===p).slice(0,5).forEach(()=>{const d=document.createElement("span");d.className="dot";const pc=themePrio(p);d.style.cssText=`background:${pc};box-shadow:0 0 8px ${pc};${p==="superurgente"?"animation:pulse 1s infinite;":""}`;dotsEl.appendChild(d);});});
+      ["superurgente","urgente","importante","normal"].forEach(p=>{active.filter(t=>t.prio===p).slice(0,5).forEach(()=>{const d=document.createElement("span");d.className="dot";const pc=themePrio(p);d.style.cssText=`background:${pc};box-shadow:0 0 8px ${pc};${p==="superurgente"?"animation:siren 0.6s infinite;":""}`;dotsEl.appendChild(d);});});
       if(done.length>0&&active.length===0){const s=document.createElement("span");s.style.cssText=`font-size:10px;color:${color}88;`;s.textContent="✓";dotsEl.appendChild(s);}
     }
     nameWrap.appendChild(nameEl);nameWrap.appendChild(dotsEl);header.appendChild(avatar);header.appendChild(nameWrap);
@@ -1630,8 +1631,9 @@ function render(){
             // Recorrentes: inclui done pra não sumir ao concluir
             const allOwnTasksActive=active.filter(t=>!t.delegatedBy||t.delegatedBy==="Diogo");
             const allOwnTasksDone=done.filter(t=>(!t.delegatedBy||t.delegatedBy==="Diogo")&&t.isRecorrente);
+            const allOwnTasksDoneManual=done.filter(t=>(!t.delegatedBy||t.delegatedBy==="Diogo")&&!t.isRecorrente);
             const recTasks=[...allOwnTasksActive.filter(t=>t.isRecorrente),...allOwnTasksDone];
-            const manualTasks=allOwnTasksActive.filter(t=>!t.isRecorrente);
+            const manualTasks=[...allOwnTasksActive.filter(t=>!t.isRecorrente),...allOwnTasksDoneManual];
             const allOwnTasks=manualTasks; // alias para o código abaixo
             const teamTasks=active.filter(t=>t.delegatedBy&&t.delegatedBy!=="Diogo");
 
@@ -1693,10 +1695,27 @@ function render(){
               else if(task.progress) chk.style.background=`linear-gradient(to top, ${pc} 50%, transparent 50%)`;
               else chk.style.background="none";
               chk.addEventListener("click",()=>toggleTask(task.id,task.done,task.progress));
-              const tw=document.createElement("div");tw.style.flex="1";const tt=document.createElement("div");tt.className="task-text";tt.textContent=task.text;tw.appendChild(tt);
-              const pb=document.createElement("div");pb.className="task-prio";const puls=task.prio==="superurgente"?"animation:pulse 1s infinite;":"";pb.innerHTML=`<span class="dot" style="background:${pc};${puls}"></span><span style="color:${pc};font-weight:${task.prio==="superurgente"?"700":"400"}">${PRIO[task.prio].label}</span>`;tw.appendChild(pb);
-              const del=document.createElement("button");del.className="del-btn";del.textContent="×";del.addEventListener("click",()=>deleteTask(task.id));
-              row.appendChild(chk);row.appendChild(tw);row.appendChild(del);panel.appendChild(row);
+              const tw=document.createElement("div");tw.style.flex="1";const tt=document.createElement("div");tt.className="task-text"+(task.done?" done":"");tt.textContent=task.text;tw.appendChild(tt);
+              const pb=document.createElement("div");pb.className="task-prio";const puls=task.prio==="superurgente"?"animation:siren 0.6s infinite;":"";pb.innerHTML=`<span class="dot" style="background:${pc};${puls}"></span><span style="color:${pc};font-weight:${task.prio==="superurgente"?"700":"400"};${puls}">${PRIO[task.prio].label}</span>`;tw.appendChild(pb);
+              row.appendChild(chk);row.appendChild(tw);
+              if(task.done){
+                const btnWrap=document.createElement("div");
+                btnWrap.style.cssText="display:flex;gap:5px;flex-shrink:0;";
+                const reopen=document.createElement("button");
+                reopen.style.cssText=`background:none;border:1px solid ${pc}44;border-radius:3px;color:${pc}99;font-size:8px;letter-spacing:1px;padding:2px 7px;cursor:pointer;font-family:inherit;`;
+                reopen.textContent="Reabrir";
+                reopen.addEventListener("click",(e)=>{e.stopPropagation();update(ref(db,`/tasks/${task.id}`),{done:false,progress:false});});
+                const okBtn=document.createElement("button");
+                okBtn.style.cssText=`background:${pc};border:none;border-radius:3px;color:#000;font-size:8px;font-weight:700;letter-spacing:1px;padding:2px 7px;cursor:pointer;font-family:inherit;`;
+                okBtn.textContent="OK";
+                okBtn.addEventListener("click",(e)=>{e.stopPropagation();deleteTask(task.id);});
+                btnWrap.appendChild(reopen);btnWrap.appendChild(okBtn);
+                row.appendChild(btnWrap);
+              }else{
+                const del=document.createElement("button");del.className="del-btn";del.textContent="×";del.addEventListener("click",()=>deleteTask(task.id));
+                row.appendChild(del);
+              }
+              panel.appendChild(row);
             });
             if(teamTasks.length>0){
               const divider=document.createElement("div");divider.className="section";divider.innerHTML=`<div class="section-label">Mensagem da equipe</div>`;
