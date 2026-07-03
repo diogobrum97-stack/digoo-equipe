@@ -346,7 +346,7 @@ function setSyncing(v){syncDot.style.opacity=v?"0.4":"1";}
 
 onValue(ref(db,"/"),snap=>{
   const d=snap.val()||{};
-  d.tasks=d.tasks||{};d.messages=d.messages||{};d.flashes=d.flashes||{};d.notices=d.notices||{};d.ml_token=d.ml_token||null;d.ml_cache=d.ml_cache||null;d.price_changes=d.price_changes||{};d.ml_token_filial=d.ml_token_filial||null;
+  d.tasks=d.tasks||{};d.messages=d.messages||{};d.flashes=d.flashes||{};d.notices=d.notices||{};d.ml_token=d.ml_token||null;d.ml_cache=d.ml_cache||null;d.price_changes=d.price_changes||{};d.ml_token_filial=d.ml_token_filial||null;d.last_known_prices=d.last_known_prices||{};
   const seenTasks=JSON.parse(localStorage.getItem("digoo_seen_tasks")||"{}");
   let seenChanged=false;
   Object.entries(d.tasks).filter(([,t])=>t!=null).forEach(([id,task])=>{
@@ -2061,6 +2061,48 @@ async function fetchMLIdentity(conta) {
   mlIdentityLoading[conta] = false; render();
 }
 
+let precoAutoCheckDone = false;
+let precoAutoCheckLoading = false;
+async function checkPriceChangesAuto() {
+  if (precoAutoCheckDone || precoAutoCheckLoading) return;
+  const token = state.ml_token_filial?.access_token;
+  if (!token) return;
+  precoAutoCheckLoading = true;
+  try {
+    const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${token}&prices=1`);
+    const data = await r.json();
+    if (!r.ok || !data.prices) { precoAutoCheckLoading = false; return; }
+
+    const vendasPorSku = {};
+    (estoqueExcelData?.rows || []).forEach(row => { vendasPorSku[row.sku] = row.vendas30 || 0; });
+
+    data.prices.forEach(item => {
+      const sku = item.sku;
+      const precoAtual = Number(item.price);
+      const conhecido = state.last_known_prices?.[sku];
+      if (conhecido === undefined || conhecido === null) {
+        // Primeira vez vendo esse SKU: só estabelece o preço base, sem gerar "mudança"
+        set(ref(db, `/last_known_prices/${sku}`), precoAtual);
+      } else if (Math.abs(Number(conhecido) - precoAtual) > 0.009) {
+        // Preço mudou de verdade desde a última vez que verificamos
+        set(ref(db, `/price_changes/${sku}`), {
+          vendas30AtChange: vendasPorSku[sku] || 0,
+          changedAt: Date.now(),
+          changedBy: "automático",
+          priceBefore: Number(conhecido),
+          priceAfter: precoAtual,
+        });
+        set(ref(db, `/last_known_prices/${sku}`), precoAtual);
+      }
+    });
+  } catch (e) {
+    console.error("Erro na checagem automática de preço:", e.message);
+  }
+  precoAutoCheckLoading = false;
+  precoAutoCheckDone = true;
+  render();
+}
+
 async function fetchBlingProdutos() {
   estoqueBlingLoading = true;
   estoqueBlingErro = null;
@@ -2092,6 +2134,7 @@ async function fetchBlingProdutos() {
 
 // ── RENDER CARD ESTOQUE ──────────────────────────────────────
 function renderEstoqueTab(panel, color) {
+  checkPriceChangesAuto();
 
   // ── Abas de localização: Filial SP / Matriz RS ──────────────
   const locWrap = document.createElement("div");
@@ -2536,6 +2579,61 @@ function renderSaudeChart(panel, enriched) {
       const priceSection = document.createElement("div");
       priceSection.style.cssText = "margin-top:14px;padding-top:12px;border-top:1px solid var(--sep);";
       const pc = state.price_changes && state.price_changes[d.sku];
+      const mlFilialOn = !!state.ml_token_filial?.access_token;
+
+      function buildRealSalesBlock(){
+        const realWrap = document.createElement("div");
+        realWrap.style.cssText = "margin-top:10px;padding-top:10px;border-top:1px dashed var(--sep);";
+        const header = document.createElement("div");
+        header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;";
+        header.innerHTML = '<span style="font-size:9px;color:var(--text3);letter-spacing:1px;">VENDAS REAIS NO ML DESDE A MUDANÇA</span>';
+        const refBtn = document.createElement("button");
+        refBtn.textContent = "↻";
+        refBtn.title = "Atualizar";
+        refBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:3px;padding:1px 6px;font-size:10px;cursor:pointer;";
+        header.appendChild(refBtn);
+        realWrap.appendChild(header);
+        const realResult = document.createElement("div");
+        realWrap.appendChild(realResult);
+
+        const buscar = async () => {
+          realResult.innerHTML = '<span class="spinning" style="color:var(--text3)">↻</span> <span style="color:var(--text3);font-size:11px;">Consultando Mercado Livre...</span>';
+          try{
+            const fromISO = new Date(pc.changedAt).toISOString();
+            const url = `${VERCEL_BACKEND}/api/ml-vendas?token=${state.ml_token_filial.access_token}&sku=${encodeURIComponent(d.sku)}&from=${encodeURIComponent(fromISO)}`;
+            const r = await fetch(url);
+            const rdata = await r.json();
+            if(!r.ok || rdata.error){
+              realResult.innerHTML = `<span style="color:#f87171;font-size:11px;">Erro: ${rdata.error||"falha na consulta"}</span>`;
+            }else{
+              const m = rdata.skuMatch;
+              if(!m || m.qty===0){
+                const lista = rdata.skusVendidosNoPeriodo || [];
+                const norm = s => String(s||"").toLowerCase().replace(/[^a-z0-9]/g,"");
+                const skuNorm = norm(d.sku);
+                const parecidos = lista.filter(s => skuNorm.length>=6 && (norm(s).includes(skuNorm.slice(0,6)) || skuNorm.includes(norm(s).slice(0,6))));
+                let extra = "";
+                if(parecidos.length){
+                  extra = '<div style="margin-top:6px;color:#fbbf24;font-size:10px;line-height:1.5;">⚠ Achei SKU(s) parecido(s) que venderam nesse período: <strong>' + parecidos.join(", ") + '</strong>. O SKU cadastrado no Mercado Livre pode estar um pouco diferente do usado na planilha (' + d.sku + ').</div>';
+                }
+                realResult.innerHTML = '<span style="color:var(--text3);font-size:11px;">Nenhuma venda real registrada pra esse SKU nesse período no Mercado Livre.</span>' + extra;
+              }else{
+                realResult.innerHTML =
+                  '<div style="display:flex;gap:20px;flex-wrap:wrap;">' +
+                    '<div><div style="font-size:9px;color:var(--text3);">UNIDADES</div><div style="font-size:15px;font-weight:600;color:#fff155;">' + m.qty + '</div></div>' +
+                    '<div><div style="font-size:9px;color:var(--text3);">FATURAMENTO</div><div style="font-size:15px;font-weight:600;color:#fff155;">R$ ' + m.revenue.toLocaleString("pt-BR",{minimumFractionDigits:2}) + '</div></div>' +
+                  '</div>';
+              }
+            }
+          }catch(err){
+            realResult.innerHTML = `<span style="color:#f87171;font-size:11px;">Erro de conexão: ${err.message}</span>`;
+          }
+        };
+        refBtn.addEventListener("click", buscar);
+        buscar(); // busca automática ao abrir o card, sem precisar clicar
+        return realWrap;
+      }
+
       if(pc){
         const diasDesde = Math.max(1, Math.round((Date.now()-pc.changedAt)/86400000));
         const antes = pc.vendas30AtChange||0;
@@ -2543,65 +2641,34 @@ function renderSaudeChart(panel, enriched) {
         const delta = depois - antes;
         const deltaColor = delta>0?"#3dd68c":delta<0?"#E24B4A":"var(--text3)";
         const deltaSign = delta>0?"+":"";
+        const marcadoPor = pc.changedBy==="automático" ? "detectado automaticamente" : "marcado por "+(pc.changedBy||"—");
+        const precoLinha = (pc.priceBefore!=null && pc.priceAfter!=null)
+          ? `<div style="font-size:10px;color:var(--text3);margin-bottom:6px;">R$ ${Number(pc.priceBefore).toFixed(2)} → R$ ${Number(pc.priceAfter).toFixed(2)}</div>`
+          : "";
         const info = document.createElement("div");
         info.innerHTML =
-          '<div style="font-size:9px;color:var(--text3);letter-spacing:1px;margin-bottom:6px;">DESDE A MUDANÇA DE PREÇO (há ' + diasDesde + 'd, marcada por ' + (pc.changedBy||"—") + ')</div>' +
-          '<div style="display:flex;gap:20px;flex-wrap:wrap;align-items:baseline;margin-bottom:10px;">' +
+          '<div style="font-size:9px;color:var(--text3);letter-spacing:1px;margin-bottom:6px;">DESDE A MUDANÇA DE PREÇO (há ' + diasDesde + 'd, ' + marcadoPor + ')</div>' +
+          precoLinha +
+          '<div style="display:flex;gap:20px;flex-wrap:wrap;align-items:baseline;margin-bottom:2px;">' +
             '<div><div style="font-size:9px;color:var(--text3);">VENDAS/MÊS ANTES</div><div style="font-size:14px;color:var(--text);">' + antes + '</div></div>' +
             '<div><div style="font-size:9px;color:var(--text3);">VENDAS/MÊS AGORA</div><div style="font-size:14px;color:var(--text);">' + depois + '</div></div>' +
             '<div><div style="font-size:9px;color:var(--text3);">VARIAÇÃO</div><div style="font-size:14px;color:' + deltaColor + ';font-weight:600;">' + deltaSign + delta + '</div></div>' +
           '</div>';
         priceSection.appendChild(info);
-        const note = document.createElement("div");
-        note.style.cssText = "font-size:10px;color:var(--text3);line-height:1.5;margin-bottom:8px;";
-        note.textContent = "Comparação aproximada: usa a venda dos últimos 30 dias de quando você marcou vs. agora, não vendas dia a dia.";
-        priceSection.appendChild(note);
-        const resetBtn = document.createElement("button");
-        resetBtn.textContent = "📌 Mudei o preço de novo agora";
-        resetBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:5px 10px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:0.5px;";
-        resetBtn.addEventListener("click",()=>{set(ref(db,`/price_changes/${d.sku}`),{vendas30AtChange:d.vendas30,changedAt:Date.now(),changedBy:currentUser});});
-        priceSection.appendChild(resetBtn);
 
-        if(state.ml_token_filial?.access_token){
-          const realWrap = document.createElement("div");
-          realWrap.style.cssText = "margin-top:10px;padding-top:10px;border-top:1px dashed var(--sep);";
-          const realBtn = document.createElement("button");
-          realBtn.textContent = "🔄 Ver vendas reais (ML) desde a mudança";
-          realBtn.style.cssText = `background:none;border:1px solid #fff15566;color:#fff155;border-radius:4px;padding:6px 12px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:0.5px;`;
-          const realResult = document.createElement("div");
-          realResult.style.cssText = "margin-top:8px;";
-          realBtn.addEventListener("click", async ()=>{
-            realBtn.disabled = true;
-            realResult.innerHTML = '<span class="spinning" style="color:var(--text3)">↻</span> <span style="color:var(--text3);font-size:11px;">Consultando Mercado Livre...</span>';
-            try{
-              const fromISO = new Date(pc.changedAt).toISOString();
-              const url = `${VERCEL_BACKEND}/api/ml-vendas?token=${state.ml_token_filial.access_token}&sku=${encodeURIComponent(d.sku)}&from=${encodeURIComponent(fromISO)}`;
-              const r = await fetch(url);
-              const rdata = await r.json();
-              if(!r.ok || rdata.error){
-                realResult.innerHTML = `<span style="color:#f87171;font-size:11px;">Erro: ${rdata.error||"falha na consulta"}</span>`;
-              }else{
-                const m = rdata.skuMatch;
-                if(!m || m.qty===0){
-                  realResult.innerHTML = '<span style="color:var(--text3);font-size:11px;">Nenhuma venda real registrada pra esse SKU nesse período no Mercado Livre.</span>';
-                }else{
-                  realResult.innerHTML =
-                    '<div style="font-size:9px;color:var(--text3);letter-spacing:1px;margin-bottom:4px;">VENDAS REAIS NO ML DESDE A MUDANÇA</div>' +
-                    '<div style="display:flex;gap:20px;flex-wrap:wrap;">' +
-                      '<div><div style="font-size:9px;color:var(--text3);">UNIDADES</div><div style="font-size:15px;font-weight:600;color:#fff155;">' + m.qty + '</div></div>' +
-                      '<div><div style="font-size:9px;color:var(--text3);">FATURAMENTO</div><div style="font-size:15px;font-weight:600;color:#fff155;">R$ ' + m.revenue.toLocaleString("pt-BR",{minimumFractionDigits:2}) + '</div></div>' +
-                    '</div>';
-                }
-              }
-            }catch(err){
-              realResult.innerHTML = `<span style="color:#f87171;font-size:11px;">Erro de conexão: ${err.message}</span>`;
-            }
-            realBtn.disabled = false;
-          });
-          realWrap.appendChild(realBtn);
-          realWrap.appendChild(realResult);
-          priceSection.appendChild(realWrap);
+        if(mlFilialOn){
+          priceSection.appendChild(buildRealSalesBlock());
+        }else{
+          const hint = document.createElement("div");
+          hint.style.cssText = "font-size:10px;color:var(--text3);margin-top:8px;line-height:1.5;";
+          hint.textContent = "Conecte o ML Filial (no topo da aba) pra ver o número real de vendas desde essa mudança, sem precisar de planilha.";
+          priceSection.appendChild(hint);
         }
+      }else if(mlFilialOn){
+        const hint = document.createElement("div");
+        hint.style.cssText = "font-size:10px;color:var(--text3);line-height:1.5;";
+        hint.textContent = "Assim que o preço desse SKU mudar no Mercado Livre, o painel detecta sozinho na próxima vez que você abrir a aba Estoque e começa a acompanhar as vendas daqui pra frente.";
+        priceSection.appendChild(hint);
       }else{
         const markBtn = document.createElement("button");
         markBtn.textContent = "📌 Marquei mudança de preço agora";
@@ -2610,7 +2677,7 @@ function renderSaudeChart(panel, enriched) {
         priceSection.appendChild(markBtn);
         const hint = document.createElement("div");
         hint.style.cssText = "font-size:10px;color:var(--text3);margin-top:6px;line-height:1.5;";
-        hint.textContent = "Clica aqui assim que mudar o preço no Mercado Livre. Da próxima vez que abrir esse card eu comparo as vendas de antes e depois.";
+        hint.textContent = "Conecte o ML Filial (no topo da aba) pra isso ficar automático. Sem ele, você precisa marcar manualmente quando mudar o preço.";
         priceSection.appendChild(hint);
       }
       det.appendChild(priceSection);
