@@ -1555,19 +1555,36 @@ function renderChatModal(memberName, color) {
             try{
               if(action.type==="criar_tarefa"){
                 const {member:taskMember,text:taskText,prio:taskPrio}=action.input||{};
-                if(taskMember&&taskText&&taskPrio) addTask(taskMember,taskText,taskPrio,memberName);
+                if(taskMember&&taskText&&taskPrio){
+                  const norm=s=>String(s||"").trim().toLowerCase();
+                  const jaExiste=Object.values(state.tasks||{}).some(t=>t!=null&&!t.done&&t.member===taskMember&&norm(t.text)===norm(taskText));
+                  if(jaExiste){
+                    cs.messages.push({ role:"assistant", content:`Já existe uma tarefa igual ("${taskText}") pendente pra ${taskMember} — não criei de novo pra não duplicar.` });
+                  }else{
+                    addTask(taskMember,taskText,taskPrio,memberName);
+                    cs.messages.push({ role:"assistant", content:`✓ Tarefa criada para ${taskMember}: "${taskText}" [${PRIO[taskPrio]?.label||taskPrio}]` });
+                  }
+                }
               }else if(action.type==="criar_tarefa_recorrente"){
                 const {member:taskMember,text:taskText,prio:taskPrio,frequency,dayOfWeek,dayOfMonth}=action.input||{};
                 if(taskMember&&taskText&&taskPrio&&frequency){
-                  push(ref(db,"/recorrentes"),{
-                    member:taskMember,text:taskText,prio:taskPrio,frequency,
-                    dayOfWeek:frequency==="weekly"?(dayOfWeek??null):null,
-                    dayOfMonth:frequency==="monthly"?(dayOfMonth??null):null,
-                    active:true,createdBy:memberName,createdAt:Date.now(),
-                  });
+                  const norm=s=>String(s||"").trim().toLowerCase();
+                  const jaExiste=Object.values(state.recorrentes||{}).some(r=>r!=null&&r.active&&r.member===taskMember&&norm(r.text)===norm(taskText));
+                  if(jaExiste){
+                    cs.messages.push({ role:"assistant", content:`Já existe uma tarefa recorrente igual ("${taskText}") ativa pra ${taskMember} — não criei de novo pra não duplicar.` });
+                  }else{
+                    push(ref(db,"/recorrentes"),{
+                      member:taskMember,text:taskText,prio:taskPrio,frequency,
+                      dayOfWeek:frequency==="weekly"?(dayOfWeek??null):null,
+                      dayOfMonth:frequency==="monthly"?(dayOfMonth??null):null,
+                      active:true,createdBy:memberName,createdAt:Date.now(),
+                    });
+                    const freqLabel={daily:"todo dia",weekly:"toda semana",monthly:"todo mês"}[frequency]||frequency;
+                    cs.messages.push({ role:"assistant", content:`✓ Tarefa recorrente criada para ${taskMember}: "${taskText}" [${PRIO[taskPrio]?.label||taskPrio}] — ${freqLabel}` });
+                  }
                 }
               }
-            }catch(err){console.error("Erro ao executar ação do Claude:",err);}
+            }catch(err){console.error("Erro ao executar ação do Claude:",err);cs.messages.push({ role:"assistant", content:"Não consegui confirmar se a ação foi salva. Confere na lista de tarefas." });}
           });
         }
       }
