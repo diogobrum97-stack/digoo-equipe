@@ -2052,7 +2052,7 @@ async function fetchMLIdentity(conta) {
   if (!token) { mlIdentity[conta] = null; return; }
   mlIdentityLoading[conta] = true; render();
   try {
-    const r = await fetch(`${VERCEL_BACKEND}/api/ml-whoami?token=${token}`);
+    const r = await fetch(`${VERCEL_BACKEND}/api/ml-auth?whoami=1&token=${token}`);
     const data = await r.json();
     mlIdentity[conta] = r.ok ? data : { error: data.error || "erro" };
   } catch (e) {
