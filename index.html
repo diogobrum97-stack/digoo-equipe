@@ -46,6 +46,7 @@ h1 { font-family: 'Bebas Neue', sans-serif; font-size: 44px; letter-spacing: 5px
 .sync { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--pn); margin-left: 10px; vertical-align: middle; box-shadow: 0 0 10px var(--pn); animation: pulse 2s infinite; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
 @keyframes siren { 0%,100%{opacity:1} 50%{opacity:0.15} }
+@keyframes atrasoBlink { 0%,100%{opacity:1} 50%{opacity:0.25} }
 .grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; max-width: 1280px; margin: 0 auto; align-items: start; }
 .card { border-radius: 10px; border: 1px solid var(--border); overflow: hidden; transition: border-color 0.3s, box-shadow 0.3s; }
 @keyframes cardFlash { 0%,100% { box-shadow: none; } 50% { box-shadow: 0 0 40px var(--c), 0 0 80px var(--c); border-color: var(--c) !important; } }
@@ -288,6 +289,41 @@ const MEMBERS = [
   { name:"Larissa", initials:"LA", locked:false, phone:"55991774483" },
 ];
 const PRIO = { superurgente:{label:"Super Urgente"}, urgente:{label:"Urgente"}, importante:{label:"Importante"}, normal:{label:"Normal"} };
+const BUDGET_HORAS = { superurgente:4, urgente:24, importante:48, normal:72 };
+
+// Decodifica o timestamp embutido no ID gerado pelo push() do Firebase,
+// usado como fallback pra tarefas antigas que não têm createdAt salvo.
+function decodePushId(id){
+  const PUSH_CHARS = "-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
+  if(!id || id.length<8) return null;
+  let ts = 0;
+  for(let i=0;i<8;i++){
+    const idx = PUSH_CHARS.indexOf(id[i]);
+    if(idx<0) return null;
+    ts = ts*64 + idx;
+  }
+  return ts;
+}
+function taskCreatedAt(task){
+  if(task.createdAt) return task.createdAt;
+  const decoded = task.id ? decodePushId(task.id) : null;
+  return decoded || null;
+}
+function taskOverdueLabel(task){
+  if(!task || task.done) return null;
+  const budgetH = BUDGET_HORAS[task.prio];
+  if(!budgetH) return null;
+  const createdAt = taskCreatedAt(task);
+  if(!createdAt) return null;
+  const elapsedH = (Date.now()-createdAt)/3600000;
+  if(elapsedH <= budgetH) return null;
+  return elapsedH < 24 ? `ATRASADA HÁ ${Math.round(elapsedH)}H` : `ATRASADA HÁ ${Math.round(elapsedH/24)}D`;
+}
+function overdueBadgeHtml(task){
+  const label = taskOverdueLabel(task);
+  if(!label) return "";
+  return `<span style="background:#E24B4A22;color:#E24B4A;border:1px solid #E24B4A55;border-radius:4px;padding:2px 8px;font-size:9px;letter-spacing:0.5px;font-weight:500;animation:atrasoBlink 0.9s infinite;flex-shrink:0;">${label}</span>`;
+}
 
 function themeColor(name) {
   const light = document.body.classList.contains("light");
@@ -392,7 +428,7 @@ onValue(ref(db,"/"),snap=>{
 },()=>{syncDot.style.background="#f87171";});
 
 function addTask(member,text,prio,sender){
-  setSyncing(true);push(ref(db,"/tasks"),{member,text,prio,done:false,delegatedBy:sender||null});
+  setSyncing(true);push(ref(db,"/tasks"),{member,text,prio,done:false,delegatedBy:sender||null,createdAt:Date.now()});
   if(member!=="Diogo"){const from=sender||"Diogo";set(ref(db,`/flashes/${member}`),{ts:Date.now(),msg:`Nova tarefa de ${from}!`});startTabFlash(`Tarefa delegada para ${member}!`,themeColor(member));}
   else if(member==="Diogo"&&sender)set(ref(db,`/flashes/Diogo`),{ts:Date.now(),msg:`Nova tarefa de ${sender}!`});
 }
@@ -686,6 +722,7 @@ async function checkAndCreateRecorrentes() {
         isRecorrente: true,
         recorrenteId: rec.id || null,
         frequency: rec.frequency,
+        createdAt: Date.now(),
       });
     }
 
@@ -1739,6 +1776,8 @@ function render(){
                 chk.addEventListener("click",()=>toggleTask(task.id,task.done,task.progress,true));
                 const tw=document.createElement("div");tw.style.flex="1";
                 const tt=document.createElement("div");tt.className="task-text"+(task.done?" done":"");tt.textContent=task.text;tw.appendChild(tt);
+                const recBadge=overdueBadgeHtml(task);
+                if(recBadge){const bd=document.createElement("div");bd.style.cssText="margin-top:4px;display:flex;";bd.innerHTML=recBadge;tw.appendChild(bd);}
                 row.appendChild(chk);row.appendChild(tw);
                 // Botões reabrir + OK quando concluída — na ponta direita
                 if(task.done){
@@ -1778,7 +1817,7 @@ function render(){
               else chk.style.background="none";
               chk.addEventListener("click",()=>toggleTask(task.id,task.done,task.progress));
               const tw=document.createElement("div");tw.style.flex="1";const tt=document.createElement("div");tt.className="task-text"+(task.done?" done":"");tt.textContent=task.text;tw.appendChild(tt);
-              const pb=document.createElement("div");pb.className="task-prio";const puls=task.prio==="superurgente"?"animation:siren 0.6s infinite;":"";pb.innerHTML=`<span class="dot" style="background:${pc};${puls}"></span><span style="color:${pc};font-weight:${task.prio==="superurgente"?"700":"400"};${puls}">${PRIO[task.prio].label}</span>`;tw.appendChild(pb);
+              const pb=document.createElement("div");pb.className="task-prio";pb.style.justifyContent="space-between";const puls=task.prio==="superurgente"?"animation:siren 0.6s infinite;":"";pb.innerHTML=`<span style="display:flex;align-items:center;gap:4px;"><span class="dot" style="background:${pc};${puls}"></span><span style="color:${pc};font-weight:${task.prio==="superurgente"?"700":"400"};${puls}">${PRIO[task.prio].label}</span></span>${overdueBadgeHtml(task)}`;tw.appendChild(pb);
               row.appendChild(chk);row.appendChild(tw);
               if(task.done){
                 const btnWrap=document.createElement("div");
@@ -1804,6 +1843,8 @@ function render(){
               teamTasks.forEach(task=>{
                 const card2=document.createElement("div");card2.style.cssText=`background:var(--bg3);border:1px solid ${themeColor(task.delegatedBy)}44;border-left:3px solid ${themeColor(task.delegatedBy)};border-radius:6px;padding:10px 12px;margin-bottom:6px;`;
                 const hdr=document.createElement("div");hdr.style.cssText="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;";hdr.innerHTML=`<span style="font-size:10px;color:${themeColor(task.delegatedBy)};letter-spacing:1px;font-weight:500">${task.delegatedBy}</span><span style="font-size:9px;color:var(--text3)">${PRIO[task.prio].label}</span>`;card2.appendChild(hdr);
+                const teamBadge=overdueBadgeHtml(task);
+                if(teamBadge){const bd=document.createElement("div");bd.style.cssText="margin-bottom:6px;display:flex;";bd.innerHTML=teamBadge;card2.appendChild(bd);}
                 const tt2=document.createElement("div");tt2.style.cssText="font-size:13px;color:var(--text);line-height:1.4;margin-bottom:8px;";tt2.textContent=task.text;card2.appendChild(tt2);
                 const threadMsgs=Object.values(state.messages||{}).filter(m=>m!=null&&m.taskId===task.id).sort((a,b)=>(a.ts_raw||0)-(b.ts_raw||0));
                 if(threadMsgs.length>0){const thread=document.createElement("div");thread.style.cssText="border-top:1px solid var(--sep);padding-top:8px;margin-bottom:8px;";threadMsgs.forEach(msg=>{const isMine=msg.from==="Diogo";const mEl=document.createElement("div");mEl.style.cssText=`display:flex;flex-direction:${isMine?"row-reverse":"row"};margin-bottom:5px;`;const bubble=document.createElement("div");bubble.style.cssText=`max-width:75%;padding:5px 9px;border-radius:${isMine?"9px 9px 2px 9px":"9px 9px 9px 2px"};background:${isMine?themeColor("Diogo")+"22":"var(--bg2)"};border:1px solid ${isMine?themeColor("Diogo")+"44":"var(--border)"};`;bubble.innerHTML=`<div style="font-size:12px;color:var(--text);line-height:1.4">${msg.text}</div><div style="font-size:9px;color:var(--text3);margin-top:2px;text-align:${isMine?"right":"left"}">${msg.ts}</div>`;mEl.appendChild(bubble);thread.appendChild(mEl);});card2.appendChild(thread);}
@@ -1883,6 +1924,8 @@ function render(){
             chk.addEventListener("click",()=>toggleTask(task.id,task.done,task.progress));
             const tw=document.createElement("div");tw.style.flex="1";const tt=document.createElement("div");tt.className="task-text";tt.textContent=task.text;tw.appendChild(tt);
             if(task.delegatedBy){const dbb=document.createElement("div");dbb.style.cssText=`font-size:9px;color:${themeColor(task.delegatedBy)};margin-top:3px;letter-spacing:1px;`;dbb.textContent=`de ${task.delegatedBy}`;tw.appendChild(dbb);}
+            const delBadge=overdueBadgeHtml(task);
+            if(delBadge){const bd=document.createElement("div");bd.style.cssText="margin-top:4px;display:flex;";bd.innerHTML=delBadge;tw.appendChild(bd);}
             row.appendChild(chk);row.appendChild(tw);
             const taskMsgs=Object.values(state.messages||{}).filter(m=>m!=null&&m.taskId===task.id);
             const mb=document.createElement("button");mb.className="msg-btn"+(taskMsgs.length>0?" has-msg":"");mb.textContent=taskMsgs.length>0?`💬 ${taskMsgs.length}`:"💬";
@@ -2724,6 +2767,7 @@ if(urlParams.get("ml_connected")==="1"){window.history.replaceState({},"",window
 if(urlParams.get("ml_error")){alert("Erro ao conectar ML: "+urlParams.get("ml_error"));window.history.replaceState({},"",window.location.pathname);}
 
 setupIdentityScreen();
+setInterval(()=>{ try{ render(); }catch(e){} }, 5*60*1000); // mantém os badges de "atrasada" atualizados
 </script>
 </body>
 </html>
