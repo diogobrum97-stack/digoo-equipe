@@ -2582,92 +2582,113 @@ function renderSaudeChart(panel, enriched) {
       const mlFilialOn = !!state.ml_token_filial?.access_token;
 
       function buildRealSalesBlock(){
-        const realWrap = document.createElement("div");
-        realWrap.style.cssText = "margin-top:10px;padding-top:10px;border-top:1px dashed var(--sep);";
+        const wrap = document.createElement("div");
         const header = document.createElement("div");
-        header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;";
-        header.innerHTML = '<span style="font-size:9px;color:var(--text3);letter-spacing:1px;">VENDAS REAIS NO ML DESDE A MUDANÇA</span>';
-        const refBtn = document.createElement("button");
-        refBtn.textContent = "↻";
-        refBtn.title = "Atualizar";
-        refBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:3px;padding:1px 6px;font-size:10px;cursor:pointer;";
-        header.appendChild(refBtn);
-        realWrap.appendChild(header);
-        const realResult = document.createElement("div");
-        realWrap.appendChild(realResult);
+        header.style.cssText = "font-size:9px;color:var(--text3);letter-spacing:1px;margin-bottom:8px;";
+        header.textContent = "VENDAS REAIS NO ML DESDE A MUDANÇA";
+        wrap.appendChild(header);
+        const statsRow = document.createElement("div");
+        statsRow.style.cssText = "display:flex;align-items:center;gap:20px;flex-wrap:wrap;";
+        wrap.appendChild(statsRow);
+        const actionsRow = document.createElement("div");
+        actionsRow.style.cssText = "margin-top:8px;";
+        wrap.appendChild(actionsRow);
+        const listWrap = document.createElement("div");
+        listWrap.style.cssText = "display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--sep);max-height:220px;overflow-y:auto;";
+        wrap.appendChild(listWrap);
+        let listaCarregada = false;
+        let ultimoRdata = null;
 
         const buscar = async () => {
-          realResult.innerHTML = '<span class="spinning" style="color:var(--text3)">↻</span> <span style="color:var(--text3);font-size:11px;">Consultando Mercado Livre...</span>';
+          statsRow.innerHTML = '<span class="spinning" style="color:var(--text3)">↻</span> <span style="color:var(--text3);font-size:11px;">Consultando Mercado Livre...</span>';
+          actionsRow.innerHTML = "";
           try{
             const fromISO = new Date(pc.changedAt).toISOString();
             const url = `${VERCEL_BACKEND}/api/ml-vendas?token=${state.ml_token_filial.access_token}&sku=${encodeURIComponent(d.sku)}&from=${encodeURIComponent(fromISO)}`;
             const r = await fetch(url);
             const rdata = await r.json();
+            ultimoRdata = rdata;
             if(!r.ok || rdata.error){
-              realResult.innerHTML = `<span style="color:#f87171;font-size:11px;">Erro: ${rdata.error||"falha na consulta"}</span>`;
-            }else{
-              const m = rdata.skuMatch;
-              if(!m || m.qty===0){
-                const lista = rdata.skusVendidosNoPeriodo || [];
-                const norm = s => String(s||"").toLowerCase().replace(/[^a-z0-9]/g,"");
-                const skuNorm = norm(d.sku);
-                const parecidos = lista.filter(s => skuNorm.length>=6 && (norm(s).includes(skuNorm.slice(0,6)) || skuNorm.includes(norm(s).slice(0,6))));
-                let extra = "";
-                if(parecidos.length){
-                  extra = '<div style="margin-top:6px;color:#fbbf24;font-size:10px;line-height:1.5;">⚠ Achei SKU(s) parecido(s) que venderam nesse período: <strong>' + parecidos.join(", ") + '</strong>. O SKU cadastrado no Mercado Livre pode estar um pouco diferente do usado na planilha (' + d.sku + ').</div>';
-                }
-                realResult.innerHTML = '<span style="color:var(--text3);font-size:11px;">Nenhuma venda real registrada pra esse SKU nesse período no Mercado Livre.</span>' + extra;
-              }else{
-                realResult.innerHTML =
-                  '<div style="display:flex;gap:20px;flex-wrap:wrap;">' +
-                    '<div><div style="font-size:9px;color:var(--text3);">UNIDADES</div><div style="font-size:15px;font-weight:600;color:#fff155;">' + m.qty + '</div></div>' +
-                    '<div><div style="font-size:9px;color:var(--text3);">FATURAMENTO</div><div style="font-size:15px;font-weight:600;color:#fff155;">R$ ' + m.revenue.toLocaleString("pt-BR",{minimumFractionDigits:2}) + '</div></div>' +
-                  '</div>';
+              statsRow.innerHTML = `<span style="color:#f87171;font-size:11px;">Erro: ${rdata.error||"falha na consulta"}</span>`;
+              return;
+            }
+            const m = rdata.skuMatch;
+            if(!m || m.qty===0){
+              const lista = rdata.skusVendidosNoPeriodo || [];
+              const norm = s => String(s||"").toLowerCase().replace(/[^a-z0-9]/g,"");
+              const skuNorm = norm(d.sku);
+              const parecidos = lista.filter(s => skuNorm.length>=6 && (norm(s).includes(skuNorm.slice(0,6)) || skuNorm.includes(norm(s).slice(0,6))));
+              let extra = "";
+              if(parecidos.length){
+                extra = ' <span style="color:#fbbf24;">⚠ achei SKU parecido nas vendas: ' + parecidos.join(", ") + '</span>';
               }
+              statsRow.innerHTML = '<span style="color:var(--text3);font-size:11px;">Nenhuma venda registrada desde a mudança.' + extra + '</span>';
+            }else{
+              statsRow.innerHTML =
+                '<div><div style="font-size:9px;color:var(--text3);">UNIDADES</div><div style="font-size:15px;font-weight:600;color:#fff155;">' + m.qty + '</div></div>' +
+                '<div><div style="font-size:9px;color:var(--text3);">FATURAMENTO</div><div style="font-size:15px;font-weight:600;color:#fff155;">R$ ' + m.revenue.toLocaleString("pt-BR",{minimumFractionDigits:2}) + '</div></div>';
+              const toggleBtn = document.createElement("button");
+              toggleBtn.textContent = "Ver lista";
+              toggleBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:3px 10px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:0.5px;";
+              toggleBtn.addEventListener("click", () => {
+                const vis = listWrap.style.display !== "none";
+                if(vis){ listWrap.style.display = "none"; toggleBtn.textContent = "Ver lista"; return; }
+                toggleBtn.textContent = "Esconder lista";
+                listWrap.style.display = "block";
+                if(!listaCarregada){
+                  listaCarregada = true;
+                  const itens = ultimoRdata.skuVendasDetalhe || [];
+                  if(!itens.length){
+                    listWrap.innerHTML = '<span style="font-size:11px;color:var(--text3);">Sem detalhe disponível.</span>';
+                  }else{
+                    listWrap.innerHTML = itens.map(v => {
+                      const dt = new Date(v.date).toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"});
+                      return '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--sep);font-size:11px;">' +
+                        '<span style="color:var(--text3);">' + dt + '</span>' +
+                        '<span>' + v.qty + ' un</span>' +
+                        '<span style="color:var(--text2);">R$ ' + v.total.toLocaleString("pt-BR",{minimumFractionDigits:2}) + '</span>' +
+                      '</div>';
+                    }).join("");
+                  }
+                }
+              });
+              actionsRow.appendChild(toggleBtn);
             }
           }catch(err){
-            realResult.innerHTML = `<span style="color:#f87171;font-size:11px;">Erro de conexão: ${err.message}</span>`;
+            statsRow.innerHTML = `<span style="color:#f87171;font-size:11px;">Erro de conexão: ${err.message}</span>`;
           }
         };
-        refBtn.addEventListener("click", buscar);
         buscar(); // busca automática ao abrir o card, sem precisar clicar
-        return realWrap;
+        return wrap;
       }
 
       if(pc){
         const diasDesde = Math.max(1, Math.round((Date.now()-pc.changedAt)/86400000));
-        const antes = pc.vendas30AtChange||0;
-        const depois = d.vendas30;
-        const delta = depois - antes;
-        const deltaColor = delta>0?"#3dd68c":delta<0?"#E24B4A":"var(--text3)";
-        const deltaSign = delta>0?"+":"";
-        const marcadoPor = pc.changedBy==="automático" ? "detectado automaticamente" : "marcado por "+(pc.changedBy||"—");
-        const precoLinha = (pc.priceBefore!=null && pc.priceAfter!=null)
-          ? `<div style="font-size:10px;color:var(--text3);margin-bottom:6px;">R$ ${Number(pc.priceBefore).toFixed(2)} → R$ ${Number(pc.priceAfter).toFixed(2)}</div>`
-          : "";
         const info = document.createElement("div");
-        info.innerHTML =
-          '<div style="font-size:9px;color:var(--text3);letter-spacing:1px;margin-bottom:6px;">DESDE A MUDANÇA DE PREÇO (há ' + diasDesde + 'd, ' + marcadoPor + ')</div>' +
-          precoLinha +
-          '<div style="display:flex;gap:20px;flex-wrap:wrap;align-items:baseline;margin-bottom:2px;">' +
-            '<div><div style="font-size:9px;color:var(--text3);">VENDAS/MÊS ANTES</div><div style="font-size:14px;color:var(--text);">' + antes + '</div></div>' +
-            '<div><div style="font-size:9px;color:var(--text3);">VENDAS/MÊS AGORA</div><div style="font-size:14px;color:var(--text);">' + depois + '</div></div>' +
-            '<div><div style="font-size:9px;color:var(--text3);">VARIAÇÃO</div><div style="font-size:14px;color:' + deltaColor + ';font-weight:600;">' + deltaSign + delta + '</div></div>' +
-          '</div>';
+        info.style.cssText = "margin-bottom:10px;";
+        if(pc.priceBefore!=null && pc.priceAfter!=null){
+          const subiu = Number(pc.priceAfter) > Number(pc.priceBefore);
+          const precoColor = subiu ? "#3dd68c" : "#E24B4A";
+          info.innerHTML =
+            '<div style="font-size:9px;color:var(--text3);letter-spacing:1px;margin-bottom:6px;">MUDANÇA DE PREÇO · há ' + diasDesde + 'd</div>' +
+            '<div style="font-size:15px;">R$ ' + Number(pc.priceBefore).toFixed(2) + ' <span style="color:var(--text3);">→</span> <span style="color:' + precoColor + ';font-weight:600;">R$ ' + Number(pc.priceAfter).toFixed(2) + '</span></div>';
+        }else{
+          info.innerHTML = '<div style="font-size:9px;color:var(--text3);letter-spacing:1px;">MUDANÇA DE PREÇO · há ' + diasDesde + 'd</div>';
+        }
         priceSection.appendChild(info);
 
         if(mlFilialOn){
           priceSection.appendChild(buildRealSalesBlock());
         }else{
           const hint = document.createElement("div");
-          hint.style.cssText = "font-size:10px;color:var(--text3);margin-top:8px;line-height:1.5;";
-          hint.textContent = "Conecte o ML Filial (no topo da aba) pra ver o número real de vendas desde essa mudança, sem precisar de planilha.";
+          hint.style.cssText = "font-size:10px;color:var(--text3);line-height:1.5;";
+          hint.textContent = "Conecte o ML Filial (no topo da aba) pra ver as vendas reais desde essa mudança.";
           priceSection.appendChild(hint);
         }
       }else if(mlFilialOn){
         const hint = document.createElement("div");
         hint.style.cssText = "font-size:10px;color:var(--text3);line-height:1.5;";
-        hint.textContent = "Assim que o preço desse SKU mudar no Mercado Livre, o painel detecta sozinho na próxima vez que você abrir a aba Estoque e começa a acompanhar as vendas daqui pra frente.";
+        hint.textContent = "Assim que o preço desse SKU mudar no Mercado Livre, o painel detecta sozinho na próxima vez que você abrir a aba Estoque.";
         priceSection.appendChild(hint);
       }else{
         const markBtn = document.createElement("button");
@@ -2677,7 +2698,7 @@ function renderSaudeChart(panel, enriched) {
         priceSection.appendChild(markBtn);
         const hint = document.createElement("div");
         hint.style.cssText = "font-size:10px;color:var(--text3);margin-top:6px;line-height:1.5;";
-        hint.textContent = "Conecte o ML Filial (no topo da aba) pra isso ficar automático. Sem ele, você precisa marcar manualmente quando mudar o preço.";
+        hint.textContent = "Conecte o ML Filial (no topo da aba) pra isso ficar automático.";
         priceSection.appendChild(hint);
       }
       det.appendChild(priceSection);
