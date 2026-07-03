@@ -346,7 +346,7 @@ function setSyncing(v){syncDot.style.opacity=v?"0.4":"1";}
 
 onValue(ref(db,"/"),snap=>{
   const d=snap.val()||{};
-  d.tasks=d.tasks||{};d.messages=d.messages||{};d.flashes=d.flashes||{};d.notices=d.notices||{};d.ml_token=d.ml_token||null;d.ml_cache=d.ml_cache||null;
+  d.tasks=d.tasks||{};d.messages=d.messages||{};d.flashes=d.flashes||{};d.notices=d.notices||{};d.ml_token=d.ml_token||null;d.ml_cache=d.ml_cache||null;d.price_changes=d.price_changes||{};
   const seenTasks=JSON.parse(localStorage.getItem("digoo_seen_tasks")||"{}");
   let seenChanged=false;
   Object.entries(d.tasks).filter(([,t])=>t!=null).forEach(([id,task])=>{
@@ -2454,6 +2454,47 @@ function renderSaudeChart(panel, enriched) {
           '<div><div style="font-size:9px;color:var(--text3);letter-spacing:1px;margin-bottom:3px;">UNIDADES</div><div style="font-size:16px;font-weight:500;color:var(--text);">' + d.aptas + '</div></div>' +
         '</div>' +
         '<div style="font-size:12px;color:var(--text3);line-height:1.6;font-family:system-ui,sans-serif;">' + msg + '</div>';
+
+      const priceSection = document.createElement("div");
+      priceSection.style.cssText = "margin-top:14px;padding-top:12px;border-top:1px solid var(--sep);";
+      const pc = state.price_changes && state.price_changes[d.sku];
+      if(pc){
+        const diasDesde = Math.max(1, Math.round((Date.now()-pc.changedAt)/86400000));
+        const antes = pc.vendas30AtChange||0;
+        const depois = d.vendas30;
+        const delta = depois - antes;
+        const deltaColor = delta>0?"#3dd68c":delta<0?"#E24B4A":"var(--text3)";
+        const deltaSign = delta>0?"+":"";
+        const info = document.createElement("div");
+        info.innerHTML =
+          '<div style="font-size:9px;color:var(--text3);letter-spacing:1px;margin-bottom:6px;">DESDE A MUDANÇA DE PREÇO (há ' + diasDesde + 'd, marcada por ' + (pc.changedBy||"—") + ')</div>' +
+          '<div style="display:flex;gap:20px;flex-wrap:wrap;align-items:baseline;margin-bottom:10px;">' +
+            '<div><div style="font-size:9px;color:var(--text3);">VENDAS/MÊS ANTES</div><div style="font-size:14px;color:var(--text);">' + antes + '</div></div>' +
+            '<div><div style="font-size:9px;color:var(--text3);">VENDAS/MÊS AGORA</div><div style="font-size:14px;color:var(--text);">' + depois + '</div></div>' +
+            '<div><div style="font-size:9px;color:var(--text3);">VARIAÇÃO</div><div style="font-size:14px;color:' + deltaColor + ';font-weight:600;">' + deltaSign + delta + '</div></div>' +
+          '</div>';
+        priceSection.appendChild(info);
+        const note = document.createElement("div");
+        note.style.cssText = "font-size:10px;color:var(--text3);line-height:1.5;margin-bottom:8px;";
+        note.textContent = "Comparação aproximada: usa a venda dos últimos 30 dias de quando você marcou vs. agora, não vendas dia a dia.";
+        priceSection.appendChild(note);
+        const resetBtn = document.createElement("button");
+        resetBtn.textContent = "📌 Mudei o preço de novo agora";
+        resetBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:5px 10px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:0.5px;";
+        resetBtn.addEventListener("click",()=>{set(ref(db,`/price_changes/${d.sku}`),{vendas30AtChange:d.vendas30,changedAt:Date.now(),changedBy:currentUser});});
+        priceSection.appendChild(resetBtn);
+      }else{
+        const markBtn = document.createElement("button");
+        markBtn.textContent = "📌 Marquei mudança de preço agora";
+        markBtn.style.cssText = `background:none;border:1px dashed ${c}66;color:${c};border-radius:5px;padding:7px 12px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:1px;width:100%;`;
+        markBtn.addEventListener("click",()=>{set(ref(db,`/price_changes/${d.sku}`),{vendas30AtChange:d.vendas30,changedAt:Date.now(),changedBy:currentUser});});
+        priceSection.appendChild(markBtn);
+        const hint = document.createElement("div");
+        hint.style.cssText = "font-size:10px;color:var(--text3);margin-top:6px;line-height:1.5;";
+        hint.textContent = "Clica aqui assim que mudar o preço no Mercado Livre. Da próxima vez que abrir esse card eu comparo as vendas de antes e depois.";
+        priceSection.appendChild(hint);
+      }
+      det.appendChild(priceSection);
 
       detWrap.appendChild(det);
       activeDet = det;
