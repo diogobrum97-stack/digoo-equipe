@@ -322,7 +322,8 @@ function taskOverdueLabel(task){
 function overdueBadgeHtml(task){
   const label = taskOverdueLabel(task);
   if(!label) return "";
-  return `<span style="background:#E24B4A22;color:#E24B4A;border:1px solid #E24B4A55;border-radius:4px;padding:2px 8px;font-size:9px;letter-spacing:0.5px;font-weight:500;animation:atrasoBlink 0.9s infinite;flex-shrink:0;">${label}</span>`;
+  const pc = themePrio(task.prio);
+  return `<span style="background:${pc}18;color:${pc};border:1px solid ${pc}77;border-radius:4px;padding:2px 8px;font-size:9px;letter-spacing:0.5px;font-weight:600;box-shadow:0 0 4px ${pc}55;flex-shrink:0;">${label}</span>`;
 }
 
 function themeColor(name) {
