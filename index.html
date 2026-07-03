@@ -1550,6 +1550,26 @@ function renderChatModal(memberName, color) {
         cs.messages.push({ role:"assistant", content: data?.error || `Erro ${r.status} no servidor. Tente uma pergunta mais curta ou tente de novo em instantes.` });
       } else {
         cs.messages.push({ role:"assistant", content: data?.reply || data?.error || "Erro" });
+        if(Array.isArray(data?.actions)){
+          data.actions.forEach(action=>{
+            try{
+              if(action.type==="criar_tarefa"){
+                const {member:taskMember,text:taskText,prio:taskPrio}=action.input||{};
+                if(taskMember&&taskText&&taskPrio) addTask(taskMember,taskText,taskPrio,memberName);
+              }else if(action.type==="criar_tarefa_recorrente"){
+                const {member:taskMember,text:taskText,prio:taskPrio,frequency,dayOfWeek,dayOfMonth}=action.input||{};
+                if(taskMember&&taskText&&taskPrio&&frequency){
+                  push(ref(db,"/recorrentes"),{
+                    member:taskMember,text:taskText,prio:taskPrio,frequency,
+                    dayOfWeek:frequency==="weekly"?(dayOfWeek??null):null,
+                    dayOfMonth:frequency==="monthly"?(dayOfMonth??null):null,
+                    active:true,createdBy:memberName,createdAt:Date.now(),
+                  });
+                }
+              }
+            }catch(err){console.error("Erro ao executar ação do Claude:",err);}
+          });
+        }
       }
     } catch(e) {
       cs.messages.push({ role:"assistant", content:"Erro de conexão. Tente novamente." });
