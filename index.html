@@ -346,7 +346,7 @@ function setSyncing(v){syncDot.style.opacity=v?"0.4":"1";}
 
 onValue(ref(db,"/"),snap=>{
   const d=snap.val()||{};
-  d.tasks=d.tasks||{};d.messages=d.messages||{};d.flashes=d.flashes||{};d.notices=d.notices||{};d.ml_token=d.ml_token||null;d.ml_cache=d.ml_cache||null;d.price_changes=d.price_changes||{};
+  d.tasks=d.tasks||{};d.messages=d.messages||{};d.flashes=d.flashes||{};d.notices=d.notices||{};d.ml_token=d.ml_token||null;d.ml_cache=d.ml_cache||null;d.price_changes=d.price_changes||{};d.ml_token_filial=d.ml_token_filial||null;
   const seenTasks=JSON.parse(localStorage.getItem("digoo_seen_tasks")||"{}");
   let seenChanged=false;
   Object.entries(d.tasks).filter(([,t])=>t!=null).forEach(([id,task])=>{
@@ -2164,6 +2164,26 @@ function renderFilialSP(panel, color) {
   uploadWrap.appendChild(blingStatus);
   panel.appendChild(uploadWrap);
 
+  // Status ML Filial (necessário pro acompanhamento de vendas reais após mudança de preço)
+  const mlFilialWrap = document.createElement("div");
+  mlFilialWrap.style.cssText = "display:flex;align-items:center;gap:6px;font-size:9px;margin-bottom:14px;";
+  if(state.ml_token_filial?.access_token){
+    mlFilialWrap.innerHTML = `<span style="color:#3dd68c">●</span><span style="color:var(--text3)">ML Filial conectado</span>`;
+    const reconBtn = document.createElement("button");
+    reconBtn.textContent = "Reconectar";
+    reconBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer;letter-spacing:1px;margin-left:4px;";
+    reconBtn.addEventListener("click", () => window.open(`${VERCEL_BACKEND}/api/ml-auth?conta=filial`, "_blank"));
+    mlFilialWrap.appendChild(reconBtn);
+  }else{
+    mlFilialWrap.innerHTML = `<span style="color:var(--text3)">ML Filial desconectado</span>`;
+    const connBtn = document.createElement("button");
+    connBtn.textContent = "Conectar ML Filial";
+    connBtn.style.cssText = "background:none;border:1px solid #fff15566;color:#fff155;border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer;letter-spacing:1px;margin-left:4px;";
+    connBtn.addEventListener("click", () => window.open(`${VERCEL_BACKEND}/api/ml-auth?conta=filial`, "_blank"));
+    mlFilialWrap.appendChild(connBtn);
+  }
+  panel.appendChild(mlFilialWrap);
+
   if (!estoqueExcelData || !estoqueExcelData.rows || estoqueExcelData.rows.length === 0) {
     const empty = document.createElement("div");
     empty.style.cssText = "text-align:center;padding:40px 0;color:var(--text3);font-size:11px;";
@@ -2483,6 +2503,47 @@ function renderSaudeChart(panel, enriched) {
         resetBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:5px 10px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:0.5px;";
         resetBtn.addEventListener("click",()=>{set(ref(db,`/price_changes/${d.sku}`),{vendas30AtChange:d.vendas30,changedAt:Date.now(),changedBy:currentUser});});
         priceSection.appendChild(resetBtn);
+
+        if(state.ml_token_filial?.access_token){
+          const realWrap = document.createElement("div");
+          realWrap.style.cssText = "margin-top:10px;padding-top:10px;border-top:1px dashed var(--sep);";
+          const realBtn = document.createElement("button");
+          realBtn.textContent = "🔄 Ver vendas reais (ML) desde a mudança";
+          realBtn.style.cssText = `background:none;border:1px solid #fff15566;color:#fff155;border-radius:4px;padding:6px 12px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:0.5px;`;
+          const realResult = document.createElement("div");
+          realResult.style.cssText = "margin-top:8px;";
+          realBtn.addEventListener("click", async ()=>{
+            realBtn.disabled = true;
+            realResult.innerHTML = '<span class="spinning" style="color:var(--text3)">↻</span> <span style="color:var(--text3);font-size:11px;">Consultando Mercado Livre...</span>';
+            try{
+              const fromISO = new Date(pc.changedAt).toISOString();
+              const url = `${VERCEL_BACKEND}/api/ml-vendas?token=${state.ml_token_filial.access_token}&sku=${encodeURIComponent(d.sku)}&from=${encodeURIComponent(fromISO)}`;
+              const r = await fetch(url);
+              const rdata = await r.json();
+              if(!r.ok || rdata.error){
+                realResult.innerHTML = `<span style="color:#f87171;font-size:11px;">Erro: ${rdata.error||"falha na consulta"}</span>`;
+              }else{
+                const m = rdata.skuMatch;
+                if(!m || m.qty===0){
+                  realResult.innerHTML = '<span style="color:var(--text3);font-size:11px;">Nenhuma venda real registrada pra esse SKU nesse período no Mercado Livre.</span>';
+                }else{
+                  realResult.innerHTML =
+                    '<div style="font-size:9px;color:var(--text3);letter-spacing:1px;margin-bottom:4px;">VENDAS REAIS NO ML DESDE A MUDANÇA</div>' +
+                    '<div style="display:flex;gap:20px;flex-wrap:wrap;">' +
+                      '<div><div style="font-size:9px;color:var(--text3);">UNIDADES</div><div style="font-size:15px;font-weight:600;color:#fff155;">' + m.qty + '</div></div>' +
+                      '<div><div style="font-size:9px;color:var(--text3);">FATURAMENTO</div><div style="font-size:15px;font-weight:600;color:#fff155;">R$ ' + m.revenue.toLocaleString("pt-BR",{minimumFractionDigits:2}) + '</div></div>' +
+                    '</div>';
+                }
+              }
+            }catch(err){
+              realResult.innerHTML = `<span style="color:#f87171;font-size:11px;">Erro de conexão: ${err.message}</span>`;
+            }
+            realBtn.disabled = false;
+          });
+          realWrap.appendChild(realBtn);
+          realWrap.appendChild(realResult);
+          priceSection.appendChild(realWrap);
+        }
       }else{
         const markBtn = document.createElement("button");
         markBtn.textContent = "📌 Marquei mudança de preço agora";
