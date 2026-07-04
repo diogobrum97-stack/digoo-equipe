@@ -490,8 +490,6 @@ let estoqueBlingData=null;
 let estoqueBlingLoading=false;
 let estoqueBlingErro=null;
 let estoqueLoc="filial"; // "filial" ou "matriz"
-let mlIdentity={matriz:null,filial:null}; // {id,nickname,email} por conta
-let mlIdentityLoading={matriz:false,filial:false};
 let matrizRows=[]; // dados do relatório Bling Matriz RS
 let matrizFileName="";
 const BLING_PROXY="https://digoo-backend.vercel.app";
@@ -2153,20 +2151,6 @@ async function processarRelatorioMatriz(file) {
   return dados;
 }
 
-async function fetchMLIdentity(conta) {
-  const token = conta === "filial" ? state.ml_token_filial?.access_token : state.ml_token?.access_token;
-  if (!token) { mlIdentity[conta] = null; return; }
-  mlIdentityLoading[conta] = true; render();
-  try {
-    const r = await fetch(`${VERCEL_BACKEND}/api/ml-auth?whoami=1&token=${token}`);
-    const data = await r.json();
-    mlIdentity[conta] = r.ok ? data : { error: data.error || "erro" };
-  } catch (e) {
-    mlIdentity[conta] = { error: e.message };
-  }
-  mlIdentityLoading[conta] = false; render();
-}
-
 let precoAutoCheckDone = false;
 let precoAutoCheckLoading = false;
 async function checkPriceChangesAuto() {
@@ -2331,7 +2315,7 @@ function renderFilialSP(panel, color) {
 
   // Status ML Filial (necessário pro acompanhamento de vendas reais após mudança de preço)
   const mlFilialWrap = document.createElement("div");
-  mlFilialWrap.style.cssText = "display:flex;align-items:center;gap:6px;font-size:9px;margin-bottom:8px;flex-wrap:wrap;";
+  mlFilialWrap.style.cssText = "display:flex;align-items:center;gap:6px;font-size:9px;margin-bottom:14px;flex-wrap:wrap;";
   if(state.ml_token_filial?.access_token){
     mlFilialWrap.innerHTML = `<span style="color:#3dd68c">●</span><span style="color:var(--text3)">ML Filial conectado</span>`;
     const reconBtn = document.createElement("button");
@@ -2348,48 +2332,6 @@ function renderFilialSP(panel, color) {
     mlFilialWrap.appendChild(connBtn);
   }
   panel.appendChild(mlFilialWrap);
-
-  // Identidade das contas conectadas — pra conferir se Matriz e Filial não são a mesma conta por engano
-  const identWrap = document.createElement("div");
-  identWrap.style.cssText = "font-size:9px;color:var(--text3);margin-bottom:14px;display:flex;flex-direction:column;gap:4px;";
-
-  const renderContaLine = (label, conta, temToken) => {
-    const line = document.createElement("div");
-    line.style.cssText = "display:flex;align-items:center;gap:6px;";
-    if(!temToken){
-      line.innerHTML = `<span style="opacity:0.6;">${label}:</span><span style="opacity:0.5;">não conectada</span>`;
-      return line;
-    }
-    if(mlIdentityLoading[conta]){
-      line.innerHTML = `<span style="opacity:0.6;">${label}:</span><span class="spinning">↻</span> verificando...`;
-    }else if(mlIdentity[conta]?.error){
-      line.innerHTML = `<span style="opacity:0.6;">${label}:</span><span style="color:#f87171;">erro ao verificar (${mlIdentity[conta].error})</span>`;
-      const retryBtn = document.createElement("button");
-      retryBtn.textContent = "↻"; retryBtn.style.cssText = "background:none;border:none;color:var(--text3);cursor:pointer;font-size:10px;";
-      retryBtn.addEventListener("click", () => fetchMLIdentity(conta));
-      line.appendChild(retryBtn);
-    }else if(mlIdentity[conta]){
-      line.innerHTML = `<span style="opacity:0.6;">${label}:</span><span style="color:var(--text2);">${mlIdentity[conta].nickname||"—"} <span style="opacity:0.5;">(#${mlIdentity[conta].id})</span></span>`;
-    }else{
-      const checkBtn = document.createElement("button");
-      checkBtn.textContent = `Ver qual conta é (${label.toLowerCase()})`;
-      checkBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer;letter-spacing:0.5px;";
-      checkBtn.addEventListener("click", () => fetchMLIdentity(conta));
-      line.appendChild(document.createTextNode(""));
-      line.appendChild(checkBtn);
-    }
-    return line;
-  };
-  identWrap.appendChild(renderContaLine("Matriz", "matriz", !!state.ml_token?.access_token));
-  identWrap.appendChild(renderContaLine("Filial", "filial", !!state.ml_token_filial?.access_token));
-
-  if(mlIdentity.matriz?.id && mlIdentity.filial?.id && mlIdentity.matriz.id === mlIdentity.filial.id){
-    const warn = document.createElement("div");
-    warn.style.cssText = "color:#f87171;font-size:10px;margin-top:2px;font-weight:500;";
-    warn.textContent = "⚠ Matriz e Filial estão conectadas na MESMA conta do Mercado Livre. A conexão da filial não deu certo de verdade — reconecte estando logado no navegador com a conta correta da filial.";
-    identWrap.appendChild(warn);
-  }
-  panel.appendChild(identWrap);
 
   if (!estoqueExcelData || !estoqueExcelData.rows || estoqueExcelData.rows.length === 0) {
     const empty = document.createElement("div");
@@ -2844,37 +2786,7 @@ function renderSaudeChart(panel, enriched) {
 document.getElementById("user-label").addEventListener("click",()=>{localStorage.removeItem(STORAGE_KEY);currentUser=null;const s=document.getElementById("identity-screen");s.innerHTML="";s.style.display="flex";setupIdentityScreen();});
 
 const urlParams=new URLSearchParams(window.location.search);
-if(urlParams.get("ml_connected")==="1"){
-  const contaConectada=urlParams.get("conta");
-  window.history.replaceState({},"",window.location.pathname);
-  if(contaConectada==="filial"||contaConectada==="matriz"){
-    // Espera um instante pro Firebase sincronizar o token recém-salvo, depois
-    // confere se a conta conectada não é a mesma da outra (matriz/filial trocadas)
-    setTimeout(async ()=>{
-      try{
-        const tokenRecemConectado = contaConectada==="filial" ? state.ml_token_filial?.access_token : state.ml_token?.access_token;
-        const outraChave = contaConectada==="filial" ? "matriz" : "filial";
-        const tokenOutraConta = contaConectada==="filial" ? state.ml_token?.access_token : state.ml_token_filial?.access_token;
-        if(!tokenRecemConectado) return;
-        const rNova=await fetch(`${VERCEL_BACKEND}/api/ml-auth?whoami=1&token=${tokenRecemConectado}`);
-        const dNova=await rNova.json();
-        if(!rNova.ok||!dNova.id) return;
-        mlIdentity[contaConectada]=dNova;
-        if(tokenOutraConta){
-          const rOutra=await fetch(`${VERCEL_BACKEND}/api/ml-auth?whoami=1&token=${tokenOutraConta}`);
-          const dOutra=await rOutra.json();
-          if(rOutra.ok&&dOutra.id){
-            mlIdentity[outraChave]=dOutra;
-            if(dOutra.id===dNova.id){
-              alert(`⚠ Conectou a conta ERRADA!\n\nA conta "${contaConectada}" ficou com a mesma conta do Mercado Livre (${dNova.nickname||dNova.id}) que já está conectada na "${outraChave}".\n\nAbra uma aba anônima/privada, faça login no Mercado Livre com a conta certa da ${contaConectada}, e clique em "Reconectar" de novo.`);
-            }
-          }
-        }
-        render();
-      }catch(e){ console.error("Erro ao verificar conta ML recém-conectada:", e.message); }
-    }, 1500);
-  }
-}
+if(urlParams.get("ml_connected")==="1"){window.history.replaceState({},"",window.location.pathname);}
 if(urlParams.get("ml_error")){alert("Erro ao conectar ML: "+urlParams.get("ml_error"));window.history.replaceState({},"",window.location.pathname);}
 
 setupIdentityScreen();
