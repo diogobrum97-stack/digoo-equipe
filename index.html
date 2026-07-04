@@ -383,7 +383,7 @@ function setSyncing(v){syncDot.style.opacity=v?"0.4":"1";}
 
 onValue(ref(db,"/"),snap=>{
   const d=snap.val()||{};
-  d.tasks=d.tasks||{};d.messages=d.messages||{};d.flashes=d.flashes||{};d.notices=d.notices||{};d.ml_token=d.ml_token||null;d.ml_cache=d.ml_cache||null;d.price_changes=d.price_changes||{};d.ml_token_filial=d.ml_token_filial||null;d.last_known_prices=d.last_known_prices||{};d.nfes_processadas=d.nfes_processadas||{};
+  d.tasks=d.tasks||{};d.messages=d.messages||{};d.flashes=d.flashes||{};d.notices=d.notices||{};d.ml_token=d.ml_token||null;d.ml_cache=d.ml_cache||null;d.price_changes=d.price_changes||{};d.ml_token_filial=d.ml_token_filial||null;d.last_known_prices=d.last_known_prices||{};d.nfes_processadas=d.nfes_processadas||{};d.categoria_saude=d.categoria_saude||{};
   const seenTasks=JSON.parse(localStorage.getItem("digoo_seen_tasks")||"{}");
   let seenChanged=false;
   Object.entries(d.tasks).filter(([,t])=>t!=null).forEach(([id,task])=>{
@@ -2635,6 +2635,7 @@ function renderSaudeChart(panel, enriched) {
   }).sort((a,b) => b.dias - a.dias);
 
   const cor = d => d.dias <= 15 ? "#3dd68c" : d.dias <= 90 ? "#EF9F27" : "#E24B4A";
+  const categoriaKey = d => d.dias <= 15 ? "verde" : d.dias <= 90 ? "amarelo" : "vermelho";
   const badgeText = d => d.dias <= 15 ? "↑ SUBIR" : d.dias <= 90 ? "~ ACOMPANHAR" : "↓ BAIXAR";
   const diasLabel = d => d.dias >= 999 ? "sem vendas" : d.dias + "d";
 
@@ -2643,14 +2644,31 @@ function renderSaudeChart(panel, enriched) {
 
   saudeRows.forEach(d => {
     const c = cor(d);
+    const skuKey = String(d.sku).replace(/[.#$\[\]\/]/g, "_"); // Firebase não aceita esses caracteres em chaves
+    const catAtual = categoriaKey(d);
+    const registro = state.categoria_saude?.[skuKey];
+    let mostrarPonto = false;
+    if (!registro) {
+      // primeira vez vendo esse SKU — só grava a categoria atual como referência, sem marcar mudança
+      set(ref(db, `/categoria_saude/${skuKey}`), { categoria: catAtual, vista: true });
+    } else if (registro.categoria !== catAtual) {
+      // categoria mudou desde a última vez — marca como não visto ainda
+      set(ref(db, `/categoria_saude/${skuKey}`), { categoria: catAtual, vista: false });
+      mostrarPonto = true;
+    } else if (registro.vista === false) {
+      mostrarPonto = true;
+    }
+
     const chip = document.createElement("div");
-    chip.style.cssText = "display:flex;flex-direction:column;gap:3px;padding:8px 10px;border-radius:6px;border:1px solid " + c + "44;background:" + c + "10;cursor:pointer;min-width:110px;transition:all 0.15s;";
+    chip.style.cssText = "position:relative;display:flex;flex-direction:column;gap:3px;padding:8px 10px;border-radius:6px;border:1px solid " + c + "44;background:" + c + "10;cursor:pointer;min-width:110px;transition:all 0.15s;";
     chip.innerHTML =
+      (mostrarPonto ? '<div style="position:absolute;top:6px;right:6px;width:6px;height:6px;border-radius:50%;background:' + c + ';box-shadow:0 0 4px ' + c + ';"></div>' : '') +
       '<div style="font-size:9px;color:' + c + ';font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px;">' + d.sku + '</div>' +
       '<div style="font-size:12px;font-weight:600;color:' + c + ';">' + diasLabel(d) + '</div>' +
       '<div style="font-size:9px;color:var(--text3);">R$' + Math.round(d.valor / 1000) + 'k · ' + d.vendas30 + '/mês</div>';
 
     chip.addEventListener("click", () => {
+      if (mostrarPonto) update(ref(db, `/categoria_saude/${skuKey}`), { vista: true });
       if (activeDet) activeDet.remove();
       if (activeChip) activeChip.style.outline = "none";
       if (activeChip === chip) { activeChip = null; activeDet = null; return; }
