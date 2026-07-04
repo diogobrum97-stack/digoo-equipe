@@ -2153,6 +2153,42 @@ async function processarRelatorioMatriz(file) {
 
 let precoAutoCheckDone = false;
 let precoAutoCheckLoading = false;
+let estoqueAutoCheckDone = false;
+let estoqueAutoLoading = false;
+let estoqueAutoErro = null;
+async function fetchEstoqueAutomatico(forcar) {
+  if (estoqueAutoLoading) return;
+  if (estoqueAutoCheckDone && !forcar) return;
+  const token = state.ml_token_filial?.access_token;
+  if (!token) return;
+  estoqueAutoLoading = true; estoqueAutoErro = null; render();
+  try {
+    const rEstoque = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${token}&estoque=1`);
+    const dEstoque = await rEstoque.json();
+    if (!rEstoque.ok || !dEstoque.rows) throw new Error(dEstoque.error || "falha ao buscar estoque do Full");
+
+    const rVendas = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${token}&days=30`);
+    const dVendas = await rVendas.json();
+    const vendasPorSku = {};
+    (dVendas.allProducts || []).forEach(p => {
+      if (p.sku) vendasPorSku[String(p.sku).trim().toLowerCase()] = p.qty || 0;
+    });
+
+    const rows = dEstoque.rows.map(r => ({
+      ...r,
+      vendas30: vendasPorSku[String(r.sku).trim().toLowerCase()] || 0,
+    }));
+
+    estoqueExcelData = { fileName: "(automático via Mercado Livre Full)", rows, automatico: true };
+  } catch (e) {
+    estoqueAutoErro = e.message;
+    console.error("Erro ao buscar estoque automático:", e.message);
+  }
+  estoqueAutoLoading = false;
+  estoqueAutoCheckDone = true;
+  render();
+}
+
 async function checkPriceChangesAuto() {
   if (precoAutoCheckDone || precoAutoCheckLoading) return;
   const token = state.ml_token_filial?.access_token;
@@ -2225,6 +2261,7 @@ async function fetchBlingProdutos() {
 // ── RENDER CARD ESTOQUE ──────────────────────────────────────
 function renderEstoqueTab(panel, color) {
   checkPriceChangesAuto();
+  fetchEstoqueAutomatico();
 
   // ── Abas de localização: Filial SP / Matriz RS ──────────────
   const locWrap = document.createElement("div");
@@ -2271,6 +2308,14 @@ function renderFilialSP(panel, color) {
     fn.style.cssText = "font-size:9px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:260px;";
     fn.textContent = estoqueExcelData.fileName;
     uploadWrap.appendChild(fn);
+  }
+  if (estoqueExcelData?.automatico) {
+    const refreshBtn = document.createElement("button");
+    refreshBtn.textContent = estoqueAutoLoading ? "↻ Atualizando..." : "↻ Atualizar do ML";
+    refreshBtn.disabled = estoqueAutoLoading;
+    refreshBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:3px;padding:3px 10px;font-size:9px;cursor:pointer;letter-spacing:0.5px;font-family:inherit;";
+    refreshBtn.addEventListener("click", () => fetchEstoqueAutomatico(true));
+    uploadWrap.appendChild(refreshBtn);
   }
   topRow.appendChild(uploadWrap);
 
@@ -2345,7 +2390,15 @@ function renderFilialSP(panel, color) {
   if (!estoqueExcelData || !estoqueExcelData.rows || estoqueExcelData.rows.length === 0) {
     const empty = document.createElement("div");
     empty.style.cssText = "text-align:center;padding:40px 0;color:var(--text3);font-size:11px;";
-    empty.textContent = "Importe a planilha Full ML para ver o estoque";
+    if (estoqueAutoLoading) {
+      empty.innerHTML = '<span class="spinning">↻</span> Buscando estoque do Full automaticamente...';
+    } else if (estoqueAutoErro) {
+      empty.innerHTML = `Erro ao buscar estoque automático: ${estoqueAutoErro}<br><span style="font-size:10px;">Tente importar a planilha manualmente enquanto isso.</span>`;
+    } else if (state.ml_token_filial?.access_token) {
+      empty.textContent = "Nenhum item encontrado no Full ainda.";
+    } else {
+      empty.textContent = "Conecte o ML Filial (acima) pra puxar o estoque automaticamente, ou importe a planilha Full ML manualmente.";
+    }
     panel.appendChild(empty);
     return;
   }
