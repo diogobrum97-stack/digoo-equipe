@@ -76,7 +76,7 @@ h1 { font-family: 'Bebas Neue', sans-serif; font-size: 44px; letter-spacing: 5px
 .task-check.progress::after { content: ''; }
 .task-text { flex: 1; font-size: 13px; color: var(--text); line-height: 1.4; }
 .task-text.done { text-decoration: line-through; color: var(--text); opacity: 0.5; }
-.task-prio { display: flex; align-items: center; gap: 4px; margin-top: 3px; }
+.task-prio { display: flex; align-items: center; gap: 4px; margin-top: 9px; }
 .task-prio .dot { width: 5px; height: 5px; }
 .task-prio span { font-size: 9px; opacity: 0.85; letter-spacing: 1px; }
 .del-btn { background: none; border: none; color: var(--border2); cursor: pointer; font-size: 18px; padding: 0; opacity: 0; transition: opacity 0.12s; flex-shrink: 0; line-height: 1; }
@@ -323,7 +323,7 @@ function overdueBadgeHtml(task){
   const label = taskOverdueLabel(task);
   if(!label) return "";
   const pc = themePrio(task.prio);
-  return `<span style="background:${pc}18;color:${pc};border:1px solid ${pc}77;border-radius:4px;padding:2px 8px;font-size:9px;letter-spacing:0.5px;font-weight:600;box-shadow:0 0 4px ${pc}55;flex-shrink:0;">${label}</span>`;
+  return `<span style="background:${pc}18;color:${pc};border:1px solid ${pc}77;border-radius:4px;padding:4px 10px;font-size:9px;letter-spacing:0.5px;font-weight:600;box-shadow:0 0 4px ${pc}55;flex-shrink:0;">${label}</span>`;
 }
 
 function themeColor(name) {
@@ -1778,7 +1778,7 @@ function render(){
                 const tw=document.createElement("div");tw.style.flex="1";
                 const tt=document.createElement("div");tt.className="task-text"+(task.done?" done":"");tt.textContent=task.text;tw.appendChild(tt);
                 const recBadge=overdueBadgeHtml(task);
-                if(recBadge){const bd=document.createElement("div");bd.style.cssText="margin-top:4px;display:flex;";bd.innerHTML=recBadge;tw.appendChild(bd);}
+                if(recBadge){const bd=document.createElement("div");bd.style.cssText="margin-top:9px;display:flex;";bd.innerHTML=recBadge;tw.appendChild(bd);}
                 row.appendChild(chk);row.appendChild(tw);
                 // Botões reabrir + OK quando concluída — na ponta direita
                 if(task.done){
@@ -1845,7 +1845,7 @@ function render(){
                 const card2=document.createElement("div");card2.style.cssText=`background:var(--bg3);border:1px solid ${themeColor(task.delegatedBy)}44;border-left:3px solid ${themeColor(task.delegatedBy)};border-radius:6px;padding:10px 12px;margin-bottom:6px;`;
                 const hdr=document.createElement("div");hdr.style.cssText="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;";hdr.innerHTML=`<span style="font-size:10px;color:${themeColor(task.delegatedBy)};letter-spacing:1px;font-weight:500">${task.delegatedBy}</span><span style="font-size:9px;color:var(--text3)">${PRIO[task.prio].label}</span>`;card2.appendChild(hdr);
                 const teamBadge=overdueBadgeHtml(task);
-                if(teamBadge){const bd=document.createElement("div");bd.style.cssText="margin-bottom:6px;display:flex;";bd.innerHTML=teamBadge;card2.appendChild(bd);}
+                if(teamBadge){const bd=document.createElement("div");bd.style.cssText="margin-top:6px;margin-bottom:8px;display:flex;";bd.innerHTML=teamBadge;card2.appendChild(bd);}
                 const tt2=document.createElement("div");tt2.style.cssText="font-size:13px;color:var(--text);line-height:1.4;margin-bottom:8px;";tt2.textContent=task.text;card2.appendChild(tt2);
                 const threadMsgs=Object.values(state.messages||{}).filter(m=>m!=null&&m.taskId===task.id).sort((a,b)=>(a.ts_raw||0)-(b.ts_raw||0));
                 if(threadMsgs.length>0){const thread=document.createElement("div");thread.style.cssText="border-top:1px solid var(--sep);padding-top:8px;margin-bottom:8px;";threadMsgs.forEach(msg=>{const isMine=msg.from==="Diogo";const mEl=document.createElement("div");mEl.style.cssText=`display:flex;flex-direction:${isMine?"row-reverse":"row"};margin-bottom:5px;`;const bubble=document.createElement("div");bubble.style.cssText=`max-width:75%;padding:5px 9px;border-radius:${isMine?"9px 9px 2px 9px":"9px 9px 9px 2px"};background:${isMine?themeColor("Diogo")+"22":"var(--bg2)"};border:1px solid ${isMine?themeColor("Diogo")+"44":"var(--border)"};`;bubble.innerHTML=`<div style="font-size:12px;color:var(--text);line-height:1.4">${msg.text}</div><div style="font-size:9px;color:var(--text3);margin-top:2px;text-align:${isMine?"right":"left"}">${msg.ts}</div>`;mEl.appendChild(bubble);thread.appendChild(mEl);});card2.appendChild(thread);}
@@ -1926,7 +1926,7 @@ function render(){
             const tw=document.createElement("div");tw.style.flex="1";const tt=document.createElement("div");tt.className="task-text";tt.textContent=task.text;tw.appendChild(tt);
             if(task.delegatedBy){const dbb=document.createElement("div");dbb.style.cssText=`font-size:9px;color:${themeColor(task.delegatedBy)};margin-top:3px;letter-spacing:1px;`;dbb.textContent=`de ${task.delegatedBy}`;tw.appendChild(dbb);}
             const delBadge=overdueBadgeHtml(task);
-            if(delBadge){const bd=document.createElement("div");bd.style.cssText="margin-top:4px;display:flex;";bd.innerHTML=delBadge;tw.appendChild(bd);}
+            if(delBadge){const bd=document.createElement("div");bd.style.cssText="margin-top:9px;display:flex;";bd.innerHTML=delBadge;tw.appendChild(bd);}
             row.appendChild(chk);row.appendChild(tw);
             const taskMsgs=Object.values(state.messages||{}).filter(m=>m!=null&&m.taskId===task.id);
             const mb=document.createElement("button");mb.className="msg-btn"+(taskMsgs.length>0?" has-msg":"");mb.textContent=taskMsgs.length>0?`💬 ${taskMsgs.length}`:"💬";
