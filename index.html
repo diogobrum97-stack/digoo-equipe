@@ -2247,9 +2247,12 @@ function renderEstoqueTab(panel, color) {
 }
 
 function renderFilialSP(panel, color) {
-  // ── Upload planilha Full ML ──────────────────────────────────
+  // ── Linha superior: trocar planilha (esquerda) + conexões (direita, empilhadas) ──
+  const topRow = document.createElement("div");
+  topRow.style.cssText = "display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:14px;";
+
   const uploadWrap = document.createElement("div");
-  uploadWrap.style.cssText = "margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;";
+  uploadWrap.style.cssText = "display:flex;align-items:center;gap:10px;flex-wrap:wrap;";
 
   const uploadLabel = document.createElement("label");
   uploadLabel.style.cssText = `display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:none;border:1px dashed ${color}66;border-radius:5px;color:${color};font-size:10px;letter-spacing:1.5px;cursor:pointer;`;
@@ -2269,10 +2272,14 @@ function renderFilialSP(panel, color) {
     fn.textContent = estoqueExcelData.fileName;
     uploadWrap.appendChild(fn);
   }
+  topRow.appendChild(uploadWrap);
+
+  const conexoesWrap = document.createElement("div");
+  conexoesWrap.style.cssText = "display:flex;flex-direction:column;gap:6px;align-items:flex-end;";
 
   // Status Bling
   const blingStatus = document.createElement("div");
-  blingStatus.style.cssText = "display:flex;align-items:center;gap:6px;margin-left:auto;font-size:9px;";
+  blingStatus.style.cssText = "display:flex;align-items:center;gap:6px;font-size:9px;";
 
   if (estoqueBlingLoading) {
     blingStatus.innerHTML = `<span class="spinning" style="color:var(--text3)">↻</span><span style="color:var(--text3)">Carregando Bling...</span>`;
@@ -2309,15 +2316,14 @@ function renderFilialSP(panel, color) {
     authBtn.addEventListener("click", () => window.open("https://digoo-backend.vercel.app/api/bling-auth", "_blank"));
     blingStatus.appendChild(authBtn);
   }
-
-  uploadWrap.appendChild(blingStatus);
-  panel.appendChild(uploadWrap);
+  conexoesWrap.appendChild(blingStatus);
 
   // Status ML Filial (necessário pro acompanhamento de vendas reais após mudança de preço)
   const mlFilialWrap = document.createElement("div");
-  mlFilialWrap.style.cssText = "display:flex;align-items:center;gap:6px;font-size:9px;margin-bottom:14px;flex-wrap:wrap;";
+  mlFilialWrap.style.cssText = "display:flex;align-items:center;gap:6px;font-size:9px;";
   if(state.ml_token_filial?.access_token){
-    mlFilialWrap.innerHTML = `<span style="color:#3dd68c">●</span><span style="color:var(--text3)">ML Filial conectado</span>`;
+    const nick = state.ml_token_filial.nickname ? ` · ${state.ml_token_filial.nickname}` : "";
+    mlFilialWrap.innerHTML = `<span style="color:#3dd68c">●</span><span style="color:var(--text3)">ML Filial${nick}</span>`;
     const reconBtn = document.createElement("button");
     reconBtn.textContent = "Reconectar";
     reconBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer;letter-spacing:1px;margin-left:4px;";
@@ -2331,7 +2337,10 @@ function renderFilialSP(panel, color) {
     connBtn.addEventListener("click", () => window.open(`${VERCEL_BACKEND}/api/ml-auth?conta=filial`, "_blank"));
     mlFilialWrap.appendChild(connBtn);
   }
-  panel.appendChild(mlFilialWrap);
+  conexoesWrap.appendChild(mlFilialWrap);
+
+  topRow.appendChild(conexoesWrap);
+  panel.appendChild(topRow);
 
   if (!estoqueExcelData || !estoqueExcelData.rows || estoqueExcelData.rows.length === 0) {
     const empty = document.createElement("div");
@@ -2432,9 +2441,12 @@ function renderFilialSP(panel, color) {
 }
 
 function renderMatrizRS(panel, color) {
-  // ── Upload relatório Bling Matriz ────────────────────────────
+  // ── Linha superior: trocar relatório (esquerda) + ML Matriz (direita) ──
+  const topRow = document.createElement("div");
+  topRow.style.cssText = "display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:14px;";
+
   const uploadWrap = document.createElement("div");
-  uploadWrap.style.cssText = "margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;";
+  uploadWrap.style.cssText = "display:flex;align-items:center;gap:10px;flex-wrap:wrap;";
 
   const uploadLabel = document.createElement("label");
   uploadLabel.style.cssText = `display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:none;border:1px dashed ${color}66;border-radius:5px;color:${color};font-size:10px;letter-spacing:1.5px;cursor:pointer;`;
@@ -2460,7 +2472,30 @@ function renderMatrizRS(panel, color) {
     fn.textContent = matrizFileName;
     uploadWrap.appendChild(fn);
   }
-  panel.appendChild(uploadWrap);
+  topRow.appendChild(uploadWrap);
+
+  // Status ML Matriz
+  const mlMatrizWrap = document.createElement("div");
+  mlMatrizWrap.style.cssText = "display:flex;align-items:center;gap:6px;font-size:9px;";
+  if(state.ml_token?.access_token){
+    const nick = state.ml_token.nickname ? ` · ${state.ml_token.nickname}` : "";
+    mlMatrizWrap.innerHTML = `<span style="color:#3dd68c">●</span><span style="color:var(--text3)">ML Matriz${nick}</span>`;
+    const reconBtn = document.createElement("button");
+    reconBtn.textContent = "Reconectar";
+    reconBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer;letter-spacing:1px;margin-left:4px;";
+    reconBtn.addEventListener("click", () => window.open(`${VERCEL_BACKEND}/api/ml-auth?conta=matriz`, "_blank"));
+    mlMatrizWrap.appendChild(reconBtn);
+  }else{
+    mlMatrizWrap.innerHTML = `<span style="color:var(--text3)">ML Matriz desconectado</span>`;
+    const connBtn = document.createElement("button");
+    connBtn.textContent = "Conectar ML Matriz";
+    connBtn.style.cssText = "background:none;border:1px solid #fff15566;color:#fff155;border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer;letter-spacing:1px;margin-left:4px;";
+    connBtn.addEventListener("click", () => window.open(`${VERCEL_BACKEND}/api/ml-auth?conta=matriz`, "_blank"));
+    mlMatrizWrap.appendChild(connBtn);
+  }
+  topRow.appendChild(mlMatrizWrap);
+
+  panel.appendChild(topRow);
 
   if (!matrizRows || matrizRows.length === 0) {
     const empty = document.createElement("div");
