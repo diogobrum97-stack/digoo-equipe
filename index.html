@@ -750,21 +750,19 @@ async function checkTransferenciasNF() {
 
       await push(ref(db, "/tasks"), {
         member: "Diogo",
-        text: `Gerar nota complementar de IPI — NF #${chave}`,
+        text: `NF de transferência gerada — NF #${chave}`,
         prio: "urgente",
         done: false,
         progress: false,
         delegatedBy: null,
         createdAt: Date.now(),
-      });
-      await push(ref(db, "/tasks"), {
-        member: "Diogo",
-        text: `Atualizar custo no Mercado Turbo Filial — NF #${chave}`,
-        prio: "urgente",
-        done: false,
-        progress: false,
-        delegatedBy: null,
-        createdAt: Date.now(),
+        subtarefas: [
+          { texto: "Gerar complemento de IPI", feito: false },
+          { texto: "Fazer balanço de estoque Filial", feito: false },
+          { texto: "Lançar estoque da transferência na filial", feito: false },
+          { texto: "Atualizar preços ML filial para gerar NF do Full", feito: false },
+          { texto: "Atualizar custos no sistema da filial", feito: false },
+        ],
       });
       await set(ref(db, `/nfes_processadas/${chave}`), {
         processedAt: Date.now(),
@@ -1854,13 +1852,34 @@ function render(){
             ownTasks.forEach(task=>{
               const pc=themePrio(task.prio);const row=document.createElement("div");row.className="task-row";
               const chk=document.createElement("button");chk.className="task-check"+(task.done?" done":task.progress?" progress":"");
-              chk.style.borderColor=pc;
+              const todosPassosFeitos = Array.isArray(task.subtarefas) && task.subtarefas.length>0 && task.subtarefas.every(s=>s.feito);
+              chk.style.borderColor= todosPassosFeitos && !task.done ? "#3dd68c" : pc;
               if(task.done) chk.style.background=pc;
               else if(task.progress) chk.style.background=`linear-gradient(to top, ${pc} 50%, transparent 50%)`;
               else chk.style.background="none";
               chk.addEventListener("click",()=>toggleTask(task.id,task.done,task.progress));
               const tw=document.createElement("div");tw.style.flex="1";const tt=document.createElement("div");tt.className="task-text"+(task.done?" done":"");tt.textContent=task.text;tw.appendChild(tt);
-              const pb=document.createElement("div");pb.className="task-prio";pb.style.justifyContent="space-between";const puls=task.prio==="superurgente"?"animation:siren 0.6s infinite;":"";pb.innerHTML=`<span style="display:flex;align-items:center;gap:4px;"><span class="dot" style="background:${pc};${puls}"></span><span style="color:${pc};font-weight:${task.prio==="superurgente"?"700":"400"};${puls}">${PRIO[task.prio].label}</span></span>${overdueBadgeHtml(task)}`;tw.appendChild(pb);
+              const pb=document.createElement("div");pb.className="task-prio";pb.style.justifyContent="space-between";const puls=task.prio==="superurgente"?"animation:siren 0.6s infinite;":"";
+              const progressoTxt = Array.isArray(task.subtarefas) && task.subtarefas.length>0 ? `<span style="font-size:9px;color:${todosPassosFeitos?"#3dd68c":"var(--text3)"};letter-spacing:0.5px;">${task.subtarefas.filter(s=>s.feito).length}/${task.subtarefas.length} passos</span>` : "";
+              pb.innerHTML=`<span style="display:flex;align-items:center;gap:4px;"><span class="dot" style="background:${pc};${puls}"></span><span style="color:${pc};font-weight:${task.prio==="superurgente"?"700":"400"};${puls}">${PRIO[task.prio].label}</span></span>${overdueBadgeHtml(task)||progressoTxt}`;tw.appendChild(pb);
+              if(Array.isArray(task.subtarefas) && task.subtarefas.length>0){
+                const checklist=document.createElement("div");
+                checklist.style.cssText="margin-top:8px;padding-top:8px;border-top:1px solid var(--sep);display:flex;flex-direction:column;gap:2px;";
+                task.subtarefas.forEach((sub,idx)=>{
+                  const subRow=document.createElement("div");
+                  subRow.style.cssText="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;";
+                  const subChk=document.createElement("button");
+                  subChk.style.cssText=`width:16px;height:16px;border-radius:4px;border:1.5px solid ${sub.feito?"#3dd68c":"var(--border2)"};background:${sub.feito?"#3dd68c":"none"};flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#000;font-size:10px;font-weight:700;`;
+                  subChk.textContent=sub.feito?"✓":"";
+                  const subLabel=document.createElement("span");
+                  subLabel.style.cssText=`font-size:12px;color:${sub.feito?"var(--text3)":"var(--text2)"};text-decoration:${sub.feito?"line-through":"none"};`;
+                  subLabel.textContent=`${idx+1}. ${sub.texto}`;
+                  subRow.appendChild(subChk);subRow.appendChild(subLabel);
+                  subRow.addEventListener("click",()=>{update(ref(db,`/tasks/${task.id}/subtarefas/${idx}`),{feito:!sub.feito});});
+                  checklist.appendChild(subRow);
+                });
+                tw.appendChild(checklist);
+              }
               row.appendChild(chk);row.appendChild(tw);
               if(task.done){
                 const btnWrap=document.createElement("div");
