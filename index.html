@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+a<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -2844,7 +2844,37 @@ function renderSaudeChart(panel, enriched) {
 document.getElementById("user-label").addEventListener("click",()=>{localStorage.removeItem(STORAGE_KEY);currentUser=null;const s=document.getElementById("identity-screen");s.innerHTML="";s.style.display="flex";setupIdentityScreen();});
 
 const urlParams=new URLSearchParams(window.location.search);
-if(urlParams.get("ml_connected")==="1"){window.history.replaceState({},"",window.location.pathname);}
+if(urlParams.get("ml_connected")==="1"){
+  const contaConectada=urlParams.get("conta");
+  window.history.replaceState({},"",window.location.pathname);
+  if(contaConectada==="filial"||contaConectada==="matriz"){
+    // Espera um instante pro Firebase sincronizar o token recém-salvo, depois
+    // confere se a conta conectada não é a mesma da outra (matriz/filial trocadas)
+    setTimeout(async ()=>{
+      try{
+        const tokenRecemConectado = contaConectada==="filial" ? state.ml_token_filial?.access_token : state.ml_token?.access_token;
+        const outraChave = contaConectada==="filial" ? "matriz" : "filial";
+        const tokenOutraConta = contaConectada==="filial" ? state.ml_token?.access_token : state.ml_token_filial?.access_token;
+        if(!tokenRecemConectado) return;
+        const rNova=await fetch(`${VERCEL_BACKEND}/api/ml-auth?whoami=1&token=${tokenRecemConectado}`);
+        const dNova=await rNova.json();
+        if(!rNova.ok||!dNova.id) return;
+        mlIdentity[contaConectada]=dNova;
+        if(tokenOutraConta){
+          const rOutra=await fetch(`${VERCEL_BACKEND}/api/ml-auth?whoami=1&token=${tokenOutraConta}`);
+          const dOutra=await rOutra.json();
+          if(rOutra.ok&&dOutra.id){
+            mlIdentity[outraChave]=dOutra;
+            if(dOutra.id===dNova.id){
+              alert(`⚠ Conectou a conta ERRADA!\n\nA conta "${contaConectada}" ficou com a mesma conta do Mercado Livre (${dNova.nickname||dNova.id}) que já está conectada na "${outraChave}".\n\nAbra uma aba anônima/privada, faça login no Mercado Livre com a conta certa da ${contaConectada}, e clique em "Reconectar" de novo.`);
+            }
+          }
+        }
+        render();
+      }catch(e){ console.error("Erro ao verificar conta ML recém-conectada:", e.message); }
+    }, 1500);
+  }
+}
 if(urlParams.get("ml_error")){alert("Erro ao conectar ML: "+urlParams.get("ml_error"));window.history.replaceState({},"",window.location.pathname);}
 
 setupIdentityScreen();
