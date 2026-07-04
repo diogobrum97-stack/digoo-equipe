@@ -1746,13 +1746,13 @@ function render(){
       expBtn.addEventListener("click",(e)=>{e.stopPropagation();estoqueFullscreen=!estoqueFullscreen;render();});
       header.appendChild(expBtn);
     }
-    // Botão diminuir a tela cheia automática (aparece assim que desbloqueia o PIN)
-    if(member.locked&&isOpen&&diogIsFullAuto){
+    // Botão diminuir/expandir a tela cheia automática (disponível sempre que o PIN estiver desbloqueado)
+    if(member.locked&&isOpen&&diogoPinOk){
       const minBtn=document.createElement("button");
       minBtn.style.cssText="background:none;border:0.5px solid rgba(255,255,255,0.25);border-radius:50%;width:22px;height:22px;color:rgba(255,255,255,0.4);font-size:12px;cursor:pointer;font-family:inherit;margin-right:6px;display:flex;align-items:center;justify-content:center;";
-      minBtn.textContent="⤡";
-      minBtn.title="Diminuir";
-      minBtn.addEventListener("click",(e)=>{e.stopPropagation();diogoAutoFullscreen=false;render();});
+      minBtn.textContent=diogoAutoFullscreen?"⤡":"⤢";
+      minBtn.title=diogoAutoFullscreen?"Diminuir":"Expandir";
+      minBtn.addEventListener("click",(e)=>{e.stopPropagation();diogoAutoFullscreen=!diogoAutoFullscreen;render();});
       header.appendChild(minBtn);
     }
     header.appendChild(chev);
@@ -1792,7 +1792,7 @@ function render(){
           panel.appendChild(tabs);
           const todayStart=new Date();todayStart.setHours(0,0,0,0);
 
-          if(window._diogotab==="mercadolivre"){
+          if(window._diogotab==="mercadolivre" || diogIsFullAuto){
             card.style.gridColumn="1 / -1";
           } else {
             card.style.gridColumn="";
