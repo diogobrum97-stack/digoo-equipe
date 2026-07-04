@@ -383,7 +383,7 @@ function setSyncing(v){syncDot.style.opacity=v?"0.4":"1";}
 
 onValue(ref(db,"/"),snap=>{
   const d=snap.val()||{};
-  d.tasks=d.tasks||{};d.messages=d.messages||{};d.flashes=d.flashes||{};d.notices=d.notices||{};d.ml_token=d.ml_token||null;d.ml_cache=d.ml_cache||null;d.price_changes=d.price_changes||{};d.ml_token_filial=d.ml_token_filial||null;d.last_known_prices=d.last_known_prices||{};
+  d.tasks=d.tasks||{};d.messages=d.messages||{};d.flashes=d.flashes||{};d.notices=d.notices||{};d.ml_token=d.ml_token||null;d.ml_cache=d.ml_cache||null;d.price_changes=d.price_changes||{};d.ml_token_filial=d.ml_token_filial||null;d.last_known_prices=d.last_known_prices||{};d.nfes_processadas=d.nfes_processadas||{};
   const seenTasks=JSON.parse(localStorage.getItem("digoo_seen_tasks")||"{}");
   let seenChanged=false;
   Object.entries(d.tasks).filter(([,t])=>t!=null).forEach(([id,task])=>{
@@ -732,6 +732,48 @@ async function checkAndCreateRecorrentes() {
     console.log(`Recorrentes criadas: ${recorrentes.length}`);
   } catch(e) {
     console.error("Erro ao criar recorrentes:", e.message);
+  }
+}
+
+let nfCheckDone = false;
+async function checkTransferenciasNF() {
+  if (nfCheckDone) return;
+  nfCheckDone = true;
+  try {
+    const r = await fetch(`${BLING_PROXY}/api/bling-produtos?notas=1`);
+    const data = await r.json();
+    if (!r.ok || !data.transferencias) return;
+
+    for (const nf of data.transferencias) {
+      const chave = String(nf.numero || nf.id).replace(/[.#$\[\]\/]/g, "_"); // Firebase não aceita esses caracteres em chaves
+      if (state.nfes_processadas?.[chave]) continue; // já criou tarefa pra essa nota
+
+      await push(ref(db, "/tasks"), {
+        member: "Diogo",
+        text: `Gerar nota complementar de IPI — NF #${chave}`,
+        prio: "urgente",
+        done: false,
+        progress: false,
+        delegatedBy: null,
+        createdAt: Date.now(),
+      });
+      await push(ref(db, "/tasks"), {
+        member: "Diogo",
+        text: `Atualizar custo no Mercado Turbo Filial — NF #${chave}`,
+        prio: "urgente",
+        done: false,
+        progress: false,
+        delegatedBy: null,
+        createdAt: Date.now(),
+      });
+      await set(ref(db, `/nfes_processadas/${chave}`), {
+        processedAt: Date.now(),
+        dataEmissao: nf.dataEmissao || null,
+        natureza: nf.natureza || null,
+      });
+    }
+  } catch (e) {
+    console.error("Erro ao checar notas de transferência:", e.message);
   }
 }
 
@@ -1747,7 +1789,7 @@ function render(){
           }
           if(window._diogotab==="tarefas"){
             // Verifica recorrentes ao abrir a aba de tarefas
-            if(currentUser==="Diogo") checkAndCreateRecorrentes();
+            if(currentUser==="Diogo"){ checkAndCreateRecorrentes(); checkTransferenciasNF(); }
             // Recorrentes: inclui done pra não sumir ao concluir
             const allOwnTasksActive=active.filter(t=>!t.delegatedBy||t.delegatedBy==="Diogo");
             const allOwnTasksDone=done.filter(t=>(!t.delegatedBy||t.delegatedBy==="Diogo")&&t.isRecorrente);
