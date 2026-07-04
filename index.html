@@ -377,7 +377,7 @@ function setupIdentityScreen() {
 function requestNotif(){if("Notification"in window&&Notification.permission==="default")Notification.requestPermission();}
 
 let state={tasks:{},messages:{},flashes:{}};
-let prevTasks={},flashQueue={},completionAlerts={},openCard=null,diogoPinUnlocked=false,tabFlashInterval=null,faviconInterval=null;
+let prevTasks={},flashQueue={},completionAlerts={},openCard=null,diogoPinUnlocked=false,diogoAutoFullscreen=false,tabFlashInterval=null,faviconInterval=null;
 const syncDot=document.getElementById("sync-dot");
 function setSyncing(v){syncDot.style.opacity=v?"0.4":"1";}
 
@@ -1694,6 +1694,7 @@ function render(){
   const diogoPinOk = diogoPinUnlocked;
   const diogIsML = openCard==="Diogo" && diogoPinOk && window._diogotab==="mercadolivre";
   const diogIsEstoque = openCard==="Diogo" && diogoPinOk && window._diogotab==="estoque" && estoqueFullscreen;
+  const diogIsFullAuto = openCard==="Diogo" && diogoPinOk && diogoAutoFullscreen;
 
   MEMBERS.forEach(member=>{
     const color=themeColor(member.name),hbg=themeHbg(member.name);
@@ -1705,10 +1706,12 @@ function render(){
     // Esconde Bruno e Larissa quando Diogo está na aba ML
     if(diogIsML && member.name !== "Diogo") return;
     if(diogIsEstoque && member.name !== "Diogo") return;
+    if(diogIsFullAuto && member.name !== "Diogo") return;
 
     const card=document.createElement("div");card.className="card"+(hasPending||isFlashing?" flashing":"");
     card.style.setProperty("--c",color);
     card.style.borderColor=isOpen?color+"88":(hasPending||isFlashing)?color:"var(--border)";
+    if(diogIsFullAuto && member.name==="Diogo") card.style.gridColumn="1 / -1";
 
     const header=document.createElement("div");header.className="card-header";header.style.background=hbg;
     const avatar=document.createElement("div");avatar.className="avatar";avatar.style.cssText=`background:${color}22;border:1.5px solid ${color};color:${color};`;avatar.textContent=member.initials;
@@ -1743,8 +1746,17 @@ function render(){
       expBtn.addEventListener("click",(e)=>{e.stopPropagation();estoqueFullscreen=!estoqueFullscreen;render();});
       header.appendChild(expBtn);
     }
+    // Botão diminuir a tela cheia automática (aparece assim que desbloqueia o PIN)
+    if(member.locked&&isOpen&&diogIsFullAuto){
+      const minBtn=document.createElement("button");
+      minBtn.style.cssText="background:none;border:0.5px solid rgba(255,255,255,0.25);border-radius:50%;width:22px;height:22px;color:rgba(255,255,255,0.4);font-size:12px;cursor:pointer;font-family:inherit;margin-right:6px;display:flex;align-items:center;justify-content:center;";
+      minBtn.textContent="⤡";
+      minBtn.title="Diminuir";
+      minBtn.addEventListener("click",(e)=>{e.stopPropagation();diogoAutoFullscreen=false;render();});
+      header.appendChild(minBtn);
+    }
     header.appendChild(chev);
-    header.addEventListener("click",()=>{openCard=openCard===member.name?null:member.name;if(!isOpen&&member.locked)diogoPinUnlocked=false;if(flashQueue[member.name]){delete flashQueue[member.name];remove(ref(db,`/flashes/${member.name}`));}render();});
+    header.addEventListener("click",()=>{openCard=openCard===member.name?null:member.name;if(!isOpen&&member.locked){diogoPinUnlocked=false;diogoAutoFullscreen=false;}if(flashQueue[member.name]){delete flashQueue[member.name];remove(ref(db,`/flashes/${member.name}`));}render();});
     card.appendChild(header);
 
     if(isOpen){
@@ -1755,7 +1767,7 @@ function render(){
         setTimeout(()=>{
           const f=document.getElementById("pin-field"),e=document.getElementById("pin-err"),b=document.getElementById("pin-btn");
           if(f){f.value="";f.removeAttribute("readonly");f.focus();}
-          const try_=()=>{if(f.value===PIN){diogoPinUnlocked=true;render();}else{f.classList.add("shake");f.value="";e.style.display="block";setTimeout(()=>f.classList.remove("shake"),400);}};
+          const try_=()=>{if(f.value===PIN){diogoPinUnlocked=true;diogoAutoFullscreen=true;render();}else{f.classList.add("shake");f.value="";e.style.display="block";setTimeout(()=>f.classList.remove("shake"),400);}};
           if(b)b.addEventListener("click",try_);if(f)f.addEventListener("keydown",e2=>{if(e2.key==="Enter")try_();});
         },50);
       }else{
