@@ -1693,7 +1693,6 @@ function render(){
   // Esconde outros cards quando Diogo está em Mercado Livre
   const diogoPinOk = diogoPinUnlocked;
   const diogIsML = openCard==="Diogo" && diogoPinOk && window._diogotab==="mercadolivre";
-  const diogIsEstoque = openCard==="Diogo" && diogoPinOk && window._diogotab==="estoque" && estoqueFullscreen;
   const diogIsFullAuto = openCard==="Diogo" && diogoPinOk && diogoAutoFullscreen;
 
   MEMBERS.forEach(member=>{
@@ -1705,7 +1704,6 @@ function render(){
 
     // Esconde Bruno e Larissa quando Diogo está na aba ML
     if(diogIsML && member.name !== "Diogo") return;
-    if(diogIsEstoque && member.name !== "Diogo") return;
     if(diogIsFullAuto && member.name !== "Diogo") return;
 
     const card=document.createElement("div");card.className="card"+(hasPending||isFlashing?" flashing":"");
@@ -1736,15 +1734,6 @@ function render(){
       chatBtn.title="Assistente Claude";
       chatBtn.addEventListener("click",(e)=>{e.stopPropagation();chatState[member.name].open=!chatState[member.name].open;renderChatModal(member.name,color);});
       header.appendChild(chatBtn);
-    }
-    // Botão expandir estoque
-    if(member.locked&&isOpen&&window._diogotab==="estoque"){
-      const expBtn=document.createElement("button");
-      expBtn.style.cssText="background:none;border:0.5px solid rgba(255,255,255,0.25);border-radius:4px;padding:2px 8px;color:rgba(255,255,255,0.4);font-size:12px;cursor:pointer;font-family:inherit;margin-right:6px;";
-      expBtn.textContent=estoqueFullscreen?"⤡":"⤢";
-      expBtn.title=estoqueExpanded?"Minimizar":"Expandir";
-      expBtn.addEventListener("click",(e)=>{e.stopPropagation();estoqueFullscreen=!estoqueFullscreen;render();});
-      header.appendChild(expBtn);
     }
     // Botão diminuir/expandir a tela cheia automática (disponível sempre que o PIN estiver desbloqueado)
     if(member.locked&&isOpen&&diogoPinOk){
@@ -1948,7 +1937,7 @@ function render(){
             panel.appendChild(btnWrapper);
             active.length=0;
           }else if(window._diogotab==="estoque"){
-            if(estoqueFullscreen){card.style.gridColumn="1 / -1";panel.style.maxHeight="none";panel.style.overflowY="auto";}else{card.style.gridColumn="";panel.style.maxHeight="";panel.style.overflowY="";}
+            if(diogIsFullAuto){panel.style.maxHeight="none";panel.style.overflowY="auto";}else{panel.style.maxHeight="";panel.style.overflowY="";}
             renderEstoqueTab(panel, color);
           }else if(window._diogotab==="concluidas"){
             if(Object.keys(completionAlerts).length>0){
