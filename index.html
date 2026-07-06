@@ -2403,12 +2403,12 @@ function renderFilialSP(panel, color) {
     return;
   }
 
-  const rows = estoqueExcelData.rows;
+  const rows = estoqueExcelData.rows.filter(r => (r.aptas || 0) > 0 || (r.transf || 0) > 0);
 
   // ── Cards resumo ─────────────────────────────────────────────
   const resumo = document.createElement("div");
-  resumo.style.cssText = "display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;";
-  let totalValor = 0, totalAptas = 0, skusSemCusto = 0;
+  resumo.style.cssText = "display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;";
+  let totalValor = 0, totalAptas = 0, totalTransf = 0, skusSemCusto = 0;
   const temCusto = rows.some(r => estoqueBlingData && estoqueBlingData[r.sku]);
   const enriched = rows.map(r => {
     const custo = estoqueBlingData ? (estoqueBlingData[r.sku] || 0) : null;
@@ -2416,13 +2416,15 @@ function renderFilialSP(panel, color) {
     if (custo === 0 || custo === null) skusSemCusto++;
     if (valor !== null) totalValor += valor;
     totalAptas += r.aptas;
+    totalTransf += (r.transf || 0);
     return { ...r, custo, valor };
   });
 
   [
     { label:"VALOR EM ESTOQUE", value: estoqueBlingData ? `R$ ${totalValor.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : "—", color:"#3dd68c", sub: skusSemCusto > 0 ? `${skusSemCusto} SKUs sem custo` : "todos com custo" },
     { label:"UNIDADES APTAS", value: totalAptas.toLocaleString("pt-BR"), color:"#378ADD", sub:`${rows.length} SKUs` },
-    { label:"CUSTO MÉDIO/UN", value: estoqueBlingData && totalAptas > 0 ? `R$ ${(totalValor/totalAptas).toLocaleString("pt-BR",{minimumFractionDigits:2})}` : "—", color:"#7F77DD", sub:"ponderado" },
+    { label:"EM TRANSFERÊNCIA", value: totalTransf.toLocaleString("pt-BR"), color:"#fbbf24", sub:"entre centros do Full" },
+    { label:"TOTAL NO FULL", value: (totalAptas+totalTransf).toLocaleString("pt-BR"), color:"#7F77DD", sub:"aptas + transferência" },
   ].forEach(s => {
     const card = document.createElement("div");
     card.style.cssText = `background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;border-top:2px solid ${s.color};`;
