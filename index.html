@@ -291,11 +291,67 @@ const MEMBERS = [
 const PRIO = { superurgente:{label:"Super Urgente"}, urgente:{label:"Urgente"}, importante:{label:"Importante"}, normal:{label:"Normal"} };
 function normSku(s){ return String(s||"").trim().toUpperCase(); }
 const BUDGET_HORAS = { superurgente:4, urgente:24, importante:48, normal:72 };
-// Alíquotas de IPI por NCM (mesma tabela da planilha Calculadora_IPI). NCM não
+// Alíquotas de IPI por NCM — extraído de TODOS os produtos reais da planilha
+// Calculadora_IPI (aba ALIQUOTAS_IPI + valores usados linha a linha). NCM não
 // mapeado cai em 0 com aviso, pra não travar o cálculo — dá pra completar aqui.
-const ALIQUOTAS_IPI = { "84733090": 0.065, "84145990": 0, "83021000": 0.0975 };
-function getAliquotaIPI(ncm){ const n=String(ncm||"").replace(/\D/g,""); return n in ALIQUOTAS_IPI ? { valor:ALIQUOTAS_IPI[n], conhecido:true } : { valor:0, conhecido:false }; }
+const ALIQUOTAS_IPI = { "29319029":0, "73181500":0.065, "83021000":0.0975, "84145990":0, "84733019":0.065, "84733090":0.065 };
+function getAliquotaIPI(ncm){
+  const n=String(ncm||"").replace(/\D/g,"");
+  const extra = state.aliquotas_ipi_extra?.[n];
+  if(extra!=null) return { valor:extra, conhecido:true };
+  return n in ALIQUOTAS_IPI ? { valor:ALIQUOTAS_IPI[n], conhecido:true } : { valor:0, conhecido:false };
+}
+function cadastrarAliquotaIPI(ncm, valor){
+  const n=String(ncm||"").replace(/\D/g,"");
+  if(n) set(ref(db, `/aliquotas_ipi_extra/${n}`), valor);
+}
 const REDUCAO_IPI = 0.10; // % de redução sempre fixo, conforme confirmado
+function normProdutoNome(s){ return String(s||"").trim().toLowerCase().replace(/\s+/g," "); }
+const PRECOS_VENDA_REFERENCIA = {
+  "Fan Ventoinha Digoo Wind X ARGB 120MM 6 Pinos Cor: Preto": 38.26,
+  "Fan Ventoinha Digoo Wind X Reverse Argb 120mm Cor: Preto": 38.26,
+  "Fan Ventoinha Digoo Zoloe ARGB 120MM 6 Pinos Cor: Preto": 43.26,
+  "Fan Ventoinha Digoo Aurora ARGB 120MM 3 Pinos PWM Cor: Preto": 43.26,
+  "Fan Ventoinha Digoo Aurora Reverse ARGB 120MM 3 Pinos PWM Cor: Preto": 43.26,
+  "Fan Ventoinha Digoo Wind X Reverse Argb 120mm Cor: Branco": 43.26,
+  "Fan Ventoinha Digoo Gale ARGB 120MM 6 Pinos Cor: Preto": 38.14,
+  "Fan Ventoinha Digoo Zoloe ARGB 120MM 6 Pinos Cor: Branco": 38.14,
+  "Fan Ventoinha Digoo Zoloe Reverse Argb 120mm Cor: Preto": 43.26,
+  "Fan Ventoinha Digoo Zoloe Reverse ARGB 120MM 6 Pinos Cor: Branco": 38.14,
+  "Carcaça Tampa da Tela Dell 3510 3511 3515 3520 P112F Cor: Preto": 160.9,
+  "Carcaça Tampa da Tela Dell 3510 3511 3515 3520 P112F Cor: Cinza": 169.9,
+  "Carcaça Tampa da Tela Acer A315-54 A315-56 A315-42 N19C1 Cor: Cinza": 106.23,
+  "Carcaça Moldura da Tela Acer A315-54 A315-56 A315-42 N19C1": 83.17,
+  "Carcaça Tampa da Tela Acer A515-54 A515-55 N18Q13": 209.9,
+  "Carcaça Moldura da Tela Dell 3510 3511 3515 3520 P112F": 45.8,
+  "Carcaça Tampa da Tela Acer A515-51 A515-41 A315-41": 103.27,
+  "Carcaça Moldura da Tela Acer A515-51 A515-41 A315-41": 84.52,
+  "Carcaça Tampa da Tela Acer ES1-533 ES1-572": 98.72,
+  "Carcaça Moldura da Tela Acer ES1-533 ES1-572": 76.52,
+  "Carcaça Tampa da Tela Acer A315-54 A315-56 A315-42 N19C1 Cor: Preto": 106.23,
+  "Carcaça Moldura da Tela Acer A515-54 A515-55 N18Q13": 149.9,
+  "Carcaça Palmrest Dell 3510 3511 3515 3520 P112F": 199.9,
+  "Carcaça Tampa da Tela Dell Latitude 3520": 249.9,
+  "Fan Ventoinha Digoo 2P ARGB 120MM 2 Pinos Cor: Preto": 28.54,
+  "Kit 8 Parafusos Acer A515-54 A515-54G A515-55 A515-55G N18Q13": 0.28,
+  "Parafusos P/ Notebook Acer A315-54 A515-51 ES1-572 Dell 3510 - KIT 6": 0.23,
+  "Controladora ARGB Digoo Atrix": 28.73,
+  "Controladora ARGB Digoo Aurora HUB": 69.9,
+  "Par de Dobradiças Acer ES1-533 ES1-572": 98.72,
+  "Par de Dobradiças Acer A315-54 A315-56 A315-42 N19C1": 110.9,
+  "Par de Dobradiças Dell 3510 3511 3515 3520 P112F": 219.9,
+  "Par de Dobradiças Acer A515-51 A515-41 A315-41": 219.9,
+  "Water Cooler Digoo Aurora Display 360mm ARGB 3P 5V PWM Cor: Preto": 219.9,
+  "Water Cooler Digoo HydroCool 240mm ARGB 3P 5V PWM Cor: Preto": 219.9,
+  "Gabinete Gamer Digoo Aquar Mid-tower Itx M-atx Usb 3.0 Cor: Preto": 203.58,
+  "Gabinete Gamer Digoo D-Cube Mid-tower Itx M-atx Usb 3.0 Cor: Preto": 114.28,
+  "Gabinete Gamer Digoo Aquar Mid-tower Itx M-atx Usb 3.0 Cor: Branco": 203.58,
+  "Pasta Térmica Digoo Colden 5G Seringa 13.8w/m-k": 23.0,
+  "Pasta Térmica Digoo Gelid 25G Pote 4.8w/m-k": 19.0,
+  "Air Cooler Digoo Auron/Frost Rainbow": 19.0,
+};
+const PRECOS_VENDA_REFERENCIA_NORM = {};
+Object.entries(PRECOS_VENDA_REFERENCIA).forEach(([k,v])=>{ PRECOS_VENDA_REFERENCIA_NORM[normProdutoNome(k)] = v; });
 let calcIpiAberto = {}; // taskId -> bool (painel expandido)
 let calcIpiState = {}; // taskId -> { produtos:[], frete, ipiOriginal, precosCarregados }
 
@@ -391,7 +447,7 @@ function setSyncing(v){syncDot.style.opacity=v?"0.4":"1";}
 
 onValue(ref(db,"/"),snap=>{
   const d=snap.val()||{};
-  d.tasks=d.tasks||{};d.messages=d.messages||{};d.flashes=d.flashes||{};d.notices=d.notices||{};d.ml_token=d.ml_token||null;d.ml_cache=d.ml_cache||null;d.price_changes=d.price_changes||{};d.ml_token_filial=d.ml_token_filial||null;d.last_known_prices=d.last_known_prices||{};d.nfes_processadas=d.nfes_processadas||{};d.categoria_saude=d.categoria_saude||{};
+  d.tasks=d.tasks||{};d.messages=d.messages||{};d.flashes=d.flashes||{};d.notices=d.notices||{};d.ml_token=d.ml_token||null;d.ml_cache=d.ml_cache||null;d.price_changes=d.price_changes||{};d.ml_token_filial=d.ml_token_filial||null;d.last_known_prices=d.last_known_prices||{};d.nfes_processadas=d.nfes_processadas||{};d.categoria_saude=d.categoria_saude||{};d.aliquotas_ipi_extra=d.aliquotas_ipi_extra||{};d.precos_venda_manual=d.precos_venda_manual||{};
   const seenTasks=JSON.parse(localStorage.getItem("digoo_seen_tasks")||"{}");
   let seenChanged=false;
   Object.entries(d.tasks).filter(([,t])=>t!=null).forEach(([id,task])=>{
@@ -742,6 +798,33 @@ async function checkAndCreateRecorrentes() {
 }
 
 let nfCheckDone = false;
+async function criarTarefaTransferencia(chave, { dataEmissao, natureza, itens, manual }){
+  await push(ref(db, "/tasks"), {
+    member: "Diogo",
+    text: `NF de transferência gerada — NF #${chave}`,
+    prio: "urgente",
+    done: false,
+    progress: false,
+    delegatedBy: null,
+    createdAt: Date.now(),
+    nfNumero: chave,
+    subtarefas: [
+      { texto: "Gerar complemento de IPI", feito: false },
+      { texto: "Fazer balanço de estoque Filial", feito: false },
+      { texto: "Lançar estoque da transferência na filial", feito: false },
+      { texto: "Atualizar preços ML filial para gerar NF do Full", feito: false },
+      { texto: "Atualizar custos no sistema da filial", feito: false },
+    ],
+  });
+  await set(ref(db, `/nfes_processadas/${chave}`), {
+    processedAt: Date.now(),
+    dataEmissao: dataEmissao || null,
+    natureza: natureza || null,
+    itens: itens || [],
+    ...(manual ? { manual: true } : {}),
+  });
+}
+
 async function checkTransferenciasNF() {
   if (nfCheckDone) return;
   nfCheckDone = true;
@@ -753,63 +836,95 @@ async function checkTransferenciasNF() {
     for (const nf of data.transferencias) {
       const chave = String(nf.numero || nf.id).replace(/[.#$\[\]\/]/g, "_"); // Firebase não aceita esses caracteres em chaves
       if (state.nfes_processadas?.[chave]) continue; // já criou tarefa pra essa nota
-
-      await push(ref(db, "/tasks"), {
-        member: "Diogo",
-        text: `NF de transferência gerada — NF #${chave}`,
-        prio: "urgente",
-        done: false,
-        progress: false,
-        delegatedBy: null,
-        createdAt: Date.now(),
-        nfNumero: chave,
-        subtarefas: [
-          { texto: "Gerar complemento de IPI", feito: false },
-          { texto: "Fazer balanço de estoque Filial", feito: false },
-          { texto: "Lançar estoque da transferência na filial", feito: false },
-          { texto: "Atualizar preços ML filial para gerar NF do Full", feito: false },
-          { texto: "Atualizar custos no sistema da filial", feito: false },
-        ],
-      });
-      await set(ref(db, `/nfes_processadas/${chave}`), {
-        processedAt: Date.now(),
-        dataEmissao: nf.dataEmissao || null,
-        natureza: nf.natureza || null,
-        itens: nf.itens || [],
-      });
+      await criarTarefaTransferencia(chave, { dataEmissao: nf.dataEmissao, natureza: nf.natureza, itens: nf.itens });
     }
   } catch (e) {
     console.error("Erro ao checar notas de transferência:", e.message);
   }
 }
 
+let processandoNotaManual = false;
+async function processarNotaManual(numeroDigitado){
+  const chave = String(numeroDigitado || "").trim().replace(/[.#$\[\]\/]/g, "_");
+  if (!chave) return;
+  if (state.nfes_processadas?.[chave]) {
+    alert(`A nota ${chave} já foi processada antes — a tarefa dela já deve estar na sua lista (ou nas concluídas).`);
+    return;
+  }
+  processandoNotaManual = true; render();
+  try {
+    const r = await fetch(`${BLING_PROXY}/api/bling-produtos?notaCompleta=${encodeURIComponent(chave)}`);
+    const data = await r.json();
+    if (!r.ok) { alert(`Não achei a nota ${chave}: ${data.error || "erro desconhecido"}`); return; }
+    const corpo = data.data || data;
+    const itensBrutos = corpo.itens || corpo.itensNota || [];
+    const itens = itensBrutos.map(it => ({
+      sku: it.codigo || null,
+      produto: it.descricao || "",
+      ncm: String(it.classificacaoFiscal || "").replace(/\D/g, ""),
+      quantidade: Number(it.quantidade) || 0,
+      valorUnit: Number(it.valor) || 0,
+    })).filter(it => it.sku);
+    await criarTarefaTransferencia(chave, {
+      dataEmissao: corpo.dataEmissao || null,
+      natureza: corpo.naturezaOperacao?.nome || null,
+      itens,
+      manual: true,
+    });
+  } catch (e) {
+    alert("Erro ao processar a nota: " + e.message);
+  }
+  processandoNotaManual = false; render();
+}
+
+function extrairNumeroNFDaTarefa(task){
+  if(task.nfNumero) return task.nfNumero;
+  const m = String(task.text||"").match(/NF #(\S+)/);
+  return m ? m[1] : null;
+}
+
 async function initCalcIpi(task){
-  const nfData = state.nfes_processadas?.[task.nfNumero];
+  const chave = extrairNumeroNFDaTarefa(task);
+  let nfData = state.nfes_processadas?.[chave];
+
+  // Tarefa antiga (criada antes de guardarmos os itens) ou sem itens salvos —
+  // busca a nota completa direto no Bling agora, sem precisar esperar o
+  // próximo ciclo de detecção automática.
+  if(!nfData?.itens?.length && chave){
+    calcIpiState[task.id] = { produtos: [], frete: 0, ipiOriginal: 0, buscandoNota: true };
+    render();
+    try{
+      const r = await fetch(`${BLING_PROXY}/api/bling-produtos?notaCompleta=${encodeURIComponent(chave)}`);
+      const d = await r.json();
+      if(r.ok && d?.data){
+        const corpo = d.data;
+        const itensBrutos = corpo.itens || corpo.itensNota || [];
+        const itensExtraidos = itensBrutos.map(it => ({
+          sku: it.codigo || null,
+          produto: it.descricao || "",
+          ncm: String(it.classificacaoFiscal || "").replace(/\D/g, ""),
+          quantidade: Number(it.quantidade) || 0,
+          valorUnit: Number(it.valor) || 0,
+        })).filter(it => it.sku);
+        nfData = { ...(nfData||{}), itens: itensExtraidos };
+        set(ref(db, `/nfes_processadas/${chave}/itens`), itensExtraidos); // guarda pra não precisar buscar de novo
+      }
+    }catch(e){ console.error("Erro ao buscar nota completa pra calculadora:", e.message); }
+  }
+
   const itensNF = nfData?.itens || [];
   calcIpiState[task.id] = {
-    produtos: itensNF.map(it => ({
-      sku: it.sku, produto: it.produto, qtd: it.quantidade, valorNf: it.valorUnit,
-      ncm: it.ncm, precoVenda: null, automatico: true,
-    })),
-    frete: 0, ipiOriginal: 0, precosCarregando: true,
+    produtos: itensNF.map(it => {
+      const precoSalvo = state.precos_venda_manual?.[normSku(it.sku)];
+      const precoRef = PRECOS_VENDA_REFERENCIA_NORM[normProdutoNome(it.produto)];
+      const precoInicial = precoSalvo!=null ? precoSalvo : (precoRef!=null ? precoRef : null);
+      return {
+        sku: it.sku, produto: it.produto, qtd: it.quantidade, valorNf: it.valorUnit,
+        ncm: it.ncm, precoVenda: precoInicial, automatico: true,
+      };
+    }),
+    frete: 0, ipiOriginal: 0,
   };
-  render();
-  const token = state.ml_token_filial?.access_token;
-  if(token){
-    try{
-      const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${token}&prices=1`);
-      const d = await r.json();
-      if(r.ok && d.prices){
-        const mapa={};
-        d.prices.forEach(p=>{ if(p.sku) mapa[normSku(p.sku)] = p.price; });
-        calcIpiState[task.id].produtos.forEach(p=>{
-          const preco = mapa[normSku(p.sku)];
-          if(preco!=null) p.precoVenda = preco;
-        });
-      }
-    }catch(e){ console.error("Erro ao buscar preços pra calculadora IPI:", e.message); }
-  }
-  if(calcIpiState[task.id]) calcIpiState[task.id].precosCarregando = false;
   render();
 }
 
@@ -897,7 +1012,10 @@ function renderCalcIpiPanel(container, task){
       const inpPreco = document.createElement("input"); inpPreco.type="number"; inpPreco.placeholder="digitar";
       inpPreco.value = p.precoVenda!=null ? p.precoVenda.toFixed(2) : "";
       inpPreco.style.cssText=`width:70px;background:var(--bg);border:1px solid ${p.precoVenda==null?"#f87171":"var(--border2)"};border-radius:4px;padding:3px 5px;color:#fbbf24;font-family:inherit;font-size:11px;text-align:right;`;
-      inpPreco.addEventListener("input",()=>{ const v=parseFloat(inpPreco.value); p.precoVenda=isNaN(v)?null:v; recalcular(); });
+      inpPreco.addEventListener("input",()=>{
+        const v=parseFloat(inpPreco.value); p.precoVenda=isNaN(v)?null:v; recalcular();
+        if(!isNaN(v) && p.sku) set(ref(db, `/precos_venda_manual/${normSku(p.sku)}`), v);
+      });
       tdPreco.appendChild(inpPreco);
       tr.appendChild(tdPreco);
 
@@ -914,18 +1032,36 @@ function renderCalcIpiPanel(container, task){
 
   function recalcular(){
     let total = 0;
-    let semAliquota = [];
+    const ncmsSemAliquota = new Map(); // ncm -> true
     const linhas = tbody.querySelectorAll("tr");
     calc.produtos.forEach((p, i)=>{
       const r = calcularLinhaIpi(p);
       total += r.ipi;
-      if(p.precoVenda!=null && !r.aliquota.conhecido) semAliquota.push(p.ncm || p.sku);
+      if(p.precoVenda!=null && !r.aliquota.conhecido && p.ncm) ncmsSemAliquota.set(p.ncm, true);
       const celula = linhas[i]?.querySelector(".celulaIpi");
       if(celula) celula.textContent = p.precoVenda!=null ? `R$ ${r.ipi.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : "—";
     });
-    if(semAliquota.length){
+
+    avisoBox.innerHTML = "";
+    if(ncmsSemAliquota.size){
       avisoBox.style.display="block";
-      avisoBox.textContent = `⚠ NCM sem alíquota cadastrada (assumindo 0%): ${[...new Set(semAliquota)].join(", ")}`;
+      [...ncmsSemAliquota.keys()].forEach(ncm=>{
+        const linha = document.createElement("div");
+        linha.style.cssText = "display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap;";
+        linha.innerHTML = `<span>⚠ NCM ${ncm} sem alíquota cadastrada (assumindo 0%):</span>`;
+        const inpAliq = document.createElement("input");
+        inpAliq.type="number"; inpAliq.step="0.01"; inpAliq.placeholder="ex: 0.065";
+        inpAliq.style.cssText="width:70px;background:var(--bg);border:1px solid #fbbf2466;border-radius:4px;padding:3px 5px;color:#fbbf24;font-family:inherit;font-size:10px;";
+        const salvarBtn = document.createElement("button");
+        salvarBtn.textContent="Salvar";
+        salvarBtn.style.cssText="background:none;border:1px solid #fbbf2466;color:#fbbf24;border-radius:4px;padding:3px 8px;font-size:9px;cursor:pointer;font-family:inherit;";
+        salvarBtn.addEventListener("click",()=>{
+          const v=parseFloat(inpAliq.value);
+          if(!isNaN(v)){ cadastrarAliquotaIPI(ncm, v); recalcular(); }
+        });
+        linha.appendChild(inpAliq); linha.appendChild(salvarBtn);
+        avisoBox.appendChild(linha);
+      });
     }else{
       avisoBox.style.display="none";
     }
@@ -2039,7 +2175,7 @@ function render(){
                   const subLabel=document.createElement("span");
                   subLabel.style.cssText=`font-size:12px;color:${sub.feito?"var(--text3)":"var(--text2)"};text-decoration:${sub.feito?"line-through":"none"};cursor:pointer;`;
                   subLabel.textContent=`${idx+1}. ${sub.texto}`;
-                  const ehPassoIPI = /ipi/i.test(sub.texto) && task.nfNumero;
+                  const ehPassoIPI = /ipi/i.test(sub.texto) && !!extrairNumeroNFDaTarefa(task);
                   if(ehPassoIPI){
                     if(!sub.feito) subLabel.style.textDecoration="underline";
                     subLabel.title="Clique pra abrir a calculadora";
@@ -2116,6 +2252,28 @@ function render(){
             btnWrapper.appendChild(taskSec);
             btnWrapper.appendChild(delSec);
             panel.appendChild(btnWrapper);
+
+            // Processar uma NF de transferência específica agora (sem esperar a detecção automática)
+            const nfManualWrap = document.createElement("div");
+            nfManualWrap.style.cssText = "margin-top:10px;";
+            const nfManualBtn = document.createElement("button");
+            nfManualBtn.className = "add-dashed";
+            nfManualBtn.textContent = processandoNotaManual ? "Processando..." : "🧾 Já tenho uma NF de transferência pra processar agora";
+            nfManualBtn.disabled = processandoNotaManual;
+            nfManualBtn.style.cssText = `border-color:${color};color:${color};opacity:0.85;`;
+            const nfManualForm = document.createElement("div");
+            nfManualForm.className = "input-box"; nfManualForm.style.display = "none";
+            nfManualForm.innerHTML = `<input placeholder="Número da NF, ex: 020061"><div class="btn-row"><button class="btn-primary" style="background:${color};color:#000">PROCESSAR</button><button class="btn-cancel">✕</button></div>`;
+            const nfInp = nfManualForm.querySelector("input");
+            const nfSubmit = () => { if(!nfInp.value.trim()) return; processarNotaManual(nfInp.value.trim()); nfInp.value=""; nfManualForm.style.display="none"; nfManualBtn.style.display=""; };
+            const nfCancel = () => { nfManualForm.style.display="none"; nfManualBtn.style.display=""; nfInp.value=""; };
+            nfManualForm.querySelector(".btn-primary").addEventListener("click", nfSubmit);
+            nfManualForm.querySelector(".btn-cancel").addEventListener("click", nfCancel);
+            nfInp.addEventListener("keydown", e=>{ if(e.key==="Enter") nfSubmit(); if(e.key==="Escape") nfCancel(); });
+            nfManualBtn.addEventListener("click", () => { nfManualBtn.style.display="none"; nfManualForm.style.display="block"; setTimeout(()=>nfInp.focus(),50); });
+            nfManualWrap.appendChild(nfManualBtn); nfManualWrap.appendChild(nfManualForm);
+            panel.appendChild(nfManualWrap);
+
             active.length=0;
           }else if(window._diogotab==="estoque"){
             if(diogIsFullAuto){panel.style.maxHeight="none";panel.style.overflowY="auto";}else{panel.style.maxHeight="";panel.style.overflowY="";}
