@@ -351,6 +351,7 @@ const PRECOS_VENDA_REFERENCIA_POR_SKU = {
 const PRECOS_VENDA_REFERENCIA_NORM = {};
 Object.entries(PRECOS_VENDA_REFERENCIA_POR_SKU).forEach(([k,v])=>{ PRECOS_VENDA_REFERENCIA_NORM[normSku(k)] = v; });
 let calcIpiAberto = {}; // taskId -> bool (painel expandido)
+let calcIpiFullscreen = null; // taskId em tela cheia, ou null
 let calcIpiState = {}; // taskId -> { produtos:[], frete, ipiOriginal, precosCarregados }
 
 // Decodifica o timestamp embutido no ID gerado pelo push() do Firebase,
@@ -979,7 +980,7 @@ function renderCalcIpiPanel(container, task){
   }
 
   const inputsRow = document.createElement("div");
-  inputsRow.style.cssText = "display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;";
+  inputsRow.style.cssText = "display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;";
   const campoInput = (label, valor, onInput) => {
     const box = document.createElement("div"); box.style.cssText="flex:1;min-width:120px;";
     const lbl = document.createElement("div"); lbl.style.cssText="font-size:9px;color:var(--text3);margin-bottom:4px;"; lbl.textContent=label;
@@ -992,14 +993,20 @@ function renderCalcIpiPanel(container, task){
   inputsRow.appendChild(campoInput("IPI da NF Original (R$)", calc.ipiOriginal, v=>calc.ipiOriginal=v));
   wrap.appendChild(inputsRow);
 
+  // Cards por alíquota (BASE e VALOR), igual à planilha — ficam em cima da tabela
+  const cardsWrap = document.createElement("div");
+  cardsWrap.style.cssText = "display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;";
+  wrap.appendChild(cardsWrap);
+
   const table = document.createElement("table");
-  table.style.cssText = "width:100%;border-collapse:collapse;font-size:11px;";
+  table.style.cssText = "width:100%;border-collapse:collapse;font-size:10.5px;";
   table.innerHTML = `<thead><tr style="border-bottom:1px solid var(--sep);">
     <th style="text-align:left;padding:5px 3px;color:var(--text3);font-weight:400;">SKU</th>
     <th style="text-align:center;padding:5px 3px;color:var(--text3);font-weight:400;">QTD</th>
     <th style="text-align:right;padding:5px 3px;color:var(--text3);font-weight:400;">VALOR NF</th>
     <th style="text-align:right;padding:5px 3px;color:#fbbf24;font-weight:400;">PREÇO VENDA</th>
-    <th style="text-align:right;padding:5px 3px;color:var(--text3);font-weight:400;">IPI</th>
+    <th style="text-align:right;padding:5px 3px;color:var(--text3);font-weight:400;">VALOR DO IPI</th>
+    <th style="text-align:right;padding:5px 3px;color:var(--text3);font-weight:400;">CMV C/ IPI+FRETE</th>
     <th style="width:16px;"></th>
   </tr></thead><tbody></tbody>`;
   const tbody = table.querySelector("tbody");
@@ -1017,7 +1024,7 @@ function renderCalcIpiPanel(container, task){
 
   const totalRow = document.createElement("div");
   totalRow.style.cssText = "margin-top:12px;padding-top:10px;border-top:1px solid var(--sep);display:flex;justify-content:space-between;align-items:center;";
-  totalRow.innerHTML = `<span style="font-size:9px;color:var(--text3);letter-spacing:1px;">TOTAL IPI DA NOTA COMPLEMENTAR</span><span id="calcIpiTotal-${task.id}" style="font-size:18px;font-weight:600;color:#3dd68c;">R$ 0,00</span>`;
+  totalRow.innerHTML = `<span style="font-size:9px;color:var(--text3);letter-spacing:1px;">TOTAL IPI E NOTA</span><span id="calcIpiTotal-${task.id}" style="font-size:18px;font-weight:600;color:#3dd68c;">R$ 0,00</span>`;
   wrap.appendChild(totalRow);
 
   function montarLinhas(){
@@ -1044,15 +1051,23 @@ function renderCalcIpiPanel(container, task){
       const inpPreco = document.createElement("input"); inpPreco.type="number"; inpPreco.placeholder="digitar";
       inpPreco.value = p.precoVenda!=null ? p.precoVenda.toFixed(2) : "";
       inpPreco.style.cssText=`width:70px;background:var(--bg);border:1px solid ${p.precoVenda==null?"#f87171":"var(--border2)"};border-radius:4px;padding:3px 5px;color:#fbbf24;font-family:inherit;font-size:11px;text-align:right;`;
+      // Só recalcula localmente enquanto digita (sem gravar no Firebase a cada
+      // tecla — isso disparava um recarregamento da tela inteira e derrubava
+      // o foco do campo no meio da digitação). Só grava quando sai do campo.
       inpPreco.addEventListener("input",()=>{
         const v=parseFloat(inpPreco.value); p.precoVenda=isNaN(v)?null:v; recalcular();
-        if(!isNaN(v) && p.sku) set(ref(db, `/precos_venda_manual/${normSku(p.sku)}`), v);
+      });
+      inpPreco.addEventListener("blur",()=>{
+        if(p.precoVenda!=null && p.sku) set(ref(db, `/precos_venda_manual/${normSku(p.sku)}`), p.precoVenda);
       });
       tdPreco.appendChild(inpPreco);
       tr.appendChild(tdPreco);
 
       const tdIpi = document.createElement("td"); tdIpi.className="celulaIpi"; tdIpi.style.cssText="padding:6px 3px;text-align:right;color:#3dd68c;";
       tr.appendChild(tdIpi);
+
+      const tdCmv = document.createElement("td"); tdCmv.className="celulaCmv"; tdCmv.style.cssText="padding:6px 3px;text-align:right;color:#7F77DD;";
+      tr.appendChild(tdCmv);
 
       const tdDel = document.createElement("td"); tdDel.style.cssText="padding:6px 3px;";
       if(!p.automatico){ const delBtn=document.createElement("button"); delBtn.textContent="×"; delBtn.style.cssText="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;"; delBtn.addEventListener("click",()=>{calc.produtos.splice(i,1);render();}); tdDel.appendChild(delBtn); }
@@ -1065,13 +1080,56 @@ function renderCalcIpiPanel(container, task){
   function recalcular(){
     let total = 0;
     const ncmsSemAliquota = new Map(); // ncm -> true
+    const porAliquota = new Map(); // valorAliquota -> {base, valor}
     const linhas = tbody.querySelectorAll("tr");
+
+    // Base de rateio (pra diluir frete + IPI da NF original proporcionalmente),
+    // igual à planilha: soma valorNf*qtd de todos os produtos com qtd>0
+    let baseRateio = 0;
+    calc.produtos.forEach(p=>{ if(p.qtd>0) baseRateio += p.valorNf * p.qtd; });
+    const totalDiluir = (calc.frete||0) + (calc.ipiOriginal||0);
+
     calc.produtos.forEach((p, i)=>{
       const r = calcularLinhaIpi(p);
       total += r.ipi;
       if(p.precoVenda!=null && !r.aliquota.conhecido && p.ncm) ncmsSemAliquota.set(p.ncm, true);
-      const celula = linhas[i]?.querySelector(".celulaIpi");
-      if(celula) celula.textContent = p.precoVenda!=null ? `R$ ${r.ipi.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : "—";
+      if(p.precoVenda!=null && p.qtd>0){
+        const chaveAliq = r.aliquota.valor;
+        if(!porAliquota.has(chaveAliq)) porAliquota.set(chaveAliq, {base:0, valor:0});
+        const acc = porAliquota.get(chaveAliq);
+        acc.base += r.baseTotal;
+        acc.valor += r.ipi;
+      }
+      const celulaIpi = linhas[i]?.querySelector(".celulaIpi");
+      if(celulaIpi) celulaIpi.textContent = p.precoVenda!=null ? `R$ ${r.ipi.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : "—";
+
+      const celulaCmv = linhas[i]?.querySelector(".celulaCmv");
+      if(celulaCmv){
+        if(p.precoVenda!=null && p.qtd>0 && baseRateio>0){
+          const cmv = p.valorNf + (r.ipi/p.qtd) + (p.valorNf/baseRateio)*totalDiluir;
+          celulaCmv.textContent = `R$ ${cmv.toLocaleString("pt-BR",{minimumFractionDigits:2})}`;
+        }else{
+          celulaCmv.textContent = "—";
+        }
+      }
+    });
+
+    cardsWrap.innerHTML = "";
+    [...porAliquota.keys()].sort().forEach(aliq=>{
+      const d = porAliquota.get(aliq);
+      const card = document.createElement("div");
+      card.style.cssText = "flex:1;min-width:130px;background:var(--bg);border-radius:8px;overflow:hidden;";
+      card.innerHTML = `
+        <div style="background:#000;padding:6px;text-align:center;font-size:10px;font-weight:600;color:#fff;">${(aliq*100).toLocaleString("pt-BR",{minimumFractionDigits:2})}%</div>
+        <div style="padding:7px;text-align:center;border-top:1px solid var(--sep);">
+          <div style="font-size:9px;color:var(--text3);">BASE</div>
+          <div style="font-size:12px;color:var(--text);">R$ ${d.base.toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
+        </div>
+        <div style="padding:7px;text-align:center;border-top:1px solid var(--sep);">
+          <div style="font-size:9px;color:var(--text3);">VALOR</div>
+          <div style="font-size:12px;color:#3dd68c;">R$ ${d.valor.toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
+        </div>`;
+      cardsWrap.appendChild(card);
     });
 
     avisoBox.innerHTML = "";
@@ -2118,6 +2176,27 @@ function render(){
             card.style.gridColumn="";
           }
           if(window._diogotab==="tarefas"){
+           if(calcIpiFullscreen){
+            const taskFS = Object.entries(state.tasks||{}).filter(([,t])=>t!=null).map(([id,t])=>({...t,id})).find(t=>t.id===calcIpiFullscreen);
+            if(taskFS){
+              const backBtn=document.createElement("button");
+              backBtn.textContent="← Voltar";
+              backBtn.style.cssText="background:none;border:1px solid var(--border2);color:var(--text2);border-radius:4px;padding:5px 12px;font-size:11px;cursor:pointer;font-family:inherit;margin-bottom:10px;";
+              backBtn.addEventListener("click",()=>{calcIpiFullscreen=null;render();});
+              panel.appendChild(backBtn);
+              const nfLabel=document.createElement("div");
+              nfLabel.style.cssText="font-size:11px;color:var(--text3);margin-bottom:14px;";
+              nfLabel.textContent=taskFS.text;
+              panel.appendChild(nfLabel);
+              if(!calcIpiState[taskFS.id]) initCalcIpi(taskFS);
+              const calcContainer=document.createElement("div");
+              renderCalcIpiPanel(calcContainer, taskFS);
+              panel.appendChild(calcContainer);
+            }else{
+              calcIpiFullscreen=null;
+            }
+           }
+           if(!calcIpiFullscreen){
             // Verifica recorrentes ao abrir a aba de tarefas
             if(currentUser==="Diogo"){ checkAndCreateRecorrentes(); checkTransferenciasNF(); }
             // Recorrentes: inclui done pra não sumir ao concluir
@@ -2212,8 +2291,8 @@ function render(){
                     if(!sub.feito) subLabel.style.textDecoration="underline";
                     subLabel.title="Clique pra abrir a calculadora";
                     subLabel.addEventListener("click",()=>{
-                      calcIpiAberto[task.id]=!calcIpiAberto[task.id];
-                      if(calcIpiAberto[task.id] && !calcIpiState[task.id]) initCalcIpi(task);
+                      calcIpiFullscreen=task.id;
+                      if(!calcIpiState[task.id]) initCalcIpi(task);
                       render();
                     });
                   }else{
@@ -2221,12 +2300,6 @@ function render(){
                   }
                   subRow.appendChild(subChk);subRow.appendChild(subLabel);
                   checklist.appendChild(subRow);
-                  if(ehPassoIPI && calcIpiAberto[task.id]){
-                    const calcContainer=document.createElement("div");
-                    calcContainer.style.cssText="margin:6px 0 8px 24px;";
-                    renderCalcIpiPanel(calcContainer, task);
-                    checklist.appendChild(calcContainer);
-                  }
                 });
                 tw.appendChild(checklist);
               }
@@ -2307,6 +2380,7 @@ function render(){
             panel.appendChild(nfManualWrap);
 
             active.length=0;
+           }
           }else if(window._diogotab==="estoque"){
             if(diogIsFullAuto){panel.style.maxHeight="none";panel.style.overflowY="auto";}else{panel.style.maxHeight="";panel.style.overflowY="";}
             renderEstoqueTab(panel, color);
