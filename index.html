@@ -297,13 +297,19 @@ const BUDGET_HORAS = { superurgente:4, urgente:24, importante:48, normal:72 };
 const ALIQUOTAS_IPI = { "29319029":0, "73181500":0.065, "83021000":0.0975, "84145990":0, "84733019":0.065, "84733090":0.065 };
 function getAliquotaIPI(ncm){
   const n=String(ncm||"").replace(/\D/g,"");
-  const extra = state.aliquotas_ipi_extra?.[n];
-  if(extra!=null) return { valor:extra, conhecido:true };
+  let extra = state.aliquotas_ipi_extra?.[n];
+  if(extra!=null){
+    // Segurança: alíquota de IPI nunca chega a 100% na prática — se alguém
+    // digitou "9.75" pensando em porcentagem (em vez de 0.0975 em fração),
+    // corrige sozinho dividindo por 100.
+    if(extra>1) extra = extra/100;
+    return { valor:extra, conhecido:true };
+  }
   return n in ALIQUOTAS_IPI ? { valor:ALIQUOTAS_IPI[n], conhecido:true } : { valor:0, conhecido:false };
 }
-function cadastrarAliquotaIPI(ncm, valor){
+function cadastrarAliquotaIPI(ncm, valorPercentual){
   const n=String(ncm||"").replace(/\D/g,"");
-  if(n) set(ref(db, `/aliquotas_ipi_extra/${n}`), valor);
+  if(n) set(ref(db, `/aliquotas_ipi_extra/${n}`), valorPercentual/100); // campo pede % (ex: 9.75), guarda como fração (0.0975)
 }
 const REDUCAO_IPI = 0.10; // % de redução sempre fixo, conforme confirmado
 const PRECOS_VENDA_REFERENCIA_POR_SKU = {
@@ -1101,13 +1107,13 @@ function renderCalcIpiPanel(container, task){
         acc.valor += r.ipi;
       }
       const celulaIpi = linhas[i]?.querySelector(".celulaIpi");
-      if(celulaIpi) celulaIpi.textContent = p.precoVenda!=null ? `R$ ${r.ipi.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : "—";
+      if(celulaIpi) celulaIpi.textContent = p.precoVenda!=null ? `R$ ${r.ipi.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}` : "—";
 
       const celulaCmv = linhas[i]?.querySelector(".celulaCmv");
       if(celulaCmv){
         if(p.precoVenda!=null && p.qtd>0 && baseRateio>0){
           const cmv = p.valorNf + (r.ipi/p.qtd) + (p.valorNf/baseRateio)*totalDiluir;
-          celulaCmv.textContent = `R$ ${cmv.toLocaleString("pt-BR",{minimumFractionDigits:2})}`;
+          celulaCmv.textContent = `R$ ${cmv.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
         }else{
           celulaCmv.textContent = "—";
         }
@@ -1120,14 +1126,14 @@ function renderCalcIpiPanel(container, task){
       const card = document.createElement("div");
       card.style.cssText = "flex:1;min-width:130px;background:var(--bg);border-radius:8px;overflow:hidden;";
       card.innerHTML = `
-        <div style="background:#000;padding:6px;text-align:center;font-size:10px;font-weight:600;color:#fff;">${(aliq*100).toLocaleString("pt-BR",{minimumFractionDigits:2})}%</div>
+        <div style="background:#000;padding:6px;text-align:center;font-size:10px;font-weight:600;color:#fff;">${(aliq*100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}%</div>
         <div style="padding:7px;text-align:center;border-top:1px solid var(--sep);">
           <div style="font-size:9px;color:var(--text3);">BASE</div>
-          <div style="font-size:12px;color:var(--text);">R$ ${d.base.toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
+          <div style="font-size:12px;color:var(--text);">R$ ${d.base.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
         </div>
         <div style="padding:7px;text-align:center;border-top:1px solid var(--sep);">
           <div style="font-size:9px;color:var(--text3);">VALOR</div>
-          <div style="font-size:12px;color:#3dd68c;">R$ ${d.valor.toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
+          <div style="font-size:12px;color:#3dd68c;">R$ ${d.valor.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
         </div>`;
       cardsWrap.appendChild(card);
     });
@@ -1138,9 +1144,9 @@ function renderCalcIpiPanel(container, task){
       [...ncmsSemAliquota.keys()].forEach(ncm=>{
         const linha = document.createElement("div");
         linha.style.cssText = "display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap;";
-        linha.innerHTML = `<span>⚠ NCM ${ncm} sem alíquota cadastrada (assumindo 0%):</span>`;
+        linha.innerHTML = `<span>⚠ NCM ${ncm} sem alíquota cadastrada (assumindo 0%). Digite a % (ex: 6,5 pra 6,5%):</span>`;
         const inpAliq = document.createElement("input");
-        inpAliq.type="number"; inpAliq.step="0.01"; inpAliq.placeholder="ex: 0.065";
+        inpAliq.type="number"; inpAliq.step="0.01"; inpAliq.placeholder="ex: 6,5";
         inpAliq.style.cssText="width:70px;background:var(--bg);border:1px solid #fbbf2466;border-radius:4px;padding:3px 5px;color:#fbbf24;font-family:inherit;font-size:10px;";
         const salvarBtn = document.createElement("button");
         salvarBtn.textContent="Salvar";
@@ -1156,7 +1162,7 @@ function renderCalcIpiPanel(container, task){
       avisoBox.style.display="none";
     }
     const totalEl = document.getElementById(`calcIpiTotal-${task.id}`);
-    if(totalEl) totalEl.textContent = `R$ ${total.toLocaleString("pt-BR",{minimumFractionDigits:2})}`;
+    if(totalEl) totalEl.textContent = `R$ ${total.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
   }
 
   montarLinhas();
