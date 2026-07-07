@@ -883,15 +883,13 @@ function extrairNumeroNFDaTarefa(task){
   return m ? m[1] : null;
 }
 
-async function initCalcIpi(task){
-  const chave = extrairNumeroNFDaTarefa(task);
+async function initCalcIpi(task, numeroManual){
+  const chave = numeroManual || extrairNumeroNFDaTarefa(task);
   let nfData = state.nfes_processadas?.[chave];
+  let erro = null;
 
-  // Tarefa antiga (criada antes de guardarmos os itens) ou sem itens salvos —
-  // busca a nota completa direto no Bling agora, sem precisar esperar o
-  // próximo ciclo de detecção automática.
   if(!nfData?.itens?.length && chave){
-    calcIpiState[task.id] = { produtos: [], frete: 0, ipiOriginal: 0, buscandoNota: true };
+    calcIpiState[task.id] = { produtos: [], frete: 0, ipiOriginal: 0, carregando: true };
     render();
     try{
       const r = await fetch(`${BLING_PROXY}/api/bling-produtos?notaCompleta=${encodeURIComponent(chave)}`);
@@ -906,10 +904,19 @@ async function initCalcIpi(task){
           quantidade: Number(it.quantidade) || 0,
           valorUnit: Number(it.valor) || 0,
         })).filter(it => it.sku);
+        if(!itensExtraidos.length){
+          erro = `A nota #${chave} foi encontrada, mas nenhum item com SKU veio nela. Confere se o SKU está cadastrado nos produtos dessa nota no Bling.`;
+        }
         nfData = { ...(nfData||{}), itens: itensExtraidos };
-        set(ref(db, `/nfes_processadas/${chave}/itens`), itensExtraidos); // guarda pra não precisar buscar de novo
+        set(ref(db, `/nfes_processadas/${chave}/itens`), itensExtraidos);
+      }else{
+        erro = d?.error || `Não achei a nota #${chave} no Bling (erro ${r.status}).`;
       }
-    }catch(e){ console.error("Erro ao buscar nota completa pra calculadora:", e.message); }
+    }catch(e){
+      erro = `Erro de conexão ao buscar a nota #${chave}: ${e.message}`;
+    }
+  }else if(!chave){
+    erro = "Não consegui identificar o número dessa NF a partir da tarefa. Digite o número manualmente abaixo.";
   }
 
   const itensNF = nfData?.itens || [];
@@ -924,6 +931,8 @@ async function initCalcIpi(task){
       };
     }),
     frete: 0, ipiOriginal: 0,
+    erro: erro,
+    nfUsada: chave,
   };
   render();
 }
@@ -941,10 +950,35 @@ function calcularLinhaIpi(p){
 
 function renderCalcIpiPanel(container, task){
   const calc = calcIpiState[task.id];
-  if(!calc){ container.innerHTML = '<span style="font-size:11px;color:var(--text3);">Carregando dados da nota...</span>'; return; }
+  if(!calc){ container.innerHTML = '<span style="font-size:11px;color:var(--text3);"><span class="spinning">↻</span> Carregando dados da nota...</span>'; return; }
+  if(calc.carregando){ container.innerHTML = '<span style="font-size:11px;color:var(--text3);"><span class="spinning">↻</span> Buscando itens da nota no Bling...</span>'; return; }
 
   const wrap = document.createElement("div");
   wrap.style.cssText = "background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;";
+
+  if(calc.erro){
+    const erroBox = document.createElement("div");
+    erroBox.style.cssText = "margin-bottom:12px;padding:8px 10px;background:#f8717110;border:1px solid #f8717133;border-radius:5px;font-size:11px;color:#f87171;";
+    erroBox.textContent = calc.erro;
+    wrap.appendChild(erroBox);
+  }
+
+  if(!calc.produtos.length){
+    const manualBox = document.createElement("div");
+    manualBox.style.cssText = "display:flex;gap:6px;margin-bottom:12px;align-items:flex-end;";
+    const campo = document.createElement("div"); campo.style.flex="1";
+    campo.innerHTML = '<div style="font-size:9px;color:var(--text3);margin-bottom:4px;">Número da NF (digite se não achou automático)</div>';
+    const inpNumero = document.createElement("input");
+    inpNumero.placeholder = "ex: 020061"; inpNumero.value = calc.nfUsada || "";
+    inpNumero.style.cssText = "width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:6px 8px;color:var(--text);font-family:inherit;font-size:12px;";
+    campo.appendChild(inpNumero);
+    const buscarBtn = document.createElement("button");
+    buscarBtn.textContent = "Buscar";
+    buscarBtn.style.cssText = "background:none;border:1px solid #3dd68c66;color:#3dd68c;border-radius:4px;padding:7px 14px;font-size:11px;cursor:pointer;font-family:inherit;white-space:nowrap;";
+    buscarBtn.addEventListener("click", ()=>{ if(inpNumero.value.trim()) initCalcIpi(task, inpNumero.value.trim()); });
+    manualBox.appendChild(campo); manualBox.appendChild(buscarBtn);
+    wrap.appendChild(manualBox);
+  }
 
   const inputsRow = document.createElement("div");
   inputsRow.style.cssText = "display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;";
