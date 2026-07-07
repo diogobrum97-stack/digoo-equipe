@@ -930,9 +930,11 @@ async function initCalcIpi(task, numeroManual){
       const precoSalvo = state.precos_venda_manual?.[normSku(it.sku)];
       const precoRef = PRECOS_VENDA_REFERENCIA_NORM[normSku(it.sku)];
       const precoInicial = precoSalvo!=null ? precoSalvo : (precoRef!=null ? precoRef : null);
+      const sugestao = getAliquotaIPI(it.ncm); // só usada como ponto de partida — sempre editável depois
       return {
         sku: it.sku, produto: it.produto, qtd: it.quantidade, valorNf: it.valorUnit,
         ncm: it.ncm, precoVenda: precoInicial, automatico: true,
+        aliquotaValor: sugestao.conhecido ? sugestao.valor : null,
       };
     }),
     frete: 0, ipiOriginal: 0,
@@ -944,13 +946,13 @@ async function initCalcIpi(task, numeroManual){
 
 function calcularLinhaIpi(p){
   const precoVenda = p.precoVenda;
-  if(precoVenda==null || !p.qtd) return { precoAjustado:0, baseUnit:0, baseTotal:0, ipi:0, aliquota:{valor:0,conhecido:true} };
-  const aliquota = getAliquotaIPI(p.ncm);
+  if(precoVenda==null || !p.qtd) return { precoAjustado:0, baseUnit:0, baseTotal:0, ipi:0, aliquotaValor:p.aliquotaValor||0 };
+  const aliquotaValor = p.aliquotaValor!=null ? p.aliquotaValor : 0;
   const precoAjustado = precoVenda * (1 - REDUCAO_IPI);
   const baseUnit = precoAjustado - p.valorNf;
   const baseTotal = baseUnit * p.qtd;
-  const ipi = baseTotal * aliquota.valor;
-  return { precoAjustado, baseUnit, baseTotal, ipi, aliquota };
+  const ipi = baseTotal * aliquotaValor;
+  return { precoAjustado, baseUnit, baseTotal, ipi, aliquotaValor };
 }
 
 function renderCalcIpiPanel(container, task){
@@ -1011,6 +1013,7 @@ function renderCalcIpiPanel(container, task){
     <th style="text-align:center;padding:5px 3px;color:var(--text3);font-weight:400;">QTD</th>
     <th style="text-align:right;padding:5px 3px;color:var(--text3);font-weight:400;">VALOR NF</th>
     <th style="text-align:right;padding:5px 3px;color:#fbbf24;font-weight:400;">PREÇO VENDA</th>
+    <th style="text-align:right;padding:5px 3px;color:#fbbf24;font-weight:400;">ALÍQUOTA %</th>
     <th style="text-align:right;padding:5px 3px;color:var(--text3);font-weight:400;">VALOR DO IPI</th>
     <th style="text-align:right;padding:5px 3px;color:var(--text3);font-weight:400;">CMV C/ IPI+FRETE</th>
     <th style="width:16px;"></th>
@@ -1025,7 +1028,7 @@ function renderCalcIpiPanel(container, task){
   const addBtn = document.createElement("button");
   addBtn.textContent = "+ adicionar produto";
   addBtn.style.cssText = "margin-top:8px;width:100%;background:none;border:1px dashed #3dd68c66;color:#3dd68c;border-radius:5px;padding:6px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:0.5px;";
-  addBtn.addEventListener("click", ()=>{ calc.produtos.push({sku:"",produto:"",qtd:0,valorNf:0,ncm:"",precoVenda:null,automatico:false}); render(); });
+  addBtn.addEventListener("click", ()=>{ calc.produtos.push({sku:"",produto:"",qtd:0,valorNf:0,ncm:"",precoVenda:null,aliquotaValor:null,automatico:false}); render(); });
   wrap.appendChild(addBtn);
 
   const totalRow = document.createElement("div");
@@ -1069,6 +1072,19 @@ function renderCalcIpiPanel(container, task){
       tdPreco.appendChild(inpPreco);
       tr.appendChild(tdPreco);
 
+      const tdAliq = document.createElement("td"); tdAliq.style.cssText="padding:6px 3px;text-align:right;";
+      const inpAliqLinha = document.createElement("input"); inpAliqLinha.type="number"; inpAliqLinha.step="0.01"; inpAliqLinha.placeholder="ex: 6,5";
+      inpAliqLinha.value = p.aliquotaValor!=null ? (p.aliquotaValor*100).toString() : "";
+      inpAliqLinha.style.cssText=`width:55px;background:var(--bg);border:1px solid ${p.aliquotaValor==null?"#f87171":"var(--border2)"};border-radius:4px;padding:3px 5px;color:#fbbf24;font-family:inherit;font-size:11px;text-align:right;`;
+      inpAliqLinha.addEventListener("input",()=>{
+        const v=parseFloat(inpAliqLinha.value);
+        p.aliquotaValor=isNaN(v)?null:v/100;
+        inpAliqLinha.style.borderColor = p.aliquotaValor==null ? "#f87171" : "var(--border2)";
+        recalcular();
+      });
+      tdAliq.appendChild(inpAliqLinha);
+      tr.appendChild(tdAliq);
+
       const tdIpi = document.createElement("td"); tdIpi.className="celulaIpi"; tdIpi.style.cssText="padding:6px 3px;text-align:right;color:#3dd68c;";
       tr.appendChild(tdIpi);
 
@@ -1085,7 +1101,6 @@ function renderCalcIpiPanel(container, task){
 
   function recalcular(){
     let total = 0;
-    const ncmsSemAliquota = new Map(); // ncm -> true
     const porAliquota = new Map(); // valorAliquota -> {base, valor}
     const linhas = tbody.querySelectorAll("tr");
 
@@ -1098,16 +1113,15 @@ function renderCalcIpiPanel(container, task){
     calc.produtos.forEach((p, i)=>{
       const r = calcularLinhaIpi(p);
       total += r.ipi;
-      if(p.precoVenda!=null && !r.aliquota.conhecido && p.ncm) ncmsSemAliquota.set(p.ncm, true);
-      if(p.precoVenda!=null && p.qtd>0){
-        const chaveAliq = r.aliquota.valor;
+      if(p.precoVenda!=null && p.qtd>0 && p.aliquotaValor!=null){
+        const chaveAliq = p.aliquotaValor;
         if(!porAliquota.has(chaveAliq)) porAliquota.set(chaveAliq, {base:0, valor:0});
         const acc = porAliquota.get(chaveAliq);
         acc.base += r.baseTotal;
         acc.valor += r.ipi;
       }
       const celulaIpi = linhas[i]?.querySelector(".celulaIpi");
-      if(celulaIpi) celulaIpi.textContent = p.precoVenda!=null ? `R$ ${r.ipi.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}` : "—";
+      if(celulaIpi) celulaIpi.textContent = (p.precoVenda!=null && p.aliquotaValor!=null) ? `R$ ${r.ipi.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}` : "—";
 
       const celulaCmv = linhas[i]?.querySelector(".celulaCmv");
       if(celulaCmv){
@@ -1138,26 +1152,11 @@ function renderCalcIpiPanel(container, task){
       cardsWrap.appendChild(card);
     });
 
+    const semAliquota = calc.produtos.filter(p=>p.precoVenda!=null && p.aliquotaValor==null).length;
     avisoBox.innerHTML = "";
-    if(ncmsSemAliquota.size){
+    if(semAliquota>0){
       avisoBox.style.display="block";
-      [...ncmsSemAliquota.keys()].forEach(ncm=>{
-        const linha = document.createElement("div");
-        linha.style.cssText = "display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap;";
-        linha.innerHTML = `<span>⚠ NCM ${ncm} sem alíquota cadastrada (assumindo 0%). Digite a % (ex: 6,5 pra 6,5%):</span>`;
-        const inpAliq = document.createElement("input");
-        inpAliq.type="number"; inpAliq.step="0.01"; inpAliq.placeholder="ex: 6,5";
-        inpAliq.style.cssText="width:70px;background:var(--bg);border:1px solid #fbbf2466;border-radius:4px;padding:3px 5px;color:#fbbf24;font-family:inherit;font-size:10px;";
-        const salvarBtn = document.createElement("button");
-        salvarBtn.textContent="Salvar";
-        salvarBtn.style.cssText="background:none;border:1px solid #fbbf2466;color:#fbbf24;border-radius:4px;padding:3px 8px;font-size:9px;cursor:pointer;font-family:inherit;";
-        salvarBtn.addEventListener("click",()=>{
-          const v=parseFloat(inpAliq.value);
-          if(!isNaN(v)){ cadastrarAliquotaIPI(ncm, v); recalcular(); }
-        });
-        linha.appendChild(inpAliq); linha.appendChild(salvarBtn);
-        avisoBox.appendChild(linha);
-      });
+      avisoBox.textContent = `⚠ ${semAliquota} produto(s) sem alíquota preenchida (campo em vermelho na tabela) — não entram no total até você preencher.`;
     }else{
       avisoBox.style.display="none";
     }
