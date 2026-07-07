@@ -289,7 +289,15 @@ const MEMBERS = [
   { name:"Larissa", initials:"LA", locked:false, phone:"55991774483" },
 ];
 const PRIO = { superurgente:{label:"Super Urgente"}, urgente:{label:"Urgente"}, importante:{label:"Importante"}, normal:{label:"Normal"} };
+function normSku(s){ return String(s||"").trim().toUpperCase(); }
 const BUDGET_HORAS = { superurgente:4, urgente:24, importante:48, normal:72 };
+// Alíquotas de IPI por NCM (mesma tabela da planilha Calculadora_IPI). NCM não
+// mapeado cai em 0 com aviso, pra não travar o cálculo — dá pra completar aqui.
+const ALIQUOTAS_IPI = { "84733090": 0.065, "84145990": 0, "83021000": 0.0975 };
+function getAliquotaIPI(ncm){ const n=String(ncm||"").replace(/\D/g,""); return n in ALIQUOTAS_IPI ? { valor:ALIQUOTAS_IPI[n], conhecido:true } : { valor:0, conhecido:false }; }
+const REDUCAO_IPI = 0.10; // % de redução sempre fixo, conforme confirmado
+let calcIpiAberto = {}; // taskId -> bool (painel expandido)
+let calcIpiState = {}; // taskId -> { produtos:[], frete, ipiOriginal, precosCarregados }
 
 // Decodifica o timestamp embutido no ID gerado pelo push() do Firebase,
 // usado como fallback pra tarefas antigas que não têm createdAt salvo.
@@ -754,6 +762,7 @@ async function checkTransferenciasNF() {
         progress: false,
         delegatedBy: null,
         createdAt: Date.now(),
+        nfNumero: chave,
         subtarefas: [
           { texto: "Gerar complemento de IPI", feito: false },
           { texto: "Fazer balanço de estoque Filial", feito: false },
@@ -766,11 +775,167 @@ async function checkTransferenciasNF() {
         processedAt: Date.now(),
         dataEmissao: nf.dataEmissao || null,
         natureza: nf.natureza || null,
+        itens: nf.itens || [],
       });
     }
   } catch (e) {
     console.error("Erro ao checar notas de transferência:", e.message);
   }
+}
+
+async function initCalcIpi(task){
+  const nfData = state.nfes_processadas?.[task.nfNumero];
+  const itensNF = nfData?.itens || [];
+  calcIpiState[task.id] = {
+    produtos: itensNF.map(it => ({
+      sku: it.sku, produto: it.produto, qtd: it.quantidade, valorNf: it.valorUnit,
+      ncm: it.ncm, precoVenda: null, automatico: true,
+    })),
+    frete: 0, ipiOriginal: 0, precosCarregando: true,
+  };
+  render();
+  const token = state.ml_token_filial?.access_token;
+  if(token){
+    try{
+      const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${token}&prices=1`);
+      const d = await r.json();
+      if(r.ok && d.prices){
+        const mapa={};
+        d.prices.forEach(p=>{ if(p.sku) mapa[normSku(p.sku)] = p.price; });
+        calcIpiState[task.id].produtos.forEach(p=>{
+          const preco = mapa[normSku(p.sku)];
+          if(preco!=null) p.precoVenda = preco;
+        });
+      }
+    }catch(e){ console.error("Erro ao buscar preços pra calculadora IPI:", e.message); }
+  }
+  if(calcIpiState[task.id]) calcIpiState[task.id].precosCarregando = false;
+  render();
+}
+
+function calcularLinhaIpi(p){
+  const precoVenda = p.precoVenda;
+  if(precoVenda==null || !p.qtd) return { precoAjustado:0, baseUnit:0, baseTotal:0, ipi:0, aliquota:{valor:0,conhecido:true} };
+  const aliquota = getAliquotaIPI(p.ncm);
+  const precoAjustado = precoVenda * (1 - REDUCAO_IPI);
+  const baseUnit = precoAjustado - p.valorNf;
+  const baseTotal = baseUnit * p.qtd;
+  const ipi = baseTotal * aliquota.valor;
+  return { precoAjustado, baseUnit, baseTotal, ipi, aliquota };
+}
+
+function renderCalcIpiPanel(container, task){
+  const calc = calcIpiState[task.id];
+  if(!calc){ container.innerHTML = '<span style="font-size:11px;color:var(--text3);">Carregando dados da nota...</span>'; return; }
+
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;";
+
+  const inputsRow = document.createElement("div");
+  inputsRow.style.cssText = "display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;";
+  const campoInput = (label, valor, onInput) => {
+    const box = document.createElement("div"); box.style.cssText="flex:1;min-width:120px;";
+    const lbl = document.createElement("div"); lbl.style.cssText="font-size:9px;color:var(--text3);margin-bottom:4px;"; lbl.textContent=label;
+    const inp = document.createElement("input"); inp.type="number"; inp.value=valor;
+    inp.style.cssText="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:5px 7px;color:#fbbf24;font-family:inherit;font-size:12px;";
+    inp.addEventListener("input", ()=>{ onInput(parseFloat(inp.value)||0); recalcular(); });
+    box.appendChild(lbl); box.appendChild(inp); return box;
+  };
+  inputsRow.appendChild(campoInput("Frete Total (R$)", calc.frete, v=>calc.frete=v));
+  inputsRow.appendChild(campoInput("IPI da NF Original (R$)", calc.ipiOriginal, v=>calc.ipiOriginal=v));
+  wrap.appendChild(inputsRow);
+
+  const table = document.createElement("table");
+  table.style.cssText = "width:100%;border-collapse:collapse;font-size:11px;";
+  table.innerHTML = `<thead><tr style="border-bottom:1px solid var(--sep);">
+    <th style="text-align:left;padding:5px 3px;color:var(--text3);font-weight:400;">SKU</th>
+    <th style="text-align:center;padding:5px 3px;color:var(--text3);font-weight:400;">QTD</th>
+    <th style="text-align:right;padding:5px 3px;color:var(--text3);font-weight:400;">VALOR NF</th>
+    <th style="text-align:right;padding:5px 3px;color:#fbbf24;font-weight:400;">PREÇO VENDA</th>
+    <th style="text-align:right;padding:5px 3px;color:var(--text3);font-weight:400;">IPI</th>
+    <th style="width:16px;"></th>
+  </tr></thead><tbody></tbody>`;
+  const tbody = table.querySelector("tbody");
+  wrap.appendChild(table);
+
+  const avisoBox = document.createElement("div");
+  avisoBox.style.cssText = "margin-top:8px;font-size:10px;color:#fbbf24;display:none;";
+  wrap.appendChild(avisoBox);
+
+  const addBtn = document.createElement("button");
+  addBtn.textContent = "+ adicionar produto";
+  addBtn.style.cssText = "margin-top:8px;width:100%;background:none;border:1px dashed #3dd68c66;color:#3dd68c;border-radius:5px;padding:6px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:0.5px;";
+  addBtn.addEventListener("click", ()=>{ calc.produtos.push({sku:"",produto:"",qtd:0,valorNf:0,ncm:"",precoVenda:null,automatico:false}); render(); });
+  wrap.appendChild(addBtn);
+
+  const totalRow = document.createElement("div");
+  totalRow.style.cssText = "margin-top:12px;padding-top:10px;border-top:1px solid var(--sep);display:flex;justify-content:space-between;align-items:center;";
+  totalRow.innerHTML = `<span style="font-size:9px;color:var(--text3);letter-spacing:1px;">TOTAL IPI DA NOTA COMPLEMENTAR</span><span id="calcIpiTotal-${task.id}" style="font-size:18px;font-weight:600;color:#3dd68c;">R$ 0,00</span>`;
+  wrap.appendChild(totalRow);
+
+  function montarLinhas(){
+    tbody.innerHTML = "";
+    calc.produtos.forEach((p, i)=>{
+      const tr = document.createElement("tr");
+      tr.style.borderBottom = "1px solid var(--sep)";
+      const tdSku = document.createElement("td"); tdSku.style.cssText="padding:6px 3px;";
+      if(p.automatico){ tdSku.innerHTML = `<span style="color:#3dd68c;font-weight:600;">${p.sku}</span>`; }
+      else{ const inpSku=document.createElement("input"); inpSku.value=p.sku; inpSku.placeholder="SKU"; inpSku.style.cssText="width:100px;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:3px 5px;color:#3dd68c;font-family:inherit;font-size:11px;"; inpSku.addEventListener("input",()=>{p.sku=inpSku.value;}); tdSku.appendChild(inpSku); }
+      tr.appendChild(tdSku);
+
+      const tdQtd = document.createElement("td"); tdQtd.style.cssText="padding:6px 3px;text-align:center;";
+      if(p.automatico){ tdQtd.textContent = p.qtd; }
+      else{ const inpQtd=document.createElement("input"); inpQtd.type="number"; inpQtd.value=p.qtd; inpQtd.style.cssText="width:55px;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:3px 5px;color:var(--text2);font-family:inherit;font-size:11px;text-align:center;"; inpQtd.addEventListener("input",()=>{p.qtd=parseFloat(inpQtd.value)||0; recalcular();}); tdQtd.appendChild(inpQtd); }
+      tr.appendChild(tdQtd);
+
+      const tdValorNf = document.createElement("td"); tdValorNf.style.cssText="padding:6px 3px;text-align:right;";
+      if(p.automatico){ tdValorNf.textContent = `R$ ${p.valorNf.toFixed(2)}`; }
+      else{ const inpV=document.createElement("input"); inpV.type="number"; inpV.value=p.valorNf; inpV.style.cssText="width:60px;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:3px 5px;color:var(--text2);font-family:inherit;font-size:11px;text-align:right;"; inpV.addEventListener("input",()=>{p.valorNf=parseFloat(inpV.value)||0; recalcular();}); tdValorNf.appendChild(inpV); }
+      tr.appendChild(tdValorNf);
+
+      const tdPreco = document.createElement("td"); tdPreco.style.cssText="padding:6px 3px;text-align:right;";
+      const inpPreco = document.createElement("input"); inpPreco.type="number"; inpPreco.placeholder="digitar";
+      inpPreco.value = p.precoVenda!=null ? p.precoVenda.toFixed(2) : "";
+      inpPreco.style.cssText=`width:70px;background:var(--bg);border:1px solid ${p.precoVenda==null?"#f87171":"var(--border2)"};border-radius:4px;padding:3px 5px;color:#fbbf24;font-family:inherit;font-size:11px;text-align:right;`;
+      inpPreco.addEventListener("input",()=>{ const v=parseFloat(inpPreco.value); p.precoVenda=isNaN(v)?null:v; recalcular(); });
+      tdPreco.appendChild(inpPreco);
+      tr.appendChild(tdPreco);
+
+      const tdIpi = document.createElement("td"); tdIpi.className="celulaIpi"; tdIpi.style.cssText="padding:6px 3px;text-align:right;color:#3dd68c;";
+      tr.appendChild(tdIpi);
+
+      const tdDel = document.createElement("td"); tdDel.style.cssText="padding:6px 3px;";
+      if(!p.automatico){ const delBtn=document.createElement("button"); delBtn.textContent="×"; delBtn.style.cssText="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;"; delBtn.addEventListener("click",()=>{calc.produtos.splice(i,1);render();}); tdDel.appendChild(delBtn); }
+      tr.appendChild(tdDel);
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  function recalcular(){
+    let total = 0;
+    let semAliquota = [];
+    const linhas = tbody.querySelectorAll("tr");
+    calc.produtos.forEach((p, i)=>{
+      const r = calcularLinhaIpi(p);
+      total += r.ipi;
+      if(p.precoVenda!=null && !r.aliquota.conhecido) semAliquota.push(p.ncm || p.sku);
+      const celula = linhas[i]?.querySelector(".celulaIpi");
+      if(celula) celula.textContent = p.precoVenda!=null ? `R$ ${r.ipi.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : "—";
+    });
+    if(semAliquota.length){
+      avisoBox.style.display="block";
+      avisoBox.textContent = `⚠ NCM sem alíquota cadastrada (assumindo 0%): ${[...new Set(semAliquota)].join(", ")}`;
+    }else{
+      avisoBox.style.display="none";
+    }
+    const totalEl = document.getElementById(`calcIpiTotal-${task.id}`);
+    if(totalEl) totalEl.textContent = `R$ ${total.toLocaleString("pt-BR",{minimumFractionDigits:2})}`;
+  }
+
+  montarLinhas();
+  recalcular();
+  container.appendChild(wrap);
 }
 
 async function fetchVendas(days) {
@@ -1452,7 +1617,7 @@ Reclamações abertas: ${mlReclamacoes.data.length} total, ${aguarda.length} agu
       const rows = estoqueExcelData.rows;
       let totalValor=0, totalAptas=0, semCusto=0;
       const enriched = rows.map(r=>{
-        const custo = estoqueBlingData ? (estoqueBlingData[r.sku]||0) : 0;
+        const custo = estoqueBlingData ? (estoqueBlingData[normSku(r.sku)]||0) : 0;
         const valor = custo * r.aptas;
         if(!custo) semCusto++;
         totalValor += valor; totalAptas += r.aptas;
@@ -1866,16 +2031,34 @@ function render(){
                 checklist.style.cssText="margin-top:8px;padding-top:8px;border-top:1px solid var(--sep);display:flex;flex-direction:column;gap:2px;";
                 task.subtarefas.forEach((sub,idx)=>{
                   const subRow=document.createElement("div");
-                  subRow.style.cssText="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;";
+                  subRow.style.cssText="display:flex;align-items:center;gap:8px;padding:4px 0;";
                   const subChk=document.createElement("button");
                   subChk.style.cssText=`width:16px;height:16px;border-radius:4px;border:1.5px solid ${sub.feito?"#3dd68c":"var(--border2)"};background:${sub.feito?"#3dd68c":"none"};flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#000;font-size:10px;font-weight:700;`;
                   subChk.textContent=sub.feito?"✓":"";
+                  subChk.addEventListener("click",()=>{update(ref(db,`/tasks/${task.id}/subtarefas/${idx}`),{feito:!sub.feito});});
                   const subLabel=document.createElement("span");
-                  subLabel.style.cssText=`font-size:12px;color:${sub.feito?"var(--text3)":"var(--text2)"};text-decoration:${sub.feito?"line-through":"none"};`;
+                  subLabel.style.cssText=`font-size:12px;color:${sub.feito?"var(--text3)":"var(--text2)"};text-decoration:${sub.feito?"line-through":"none"};cursor:pointer;`;
                   subLabel.textContent=`${idx+1}. ${sub.texto}`;
+                  const ehPassoIPI = /ipi/i.test(sub.texto) && task.nfNumero;
+                  if(ehPassoIPI){
+                    if(!sub.feito) subLabel.style.textDecoration="underline";
+                    subLabel.title="Clique pra abrir a calculadora";
+                    subLabel.addEventListener("click",()=>{
+                      calcIpiAberto[task.id]=!calcIpiAberto[task.id];
+                      if(calcIpiAberto[task.id] && !calcIpiState[task.id]) initCalcIpi(task);
+                      render();
+                    });
+                  }else{
+                    subLabel.addEventListener("click",()=>{update(ref(db,`/tasks/${task.id}/subtarefas/${idx}`),{feito:!sub.feito});});
+                  }
                   subRow.appendChild(subChk);subRow.appendChild(subLabel);
-                  subRow.addEventListener("click",()=>{update(ref(db,`/tasks/${task.id}/subtarefas/${idx}`),{feito:!sub.feito});});
                   checklist.appendChild(subRow);
+                  if(ehPassoIPI && calcIpiAberto[task.id]){
+                    const calcContainer=document.createElement("div");
+                    calcContainer.style.cssText="margin:6px 0 8px 24px;";
+                    renderCalcIpiPanel(calcContainer, task);
+                    checklist.appendChild(calcContainer);
+                  }
                 });
                 tw.appendChild(checklist);
               }
@@ -2244,7 +2427,7 @@ async function fetchBlingProdutos() {
     // Monta mapa SKU → precoCusto
     const mapa = {};
     (data.data || []).forEach(p => {
-      const sku = String(p.codigo || "").trim();
+      const sku = normSku(p.codigo);
       const custo = Number(p.precoCusto) || 0;
       if (sku) mapa[sku] = custo;
     });
@@ -2409,9 +2592,9 @@ function renderFilialSP(panel, color) {
   const resumo = document.createElement("div");
   resumo.style.cssText = "display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;";
   let totalValor = 0, totalAptas = 0, totalTransf = 0, skusSemCusto = 0;
-  const temCusto = rows.some(r => estoqueBlingData && estoqueBlingData[r.sku]);
+  const temCusto = rows.some(r => estoqueBlingData && estoqueBlingData[normSku(r.sku)]);
   const enriched = rows.map(r => {
-    const custo = estoqueBlingData ? (estoqueBlingData[r.sku] || 0) : null;
+    const custo = estoqueBlingData ? (estoqueBlingData[normSku(r.sku)] || 0) : null;
     const valor = custo !== null ? r.aptas * custo : null;
     if (custo === 0 || custo === null) skusSemCusto++;
     if (valor !== null) totalValor += valor;
