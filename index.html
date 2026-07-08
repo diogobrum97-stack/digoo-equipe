@@ -1009,17 +1009,19 @@ function renderCalcIpiPanel(container, task){
   const table = document.createElement("table");
   table.style.cssText = "width:100%;border-collapse:collapse;font-size:10.5px;";
   table.innerHTML = `<thead><tr style="border-bottom:1px solid var(--sep);">
-    <th style="text-align:left;padding:5px 3px;color:var(--text3);font-weight:400;">SKU</th>
+    <th style="text-align:left;padding:5px 3px;color:var(--text3);font-weight:400;">SKU / PRODUTO</th>
     <th style="text-align:center;padding:5px 3px;color:var(--text3);font-weight:400;">QTD</th>
     <th style="text-align:right;padding:5px 3px;color:var(--text3);font-weight:400;">VALOR NF</th>
     <th style="text-align:right;padding:5px 3px;color:#fbbf24;font-weight:400;">PREÇO VENDA</th>
-    <th style="text-align:right;padding:5px 3px;color:#fbbf24;font-weight:400;">ALÍQUOTA %</th>
     <th style="text-align:right;padding:5px 3px;color:var(--text3);font-weight:400;">VALOR DO IPI</th>
     <th style="text-align:right;padding:5px 3px;color:var(--text3);font-weight:400;">CMV C/ IPI+FRETE</th>
     <th style="width:16px;"></th>
-  </tr></thead><tbody></tbody>`;
+  </tr></thead><tbody></tbody><tfoot></tfoot>`;
   const tbody = table.querySelector("tbody");
+  const tfoot = table.querySelector("tfoot");
   wrap.appendChild(table);
+
+  if(!calc.linhaExpandida) calc.linhaExpandida = null; // índice do produto expandido pra editar NCM/alíquota, ou null
 
   const avisoBox = document.createElement("div");
   avisoBox.style.cssText = "margin-top:8px;font-size:10px;color:#fbbf24;display:none;";
@@ -1040,26 +1042,41 @@ function renderCalcIpiPanel(container, task){
     tbody.innerHTML = "";
     calc.produtos.forEach((p, i)=>{
       const tr = document.createElement("tr");
-      tr.style.borderBottom = "1px solid var(--sep)";
+      tr.style.cssText = "border-bottom:1px solid var(--sep);cursor:pointer;";
+      tr.dataset.prodIdx = i;
+
       const tdSku = document.createElement("td"); tdSku.style.cssText="padding:6px 3px;";
-      if(p.automatico){ tdSku.innerHTML = `<span style="color:#3dd68c;font-weight:600;">${p.sku}</span>`; }
-      else{ const inpSku=document.createElement("input"); inpSku.value=p.sku; inpSku.placeholder="SKU"; inpSku.style.cssText="width:100px;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:3px 5px;color:#3dd68c;font-family:inherit;font-size:11px;"; inpSku.addEventListener("input",()=>{p.sku=inpSku.value;}); tdSku.appendChild(inpSku); }
+      const aliqTextoHtml = (val) => val==null
+        ? `<span class="aliqBadge" style="color:#f87171;font-size:9px;">sem %</span>`
+        : `<span class="aliqBadge" style="color:var(--text3);font-size:9px;">${(val*100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}%</span>`;
+      const seta = calc.linhaExpandida===i ? "▾" : "▸";
+      if(p.automatico){
+        tdSku.innerHTML = `<div style="color:#3dd68c;font-weight:600;">${p.sku} <span style="color:var(--border2);">·</span> ${aliqTextoHtml(p.aliquotaValor)} <span style="color:var(--text3);font-size:9px;">${seta}</span></div><div style="color:var(--text3);font-size:9.5px;margin-top:2px;">${p.produto||""}</div>`;
+      }else{
+        tdSku.innerHTML = `<div style="color:#3dd68c;font-weight:600;">· ${aliqTextoHtml(p.aliquotaValor)} <span style="color:var(--text3);font-size:9px;">${seta}</span></div>`;
+        const inpSku=document.createElement("input"); inpSku.value=p.sku; inpSku.placeholder="SKU";
+        inpSku.style.cssText="width:100px;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:3px 5px;color:#3dd68c;font-family:inherit;font-size:11px;margin-top:2px;";
+        inpSku.addEventListener("click",e=>e.stopPropagation());
+        inpSku.addEventListener("input",()=>{p.sku=inpSku.value;});
+        tdSku.insertBefore(inpSku, tdSku.firstChild.nextSibling);
+      }
       tr.appendChild(tdSku);
 
       const tdQtd = document.createElement("td"); tdQtd.style.cssText="padding:6px 3px;text-align:center;";
       if(p.automatico){ tdQtd.textContent = p.qtd; }
-      else{ const inpQtd=document.createElement("input"); inpQtd.type="number"; inpQtd.value=p.qtd; inpQtd.style.cssText="width:55px;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:3px 5px;color:var(--text2);font-family:inherit;font-size:11px;text-align:center;"; inpQtd.addEventListener("input",()=>{p.qtd=parseFloat(inpQtd.value)||0; recalcular();}); tdQtd.appendChild(inpQtd); }
+      else{ const inpQtd=document.createElement("input"); inpQtd.type="number"; inpQtd.value=p.qtd; inpQtd.style.cssText="width:55px;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:3px 5px;color:var(--text2);font-family:inherit;font-size:11px;text-align:center;"; inpQtd.addEventListener("click",e=>e.stopPropagation()); inpQtd.addEventListener("input",()=>{p.qtd=parseFloat(inpQtd.value)||0; recalcular();}); tdQtd.appendChild(inpQtd); }
       tr.appendChild(tdQtd);
 
       const tdValorNf = document.createElement("td"); tdValorNf.style.cssText="padding:6px 3px;text-align:right;";
       if(p.automatico){ tdValorNf.textContent = `R$ ${p.valorNf.toFixed(2)}`; }
-      else{ const inpV=document.createElement("input"); inpV.type="number"; inpV.value=p.valorNf; inpV.style.cssText="width:60px;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:3px 5px;color:var(--text2);font-family:inherit;font-size:11px;text-align:right;"; inpV.addEventListener("input",()=>{p.valorNf=parseFloat(inpV.value)||0; recalcular();}); tdValorNf.appendChild(inpV); }
+      else{ const inpV=document.createElement("input"); inpV.type="number"; inpV.value=p.valorNf; inpV.style.cssText="width:60px;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:3px 5px;color:var(--text2);font-family:inherit;font-size:11px;text-align:right;"; inpV.addEventListener("click",e=>e.stopPropagation()); inpV.addEventListener("input",()=>{p.valorNf=parseFloat(inpV.value)||0; recalcular();}); tdValorNf.appendChild(inpV); }
       tr.appendChild(tdValorNf);
 
       const tdPreco = document.createElement("td"); tdPreco.style.cssText="padding:6px 3px;text-align:right;";
       const inpPreco = document.createElement("input"); inpPreco.type="number"; inpPreco.placeholder="digitar";
       inpPreco.value = p.precoVenda!=null ? p.precoVenda.toFixed(2) : "";
       inpPreco.style.cssText=`width:70px;background:var(--bg);border:1px solid ${p.precoVenda==null?"#f87171":"var(--border2)"};border-radius:4px;padding:3px 5px;color:#fbbf24;font-family:inherit;font-size:11px;text-align:right;`;
+      inpPreco.addEventListener("click",e=>e.stopPropagation());
       // Só recalcula localmente enquanto digita (sem gravar no Firebase a cada
       // tecla — isso disparava um recarregamento da tela inteira e derrubava
       // o foco do campo no meio da digitação). Só grava quando sai do campo.
@@ -1072,19 +1089,6 @@ function renderCalcIpiPanel(container, task){
       tdPreco.appendChild(inpPreco);
       tr.appendChild(tdPreco);
 
-      const tdAliq = document.createElement("td"); tdAliq.style.cssText="padding:6px 3px;text-align:right;";
-      const inpAliqLinha = document.createElement("input"); inpAliqLinha.type="number"; inpAliqLinha.step="0.01"; inpAliqLinha.placeholder="ex: 6,5";
-      inpAliqLinha.value = p.aliquotaValor!=null ? (p.aliquotaValor*100).toString() : "";
-      inpAliqLinha.style.cssText=`width:55px;background:var(--bg);border:1px solid ${p.aliquotaValor==null?"#f87171":"var(--border2)"};border-radius:4px;padding:3px 5px;color:#fbbf24;font-family:inherit;font-size:11px;text-align:right;`;
-      inpAliqLinha.addEventListener("input",()=>{
-        const v=parseFloat(inpAliqLinha.value);
-        p.aliquotaValor=isNaN(v)?null:v/100;
-        inpAliqLinha.style.borderColor = p.aliquotaValor==null ? "#f87171" : "var(--border2)";
-        recalcular();
-      });
-      tdAliq.appendChild(inpAliqLinha);
-      tr.appendChild(tdAliq);
-
       const tdIpi = document.createElement("td"); tdIpi.className="celulaIpi"; tdIpi.style.cssText="padding:6px 3px;text-align:right;color:#3dd68c;";
       tr.appendChild(tdIpi);
 
@@ -1092,17 +1096,62 @@ function renderCalcIpiPanel(container, task){
       tr.appendChild(tdCmv);
 
       const tdDel = document.createElement("td"); tdDel.style.cssText="padding:6px 3px;";
-      if(!p.automatico){ const delBtn=document.createElement("button"); delBtn.textContent="×"; delBtn.style.cssText="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;"; delBtn.addEventListener("click",()=>{calc.produtos.splice(i,1);render();}); tdDel.appendChild(delBtn); }
+      if(!p.automatico){ const delBtn=document.createElement("button"); delBtn.textContent="×"; delBtn.style.cssText="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;"; delBtn.addEventListener("click",e=>{e.stopPropagation();calc.produtos.splice(i,1);render();}); tdDel.appendChild(delBtn); }
       tr.appendChild(tdDel);
 
+      tr.addEventListener("click", ()=>{
+        calc.linhaExpandida = calc.linhaExpandida===i ? null : i;
+        montarLinhas();
+        recalcular();
+      });
       tbody.appendChild(tr);
+
+      if(calc.linhaExpandida===i){
+        const trDet = document.createElement("tr");
+        trDet.style.cssText = "background:var(--bg);";
+        const tdDet = document.createElement("td");
+        tdDet.colSpan = 7;
+        tdDet.style.cssText = "padding:10px 12px;";
+        tdDet.innerHTML = `<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+          <div><div style="font-size:9px;color:var(--text3);margin-bottom:3px;">NCM</div><div style="font-size:11px;color:var(--text2);">${p.ncm||"—"}</div></div>
+        </div>`;
+        const campoAliq = document.createElement("div");
+        const lblAliq = document.createElement("div"); lblAliq.style.cssText="font-size:9px;color:var(--text3);margin-bottom:3px;"; lblAliq.textContent="ALÍQUOTA %";
+        const inpAliqDet = document.createElement("input"); inpAliqDet.type="number"; inpAliqDet.step="0.01"; inpAliqDet.placeholder="digitar";
+        inpAliqDet.value = p.aliquotaValor!=null ? (p.aliquotaValor*100) : "";
+        inpAliqDet.style.cssText = "width:80px;background:var(--bg3);border:1px solid #fbbf2466;border-radius:4px;padding:5px 8px;color:#fbbf24;font-family:inherit;font-size:12px;";
+        inpAliqDet.addEventListener("click",e=>e.stopPropagation());
+        inpAliqDet.addEventListener("input",()=>{
+          const v=parseFloat(inpAliqDet.value);
+          p.aliquotaValor=isNaN(v)?null:v/100;
+          const badge = tr.querySelector(".aliqBadge");
+          if(badge){
+            if(p.aliquotaValor==null){ badge.style.color="#f87171"; badge.textContent="sem %"; }
+            else{ badge.style.color="var(--text3)"; badge.textContent=`${(p.aliquotaValor*100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}%`; }
+          }
+          recalcular();
+        });
+        campoAliq.appendChild(lblAliq); campoAliq.appendChild(inpAliqDet);
+        tdDet.querySelector("div").appendChild(campoAliq);
+        trDet.appendChild(tdDet);
+        trDet.addEventListener("click", e=>e.stopPropagation());
+        tbody.appendChild(trDet);
+      }
     });
+
+    // Rodapé: total de SKUs e total de unidades
+    const totalUnidades = calc.produtos.reduce((s,p)=>s+(p.qtd||0),0);
+    tfoot.innerHTML = `<tr style="border-top:1px solid var(--border2);">
+      <td style="padding:8px 3px;color:var(--text2);font-size:10px;font-weight:600;">${calc.produtos.length} SKUs</td>
+      <td style="padding:8px 3px;text-align:center;color:var(--text);font-size:10px;font-weight:600;">${totalUnidades.toLocaleString("pt-BR")} un.</td>
+      <td colspan="5"></td>
+    </tr>`;
   }
 
   function recalcular(){
     let total = 0;
     const porAliquota = new Map(); // valorAliquota -> {base, valor}
-    const linhas = tbody.querySelectorAll("tr");
+    const linhas = tbody.querySelectorAll("tr[data-prod-idx]");
 
     // Base de rateio (pra diluir frete + IPI da NF original proporcionalmente),
     // igual à planilha: soma valorNf*qtd de todos os produtos com qtd>0
@@ -1164,9 +1213,9 @@ function renderCalcIpiPanel(container, task){
     if(totalEl) totalEl.textContent = `R$ ${total.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
   }
 
+  container.appendChild(wrap);
   montarLinhas();
   recalcular();
-  container.appendChild(wrap);
 }
 
 async function fetchVendas(days) {
