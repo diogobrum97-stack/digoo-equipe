@@ -2521,7 +2521,7 @@ let cancelamentosErro = null;
 async function fetchCancelamentos(forcar) {
   if (cancelamentosLoading) return;
   if (cancelamentosData !== null && !forcar) return;
-  cancelamentosLoading = true; cancelamentosErro = null; render();
+  cancelamentosLoading = true; cancelamentosErro = null;
   try {
     const r = await fetch(`${VERCEL_BACKEND}/api/ml-canceladas`);
     const d = await r.json();
@@ -2529,10 +2529,11 @@ async function fetchCancelamentos(forcar) {
     cancelamentosData = d.itens || [];
   } catch (e) {
     cancelamentosErro = e.message;
-    cancelamentosData = null;
+    cancelamentosData = [];  // array vazio em vez de null pra sair do loading
     console.error("Erro ao buscar cancelamentos:", e.message);
   }
-  cancelamentosLoading = false; render();
+  cancelamentosLoading = false;
+  setTimeout(() => { try{ render(); }catch(e){} }, 0);  // fora do ciclo atual de render
 }
 
 function renderCancelamentos(panel) {
@@ -2558,8 +2559,9 @@ function renderCancelamentos(panel) {
   if (cancelamentosErro) {
     const err = document.createElement("div");
     err.style.cssText = "padding:10px;background:#f8717110;border:1px solid #f8717133;border-radius:5px;font-size:11px;color:#f87171;margin-bottom:12px;";
-    err.textContent = cancelamentosErro;
+    err.textContent = `Erro: ${cancelamentosErro}`;
     panel.appendChild(err);
+    return;
   }
 
   if (!cancelamentosData || cancelamentosData.length === 0) {
