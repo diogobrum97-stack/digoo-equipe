@@ -2010,7 +2010,7 @@ function render(){
         if(member.locked){
           if(!window._diogotab)window._diogotab="tarefas";
           const tabs=document.createElement("div");tabs.className="tabs";
-          ["tarefas","concluidas","conversas","estoque"].forEach(tab=>{
+          ["tarefas","concluidas","conversas","estoque","cancelamentos"].forEach(tab=>{
             const btn=document.createElement("button");
             btn.className="tab-btn"+(window._diogotab===tab?" active":"");
             if(tab==="concluidas"){
@@ -2019,6 +2019,8 @@ function render(){
               btn.textContent="Minhas Tarefas";
             } else if(tab==="estoque") {
               btn.textContent="Estoque";
+            } else if(tab==="cancelamentos") {
+              btn.textContent="Cancelamentos";
             } else {
               btn.textContent="Conversas";
             }
@@ -2126,7 +2128,7 @@ function render(){
             if(ownTasks.length===0&&recTasks.length===0){const e=document.createElement("p");e.style.cssText="font-size:11px;color:var(--text3);padding:10px 0 4px;";e.textContent="Nenhuma tarefa sua ainda";panel.appendChild(e);}
             if(ownTasks.length>0){
               const manLabel=document.createElement("div");
-              manLabel.style.cssText="font-size:8px;letter-spacing:2px;color:#B8BEC8;text-transform:uppercase;margin-bottom:8px;margin-top:4px;display:flex;align-items:center;gap:6px;";
+              manLabel.style.cssText="font-size:8px;letter-spacing:2px;color:#ffffff33;text-transform:uppercase;margin-bottom:8px;margin-top:4px;display:flex;align-items:center;gap:6px;";
               manLabel.innerHTML='minhas tarefas <span style="flex:1;height:1px;background:#ffffff08;display:inline-block;"></span>';
               panel.appendChild(manLabel);
             }
@@ -2138,7 +2140,7 @@ function render(){
               if(!task.isRecorrente){
                 const handle = document.createElement("span");
                 handle.textContent = "⠿";
-                handle.style.cssText = "color: #B8BEC8;font-size:13px;cursor:grab;flex-shrink:0;padding:2px 4px 0 0;user-select:none;";
+                handle.style.cssText = "color:#ffffff22;font-size:13px;cursor:grab;flex-shrink:0;padding:2px 4px 0 0;user-select:none;";
                 handle.setAttribute("draggable","false");
                 row.setAttribute("draggable","true");
                 row.prepend(handle);
@@ -2291,6 +2293,10 @@ function render(){
           }else if(window._diogotab==="estoque"){
             if(diogIsFullAuto){panel.style.maxHeight="none";panel.style.overflowY="auto";}else{panel.style.maxHeight="";panel.style.overflowY="";}
             renderEstoqueTab(panel, color);
+          }else if(window._diogotab==="cancelamentos"){
+            panel.style.maxHeight="none"; panel.style.overflowY="auto";
+            fetchCancelamentos();
+            renderCancelamentos(panel);
           }else if(window._diogotab==="concluidas"){
             if(Object.keys(completionAlerts).length>0){
               const sec=document.createElement("div");sec.style.marginBottom="12px";sec.innerHTML=`<div class="section-label" style="color:#00e676;margin-bottom:8px">Novas conclusões</div>`;
@@ -2506,6 +2512,142 @@ async function processarRelatorioMatriz(file) {
 }
 
 let precoAutoCheckDone = false;
+
+// ── Cancelamentos ML ──────────────────────────────────────────────────────────
+let cancelamentosData = null;     // null = não carregado ainda, [] = carregado vazio
+let cancelamentosLoading = false;
+let cancelamentosErro = null;
+
+async function fetchCancelamentos(forcar) {
+  if (cancelamentosLoading) return;
+  if (cancelamentosData !== null && !forcar) return;
+  cancelamentosLoading = true; cancelamentosErro = null; render();
+  try {
+    const r = await fetch(`${VERCEL_BACKEND}/api/ml-canceladas`);
+    const d = await r.json();
+    if (!r.ok || !d.ok) throw new Error(d.error || "falha ao buscar cancelamentos");
+    cancelamentosData = d.itens || [];
+  } catch (e) {
+    cancelamentosErro = e.message;
+    cancelamentosData = null;
+    console.error("Erro ao buscar cancelamentos:", e.message);
+  }
+  cancelamentosLoading = false; render();
+}
+
+function renderCancelamentos(panel) {
+  if (cancelamentosLoading) {
+    const l = document.createElement("div");
+    l.style.cssText = "text-align:center;padding:30px 0;font-size:12px;color:var(--text3);";
+    l.innerHTML = '<span class="spinning">↻</span> Buscando cancelamentos no ML...';
+    panel.appendChild(l); return;
+  }
+
+  const topRow = document.createElement("div");
+  topRow.style.cssText = "display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;";
+  const titulo = document.createElement("div");
+  titulo.style.cssText = "font-size:11px;color:var(--text3);letter-spacing:1px;";
+  titulo.textContent = cancelamentosData ? `${cancelamentosData.length} cancelamentos nos últimos 30 dias` : "—";
+  const refreshBtn = document.createElement("button");
+  refreshBtn.textContent = "↻ Atualizar";
+  refreshBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:4px 10px;font-size:10px;cursor:pointer;font-family:inherit;";
+  refreshBtn.addEventListener("click", () => fetchCancelamentos(true));
+  topRow.appendChild(titulo); topRow.appendChild(refreshBtn);
+  panel.appendChild(topRow);
+
+  if (cancelamentosErro) {
+    const err = document.createElement("div");
+    err.style.cssText = "padding:10px;background:#f8717110;border:1px solid #f8717133;border-radius:5px;font-size:11px;color:#f87171;margin-bottom:12px;";
+    err.textContent = cancelamentosErro;
+    panel.appendChild(err);
+  }
+
+  if (!cancelamentosData || cancelamentosData.length === 0) {
+    const vazio = document.createElement("div");
+    vazio.style.cssText = "text-align:center;padding:30px 0;font-size:12px;color:var(--text3);";
+    vazio.textContent = cancelamentosData ? "Nenhum cancelamento encontrado no período." : "Clique em Atualizar para carregar.";
+    panel.appendChild(vazio); return;
+  }
+
+  // Filtra apenas os pendentes por padrão, com toggle pra ver todos
+  if (!window._cancelFiltro) window._cancelFiltro = "pendentes";
+  const filtroRow = document.createElement("div");
+  filtroRow.style.cssText = "display:flex;gap:6px;margin-bottom:12px;";
+  [["pendentes","⚠ NF pendente"],["sem_nf","Sem NF"],["todos","Todos"]].forEach(([v,l]) => {
+    const btn = document.createElement("button");
+    btn.textContent = l;
+    btn.style.cssText = `background:none;border:1px solid ${window._cancelFiltro===v?"var(--text)":"var(--border2)"};color:${window._cancelFiltro===v?"var(--text)":"var(--text3)"};border-radius:4px;padding:3px 10px;font-size:10px;cursor:pointer;font-family:inherit;`;
+    btn.addEventListener("click", () => { window._cancelFiltro = v; render(); });
+    filtroRow.appendChild(btn);
+  });
+  panel.appendChild(filtroRow);
+
+  const filtrados = cancelamentosData.filter(it => {
+    if (window._cancelFiltro === "pendentes") return it.status === "nf_pendente";
+    if (window._cancelFiltro === "sem_nf") return it.status === "sem_nf";
+    return true;
+  });
+
+  if (filtrados.length === 0) {
+    const vazio = document.createElement("div");
+    vazio.style.cssText = "padding:10px 0;font-size:12px;color:var(--text3);";
+    vazio.textContent = "Nenhum item nessa categoria.";
+    panel.appendChild(vazio); return;
+  }
+
+  filtrados.forEach(it => {
+    const card = document.createElement("div");
+    card.style.cssText = "background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px 12px;margin-bottom:8px;";
+
+    const statusInfo = {
+      nf_pendente: { cor: "#f87171", texto: "⚠ NF não cancelada" },
+      sem_nf:      { cor: "#fbbf24", texto: "Sem NF no período" },
+      nf_cancelada:{ cor: "#00dfc3", texto: "✓ NF cancelada" },
+    }[it.status] || { cor: "#888", texto: "—" };
+
+    const dataStr = it.dataCancelamento ? new Date(it.dataCancelamento).toLocaleDateString("pt-BR") : "—";
+    const valorStr = `R$ ${Number(it.valor).toLocaleString("pt-BR", {minimumFractionDigits:2})}`;
+
+    card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px;">
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--text);margin-bottom:2px;">${it.produto}</div>
+          <div style="font-size:10px;color:var(--text3);">${it.comprador} · ${dataStr} · ${valorStr}</div>
+        </div>
+        <span style="background:${statusInfo.cor}18;color:${statusInfo.cor};border:1px solid ${statusInfo.cor}55;border-radius:4px;padding:2px 8px;font-size:9px;white-space:nowrap;flex-shrink:0;">${statusInfo.texto}</span>
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:8px;">
+        Pedido ML #${it.numeroPedido}
+        ${it.nf ? `· NF #${it.nf.nfNumero} (${it.nf.nfSituacao})` : ""}
+      </div>`;
+
+    if (it.status !== "nf_cancelada") {
+      const delegarRow = document.createElement("div");
+      delegarRow.style.cssText = "display:flex;gap:6px;";
+      ["Bruno","Larissa"].forEach(membro => {
+        const cor = themeColor(membro);
+        const btn = document.createElement("button");
+        btn.textContent = `Delegar pra ${membro}`;
+        btn.style.cssText = `background:none;border:1px solid ${cor}44;color:${cor};border-radius:4px;padding:4px 10px;font-size:10px;cursor:pointer;font-family:inherit;`;
+        btn.addEventListener("click", () => {
+          const texto = `Cancelar NF #${it.nf?.nfNumero || "s/n"} — Pedido ML #${it.numeroPedido} (${it.produto}, ${valorStr})`;
+          push(ref(db, "/tasks"), {
+            member: membro, text: texto, prio: "urgente",
+            done: false, progress: false, delegatedBy: "Diogo",
+            createdAt: Date.now(),
+          });
+          set(ref(db, `/flashes/${membro}`), { ts: Date.now(), msg: "Nova tarefa de Diogo!" });
+          btn.textContent = "✓ Delegado";
+          btn.disabled = true;
+        });
+        delegarRow.appendChild(btn);
+      });
+      card.appendChild(delegarRow);
+    }
+
+    panel.appendChild(card);
+  });
+}
 let precoAutoCheckLoading = false;
 let estoqueAutoCheckDone = false;
 let estoqueAutoLoading = false;
