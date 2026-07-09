@@ -90,7 +90,7 @@ h1 { font-family: 'Bebas Neue', sans-serif; font-size: 44px; letter-spacing: 5px
 .clear-btn { background: none; border: none; color: #8a8a8a; font-size: 11px; letter-spacing: 1px; cursor: pointer; font-family: inherit; font-weight: 400; }
 .task-row.done-row { opacity: 0.65; }
 .section { margin-top: 14px; border-top: 1px solid var(--sep); padding-top: 12px; }
-.section-label { font-size: 10px; color: #C7CDD6; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; font-weight: 500; }
+.section-label { font-size: 10px; color: #ffffff; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; font-weight: 500; }
 .input-box { background: var(--bg3); border: 1px solid var(--border2); border-radius: 6px; padding: 12px; margin-top: 6px; }
 .input-box input { width: 100%; background: none; border: none; outline: none; color: var(--text); font-size: 13px; margin-bottom: 10px; padding: 0; font-family: inherit; }
 .input-box input::placeholder { color: var(--text3); }
