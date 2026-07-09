@@ -2262,6 +2262,7 @@ function render(){
             const recTasks=[...allOwnTasksActive.filter(t=>t.isRecorrente),...allOwnTasksDone];
             const manualTasks=[...allOwnTasksActive.filter(t=>!t.isRecorrente),...allOwnTasksDoneManual];
             const allOwnTasks=manualTasks; // alias para o código abaixo
+            const ownTasks=manualTasks;
             const teamTasks=active.filter(t=>t.delegatedBy&&t.delegatedBy!=="Diogo");
 
             // Seção recorrentes
