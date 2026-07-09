@@ -1,6 +1,15 @@
+/* Importa Inter (próxima à fonte do ChatGPT) mantendo IBM Plex Mono como fallback monospace */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
+
 body {
-  font-family: 'IBM Plex Mono', monospace;
+  /* Inter como fonte principal nos textos de interface; IBM Plex Mono preservado em campos de código/dado */
+  font-family: 'Inter', 'IBM Plex Mono', monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   padding: 20px 28px 60px;
   min-height: 100vh;
   transition: background 0.3s, color 0.3s;
@@ -8,8 +17,8 @@ body {
 body {
   --bg: #000; --bg2: #0a0a0a; --bg3: #111;
   --border: #2a2a2a; --border2: #333;
-  --text: #fff; --text2: #ccc; --text3: #888; --sub: #666;
-  --done: #888; --sep: rgba(255,255,255,0.18);
+  --text: #ececec; --text2: #c8c8c8; --text3: #8e8e8e; --sub: #666;
+  --done: #888; --sep: rgba(255,255,255,0.08);
   --c-d: #00ffe5; --hbg-d: #0a2820;
   --c-b: #9d7fff; --hbg-b: #12103a;
   --c-l: #ff1f7a; --hbg-l: #280818;
@@ -33,8 +42,8 @@ body.light {
 body.light .toggle-track { background: #e0ddd5; border-color: #ccc; }
 body.light .toggle-thumb { transform: translateX(22px); background: #fff; }
 header { text-align: center; margin-bottom: 24px; }
-/* Sub-título do header: de opacity:0.5 para cor fixa mais legível */
-.sub { font-size: 10px; letter-spacing: 6px; color: #aaa; margin-bottom: 6px; text-transform: uppercase; }
+.sub { font-size: 10px; letter-spacing: 6px; color: #9a9a9a; margin-bottom: 6px; text-transform: uppercase; font-weight: 400; }
+/* h1 mantém Bebas Neue — é identidade visual, não tipografia de texto */
 h1 { font-family: 'Bebas Neue', sans-serif; font-size: 44px; letter-spacing: 5px; color: var(--text); }
 .sync { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--pn); margin-left: 10px; vertical-align: middle; box-shadow: 0 0 10px var(--pn); animation: pulse 2s infinite; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
@@ -47,22 +56,21 @@ h1 { font-family: 'Bebas Neue', sans-serif; font-size: 44px; letter-spacing: 5px
 .card.flashing { animation: cardFlash 0.9s ease-in-out infinite; }
 .card-header { padding: 16px 14px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--sep); cursor: pointer; transition: filter 0.15s; user-select: none; }
 .card-header:hover { filter: brightness(1.08); }
-.avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 500; letter-spacing: 1px; flex-shrink: 0; }
+.avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; letter-spacing: 1px; flex-shrink: 0; }
+/* member-name mantém Bebas Neue — identidade visual dos cards */
 .member-name { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 3px; }
 .dots { display: flex; gap: 5px; margin-top: 4px; min-height: 8px; align-items: center; }
 .dot { width: 7px; height: 7px; border-radius: 50%; }
-/* Chevron: mais visível */
-.chevron { margin-left: auto; font-size: 11px; color: #aaa; transition: transform 0.2s; }
+.chevron { margin-left: auto; font-size: 11px; color: #9a9a9a; transition: transform 0.2s; }
 .chevron.open { transform: rotate(180deg); }
 .unread-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 .panel { background: var(--bg2); padding: 16px; display: none; }
 .panel.open { display: block; }
 .pin-wrap { text-align: center; padding: 20px 0; }
 .pin-icon { font-size: 26px; margin-bottom: 12px; color: var(--text2); }
-/* PIN label: de opacity:0.7 para cor fixa */
-.pin-wrap p { font-size: 12px; color: #bbb; margin-bottom: 16px; letter-spacing: 1px; }
-.pin-input { background: var(--bg3); border: 1px solid var(--border2); border-radius: 5px; color: var(--text); font-size: 18px; padding: 8px 14px; text-align: center; outline: none; width: 140px; letter-spacing: 8px; font-family: inherit; }
-.pin-btn { display: block; margin: 12px auto 0; padding: 7px 20px; border: none; border-radius: 4px; font-size: 10px; letter-spacing: 2px; cursor: pointer; font-family: inherit; font-weight: 500; }
+.pin-wrap p { font-size: 13px; color: #b0b0b0; margin-bottom: 16px; letter-spacing: 0.5px; font-weight: 400; }
+.pin-input { background: var(--bg3); border: 1px solid var(--border2); border-radius: 5px; color: var(--text); font-size: 18px; padding: 8px 14px; text-align: center; outline: none; width: 140px; letter-spacing: 8px; font-family: 'IBM Plex Mono', monospace; }
+.pin-btn { display: block; margin: 12px auto 0; padding: 7px 20px; border: none; border-radius: 4px; font-size: 11px; letter-spacing: 1.5px; cursor: pointer; font-family: inherit; font-weight: 500; }
 @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }
 .shake { animation: shake 0.35s ease; }
 .task-row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--sep); }
@@ -70,84 +78,72 @@ h1 { font-family: 'Bebas Neue', sans-serif; font-size: 44px; letter-spacing: 5px
 .task-check { width: 28px; height: 28px; border-radius: 5px; border: 1.5px solid var(--border2); background: none; cursor: pointer; flex-shrink: 0; padding: 0; transition: all 0.15s; touch-action: manipulation; display: flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent; }
 .task-check.done::after { content: '✓'; color: #000; font-size: 11px; font-weight: 700; }
 .task-check.progress::after { content: ''; }
-.task-text { flex: 1; font-size: 13px; color: var(--text); line-height: 1.4; }
-/* Tarefa concluída: opacity mais discreta, mas ainda legível */
-.task-text.done { text-decoration: line-through; color: #666; }
+.task-text { flex: 1; font-size: 13.5px; color: var(--text); line-height: 1.5; font-weight: 400; }
+.task-text.done { text-decoration: line-through; color: #606060; }
 .task-prio { display: flex; align-items: center; gap: 4px; margin-top: 9px; }
 .task-prio .dot { width: 5px; height: 5px; }
-/* Label de prioridade: de opacity:0.85 para cor fixa */
-.task-prio span { font-size: 9px; color: inherit; letter-spacing: 1px; }
+.task-prio span { font-size: 10px; color: inherit; letter-spacing: 0.5px; font-weight: 400; }
 .del-btn { background: none; border: none; color: var(--border2); cursor: pointer; font-size: 18px; padding: 0; opacity: 0; transition: opacity 0.12s; flex-shrink: 0; line-height: 1; }
 .task-row:hover .del-btn { opacity: 1; }
 .done-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-/* Label "concluídas": de opacity:0.7 para cor fixa */
-.done-label { font-size: 10px; color: #aaa; letter-spacing: 2px; font-weight: 500; }
-/* Botão limpar: de opacity:0.6 para cor fixa */
-.clear-btn { background: none; border: none; color: #999; font-size: 10px; letter-spacing: 1.5px; cursor: pointer; font-family: inherit; }
+.done-label { font-size: 11px; color: #9a9a9a; letter-spacing: 1.5px; font-weight: 500; }
+.clear-btn { background: none; border: none; color: #8a8a8a; font-size: 11px; letter-spacing: 1px; cursor: pointer; font-family: inherit; font-weight: 400; }
 .task-row.done-row { opacity: 0.65; }
 .section { margin-top: 14px; border-top: 1px solid var(--sep); padding-top: 12px; }
-/* Section label: de opacity:0.7 para cor fixa */
-.section-label { font-size: 10px; color: #aaa; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; font-weight: 500; }
+.section-label { font-size: 10px; color: #9a9a9a; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; font-weight: 500; }
 .input-box { background: var(--bg3); border: 1px solid var(--border2); border-radius: 6px; padding: 12px; margin-top: 6px; }
 .input-box input { width: 100%; background: none; border: none; outline: none; color: var(--text); font-size: 13px; margin-bottom: 10px; padding: 0; font-family: inherit; }
 .input-box input::placeholder { color: var(--text3); }
 .prio-row { display: flex; gap: 5px; margin-bottom: 10px; flex-wrap: wrap; }
-/* Botões de prioridade: text2 é mais visível que text3 */
-.prio-btn { padding: 3px 10px; border-radius: 3px; border: 1px solid var(--border2); background: none; color: var(--text2); font-size: 9px; letter-spacing: 1px; cursor: pointer; font-family: inherit; transition: all 0.12s; }
+.prio-btn { padding: 3px 10px; border-radius: 3px; border: 1px solid var(--border2); background: none; color: var(--text2); font-size: 10px; letter-spacing: 0.5px; cursor: pointer; font-family: inherit; transition: all 0.12s; font-weight: 400; }
 .who-row { display: flex; gap: 6px; margin-bottom: 10px; }
-.who-btn { padding: 4px 14px; border-radius: 3px; border: 1px solid var(--border2); background: none; color: var(--text2); font-size: 11px; letter-spacing: 1px; cursor: pointer; font-family: inherit; transition: all 0.12s; }
+.who-btn { padding: 4px 14px; border-radius: 3px; border: 1px solid var(--border2); background: none; color: var(--text2); font-size: 12px; letter-spacing: 0.5px; cursor: pointer; font-family: inherit; transition: all 0.12s; }
 .btn-row { display: flex; gap: 6px; }
-.btn-primary { flex: 1; border: none; border-radius: 5px; padding: 8px; font-size: 10px; letter-spacing: 2px; cursor: pointer; font-family: inherit; font-weight: 500; transition: all 0.12s; }
+.btn-primary { flex: 1; border: none; border-radius: 5px; padding: 8px; font-size: 11px; letter-spacing: 1.5px; cursor: pointer; font-family: inherit; font-weight: 500; transition: all 0.12s; }
 .btn-primary:disabled { background: var(--bg2) !important; color: var(--text3) !important; cursor: not-allowed; }
-/* Botão cancelar: text2 em vez de text3 */
-.btn-cancel { background: none; border: 1px solid var(--border2); color: var(--text2); border-radius: 5px; padding: 8px 12px; font-size: 12px; cursor: pointer; }
-/* Add dashed: opacity:0.75 -> cor fixa mais visível */
-.add-dashed { width: 100%; background: none; border-radius: 5px; padding: 10px; font-size: 12px; cursor: pointer; letter-spacing: 1.5px; transition: all 0.15s; font-family: inherit; border-style: dashed; border-width: 1px; margin-top: 4px; color: #bbb; border-color: #555; }
+.btn-cancel { background: none; border: 1px solid var(--border2); color: var(--text2); border-radius: 5px; padding: 8px 12px; font-size: 12px; cursor: pointer; font-family: inherit; }
+.add-dashed { width: 100%; background: none; border-radius: 5px; padding: 10px; font-size: 12px; cursor: pointer; letter-spacing: 1px; transition: all 0.15s; font-family: inherit; border-style: dashed; border-width: 1px; margin-top: 4px; color: #b0b0b0; border-color: #444; }
 .card-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--sep); margin-bottom: 14px; }
-/* Abas inativas: text3 -> #aaa para melhor leitura */
-.card-tab { padding: 8px 12px; background: none; border: none; font-family: inherit; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; color: #aaa; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; }
+.card-tab { padding: 8px 12px; background: none; border: none; font-family: inherit; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; color: #8e8e8e; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; font-weight: 500; }
 .card-tab.active { color: var(--text); border-bottom-color: var(--text); }
 .task-msg-form { margin-top: 8px; padding: 10px 12px; background: var(--bg3); border-radius: 6px; border: 1px solid var(--border); }
-.task-msg-form input { width: 100%; background: none; border: none; outline: none; color: var(--text); font-size: 12px; padding: 0; font-family: inherit; margin-bottom: 8px; }
+.task-msg-form input { width: 100%; background: none; border: none; outline: none; color: var(--text); font-size: 13px; padding: 0; font-family: inherit; margin-bottom: 8px; }
 .task-msg-form input::placeholder { color: var(--text3); }
 .ml-subtabs { display: flex; gap: 0; border-bottom: 1px solid var(--sep); margin-bottom: 16px; }
-/* ML subtabs inativas: #aaa */
-.ml-subtab { padding: 8px 16px; background: none; border: none; font-family: inherit; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; color: #aaa; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; }
+.ml-subtab { padding: 8px 16px; background: none; border: none; font-family: inherit; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; color: #8e8e8e; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; font-weight: 500; }
 .ml-subtab.active { color: var(--text); border-bottom-color: var(--text); }
 .ml-subtab .badge { display: inline-block; background: #555; color: var(--bg); border-radius: 10px; padding: 1px 6px; font-size: 9px; margin-left: 4px; font-weight: 700; }
 .ml-subtab.active .badge { background: var(--text); }
 .ml-tab { padding: 14px 0; }
-.ml-connect-btn { display: block; width: 100%; padding: 12px; background: none; border: 1px solid #fff15544; color: #fff155; border-radius: 6px; font-family: inherit; font-size: 11px; letter-spacing: 2px; cursor: pointer; text-align: center; transition: all 0.15s; margin-bottom: 12px; }
+.ml-connect-btn { display: block; width: 100%; padding: 12px; background: none; border: 1px solid #fff15544; color: #fff155; border-radius: 6px; font-family: inherit; font-size: 11px; letter-spacing: 1.5px; cursor: pointer; text-align: center; transition: all 0.15s; margin-bottom: 12px; font-weight: 500; }
 .ml-connect-btn:hover { background: #fff15511; }
 .ml-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; margin-bottom: 6px; display: flex; align-items: flex-start; gap: 10px; }
 .ml-card:hover { border-color: #fff15544; }
 .ml-badge { font-size: 9px; padding: 2px 7px; border-radius: 3px; letter-spacing: 1px; white-space: nowrap; flex-shrink: 0; }
-.ml-link { background: none; border: none; color: #fff155; cursor: pointer; font-size: 10px; letter-spacing: 1px; font-family: inherit; padding: 0; text-decoration: underline; margin-top: 4px; display: block; }
+.ml-link { background: none; border: none; color: #fff155; cursor: pointer; font-size: 11px; letter-spacing: 0.5px; font-family: inherit; padding: 0; text-decoration: underline; margin-top: 4px; display: block; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .spinning { animation: spin 1s linear infinite; display: inline-block; }
 @keyframes borderPulse { 0%,100% { border-color: #2a2a2a; } 50% { border-color: #fff; } }
 .tabs { display: flex; gap: 0; margin-bottom: 14px; border-bottom: 1px solid var(--sep); }
-/* Tabs inativas: #aaa em vez de text3 */
-.tab-btn { padding: 8px 14px; background: none; border: none; font-family: inherit; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; color: #aaa; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; }
+.tab-btn { padding: 8px 14px; background: none; border: none; font-family: inherit; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; color: #8e8e8e; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; font-weight: 500; }
 .tab-btn.active { color: var(--text); border-bottom-color: var(--text); }
 .corner-btn { display: block; margin-top: 12px; margin-left: auto; background: none; border: 1px solid var(--border); border-radius: 50%; width: 22px; height: 22px; font-size: 14px; cursor: pointer; transition: all 0.15s; touch-action: manipulation; font-family: inherit; line-height: 20px; text-align: center; padding: 0; color: var(--text2); }
 .corner-btn:hover { border-color: var(--border2); color: var(--text2); }
 #identity-screen { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 9999; flex-direction: column; gap: 0; }
+/* id-title mantém Bebas Neue — identidade da tela de seleção */
 .id-title { font-family: 'Bebas Neue', sans-serif; font-size: 36px; letter-spacing: 4px; color: var(--text); margin-bottom: 8px; }
-/* ID sub: text3 -> #aaa */
-.id-sub { font-size: 10px; color: #aaa; letter-spacing: 3px; margin-bottom: 40px; }
+.id-sub { font-size: 11px; color: #8e8e8e; letter-spacing: 2.5px; margin-bottom: 40px; font-weight: 400; }
 .id-btn { width: 220px; padding: 16px; margin-bottom: 10px; border: 1px solid; border-radius: 8px; background: none; font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 3px; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 14px; }
 .id-btn:hover { filter: brightness(1.2); transform: translateX(4px); }
-.id-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; letter-spacing: 1px; flex-shrink: 0; font-family: 'IBM Plex Mono', monospace; }
+.id-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; letter-spacing: 1px; flex-shrink: 0; font-family: 'IBM Plex Mono', monospace; }
 .alert-row { display: flex; align-items: center; gap: 10px; padding: 9px 10px; margin-bottom: 4px; border-radius: 5px; background: var(--bg3); border: 1px solid rgba(0,255,119,0.3); }
 #ml-modal { position:fixed;inset:0;background:var(--bg);z-index:9000;display:none;flex-direction:column; }
 #ml-modal.open { display:flex; }
 #ml-modal-header { padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #fff15533;background:#0a0900;flex-shrink:0; }
 #ml-modal-body { flex:1;overflow-y:auto;padding:20px; }
-.ml-modal-tab { padding:8px 18px;background:none;border:none;font-family:inherit;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;color:#aaa;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s; }
+.ml-modal-tab { padding:8px 18px;background:none;border:none;font-family:inherit;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;color:#8e8e8e;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s;font-weight:500; }
 .ml-modal-tab.active { color:#fff155;border-bottom-color:#fff155; }
 .ml-modal-subtabs { display:flex;border-bottom:1px solid var(--sep);margin-bottom:20px; }
-/* Chat assistente */
 .chat-modal {
   position:fixed; bottom:0; width:460px; max-height:680px; height:680px;
   background:var(--bg3); border:1px solid var(--border2);
@@ -168,7 +164,7 @@ h1 { font-family: 'Bebas Neue', sans-serif; font-size: 44px; letter-spacing: 5px
 }
 .chat-bubble {
   max-width:88%; padding:10px 14px; border-radius:10px;
-  font-size:13px; line-height:1.65;
+  font-size:13.5px; line-height:1.7; font-weight: 400;
 }
 .chat-bubble.user { align-self:flex-end; }
 .chat-bubble.assistant { align-self:flex-start; background:var(--bg2); color:var(--text); border:1px solid var(--border); }
@@ -179,11 +175,11 @@ h1 { font-family: 'Bebas Neue', sans-serif; font-size: 44px; letter-spacing: 5px
 .chat-input {
   flex:1; background:var(--bg2); border:1px solid var(--border2);
   border-radius:6px; padding:7px 10px; color:var(--text);
-  font-size:12px; font-family:inherit; outline:none; resize:none;
+  font-size:13px; font-family:inherit; outline:none; resize:none;
 }
 .chat-send {
   border:none; border-radius:6px; padding:7px 12px;
-  font-size:13px; cursor:pointer; flex-shrink:0; font-weight:700;
+  font-size:13px; cursor:pointer; flex-shrink:0; font-weight:600;
 }
 .chat-btn {
   position:absolute; bottom:10px; left:12px;
@@ -193,23 +189,13 @@ h1 { font-family: 'Bebas Neue', sans-serif; font-size: 44px; letter-spacing: 5px
   justify-content:center; transition:all 0.15s; z-index:10;
 }
 .chat-btn:hover { transform:scale(1.15); }
-.chat-typing { font-size:11px; color:#aaa; padding:4px 12px; }
-
+.chat-typing { font-size:12px; color:#8e8e8e; padding:4px 12px; font-weight:400; }
 #ml-fullscreen { position:fixed;inset:0;background:var(--bg);z-index:8000;display:none;flex-direction:column; }
 #ml-fullscreen.open { display:flex; }
 #ml-fullscreen-header { padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #fff15533;background:#0a0900;flex-shrink:0; }
 #ml-fullscreen-body { flex:1;overflow-y:auto;padding:20px; }
-/* Footer: opacity:0.5 -> cor fixa */
-footer { margin-top: 40px; text-align: center; font-size: 10px; color: #888; letter-spacing: 3px; text-transform: uppercase; }
-/* User label: opacity:0.5 -> cor fixa */
-#user-label { cursor: pointer; color: #888; }
+footer { margin-top: 40px; text-align: center; font-size: 10px; color: #787878; letter-spacing: 3px; text-transform: uppercase; }
+#user-label { cursor: pointer; color: #787878; }
 ::-webkit-scrollbar { width: 3px; }
 ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 @media(max-width:700px) { .grid { grid-template-columns: 1fr; } }
-.section-label{
-    font-size:11px;
-    font-weight:600;
-    color:#BDBDBD;
-    letter-spacing:3px;
-    text-transform:uppercase;
-    margin-bottom:10px;
