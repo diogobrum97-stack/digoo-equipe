@@ -206,3 +206,10 @@ footer { margin-top: 40px; text-align: center; font-size: 10px; color: #888; let
 ::-webkit-scrollbar { width: 3px; }
 ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 @media(max-width:700px) { .grid { grid-template-columns: 1fr; } }
+.section-label{
+    font-size:11px;
+    font-weight:600;
+    color:#BDBDBD;
+    letter-spacing:3px;
+    text-transform:uppercase;
+    margin-bottom:10px;
