@@ -2572,10 +2572,10 @@ function renderCancelamentos(panel) {
   }
 
   // Filtra apenas os pendentes por padrão, com toggle pra ver todos
-  if (!window._cancelFiltro) window._cancelFiltro = "pendentes";
+  if (!window._cancelFiltro) window._cancelFiltro = "nf_pendente";
   const filtroRow = document.createElement("div");
   filtroRow.style.cssText = "display:flex;gap:6px;margin-bottom:12px;";
-  [["pendentes","⚠ NF pendente"],["sem_nf","Sem NF"],["todos","Todos"]].forEach(([v,l]) => {
+  [["nf_pendente","⚠ NF não cancelada"],["sem_nf","NF não encontrada"],["todos","Todos"]].forEach(([v,l]) => {
     const btn = document.createElement("button");
     btn.textContent = l;
     btn.style.cssText = `background:none;border:1px solid ${window._cancelFiltro===v?"var(--text)":"var(--border2)"};color:${window._cancelFiltro===v?"var(--text)":"var(--text3)"};border-radius:4px;padding:3px 10px;font-size:10px;cursor:pointer;font-family:inherit;`;
@@ -2585,7 +2585,7 @@ function renderCancelamentos(panel) {
   panel.appendChild(filtroRow);
 
   const filtrados = cancelamentosData.filter(it => {
-    if (window._cancelFiltro === "pendentes") return it.status === "nf_pendente";
+    if (window._cancelFiltro === "nf_pendente") return it.status === "nf_pendente";
     if (window._cancelFiltro === "sem_nf") return it.status === "sem_nf";
     return true;
   });
@@ -2603,7 +2603,7 @@ function renderCancelamentos(panel) {
 
     const statusInfo = {
       nf_pendente: { cor: "#f87171", texto: "⚠ NF não cancelada" },
-      sem_nf:      { cor: "#fbbf24", texto: "Sem NF no período" },
+      sem_nf:      { cor: "#fbbf24", texto: "NF não encontrada" },
       nf_cancelada:{ cor: "#00dfc3", texto: "✓ NF cancelada" },
     }[it.status] || { cor: "#888", texto: "—" };
 
