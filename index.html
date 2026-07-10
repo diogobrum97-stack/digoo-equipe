@@ -2613,17 +2613,15 @@ function renderCancelamentos(panel) {
     panel.appendChild(vazio); return;
   }
 
-  // Filtros: NF não cancelada | Em trânsito | Todos
+  // Filtros: NF não cancelada (inclui em_transito) | Todos
   if (!window._cancelFiltro) window._cancelFiltro = "nf_pendente";
   const filtroRow = document.createElement("div");
   filtroRow.style.cssText = "display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;";
 
-  const nPendente   = cancelamentosData.filter(it => it.status === "nf_pendente").length;
-  const nTransito   = cancelamentosData.filter(it => it.status === "em_transito").length;
+  const nAtivos = cancelamentosData.filter(it => it.status === "nf_pendente" || it.status === "em_transito").length;
 
   [
-    ["nf_pendente", `⚠ NF não cancelada${nPendente ? " ("+nPendente+")" : ""}`],
-    ["em_transito", `🔄 Em trânsito${nTransito ? " ("+nTransito+")" : ""}`],
+    ["nf_pendente", `⚠ NF não cancelada${nAtivos ? " ("+nAtivos+")" : ""}`],
     ["todos",       "Todos"],
   ].forEach(([v,l]) => {
     const btn = document.createElement("button");
@@ -2636,9 +2634,7 @@ function renderCancelamentos(panel) {
   panel.appendChild(filtroRow);
 
   const filtrados = cancelamentosData.filter(it => {
-    if (window._cancelFiltro === "nf_pendente") return it.status === "nf_pendente";
-    if (window._cancelFiltro === "em_transito") return it.status === "em_transito";
-    // "todos" — esconde só nf_cancelada e sem_nf
+    if (window._cancelFiltro === "nf_pendente") return it.status === "nf_pendente" || it.status === "em_transito";
     return it.status === "nf_pendente" || it.status === "em_transito";
   });
 
@@ -2675,7 +2671,7 @@ function renderCancelamentos(panel) {
     const card = document.createElement("div");
     const statusInfo = {
       nf_pendente:  { cor: "#f87171", texto: "⚠ NF não cancelada" },
-      em_transito:  { cor: "#fbbf24", texto: "🔄 Em trânsito" },
+      em_transito:  { cor: "#fbbf24", texto: "Em trânsito — aguardar devolução" },
       sem_nf:       { cor: "#888",    texto: "Sem NF" },
       nf_cancelada: { cor: "#00dfc3", texto: "✓ NF cancelada" },
     }[it.status] || { cor: "#888", texto: "—" };
