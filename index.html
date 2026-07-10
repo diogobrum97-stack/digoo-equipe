@@ -1952,6 +1952,9 @@ function render(){
     // Esconde Bruno e Larissa quando Diogo está na aba ML
     if(diogIsML && member.name !== "Diogo") return;
     if(diogIsFullAuto && member.name !== "Diogo") return;
+    // Esconde outros cards quando Bruno está na aba de cancelamentos
+    const brunoEmCancelamentos = openCard==="Bruno" && window._brunotab==="cancelamentos";
+    if(brunoEmCancelamentos && member.name !== "Bruno") return;
 
     const card=document.createElement("div");card.className="card"+(hasPending||isFlashing?" flashing":"");
     card.style.setProperty("--c",color);
@@ -2364,7 +2367,7 @@ function render(){
               panel.style.overflowY="";
             }
           }
-          if(active.length===0&&done.length===0&&window._brunotab!=="cancelamentos"){const e=document.createElement("p");e.style.cssText="font-size:11px;color:var(--text3);text-align:center;padding:14px 0;";e.textContent="Nenhuma tarefa delegada";panel.appendChild(e);}
+          if(active.length===0&&done.length===0){const e=document.createElement("p");e.style.cssText="font-size:11px;color:var(--text3);text-align:center;padding:14px 0;";e.textContent="Nenhuma tarefa delegada";panel.appendChild(e);}
         }
 
         if(!member.locked){
@@ -2755,7 +2758,6 @@ function renderCancelamentos(panel) {
 }
 function renderCancelamentosBruno(panel) {
   if(!cancelamentosLoading && cancelamentosData === null) fetchCancelamentos(false);
-
   const pendentes = (cancelamentosData || []).filter(it => it.status === "nf_pendente");
 
   if(cancelamentosLoading || cancelamentosData === null) {
@@ -2765,6 +2767,7 @@ function renderCancelamentosBruno(panel) {
     panel.appendChild(l); return;
   }
 
+  // Header
   const topRow = document.createElement("div");
   topRow.style.cssText = "display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;";
   const titulo = document.createElement("div");
@@ -2773,11 +2776,7 @@ function renderCancelamentosBruno(panel) {
   const refBtn = document.createElement("button");
   refBtn.textContent = "↻ Atualizar";
   refBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:4px 10px;font-size:10px;cursor:pointer;font-family:inherit;";
-  refBtn.addEventListener("click", () => {
-    cancelamentosData = null;
-    const p = panel; p.innerHTML = ""; renderCancelamentosBruno(p);
-    fetchCancelamentos(true);
-  });
+  refBtn.addEventListener("click", () => { cancelamentosData=null; const p=panel; p.innerHTML=""; renderCancelamentosBruno(p); fetchCancelamentos(true); });
   topRow.appendChild(titulo); topRow.appendChild(refBtn);
   panel.appendChild(topRow);
 
@@ -2788,11 +2787,45 @@ function renderCancelamentosBruno(panel) {
     panel.appendChild(ok); return;
   }
 
+  // Instrução passo a passo
   const instrucao = document.createElement("div");
-  instrucao.style.cssText = "padding:10px 12px;background:#fbbf2410;border:1px solid #fbbf2433;border-radius:6px;font-size:11px;color:#fbbf24;line-height:1.6;margin-bottom:14px;";
+  instrucao.style.cssText = "padding:10px 14px;background:#fbbf2410;border:1px solid #fbbf2433;border-radius:6px;font-size:11px;color:#fbbf24;line-height:1.7;margin-bottom:12px;";
   instrucao.innerHTML = "<strong>Como cancelar:</strong> copie o número da NF → acesse o Bling → Nota Fiscal → busca pelo número → abre a NF → clica em <em>Cancelar NF</em>.";
   panel.appendChild(instrucao);
 
+  // Card de justificativas (para quando o Bling pedir motivo)
+  const justCard = document.createElement("div");
+  justCard.style.cssText = "background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px 14px;margin-bottom:14px;";
+  const justTitle = document.createElement("div");
+  justTitle.style.cssText = "font-size:9px;color:var(--text3);letter-spacing:1.5px;margin-bottom:8px;text-transform:uppercase;";
+  justTitle.textContent = "Justificativas prontas (se o Bling pedir)";
+  justCard.appendChild(justTitle);
+  const justificativas = [
+    "Pedido cancelado pelo cliente na plataforma de venda antes da entrega.",
+    "Cancelamento de venda a pedido do comprador. Produto não foi entregue.",
+    "Operação cancelada por desistência do comprador. NF emitida em erro.",
+  ];
+  justificativas.forEach(txt => {
+    const row = document.createElement("div");
+    row.style.cssText = "display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--sep);";
+    const label = document.createElement("span");
+    label.style.cssText = "font-size:11px;color:var(--text2);flex:1;line-height:1.5;";
+    label.textContent = txt;
+    const copyBtn = document.createElement("button");
+    copyBtn.textContent = "Copiar";
+    copyBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:3px 10px;font-size:10px;cursor:pointer;font-family:inherit;flex-shrink:0;";
+    copyBtn.addEventListener("click", () => {
+      navigator.clipboard.writeText(txt).catch(()=>{});
+      copyBtn.textContent = "✓";
+      copyBtn.style.color = "#00dfc3";
+      setTimeout(()=>{ copyBtn.textContent="Copiar"; copyBtn.style.color="var(--text3)"; }, 1200);
+    });
+    row.appendChild(label); row.appendChild(copyBtn);
+    justCard.appendChild(row);
+  });
+  panel.appendChild(justCard);
+
+  // Função copiável
   function copiavel(texto, exibir) {
     const span = document.createElement("span");
     span.textContent = exibir || texto;
@@ -2807,17 +2840,26 @@ function renderCancelamentosBruno(panel) {
     return span;
   }
 
+  // Cards de NFs pendentes
   pendentes.forEach(it => {
     const card = document.createElement("div");
     card.style.cssText = "background:var(--bg3);border:1px solid #f8717133;border-left:3px solid #f87171;border-radius:6px;padding:10px 14px;margin-bottom:8px;";
 
-    const linha1 = document.createElement("div");
-    linha1.style.cssText = "font-size:12px;font-weight:600;color:var(--text);margin-bottom:6px;";
-    linha1.textContent = it.produto;
-    card.appendChild(linha1);
+    // Badge necessário cancelar
+    const badgeRow = document.createElement("div");
+    badgeRow.style.cssText = "display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;";
+    const prodNome = document.createElement("div");
+    prodNome.style.cssText = "font-size:12px;font-weight:600;color:var(--text);flex:1;margin-right:8px;";
+    prodNome.textContent = it.produto;
+    const badge = document.createElement("span");
+    badge.style.cssText = "background:#f8717118;color:#f87171;border:1px solid #f8717155;border-radius:4px;padding:2px 8px;font-size:9px;white-space:nowrap;flex-shrink:0;letter-spacing:0.5px;font-weight:600;";
+    badge.textContent = "⚠ Necessário cancelar NF";
+    badgeRow.appendChild(prodNome); badgeRow.appendChild(badge);
+    card.appendChild(badgeRow);
 
+    // Comprador + data + valor
     const linha2 = document.createElement("div");
-    linha2.style.cssText = "display:flex;gap:14px;align-items:center;flex-wrap:wrap;font-size:10px;color:var(--text3);margin-bottom:8px;";
+    linha2.style.cssText = "display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:10px;color:var(--text3);margin-bottom:8px;";
     const compRow = document.createElement("span");
     compRow.appendChild(copiavel(it.comprador, `👤 ${it.comprador}`));
     linha2.appendChild(compRow);
@@ -2828,16 +2870,39 @@ function renderCancelamentosBruno(panel) {
     }
     const valorEl = document.createElement("span");
     valorEl.style.color="#fbbf24";
-    valorEl.textContent=`R$ ${Number(it.valor).toLocaleString("pt-BR",{minimumFractionDigits:2})}`;
+    valorEl.textContent = `R$ ${Number(it.valor).toLocaleString("pt-BR",{minimumFractionDigits:2})}`;
     linha2.appendChild(valorEl);
     card.appendChild(linha2);
 
+    // Número do pedido ML + NF — ambos copiáveis
+    const bottomRow = document.createElement("div");
+    bottomRow.style.cssText = "display:flex;align-items:center;gap:16px;flex-wrap:wrap;";
+
+    // Pedido ML
+    const pedidoWrap = document.createElement("div");
+    pedidoWrap.style.cssText = "display:flex;align-items:center;gap:6px;";
+    const pedidoLabel = document.createElement("span");
+    pedidoLabel.style.cssText = "font-size:9px;color:var(--text3);letter-spacing:1px;";
+    pedidoLabel.textContent = "PEDIDO ML";
+    const pedidoNum = document.createElement("span");
+    pedidoNum.style.cssText = "font-size:12px;font-weight:600;color:#9d7fff;font-family:'IBM Plex Mono',monospace;cursor:pointer;letter-spacing:0.5px;";
+    pedidoNum.textContent = it.numeroPedido;
+    pedidoNum.title = "Clique pra copiar";
+    pedidoNum.addEventListener("click", () => {
+      navigator.clipboard.writeText(String(it.numeroPedido)).catch(()=>{});
+      const orig = pedidoNum.style.color; pedidoNum.style.color="#00dfc3";
+      setTimeout(()=>pedidoNum.style.color=orig, 800);
+    });
+    pedidoWrap.appendChild(pedidoLabel); pedidoWrap.appendChild(pedidoNum);
+    bottomRow.appendChild(pedidoWrap);
+
+    // NF
     if(it.nf){
-      const nfRow = document.createElement("div");
-      nfRow.style.cssText = "display:flex;align-items:center;gap:10px;";
+      const nfWrap = document.createElement("div");
+      nfWrap.style.cssText = "display:flex;align-items:center;gap:6px;";
       const nfLabel = document.createElement("span");
       nfLabel.style.cssText = "font-size:9px;color:var(--text3);letter-spacing:1px;";
-      nfLabel.textContent = "NF ";
+      nfLabel.textContent = "NF";
       const nfNum = document.createElement("span");
       nfNum.style.cssText = "font-size:16px;font-weight:700;color:#f87171;font-family:'IBM Plex Mono',monospace;cursor:pointer;letter-spacing:1px;";
       nfNum.textContent = it.nf.nfNumero;
@@ -2847,12 +2912,13 @@ function renderCancelamentosBruno(panel) {
         const orig = nfNum.style.color; nfNum.style.color="#00dfc3";
         setTimeout(()=>nfNum.style.color=orig, 800);
       });
-      const badge = document.createElement("span");
-      badge.style.cssText = "background:#00dfc318;color:#00dfc3;border:1px solid #00dfc333;border-radius:3px;padding:1px 7px;font-size:9px;";
-      badge.textContent = it.nf.nfSituacao;
-      nfRow.appendChild(nfLabel); nfRow.appendChild(nfNum); nfRow.appendChild(badge);
-      card.appendChild(nfRow);
+      const nfBadge = document.createElement("span");
+      nfBadge.style.cssText = "background:#00dfc318;color:#00dfc3;border:1px solid #00dfc333;border-radius:3px;padding:1px 7px;font-size:9px;";
+      nfBadge.textContent = it.nf.nfSituacao;
+      nfWrap.appendChild(nfLabel); nfWrap.appendChild(nfNum); nfWrap.appendChild(nfBadge);
+      bottomRow.appendChild(nfWrap);
     }
+    card.appendChild(bottomRow);
     panel.appendChild(card);
   });
 }
