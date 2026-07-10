@@ -2586,9 +2586,6 @@ function renderCancelamentos(panel) {
 
   const topRow = document.createElement("div");
   topRow.style.cssText = "display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;";
-  const titulo = document.createElement("div");
-  titulo.style.cssText = "font-size:11px;color:var(--text3);letter-spacing:1px;";
-  titulo.textContent = `${cancelamentosData.length} cancelamentos nos últimos 30 dias`;
   const refreshBtn = document.createElement("button");
   refreshBtn.textContent = "↻ Atualizar";
   refreshBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:4px 10px;font-size:10px;cursor:pointer;font-family:inherit;";
@@ -2598,7 +2595,7 @@ function renderCancelamentos(panel) {
     if(p){ p.innerHTML=""; renderCancelamentos(p); }
     fetchCancelamentos(true);
   });
-  topRow.appendChild(titulo); topRow.appendChild(refreshBtn);
+  topRow.appendChild(refreshBtn);
   panel.appendChild(topRow);
 
   if (cancelamentosErro) {
