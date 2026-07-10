@@ -2339,7 +2339,32 @@ function render(){
               renderMLInPanel(panel,color);card.appendChild(panel);container.appendChild(card);return;
             }else{card.style.gridColumn="";panel.style.maxHeight="";panel.style.overflowY="";}
           }
-          if(active.length===0&&done.length===0){const e=document.createElement("p");e.style.cssText="font-size:11px;color:var(--text3);text-align:center;padding:14px 0;";e.textContent="Nenhuma tarefa delegada";panel.appendChild(e);}
+          if(member.name==="Bruno"){
+            if(!window._brunotab) window._brunotab="tarefas";
+            const brunoTabs = document.createElement("div"); brunoTabs.className="tabs";
+            ["tarefas","cancelamentos"].forEach(tab=>{
+              const btn=document.createElement("button");
+              btn.className="tab-btn"+(window._brunotab===tab?" active":"");
+              btn.textContent=tab==="tarefas"?"Tarefas":"NFs pra Cancelar";
+              btn.addEventListener("click",()=>{ window._brunotab=tab; render(); });
+              brunoTabs.appendChild(btn);
+            });
+            panel.appendChild(brunoTabs);
+            if(window._brunotab==="cancelamentos"){
+              card.style.gridColumn="1 / -1";
+              panel.style.maxHeight="75vh";
+              panel.style.overflowY="auto";
+              renderCancelamentosBruno(panel);
+              card.appendChild(panel);
+              container.appendChild(card);
+              return;
+            } else {
+              card.style.gridColumn="";
+              panel.style.maxHeight="";
+              panel.style.overflowY="";
+            }
+          }
+          if(active.length===0&&done.length===0&&window._brunotab!=="cancelamentos"){const e=document.createElement("p");e.style.cssText="font-size:11px;color:var(--text3);text-align:center;padding:14px 0;";e.textContent="Nenhuma tarefa delegada";panel.appendChild(e);}
         }
 
         if(!member.locked){
@@ -2728,6 +2753,110 @@ function renderCancelamentos(panel) {
     panel.appendChild(card);
   });
 }
+function renderCancelamentosBruno(panel) {
+  if(!cancelamentosLoading && cancelamentosData === null) fetchCancelamentos(false);
+
+  const pendentes = (cancelamentosData || []).filter(it => it.status === "nf_pendente");
+
+  if(cancelamentosLoading || cancelamentosData === null) {
+    const l = document.createElement("div");
+    l.style.cssText = "text-align:center;padding:30px 0;font-size:12px;color:var(--text3);";
+    l.innerHTML = '<span class="spinning">↻</span> Carregando...';
+    panel.appendChild(l); return;
+  }
+
+  const topRow = document.createElement("div");
+  topRow.style.cssText = "display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;";
+  const titulo = document.createElement("div");
+  titulo.style.cssText = "font-size:11px;color:var(--text3);letter-spacing:1px;";
+  titulo.textContent = pendentes.length === 0 ? "Nenhuma NF pendente de cancelamento" : `${pendentes.length} NF${pendentes.length>1?"s":""} para cancelar no Bling`;
+  const refBtn = document.createElement("button");
+  refBtn.textContent = "↻ Atualizar";
+  refBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:4px 10px;font-size:10px;cursor:pointer;font-family:inherit;";
+  refBtn.addEventListener("click", () => {
+    cancelamentosData = null;
+    const p = panel; p.innerHTML = ""; renderCancelamentosBruno(p);
+    fetchCancelamentos(true);
+  });
+  topRow.appendChild(titulo); topRow.appendChild(refBtn);
+  panel.appendChild(topRow);
+
+  if(pendentes.length === 0) {
+    const ok = document.createElement("div");
+    ok.style.cssText = "text-align:center;padding:30px 0;color:#00dfc3;font-size:13px;";
+    ok.textContent = "✓ Tudo ok, nenhuma NF pra cancelar";
+    panel.appendChild(ok); return;
+  }
+
+  const instrucao = document.createElement("div");
+  instrucao.style.cssText = "padding:10px 12px;background:#fbbf2410;border:1px solid #fbbf2433;border-radius:6px;font-size:11px;color:#fbbf24;line-height:1.6;margin-bottom:14px;";
+  instrucao.innerHTML = "<strong>Como cancelar:</strong> copie o número da NF → acesse o Bling → Nota Fiscal → busca pelo número → abre a NF → clica em <em>Cancelar NF</em>.";
+  panel.appendChild(instrucao);
+
+  function copiavel(texto, exibir) {
+    const span = document.createElement("span");
+    span.textContent = exibir || texto;
+    span.style.cssText = "cursor:pointer;text-decoration:underline;text-underline-offset:2px;text-decoration-color:#555;color:var(--text2);";
+    span.title = "Clique pra copiar";
+    span.addEventListener("click", e => {
+      e.stopPropagation();
+      navigator.clipboard.writeText(texto).catch(()=>{});
+      const orig = span.style.color; span.style.color="#00dfc3";
+      setTimeout(()=>span.style.color=orig, 800);
+    });
+    return span;
+  }
+
+  pendentes.forEach(it => {
+    const card = document.createElement("div");
+    card.style.cssText = "background:var(--bg3);border:1px solid #f8717133;border-left:3px solid #f87171;border-radius:6px;padding:10px 14px;margin-bottom:8px;";
+
+    const linha1 = document.createElement("div");
+    linha1.style.cssText = "font-size:12px;font-weight:600;color:var(--text);margin-bottom:6px;";
+    linha1.textContent = it.produto;
+    card.appendChild(linha1);
+
+    const linha2 = document.createElement("div");
+    linha2.style.cssText = "display:flex;gap:14px;align-items:center;flex-wrap:wrap;font-size:10px;color:var(--text3);margin-bottom:8px;";
+    const compRow = document.createElement("span");
+    compRow.appendChild(copiavel(it.comprador, `👤 ${it.comprador}`));
+    linha2.appendChild(compRow);
+    if(it.dataCancelamento){
+      const dataEl = document.createElement("span");
+      dataEl.textContent = new Date(it.dataCancelamento).toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"});
+      linha2.appendChild(dataEl);
+    }
+    const valorEl = document.createElement("span");
+    valorEl.style.color="#fbbf24";
+    valorEl.textContent=`R$ ${Number(it.valor).toLocaleString("pt-BR",{minimumFractionDigits:2})}`;
+    linha2.appendChild(valorEl);
+    card.appendChild(linha2);
+
+    if(it.nf){
+      const nfRow = document.createElement("div");
+      nfRow.style.cssText = "display:flex;align-items:center;gap:10px;";
+      const nfLabel = document.createElement("span");
+      nfLabel.style.cssText = "font-size:9px;color:var(--text3);letter-spacing:1px;";
+      nfLabel.textContent = "NF ";
+      const nfNum = document.createElement("span");
+      nfNum.style.cssText = "font-size:16px;font-weight:700;color:#f87171;font-family:'IBM Plex Mono',monospace;cursor:pointer;letter-spacing:1px;";
+      nfNum.textContent = it.nf.nfNumero;
+      nfNum.title = "Clique pra copiar";
+      nfNum.addEventListener("click", () => {
+        navigator.clipboard.writeText(String(it.nf.nfNumero)).catch(()=>{});
+        const orig = nfNum.style.color; nfNum.style.color="#00dfc3";
+        setTimeout(()=>nfNum.style.color=orig, 800);
+      });
+      const badge = document.createElement("span");
+      badge.style.cssText = "background:#00dfc318;color:#00dfc3;border:1px solid #00dfc333;border-radius:3px;padding:1px 7px;font-size:9px;";
+      badge.textContent = it.nf.nfSituacao;
+      nfRow.appendChild(nfLabel); nfRow.appendChild(nfNum); nfRow.appendChild(badge);
+      card.appendChild(nfRow);
+    }
+    panel.appendChild(card);
+  });
+}
+
 let precoAutoCheckLoading = false;
 let estoqueAutoCheckDone = false;
 let estoqueAutoLoading = false;
