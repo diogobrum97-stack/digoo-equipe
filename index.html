@@ -2597,7 +2597,6 @@ function renderCancelamentos(panel) {
   });
   topRow.appendChild(refreshBtn);
   panel.appendChild(topRow);
-  panel.appendChild(filtroRow);
 
   if (cancelamentosErro) {
     const err = document.createElement("div");
@@ -2625,6 +2624,7 @@ function renderCancelamentos(panel) {
   btnFiltro.textContent = `NF não cancelada (${nAtivos})`;
   btnFiltro.style.cssText = `background:none;border:1px solid var(--text);color:var(--text);border-radius:4px;padding:3px 10px;font-size:10px;cursor:default;font-family:inherit;`;
   filtroRow.appendChild(btnFiltro);
+  panel.appendChild(filtroRow);
 
   const filtrados = cancelamentosData.filter(it =>
     it.status === "nf_pendente" || it.status === "em_transito" || it.status === "devolucao_recebida"
