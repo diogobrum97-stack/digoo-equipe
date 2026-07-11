@@ -2596,6 +2596,7 @@ function renderCancelamentos(panel) {
     fetchCancelamentos(true);
   });
   topRow.appendChild(refreshBtn);
+  topRow.appendChild(filtroRow);
   panel.appendChild(topRow);
 
   if (cancelamentosErro) {
@@ -2618,25 +2619,16 @@ function renderCancelamentos(panel) {
   const filtroRow = document.createElement("div");
   filtroRow.style.cssText = "display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;";
 
-  const nAtivos = cancelamentosData.filter(it => it.status === "nf_pendente" || it.status === "em_transito").length;
+  const nAtivos = cancelamentosData.filter(it => ["nf_pendente","em_transito","devolucao_recebida"].includes(it.status)).length;
 
-  [
-    ["nf_pendente", `⚠ NF não cancelada${nAtivos ? " ("+nAtivos+")" : ""}`],
-    ["todos",       "Todos"],
-  ].forEach(([v,l]) => {
-    const btn = document.createElement("button");
-    btn.textContent = l;
-    const isActive = window._cancelFiltro === v;
-    btn.style.cssText = `background:none;border:1px solid ${isActive?"var(--text)":"var(--border2)"};color:${isActive?"var(--text)":"var(--text3)"};border-radius:4px;padding:3px 10px;font-size:10px;cursor:pointer;font-family:inherit;`;
-    btn.addEventListener("click", () => { window._cancelFiltro = v; const p=document.getElementById("cancelamentos-panel"); if(p){p.innerHTML="";renderCancelamentos(p);} });
-    filtroRow.appendChild(btn);
-  });
-  panel.appendChild(filtroRow);
+  const btnFiltro = document.createElement("button");
+  btnFiltro.textContent = `NF não cancelada (${nAtivos})`;
+  btnFiltro.style.cssText = `background:none;border:1px solid var(--text);color:var(--text);border-radius:4px;padding:3px 10px;font-size:10px;cursor:default;font-family:inherit;`;
+  filtroRow.appendChild(btnFiltro);
 
-  const filtrados = cancelamentosData.filter(it => {
-    if (window._cancelFiltro === "nf_pendente") return it.status === "nf_pendente" || it.status === "em_transito";
-    return it.status === "nf_pendente" || it.status === "em_transito";
-  });
+  const filtrados = cancelamentosData.filter(it =>
+    it.status === "nf_pendente" || it.status === "em_transito" || it.status === "devolucao_recebida"
+  );
 
   if (filtrados.length === 0) {
     const vazio = document.createElement("div");
@@ -2670,12 +2662,13 @@ function renderCancelamentos(panel) {
   filtrados.forEach(it => {
     const card = document.createElement("div");
     const statusInfo = {
-      nf_pendente:  { cor: "#f87171", texto: "⚠ NF não cancelada" },
-      em_transito:  { cor: "#fbbf24", texto: "Em trânsito — aguardar devolução" },
-      sem_nf:       { cor: "#888",    texto: "Sem NF" },
-      nf_cancelada: { cor: "#00dfc3", texto: "✓ NF cancelada" },
+      nf_pendente:       { cor: "#f87171", texto: "NF não cancelada" },
+      em_transito:       { cor: "#fbbf24", texto: "Em trânsito — aguardar" },
+      devolucao_recebida:{ cor: "#f87171", texto: "Devolução recebida — cancelar NF" },
+      sem_nf:            { cor: "#888",    texto: "Sem NF" },
+      nf_cancelada:      { cor: "#00dfc3", texto: "NF cancelada" },
     }[it.status] || { cor: "#888", texto: "—" };
-    const borderColor = it.status === "nf_pendente" ? "#f87171" : it.status === "em_transito" ? "#fbbf24" : "var(--border)";
+    const borderColor = (it.status === "nf_pendente" || it.status === "devolucao_recebida") ? "#f87171" : it.status === "em_transito" ? "#fbbf24" : "var(--border)";
     card.style.cssText = `background:var(--bg3);border:1px solid ${borderColor}44;border-left:3px solid ${borderColor};border-radius:6px;padding:10px 12px;margin-bottom:8px;${it.status==="nf_cancelada"?"opacity:0.6;":""}`;
 
     const dataStr = it.dataCancelamento ? new Date(it.dataCancelamento).toLocaleDateString("pt-BR") : "—";
