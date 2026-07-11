@@ -2596,8 +2596,8 @@ function renderCancelamentos(panel) {
     fetchCancelamentos(true);
   });
   topRow.appendChild(refreshBtn);
-  topRow.appendChild(filtroRow);
   panel.appendChild(topRow);
+  panel.appendChild(filtroRow);
 
   if (cancelamentosErro) {
     const err = document.createElement("div");
