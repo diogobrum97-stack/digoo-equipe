@@ -2662,8 +2662,8 @@ function renderCancelamentos(panel) {
   filtrados.forEach(it => {
     const card = document.createElement("div");
     const statusInfo = {
-      nf_pendente: { cor: "#f87171", texto: "NF não cancelada" },
-      em_transito: { cor: "#fbbf24", texto: "Devolução — verificar e cancelar NF" },
+      nf_pendente: { cor: "#f87171", texto: "Cancelar NF" },
+      em_transito: { cor: "#fbbf24", texto: "Devolução em andamento" },
       sem_nf:      { cor: "#888",    texto: "Sem NF" },
       nf_cancelada:{ cor: "#00dfc3", texto: "NF cancelada" },
     }[it.status] || { cor: "#888", texto: "—" };
