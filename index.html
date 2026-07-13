@@ -2613,58 +2613,23 @@ function renderCancelamentos(panel) {
     panel.appendChild(vazio); return;
   }
 
-  // Filtros clicáveis por status com contagens
-  if (!window._cancelFiltro) window._cancelFiltro = "pendentes";
-
+  // 4 status — definição de cor, ícone e texto do badge
   const statusDefs = {
-    nf_pendente: { cor: "#f87171", texto: "Cancelar NF",           icone: "⚠" },
-    em_transito: { cor: "#fbbf24", texto: "Devolução em andamento", icone: "↩" },
-    sem_nf:      { cor: "#888",    texto: "Sem NF",                 icone: "—" },
-    nf_cancelada:{ cor: "#00dfc3", texto: "NF cancelada",           icone: "✓" },
+    nf_pendente:           { cor: "#f87171", texto: "Cancelar NF",            icone: "⚠" },
+    cancelar_nf_devolucao: { cor: "#fb923c", texto: "Chegou — Cancelar NF",   icone: "📦" },
+    verificar_devolucao:   { cor: "#a78bfa", texto: "Verificar devolução",     icone: "🔍" },
+    em_transito:           { cor: "#fbbf24", texto: "Devolução em andamento",  icone: "↩" },
+    sem_nf:                { cor: "#888",    texto: "Sem NF",                  icone: "—" },
+    nf_cancelada:          { cor: "#00dfc3", texto: "NF cancelada",            icone: "✓" },
   };
 
-  const nPendente  = cancelamentosData.filter(it => it.status === "nf_pendente").length;
-  const nTransito  = cancelamentosData.filter(it => it.status === "em_transito").length;
-  const nSemNF     = cancelamentosData.filter(it => it.status === "sem_nf").length;
-  const nCancelada = cancelamentosData.filter(it => it.status === "nf_cancelada").length;
-  const nPendentes = nPendente + nTransito;
-  const nTodos     = cancelamentosData.length;
-
-  const filtrosDef = [
-    { key: "pendentes",   label: `Pendentes`,    count: nPendentes,  cor: "#f87171" },
-    { key: "nf_pendente", label: `Cancelar NF`,  count: nPendente,   cor: "#f87171" },
-    { key: "em_transito", label: `Devoluções`,   count: nTransito,   cor: "#fbbf24" },
-    { key: "sem_nf",      label: `Sem NF`,       count: nSemNF,      cor: "#888"    },
-    { key: "nf_cancelada",label: `Canceladas`,   count: nCancelada,  cor: "#00dfc3" },
-    { key: "todos",       label: `Todos`,        count: nTodos,      cor: "var(--text3)" },
-  ];
-
-  const filtroRow = document.createElement("div");
-  filtroRow.style.cssText = "display:flex;gap:5px;margin-bottom:12px;flex-wrap:wrap;";
-
-  filtrosDef.forEach(fd => {
-    const btn = document.createElement("button");
-    const ativo = window._cancelFiltro === fd.key;
-    btn.textContent = `${fd.label} ${fd.count}`;
-    btn.style.cssText = `background:${ativo ? fd.cor+"22" : "none"};border:1px solid ${ativo ? fd.cor : "var(--border2)"};color:${ativo ? fd.cor : "var(--text3)"};border-radius:4px;padding:2px 8px;font-size:10px;cursor:pointer;font-family:inherit;transition:all 0.15s;`;
-    btn.addEventListener("mouseenter", () => { if(!ativo) btn.style.borderColor = fd.cor; btn.style.color = fd.cor; });
-    btn.addEventListener("mouseleave", () => { if(!ativo) btn.style.borderColor = "var(--border2)"; btn.style.color = "var(--text3)"; });
-    btn.addEventListener("click", () => { window._cancelFiltro = fd.key; const p = document.getElementById("cancelamentos-panel"); if(p){p.innerHTML="";renderCancelamentos(p);} });
-    filtroRow.appendChild(btn);
+  // Ordena: ação imediata primeiro, depois acompanhamento, depois ok
+  const ordemStatus = { nf_pendente: 0, cancelar_nf_devolucao: 1, verificar_devolucao: 2, em_transito: 3, sem_nf: 4, nf_cancelada: 5 };
+  const filtrados = [...cancelamentosData].sort((a, b) => {
+    const ds = (ordemStatus[a.status] ?? 9) - (ordemStatus[b.status] ?? 9);
+    if (ds !== 0) return ds;
+    return new Date(b.dataCancelamento || 0) - new Date(a.dataCancelamento || 0);
   });
-  panel.appendChild(filtroRow);
-
-  let filtrados;
-  if (window._cancelFiltro === "pendentes") {
-    filtrados = cancelamentosData.filter(it => it.status === "nf_pendente" || it.status === "em_transito");
-    filtrados.sort((a,b) => new Date(b.dataCancelamento||0) - new Date(a.dataCancelamento||0));
-  } else if (window._cancelFiltro === "todos") {
-    filtrados = [...cancelamentosData];
-    filtrados.sort((a,b) => new Date(b.dataCancelamento||0) - new Date(a.dataCancelamento||0));
-  } else {
-    filtrados = cancelamentosData.filter(it => it.status === window._cancelFiltro);
-    filtrados.sort((a,b) => new Date(b.dataCancelamento||0) - new Date(a.dataCancelamento||0));
-  }
 
   if (filtrados.length === 0) {
     const vazio = document.createElement("div");
@@ -2747,9 +2712,11 @@ function renderCancelamentos(panel) {
     if (it.status !== "nf_cancelada") {
       const delegarRow = document.createElement("div");
       delegarRow.style.cssText = "display:flex;gap:6px;flex-wrap:wrap;";
-      const textoTarefa = it.status === "em_transito"
-        ? `↩ Devolução — verificar no ML e cancelar NF ${it.nf?.nfNumero || "s/n"} — Pedido ${it.numeroPedido} (${it.produto}, ${valorStr})`
-        : `Cancelar NF ${it.nf?.nfNumero || "s/n"} — Pedido ML ${it.numeroPedido} (${it.produto}, ${valorStr})`;
+      const textoTarefa =
+        it.status === "em_transito"           ? `↩ Devolução a caminho — aguardar chegada e cancelar NF ${it.nf?.nfNumero || "s/n"} — Pedido ${it.numeroPedido} (${it.produto}, ${valorStr})` :
+        it.status === "verificar_devolucao"   ? `🔍 Conferir devolução recebida e cancelar NF ${it.nf?.nfNumero || "s/n"} — Pedido ${it.numeroPedido} (${it.produto}, ${valorStr})` :
+        it.status === "cancelar_nf_devolucao" ? `📦 Produto devolvido e reembolsado — cancelar NF ${it.nf?.nfNumero || "s/n"} no Bling — Pedido ${it.numeroPedido} (${it.produto}, ${valorStr})` :
+        `Cancelar NF ${it.nf?.nfNumero || "s/n"} — Pedido ML ${it.numeroPedido} (${it.produto}, ${valorStr})`;
       ["Bruno","Larissa"].forEach(membro => {
         const cor = themeColor(membro);
         const btn = document.createElement("button");
