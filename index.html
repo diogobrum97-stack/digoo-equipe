@@ -2624,8 +2624,8 @@ function renderCancelamentos(panel) {
   };
 
   // Ordena: ação imediata primeiro, depois acompanhamento, depois ok
-  const ordemStatus = { nf_pendente: 0, cancelar_nf_devolucao: 1, verificar_devolucao: 2, em_transito: 3, sem_nf: 4, nf_cancelada: 5 };
-  const filtrados = [...cancelamentosData].sort((a, b) => {
+  const ordemStatus = { nf_pendente: 0, cancelar_nf_devolucao: 1, verificar_devolucao: 2, em_transito: 3, nf_cancelada: 4 };
+  const filtrados = cancelamentosData.filter(it => it.status !== "sem_nf").sort((a, b) => {
     const ds = (ordemStatus[a.status] ?? 9) - (ordemStatus[b.status] ?? 9);
     if (ds !== 0) return ds;
     return new Date(b.dataCancelamento || 0) - new Date(a.dataCancelamento || 0);
