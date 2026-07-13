@@ -2615,16 +2615,13 @@ function renderCancelamentos(panel) {
 
   // 4 status — definição de cor, ícone e texto do badge
   const statusDefs = {
-    nf_pendente:           { cor: "#f87171", texto: "Cancelar NF",            icone: "⚠" },
-    cancelar_nf_devolucao: { cor: "#fb923c", texto: "Chegou — Cancelar NF",   icone: "📦" },
-    verificar_devolucao:   { cor: "#a78bfa", texto: "Verificar devolução",     icone: "🔍" },
-    em_transito:           { cor: "#fbbf24", texto: "Devolução em andamento",  icone: "↩" },
-    sem_nf:                { cor: "#888",    texto: "Sem NF",                  icone: "—" },
-    nf_cancelada:          { cor: "#00dfc3", texto: "NF cancelada",            icone: "✓" },
+    nf_pendente:        { cor: "#f87171", texto: "Cancelar NF",          icone: "⚠" },
+    devolucao_pendente: { cor: "#fbbf24", texto: "Devolução — processar", icone: "↩" },
+    nf_cancelada:       { cor: "#00dfc3", texto: "NF cancelada",          icone: "✓" },
   };
 
-  // Ordena: ação imediata primeiro, depois acompanhamento, depois ok
-  const ordemStatus = { nf_pendente: 0, cancelar_nf_devolucao: 1, verificar_devolucao: 2, em_transito: 3, nf_cancelada: 4 };
+  // Ordena: cancelar NF direto primeiro, depois devolução pendente, depois já ok
+  const ordemStatus = { nf_pendente: 0, devolucao_pendente: 1, nf_cancelada: 2 };
   const filtrados = cancelamentosData.filter(it => it.status !== "sem_nf").sort((a, b) => {
     const ds = (ordemStatus[a.status] ?? 9) - (ordemStatus[b.status] ?? 9);
     if (ds !== 0) return ds;
@@ -2712,11 +2709,9 @@ function renderCancelamentos(panel) {
     if (it.status !== "nf_cancelada") {
       const delegarRow = document.createElement("div");
       delegarRow.style.cssText = "display:flex;gap:6px;flex-wrap:wrap;";
-      const textoTarefa =
-        it.status === "em_transito"           ? `↩ Devolução a caminho — aguardar chegada e cancelar NF ${it.nf?.nfNumero || "s/n"} — Pedido ${it.numeroPedido} (${it.produto}, ${valorStr})` :
-        it.status === "verificar_devolucao"   ? `🔍 Conferir devolução recebida e cancelar NF ${it.nf?.nfNumero || "s/n"} — Pedido ${it.numeroPedido} (${it.produto}, ${valorStr})` :
-        it.status === "cancelar_nf_devolucao" ? `📦 Produto devolvido e reembolsado — cancelar NF ${it.nf?.nfNumero || "s/n"} no Bling — Pedido ${it.numeroPedido} (${it.produto}, ${valorStr})` :
-        `Cancelar NF ${it.nf?.nfNumero || "s/n"} — Pedido ML ${it.numeroPedido} (${it.produto}, ${valorStr})`;
+      const textoTarefa = it.status === "devolucao_pendente"
+        ? `↩ Processar devolução no Bling — NF ${it.nf?.nfNumero || "s/n"} — Pedido ML ${it.numeroPedido} (${it.produto}, ${valorStr})`
+        : `Cancelar NF ${it.nf?.nfNumero || "s/n"} — Pedido ML ${it.numeroPedido} (${it.produto}, ${valorStr})`;
       ["Bruno","Larissa"].forEach(membro => {
         const cor = themeColor(membro);
         const btn = document.createElement("button");
