@@ -618,11 +618,12 @@ async function criarTarefaTransferencia(chave, { dataEmissao, natureza, itens, m
     nfNumero: chave,
     subtarefas: [
       { texto: "Gerar complemento de IPI", feito: false },
-      { texto: "Atualizar custos no envio Full", feito: false },
+      { texto: "Atualizar custo envio full", feito: false },
       { texto: "Gerar NF Full", feito: false },
-      { texto: "Balanço de estoque Filial (Bling)", feito: false },
-      { texto: "Lançar Estoque Filial (Bling)", feito: false },
-      { texto: "Lançar custos MT Filial", feito: false },
+      { texto: "Balanço de estoque Filial (Bling/ ML)", feito: false },
+      { texto: "Calcular novo custo ponderado", feito: false },
+      { texto: "Lançar Estoque Filial no Bling)", feito: false },
+      { texto: "Atualizar novos custos Bling e MT Filial", feito: false },
     ],
   });
   await set(ref(db, `/nfes_processadas/${chave}`), {
