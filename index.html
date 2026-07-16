@@ -3840,8 +3840,10 @@ function renderFechamentoMensal(panel, color) {
 
       // Nº Nota
       const tdNum = document.createElement("td"); tdNum.style.cssText = "padding:7px 8px;";
-      const iNum = inpCell(nf.numero, "—", "80px", "#00dfc3");
-      iNum.addEventListener("input", () => { nf.numero = iNum.value; });
+      const numVazio = !nf.numero || nf.numero.toUpperCase().includes("NÃO") || nf.numero === "—";
+      const iNum = inpCell(numVazio ? "" : nf.numero, numVazio ? "⚠ preencher" : "—", "90px", numVazio ? "#f87171" : "#00dfc3");
+      if(numVazio) iNum.style.borderBottomColor = "#f8717166";
+      iNum.addEventListener("input", () => { nf.numero = iNum.value; iNum.style.color="#00dfc3"; iNum.style.borderBottomColor="transparent"; });
       tdNum.appendChild(iNum); tr.appendChild(tdNum);
 
       // Serviço
@@ -3853,10 +3855,14 @@ function renderFechamentoMensal(panel, color) {
 
       // Valor
       const tdVal = document.createElement("td"); tdVal.style.cssText = "padding:7px 8px;text-align:right;";
-      const iVal = inpCell(nf.valor, "0,00", "80px", "#4ade80");
+      const valVazio = !nf.valor || nf.valor.toUpperCase().includes("NÃO") || nf.valor.toUpperCase().includes("VALOR");
+      const iVal = inpCell(valVazio ? "" : nf.valor, valVazio ? "⚠ preencher" : "0,00", "80px", valVazio ? "#f87171" : "#4ade80");
       iVal.style.textAlign = "right";
+      if(valVazio) iVal.style.borderBottomColor = "#f8717166";
       iVal.addEventListener("input", () => {
         nf.valor = iVal.value;
+        iVal.style.color = "#4ade80";
+        iVal.style.borderBottomColor = "transparent";
         atualizarTotal();
       });
       tdVal.appendChild(iVal); tr.appendChild(tdVal);
