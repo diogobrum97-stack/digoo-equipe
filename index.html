@@ -255,7 +255,7 @@ function setSyncing(v){syncDot.style.opacity=v?"0.4":"1";}
 
 onValue(ref(db,"/"),snap=>{
   const d=snap.val()||{};
-  d.tasks=d.tasks||{};d.messages=d.messages||{};d.flashes=d.flashes||{};d.notices=d.notices||{};d.ml_token=d.ml_token||null;d.ml_cache=d.ml_cache||null;d.price_changes=d.price_changes||{};d.ml_token_filial=d.ml_token_filial||null;d.last_known_prices=d.last_known_prices||{};d.nfes_processadas=d.nfes_processadas||{};d.categoria_saude=d.categoria_saude||{};d.aliquotas_ipi_extra=d.aliquotas_ipi_extra||{};d.precos_venda_manual=d.precos_venda_manual||{};d.ordem_tarefas=d.ordem_tarefas||[];d.google_token=d.google_token||null;
+  d.tasks=d.tasks||{};d.messages=d.messages||{};d.flashes=d.flashes||{};d.notices=d.notices||{};d.ml_token=d.ml_token||null;d.ml_cache=d.ml_cache||null;d.price_changes=d.price_changes||{};d.ml_token_filial=d.ml_token_filial||null;d.last_known_prices=d.last_known_prices||{};d.nfes_processadas=d.nfes_processadas||{};d.categoria_saude=d.categoria_saude||{};d.aliquotas_ipi_extra=d.aliquotas_ipi_extra||{};d.precos_venda_manual=d.precos_venda_manual||{};d.ordem_tarefas=d.ordem_tarefas||[];d.google_token=d.google_token||null;d.fechamentos=d.fechamentos||{};
   const seenTasks=JSON.parse(localStorage.getItem("digoo_seen_tasks")||"{}");
   let seenChanged=false;
   Object.entries(d.tasks).filter(([,t])=>t!=null).forEach(([id,task])=>{
@@ -3665,6 +3665,7 @@ function renderFechamentoMensal(panel, color) {
   const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
   const [ano, mesNum] = fechamentoMes.split("-");
   const nomeMes = `${MESES[Number(mesNum)-1]} ${ano}`;
+  const fbKey   = `fechamentos/${fechamentoMes.replace("-","_")}`;
 
   // ── Header ──────────────────────────────────────────────────
   const header = document.createElement("div");
@@ -3677,8 +3678,7 @@ function renderFechamentoMensal(panel, color) {
   prevBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text2);border-radius:4px;padding:2px 10px;cursor:pointer;font-size:18px;";
   prevBtn.addEventListener("click", () => {
     const [y, m] = fechamentoMes.split("-").map(Number);
-    const nm = m === 1 ? 12 : m - 1, ny = m === 1 ? y - 1 : y;
-    fechamentoMes = `${ny}-${String(nm).padStart(2,"0")}`;
+    fechamentoMes = `${m===1?y-1:y}-${String(m===1?12:m-1).padStart(2,"0")}`;
     fechamentoData = null; fechamentoOverrides = {};
     const p = document.getElementById("fechamento-panel");
     if(p){ p.innerHTML=""; renderFechamentoMensal(p, color); }
@@ -3691,8 +3691,7 @@ function renderFechamentoMensal(panel, color) {
   nextBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text2);border-radius:4px;padding:2px 10px;cursor:pointer;font-size:18px;";
   nextBtn.addEventListener("click", () => {
     const [y, m] = fechamentoMes.split("-").map(Number);
-    const nm = m === 12 ? 1 : m + 1, ny = m === 12 ? y + 1 : y;
-    fechamentoMes = `${ny}-${String(nm).padStart(2,"0")}`;
+    fechamentoMes = `${m===12?y+1:y}-${String(m===12?1:m+1).padStart(2,"0")}`;
     fechamentoData = null; fechamentoOverrides = {};
     const p = document.getElementById("fechamento-panel");
     if(p){ p.innerHTML=""; renderFechamentoMensal(p, color); }
@@ -3702,113 +3701,81 @@ function renderFechamentoMensal(panel, color) {
   const rightWrap = document.createElement("div");
   rightWrap.style.cssText = "display:flex;gap:8px;align-items:center;";
 
-  if(!state.google_token?.access_token) {
-    const connectBtn = document.createElement("button");
-    connectBtn.textContent = "Conectar Google";
-    connectBtn.style.cssText = "background:none;border:1px solid #4285f466;color:#4285f4;border-radius:4px;padding:5px 12px;font-size:10px;cursor:pointer;font-family:inherit;";
-    connectBtn.addEventListener("click", () => window.open(`${VERCEL_BACKEND}/api/google?action=auth`, "_blank"));
-    rightWrap.appendChild(connectBtn);
-  } else {
-    const gStatus = document.createElement("span");
-    gStatus.style.cssText = "font-size:9px;color:#00dfc3;";
-    gStatus.textContent = "● Google conectado";
-    rightWrap.appendChild(gStatus);
-  }
-
-  const buscarBtn = document.createElement("button");
-  buscarBtn.textContent = fechamentoLoading ? "↻ Buscando..." : "↻ Buscar NFS-e";
-  buscarBtn.disabled = fechamentoLoading;
-  buscarBtn.style.cssText = `background:none;border:1px solid ${color}66;color:${color};border-radius:4px;padding:5px 14px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:1px;opacity:${fechamentoLoading?0.5:1};`;
-  buscarBtn.addEventListener("click", () => fetchFechamento(fechamentoMes));
-  rightWrap.appendChild(buscarBtn);
+  // Botão upload CSV/Excel
+  const uploadLabel = document.createElement("label");
+  uploadLabel.style.cssText = `display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:none;border:1px dashed ${color}66;border-radius:4px;color:${color};font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:1px;`;
+  uploadLabel.innerHTML = "↑ Importar planilha";
+  const fileInput = document.createElement("input");
+  fileInput.type = "file"; fileInput.accept = ".csv,.xlsx,.xls"; fileInput.style.display = "none";
+  fileInput.addEventListener("change", async e => {
+    const file = e.target.files[0]; if(!file) return;
+    await processarPlanilhaFechamento(file, fbKey, nomeMes, color);
+  });
+  uploadLabel.appendChild(fileInput);
+  rightWrap.appendChild(uploadLabel);
 
   header.appendChild(monthWrap); header.appendChild(rightWrap);
   panel.appendChild(header);
 
-  if(fechamentoLoading) return;
+  // ── Carrega dados salvos do Firebase ─────────────────────────
+  const dadosSalvos = state.fechamentos?.[fechamentoMes.replace("-","_")];
 
-  // ── Erro ────────────────────────────────────────────────────
-  if(fechamentoErro) {
-    const err = document.createElement("div");
-    err.style.cssText = "padding:10px 12px;background:#f8717110;border:1px solid #f8717133;border-radius:5px;font-size:11px;color:#f87171;margin-bottom:12px;line-height:1.6;";
-    err.textContent = `Erro: ${fechamentoErro}`;
-    panel.appendChild(err);
-    return;
-  }
-
-  // ── Estado inicial ───────────────────────────────────────────
-  if(!fechamentoData) {
+  if(!fechamentoData && !dadosSalvos) {
     const info = document.createElement("div");
-    info.style.cssText = "text-align:center;padding:50px 0;color:var(--text3);font-size:11px;line-height:2.2;";
-    info.innerHTML = `Clique em <strong style="color:${color}">↻ Buscar NFS-e</strong><br>O Claude vai buscar no Gmail e Drive e montar o consolidado de ${nomeMes}.`;
+    info.style.cssText = "text-align:center;padding:50px 20px;color:var(--text3);font-size:11px;line-height:2.2;";
+    info.innerHTML = `Faça o consolidado de NFS-e aqui no chat e exporte como CSV.<br>Depois clique em <strong style="color:${color}">↑ Importar planilha</strong> para conferir e salvar.`;
     panel.appendChild(info);
     return;
   }
 
-  const notas = fechamentoData.notas || [];
-  const faltantes = fechamentoData.faltantes || [];
-  const avisos = fechamentoData.avisos || [];
+  // Usa dados do Firebase se não tem upload novo
+  const notas = fechamentoData?.notas || dadosSalvos?.notas || [];
+  const savedAt = dadosSalvos?.savedAt;
 
-  // ── Avisos ───────────────────────────────────────────────────
-  if(avisos.length > 0) {
-    avisos.forEach(av => {
-      const alertBox = document.createElement("div");
-      alertBox.style.cssText = "padding:8px 12px;background:#fbbf2410;border:1px solid #fbbf2433;border-radius:5px;font-size:11px;color:#fbbf24;margin-bottom:8px;";
-      alertBox.textContent = `⚠ ${av}`;
-      panel.appendChild(alertBox);
-    });
-  }
-
-  // ── Faltantes ───────────────────────────────────────────────
-  if(faltantes.length > 0) {
-    const faltBox = document.createElement("div");
-    faltBox.style.cssText = "padding:8px 12px;background:#f8717108;border:1px solid #f8717122;border-radius:5px;font-size:11px;color:#f87171;margin-bottom:14px;line-height:1.9;";
-    faltBox.innerHTML = `<strong>Não encontradas:</strong> ${faltantes.join(" · ")}`;
-    panel.appendChild(faltBox);
-  }
-
-  // ── Sem notas ────────────────────────────────────────────────
   if(notas.length === 0) {
     const vazio = document.createElement("div");
     vazio.style.cssText = "text-align:center;padding:30px 0;color:var(--text3);font-size:11px;";
-    vazio.textContent = `Nenhuma NFS-e encontrada para ${nomeMes}.`;
+    vazio.textContent = "Nenhuma nota nesse mês.";
     panel.appendChild(vazio);
     return;
   }
 
-  // ── Tabela ───────────────────────────────────────────────────
+  // Status salvo
+  if(savedAt) {
+    const statusBar = document.createElement("div");
+    statusBar.style.cssText = "display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:var(--bg3);border-radius:5px;margin-bottom:12px;font-size:10px;color:var(--text3);";
+    statusBar.innerHTML = `<span>✓ Salvo em ${new Date(savedAt).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}</span>`;
+    panel.appendChild(statusBar);
+  }
+
+  // ── Tabela editável ──────────────────────────────────────────
   const tableWrap = document.createElement("div");
-  tableWrap.style.cssText = "overflow-x:auto;margin-bottom:14px;";
+  tableWrap.style.cssText = "overflow-x:auto;margin-bottom:10px;";
   const table = document.createElement("table");
   table.style.cssText = "width:100%;border-collapse:collapse;font-size:11px;";
   table.innerHTML = `<thead><tr style="border-bottom:1px solid var(--sep);">
-    <th style="text-align:left;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">PRESTADOR</th>
-    <th style="text-align:left;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">CNPJ</th>
+    <th style="text-align:left;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;min-width:160px;">PRESTADOR</th>
+    <th style="text-align:left;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;white-space:nowrap;">CNPJ</th>
     <th style="text-align:left;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">Nº NOTA</th>
-    <th style="text-align:left;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;min-width:140px;">SERVIÇO</th>
+    <th style="text-align:left;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;min-width:160px;">SERVIÇO</th>
     <th style="text-align:right;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">VALOR</th>
-    <th style="text-align:left;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">EMISSÃO</th>
-    <th style="text-align:center;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">FONTE</th>
+    <th style="text-align:left;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;white-space:nowrap;">EMISSÃO</th>
     <th style="width:24px;"></th>
   </tr></thead><tbody></tbody>`;
   const tbody = table.querySelector("tbody");
   tableWrap.appendChild(table);
   panel.appendChild(tableWrap);
 
-  // Estado editável local (sem re-render)
-  const notasState = notas.map((nf, i) => ({
-    ...nf,
-    _idx: i,
-    _removido: false,
-  }));
+  const notasState = notas.map((nf, i) => ({ ...nf, _idx: i, _removido: false }));
 
   function inpCell(val, placeholder, width, cor) {
     const inp = document.createElement("input");
-    inp.value = val || "";
-    inp.placeholder = placeholder || "";
-    inp.style.cssText = `width:${width||"100%"};background:none;border:none;border-bottom:1px solid transparent;color:${cor||"var(--text)"};font-family:inherit;font-size:11px;padding:2px 4px;outline:none;transition:border-color 0.1s;`;
+    const vazio = !val || String(val).toUpperCase().includes("NÃO") || String(val).toUpperCase().includes("VALOR N");
+    inp.value = vazio ? "" : (val || "");
+    inp.placeholder = vazio ? "⚠ preencher" : (placeholder || "");
+    inp.style.cssText = `width:${width||"100%"};background:none;border:none;border-bottom:1px solid ${vazio?"#f8717155":"transparent"};color:${vazio?"#f87171":(cor||"var(--text)")};font-family:inherit;font-size:11px;padding:2px 4px;outline:none;transition:border-color 0.1s;`;
     inp.addEventListener("focus", () => { inp.style.borderBottomColor = color; });
-    inp.addEventListener("blur",  () => { inp.style.borderBottomColor = "transparent"; });
+    inp.addEventListener("blur",  () => { inp.style.borderBottomColor = "transparent"; inp.style.color = cor || "var(--text)"; });
     return inp;
   }
 
@@ -3818,94 +3785,69 @@ function renderFechamentoMensal(panel, color) {
 
   function renderLinhas() {
     tbody.innerHTML = "";
-    let total = 0;
     const ativas = notasState.filter(nf => !nf._removido);
+    let total = 0;
 
     ativas.forEach(nf => {
       const tr = document.createElement("tr");
       tr.style.cssText = "border-bottom:1px solid var(--sep2);";
 
-      // Prestador
-      const tdNome = document.createElement("td"); tdNome.style.cssText = "padding:7px 8px;color:var(--text);font-weight:500;white-space:nowrap;";
       const iNome = inpCell(nf.fornecedor, "Prestador", "160px");
       iNome.addEventListener("input", () => { nf.fornecedor = iNome.value; });
+      const tdNome = document.createElement("td"); tdNome.style.cssText = "padding:7px 8px;";
       tdNome.appendChild(iNome); tr.appendChild(tdNome);
 
-      // CNPJ
-      const tdCnpj = document.createElement("td"); tdCnpj.style.cssText = "padding:7px 8px;white-space:nowrap;";
-      const iCnpj = inpCell(nf.cnpj, "XX.XXX.XXX/XXXX-XX", "130px", "var(--text3)");
+      const iCnpj = inpCell(nf.cnpj, "CNPJ", "130px", "var(--text3)");
       iCnpj.style.fontSize = "10px";
       iCnpj.addEventListener("input", () => { nf.cnpj = iCnpj.value; });
+      const tdCnpj = document.createElement("td"); tdCnpj.style.cssText = "padding:7px 8px;white-space:nowrap;";
       tdCnpj.appendChild(iCnpj); tr.appendChild(tdCnpj);
 
-      // Nº Nota
+      const iNum = inpCell(nf.numero, "—", "80px", "#00dfc3");
+      iNum.addEventListener("input", () => { nf.numero = iNum.value; iNum.style.color="#00dfc3"; });
       const tdNum = document.createElement("td"); tdNum.style.cssText = "padding:7px 8px;";
-      const numVazio = !nf.numero || nf.numero.toUpperCase().includes("NÃO") || nf.numero === "—";
-      const iNum = inpCell(numVazio ? "" : nf.numero, numVazio ? "⚠ preencher" : "—", "90px", numVazio ? "#f87171" : "#00dfc3");
-      if(numVazio) iNum.style.borderBottomColor = "#f8717166";
-      iNum.addEventListener("input", () => { nf.numero = iNum.value; iNum.style.color="#00dfc3"; iNum.style.borderBottomColor="transparent"; });
       tdNum.appendChild(iNum); tr.appendChild(tdNum);
 
-      // Serviço
-      const tdServ = document.createElement("td"); tdServ.style.cssText = "padding:7px 8px;";
       const iServ = inpCell(nf.servico, "descrição", "100%");
       iServ.style.minWidth = "140px";
       iServ.addEventListener("input", () => { nf.servico = iServ.value; });
+      const tdServ = document.createElement("td"); tdServ.style.cssText = "padding:7px 8px;";
       tdServ.appendChild(iServ); tr.appendChild(tdServ);
 
-      // Valor
-      const tdVal = document.createElement("td"); tdVal.style.cssText = "padding:7px 8px;text-align:right;";
-      const valVazio = !nf.valor || nf.valor.toUpperCase().includes("NÃO") || nf.valor.toUpperCase().includes("VALOR");
-      const iVal = inpCell(valVazio ? "" : nf.valor, valVazio ? "⚠ preencher" : "0,00", "80px", valVazio ? "#f87171" : "#4ade80");
+      const iVal = inpCell(nf.valor, "0,00", "80px", "#4ade80");
       iVal.style.textAlign = "right";
-      if(valVazio) iVal.style.borderBottomColor = "#f8717166";
-      iVal.addEventListener("input", () => {
-        nf.valor = iVal.value;
-        iVal.style.color = "#4ade80";
-        iVal.style.borderBottomColor = "transparent";
-        atualizarTotal();
-      });
+      iVal.addEventListener("input", () => { nf.valor = iVal.value; iVal.style.color="#4ade80"; atualizarTotal(); });
+      const tdVal = document.createElement("td"); tdVal.style.cssText = "padding:7px 8px;text-align:right;";
       tdVal.appendChild(iVal); tr.appendChild(tdVal);
       total += parseValor(nf.valor);
 
-      // Emissão
-      const tdEmis = document.createElement("td"); tdEmis.style.cssText = "padding:7px 8px;white-space:nowrap;";
       const iEmis = inpCell(nf.emissao, "DD/MM/AAAA", "80px", "var(--text3)");
       iEmis.style.fontSize = "10px";
       iEmis.addEventListener("input", () => { nf.emissao = iEmis.value; });
+      const tdEmis = document.createElement("td"); tdEmis.style.cssText = "padding:7px 8px;white-space:nowrap;";
       tdEmis.appendChild(iEmis); tr.appendChild(tdEmis);
 
-      // Fonte
-      const tdFonte = document.createElement("td"); tdFonte.style.cssText = "padding:7px 8px;text-align:center;";
-      const badge = document.createElement("span");
-      badge.style.cssText = `font-size:9px;padding:2px 6px;border-radius:3px;background:${nf.fonte==="Gmail"?"#4285f418":"#00dfc318"};color:${nf.fonte==="Gmail"?"#4285f4":"#00dfc3"};`;
-      badge.textContent = nf.fonte || "—";
-      tdFonte.appendChild(badge); tr.appendChild(tdFonte);
-
-      // Remover
-      const tdDel = document.createElement("td"); tdDel.style.cssText = "padding:7px 4px;text-align:center;";
       const delBtn = document.createElement("button");
-      delBtn.textContent = "×"; delBtn.style.cssText = "background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;opacity:0.4;";
+      delBtn.textContent = "×"; delBtn.style.cssText = "background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;opacity:0.4;padding:0 4px;";
       delBtn.addEventListener("click", () => { nf._removido = true; renderLinhas(); });
+      const tdDel = document.createElement("td"); tdDel.style.cssText = "padding:7px 4px;";
       tdDel.appendChild(delBtn); tr.appendChild(tdDel);
 
       tbody.appendChild(tr);
     });
 
-    // Total
+    // Linha de total
     const totalRow = document.createElement("tr");
     totalRow.style.cssText = "border-top:2px solid var(--border);";
     const tdLabel = document.createElement("td");
     tdLabel.colSpan = 4;
     tdLabel.style.cssText = "padding:10px 8px;font-size:11px;font-weight:600;color:var(--text);";
-    tdLabel.textContent = `Total Geral — ${ativas.length} nota${ativas.length !== 1 ? "s" : ""}`;
+    tdLabel.textContent = `Total Geral — ${ativas.length} nota${ativas.length!==1?"s":""}`;
     const tdTotal = document.createElement("td");
     tdTotal.id = "fechamento-total";
-    tdTotal.colSpan = 4;
-    tdTotal.style.cssText = "padding:10px 8px;text-align:right;font-size:13px;font-weight:600;color:#4ade80;";
-    tdTotal.textContent = total > 0
-      ? `R$ ${total.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}`
-      : "—";
+    tdTotal.colSpan = 3;
+    tdTotal.style.cssText = "padding:10px 8px;text-align:right;font-size:14px;font-weight:600;color:#4ade80;";
+    tdTotal.textContent = total > 0 ? `R$ ${total.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : "—";
     totalRow.appendChild(tdLabel); totalRow.appendChild(tdTotal);
     tbody.appendChild(totalRow);
   }
@@ -3914,102 +3856,140 @@ function renderFechamentoMensal(panel, color) {
     const ativas = notasState.filter(nf => !nf._removido);
     const total  = ativas.reduce((s, nf) => s + parseValor(nf.valor), 0);
     const el = document.getElementById("fechamento-total");
-    if(el) {
-      el.textContent = total > 0
-        ? `R$ ${total.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}`
-        : "—";
-    }
+    if(el) el.textContent = total > 0 ? `R$ ${total.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : "—";
   }
 
   renderLinhas();
 
-  // ── Botão adicionar linha ─────────────────────────────────────
+  // Botão adicionar linha
   const addBtn = document.createElement("button");
   addBtn.textContent = "+ adicionar nota manualmente";
-  addBtn.style.cssText = `width:100%;background:none;border:1px dashed ${color}44;color:${color};border-radius:5px;padding:7px;font-size:10px;cursor:pointer;font-family:inherit;margin-bottom:14px;opacity:0.7;`;
+  addBtn.style.cssText = `width:100%;background:none;border:1px dashed ${color}33;color:${color};border-radius:5px;padding:6px;font-size:10px;cursor:pointer;font-family:inherit;margin-bottom:14px;opacity:0.6;`;
   addBtn.addEventListener("click", () => {
-    notasState.push({ fornecedor:"", cnpj:"", numero:"", servico:"", valor:"", emissao:"", fonte:"Manual", _idx: notasState.length, _removido: false });
+    notasState.push({ fornecedor:"", cnpj:"", numero:"", servico:"", valor:"", emissao:"", _idx:notasState.length, _removido:false });
     renderLinhas();
   });
   panel.appendChild(addBtn);
 
   // ── Rodapé ───────────────────────────────────────────────────
   const rodape = document.createElement("div");
-  rodape.style.cssText = "display:flex;gap:10px;padding-top:14px;border-top:1px solid var(--border);";
+  rodape.style.cssText = "display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding-top:12px;border-top:1px solid var(--border);";
 
-  // Gerar CSV
+  // Salvar
+  const salvarBtn = document.createElement("button");
+  salvarBtn.style.cssText = `padding:9px;font-size:11px;background:#00dfc322;border:1px solid #00dfc366;border-radius:6px;cursor:pointer;color:#00dfc3;font-family:inherit;`;
+  salvarBtn.textContent = "✓ Salvar";
+  salvarBtn.addEventListener("click", async () => {
+    const ativas = notasState.filter(nf => !nf._removido);
+    const dados  = { notas: ativas.map(({_idx,_removido,...rest})=>rest), savedAt: Date.now(), nomeMes };
+    await set(ref(db, `/fechamentos/${fechamentoMes.replace("-","_")}`), dados);
+    salvarBtn.textContent = "✓ Salvo!";
+    setTimeout(() => { salvarBtn.textContent = "✓ Salvar"; }, 2000);
+  });
+
+  // CSV
   const csvBtn = document.createElement("button");
-  csvBtn.style.cssText = "flex:1;padding:10px;font-size:11px;background:none;border:1px solid var(--border2);border-radius:6px;cursor:pointer;color:var(--text);font-family:inherit;letter-spacing:1px;";
+  csvBtn.style.cssText = "padding:9px;font-size:11px;background:none;border:1px solid var(--border2);border-radius:6px;cursor:pointer;color:var(--text);font-family:inherit;";
   csvBtn.textContent = "↓ Gerar CSV";
   csvBtn.addEventListener("click", async () => {
     const ativas = notasState.filter(nf => !nf._removido);
-    const nfses  = ativas.map(nf => ({
-      fornecedor: nf.fornecedor, cnpj: nf.cnpj, valor: String(nf.valor).replace(".",","),
-      dataEmissao: nf.emissao, numero: nf.numero,
-    }));
+    const nfses  = ativas.map(nf => ({ fornecedor:nf.fornecedor, cnpj:nf.cnpj, valor:String(nf.valor).replace(".",","), emissao:nf.emissao, numero:nf.numero }));
     try {
       const r = await fetch(`${VERCEL_BACKEND}/api/google?action=csv&mes=${fechamentoMes}`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nfses }),
+        method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({nfses}),
       });
       const blob = await r.blob();
       const url  = URL.createObjectURL(blob);
       const a    = document.createElement("a"); a.href=url; a.download=`contas_pagar_${fechamentoMes}.csv`; a.click();
       URL.revokeObjectURL(url);
-    } catch(e) { alert("Erro: " + e.message); }
+    } catch(e) { alert("Erro: "+e.message); }
   });
 
-  // Criar rascunho
+  // Rascunho Gmail
   const rascunhoBtn = document.createElement("button");
-  rascunhoBtn.style.cssText = `flex:1;padding:10px;font-size:11px;background:${color}22;border:1px solid ${color}66;border-radius:6px;cursor:pointer;color:${color};font-family:inherit;letter-spacing:1px;`;
-  rascunhoBtn.innerHTML = "✉ Criar rascunho Gmail";
+  rascunhoBtn.style.cssText = `padding:9px;font-size:11px;background:${color}22;border:1px solid ${color}66;border-radius:6px;cursor:pointer;color:${color};font-family:inherit;`;
+  rascunhoBtn.textContent = "✉ Rascunho Gmail";
   rascunhoBtn.addEventListener("click", async () => {
     const ativas = notasState.filter(nf => !nf._removido);
-    const total  = ativas.reduce((s, nf) => s + parseValor(nf.valor), 0);
-
+    const total  = ativas.reduce((s,nf) => s + parseValor(nf.valor), 0);
     const linhas = ativas.map(nf => {
-      const valFmt = parseValor(nf.valor) > 0
-        ? `R$ ${parseValor(nf.valor).toLocaleString("pt-BR",{minimumFractionDigits:2})}`
-        : "—";
-      return `${nf.fornecedor} | ${nf.cnpj} | NF ${nf.numero||"—"} | ${nf.servico||"—"} | ${valFmt} | ${nf.emissao||"—"}`;
+      const val = parseValor(nf.valor) > 0 ? `R$ ${parseValor(nf.valor).toLocaleString("pt-BR",{minimumFractionDigits:2})}` : "—";
+      return `${nf.fornecedor} | ${nf.cnpj} | NF ${nf.numero||"—"} | ${nf.servico||"—"} | ${val} | ${nf.emissao||"—"}`;
     }).join("\n");
-
-    const faltantesTexto = faltantes.length > 0
-      ? `\n\n⚠ Não encontradas:\n${faltantes.map(f => `• ${f}`).join("\n")}`
-      : "";
-
-    const corpo = `Leonardo,
-
-Segue o fechamento de NFS-e de ${nomeMes}:
-
-PRESTADOR | CNPJ | Nº NOTA | SERVIÇO | VALOR | EMISSÃO
-${"—".repeat(100)}
-${linhas}
-${"—".repeat(100)}
-Total Geral — ${ativas.length} notas | R$ ${total.toLocaleString("pt-BR",{minimumFractionDigits:2})}${faltantesTexto}
-
-Att,
-Diogo`;
-
+    const corpo = `Leonardo,\n\nSegue o fechamento de NFS-e de ${nomeMes}:\n\n${"—".repeat(80)}\n${linhas}\n${"—".repeat(80)}\nTotal Geral — ${ativas.length} notas | R$ ${total.toLocaleString("pt-BR",{minimumFractionDigits:2})}\n\nAtt,\nDiogo`;
     try {
       const r = await fetch(`${VERCEL_BACKEND}/api/google?action=rascunho`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          para: "leonardo@resicontabilidade.com.br",
-          assunto: `NFS-e ${nomeMes} — Digoo Brasil`, corpo,
-        }),
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ para:"leonardo@resicontabilidade.com.br", assunto:`NFS-e ${nomeMes} — Digoo Brasil`, corpo }),
       });
       const d = await r.json();
       if(d.ok) {
-        rascunhoBtn.textContent = "✓ Rascunho criado!";
-        rascunhoBtn.style.color = "#00dfc3";
-        setTimeout(() => { rascunhoBtn.innerHTML = "✉ Criar rascunho Gmail"; rascunhoBtn.style.color = color; }, 3000);
-      } else { alert("Erro: " + (d.error || "falha")); }
-    } catch(e) { alert("Erro: " + e.message); }
+        rascunhoBtn.textContent = "✓ Criado!";
+        setTimeout(()=>{ rascunhoBtn.textContent = "✉ Rascunho Gmail"; }, 2500);
+      } else { alert("Erro: "+(d.error||"falha")); }
+    } catch(e) { alert("Erro: "+e.message); }
   });
 
-  rodape.appendChild(csvBtn); rodape.appendChild(rascunhoBtn);
+  rodape.appendChild(salvarBtn); rodape.appendChild(csvBtn); rodape.appendChild(rascunhoBtn);
   panel.appendChild(rodape);
+}
+
+// ── Parser planilha de fechamento ────────────────────────────
+async function processarPlanilhaFechamento(file, fbKey, nomeMes, color) {
+  try {
+    const XLSX = await import("https://cdn.jsdelivr.net/npm/xlsx@0.18.5/+esm");
+    const arrayBuffer = await file.arrayBuffer();
+    const wb   = XLSX.read(arrayBuffer, { type:"array" });
+    const ws   = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:"" });
+
+    // Detecta linha de cabeçalho — procura por palavras-chave
+    const keywords = ["prestador","fornecedor","cnpj","nota","valor","serviço","emissão"];
+    let headerIdx = 0;
+    for (let i = 0; i < Math.min(rows.length, 10); i++) {
+      const row = rows[i].map(c => String(c||"").toLowerCase());
+      if (keywords.filter(k => row.some(c => c.includes(k))).length >= 2) {
+        headerIdx = i; break;
+      }
+    }
+
+    const headers = rows[headerIdx].map(h => String(h||"").toLowerCase().trim());
+    const col = kws => {
+      const idx = headers.findIndex(h => kws.some(k => h.includes(k)));
+      return idx >= 0 ? idx : null;
+    };
+
+    const cForn  = col(["prestador","fornecedor","nome"]);
+    const cCnpj  = col(["cnpj"]);
+    const cNum   = col(["nota","número","nº","nf"]);
+    const cServ  = col(["serviço","servi","descri","historico","histórico"]);
+    const cVal   = col(["valor"]);
+    const cEmis  = col(["emissão","emiss","data","vencimento"]);
+
+    const notas = [];
+    for (let i = headerIdx + 1; i < rows.length; i++) {
+      const row = rows[i];
+      const forn = String(row[cForn] ?? "").trim();
+      const val  = String(row[cVal]  ?? "").trim();
+      if (!forn && !val) continue; // linha vazia
+      notas.push({
+        fornecedor: forn,
+        cnpj:       cCnpj  != null ? String(row[cCnpj]  ?? "").trim() : "",
+        numero:     cNum   != null ? String(row[cNum]   ?? "").trim() : "",
+        servico:    cServ  != null ? String(row[cServ]  ?? "").trim() : "",
+        valor:      val.replace(/[^\d,\.]/g,"").replace(",","."),
+        emissao:    cEmis  != null ? String(row[cEmis]  ?? "").trim() : "",
+      });
+    }
+
+    if (notas.length === 0) { alert("Nenhuma nota encontrada na planilha."); return; }
+
+    fechamentoData = { notas };
+    const p = document.getElementById("fechamento-panel");
+    if(p){ p.innerHTML=""; renderFechamentoMensal(p, color); }
+  } catch(e) {
+    alert("Erro ao ler planilha: " + e.message);
+  }
 }
 
 document.getElementById("user-label").addEventListener("click",()=>{localStorage.removeItem(STORAGE_KEY);currentUser=null;const s=document.getElementById("identity-screen");s.innerHTML="";s.style.display="flex";setupIdentityScreen();});
