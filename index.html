@@ -255,7 +255,7 @@ function setSyncing(v){syncDot.style.opacity=v?"0.4":"1";}
 
 onValue(ref(db,"/"),snap=>{
   const d=snap.val()||{};
-  d.tasks=d.tasks||{};d.messages=d.messages||{};d.flashes=d.flashes||{};d.notices=d.notices||{};d.ml_token=d.ml_token||null;d.ml_cache=d.ml_cache||null;d.price_changes=d.price_changes||{};d.ml_token_filial=d.ml_token_filial||null;d.last_known_prices=d.last_known_prices||{};d.nfes_processadas=d.nfes_processadas||{};d.categoria_saude=d.categoria_saude||{};d.aliquotas_ipi_extra=d.aliquotas_ipi_extra||{};d.precos_venda_manual=d.precos_venda_manual||{};d.ordem_tarefas=d.ordem_tarefas||[];
+  d.tasks=d.tasks||{};d.messages=d.messages||{};d.flashes=d.flashes||{};d.notices=d.notices||{};d.ml_token=d.ml_token||null;d.ml_cache=d.ml_cache||null;d.price_changes=d.price_changes||{};d.ml_token_filial=d.ml_token_filial||null;d.last_known_prices=d.last_known_prices||{};d.nfes_processadas=d.nfes_processadas||{};d.categoria_saude=d.categoria_saude||{};d.aliquotas_ipi_extra=d.aliquotas_ipi_extra||{};d.precos_venda_manual=d.precos_venda_manual||{};d.ordem_tarefas=d.ordem_tarefas||[];d.google_token=d.google_token||null;
   const seenTasks=JSON.parse(localStorage.getItem("digoo_seen_tasks")||"{}");
   let seenChanged=false;
   Object.entries(d.tasks).filter(([,t])=>t!=null).forEach(([id,task])=>{
@@ -3626,9 +3626,17 @@ let fechamentoErro = null;
 let fechamentoOverrides = {};
 
 async function fetchFechamento(mes) {
+  if(fechamentoLoading) return;
   fechamentoLoading = true; fechamentoErro = null; fechamentoData = null;
+  // Atualiza só o spinner sem chamar render() geral
   const p = document.getElementById("fechamento-panel");
-  if(p){ p.innerHTML=""; renderFechamentoMensal(p, themeColor("Diogo")); }
+  if(p) {
+    p.innerHTML = "";
+    const l = document.createElement("div");
+    l.style.cssText = "text-align:center;padding:40px 0;color:var(--text3);font-size:12px;";
+    l.innerHTML = '<span class="spinning">↻</span> Buscando NFS-e no Gmail e Drive...';
+    p.appendChild(l);
+  }
   try {
     const r = await fetch(`${VERCEL_BACKEND}/api/google?action=buscar&mes=${mes}`);
     const d = await r.json();
@@ -3657,10 +3665,13 @@ function renderFechamentoMensal(panel, color) {
   prevBtn.textContent = "‹";
   prevBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text2);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:16px;";
   prevBtn.addEventListener("click", () => {
-    const d = new Date(`${fechamentoMes}-01`); d.setMonth(d.getMonth()-1);
-    fechamentoMes = d.toISOString().slice(0,7);
+    const [y, m] = fechamentoMes.split("-").map(Number);
+    const novoMes = m === 1 ? 12 : m - 1;
+    const novoAno = m === 1 ? y - 1 : y;
+    fechamentoMes = `${novoAno}-${String(novoMes).padStart(2,"0")}`;
     fechamentoData = null; fechamentoOverrides = {};
-    fetchFechamento(fechamentoMes);
+    const p = document.getElementById("fechamento-panel");
+    if(p){ p.innerHTML=""; renderFechamentoMensal(p, color); }
   });
   const monthLabel = document.createElement("span");
   monthLabel.style.cssText = "font-size:13px;font-weight:600;color:var(--text);letter-spacing:1px;min-width:130px;text-align:center;";
@@ -3669,10 +3680,13 @@ function renderFechamentoMensal(panel, color) {
   nextBtn.textContent = "›";
   nextBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text2);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:16px;";
   nextBtn.addEventListener("click", () => {
-    const d = new Date(`${fechamentoMes}-01`); d.setMonth(d.getMonth()+1);
-    fechamentoMes = d.toISOString().slice(0,7);
+    const [y, m] = fechamentoMes.split("-").map(Number);
+    const novoMes = m === 12 ? 1 : m + 1;
+    const novoAno = m === 12 ? y + 1 : y;
+    fechamentoMes = `${novoAno}-${String(novoMes).padStart(2,"0")}`;
     fechamentoData = null; fechamentoOverrides = {};
-    fetchFechamento(fechamentoMes);
+    const p = document.getElementById("fechamento-panel");
+    if(p){ p.innerHTML=""; renderFechamentoMensal(p, color); }
   });
   monthWrap.appendChild(prevBtn); monthWrap.appendChild(monthLabel); monthWrap.appendChild(nextBtn);
 
