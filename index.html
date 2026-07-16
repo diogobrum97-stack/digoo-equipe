@@ -3780,7 +3780,14 @@ function renderFechamentoMensal(panel, color) {
   }
 
   function parseValor(v) {
-    return parseFloat(String(v||"0").replace(/\s/g,"").replace(/\./g,"").replace(",",".")) || 0;
+    const s = String(v||"").trim().replace(/\s/g,"");
+    if (!s) return 0;
+    // Formato pt-BR: 1.234,56 — vírgula é decimal, ponto é milhar
+    if (s.includes(",") && s.lastIndexOf(",") > s.lastIndexOf(".")) {
+      return parseFloat(s.replace(/\./g,"").replace(",",".")) || 0;
+    }
+    // Formato US: 1234.56
+    return parseFloat(s.replace(",","")) || 0;
   }
 
   function renderLinhas() {
@@ -3814,8 +3821,13 @@ function renderFechamentoMensal(panel, color) {
       const tdServ = document.createElement("td"); tdServ.style.cssText = "padding:7px 8px;";
       tdServ.appendChild(iServ); tr.appendChild(tdServ);
 
-      const iVal = inpCell(nf.valor, "0,00", "80px", "#4ade80");
+      const iVal = inpCell(nf.valor, "0,00", "90px", "#4ade80");
       iVal.style.textAlign = "right";
+      // Formata o valor inicial com vírgula decimal
+      if(nf.valor && !String(nf.valor).toUpperCase().includes("NÃO")) {
+        const numVal = parseFloat(String(nf.valor).replace(",",".")) || 0;
+        if(numVal > 0) iVal.value = numVal.toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2});
+      }
       iVal.addEventListener("input", () => { nf.valor = iVal.value; iVal.style.color="#4ade80"; atualizarTotal(); });
       const tdVal = document.createElement("td"); tdVal.style.cssText = "padding:7px 8px;text-align:right;";
       tdVal.appendChild(iVal); tr.appendChild(tdVal);
@@ -3943,46 +3955,61 @@ async function processarPlanilhaFechamento(file, fbKey, nomeMes, color) {
     const ws   = wb.Sheets[wb.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:"" });
 
-    // Detecta linha de cabeçalho — procura por palavras-chave
-    const keywords = ["prestador","fornecedor","cnpj","nota","valor","serviço","emissão"];
-    let headerIdx = 0;
-    for (let i = 0; i < Math.min(rows.length, 10); i++) {
+    // Acha linha do cabeçalho — tem "Fornecedor" e "CNPJ"
+    let headerIdx = -1;
+    for (let i = 0; i < rows.length; i++) {
       const row = rows[i].map(c => String(c||"").toLowerCase());
-      if (keywords.filter(k => row.some(c => c.includes(k))).length >= 2) {
+      if (row.some(c => c.includes("fornecedor") || c.includes("prestador")) &&
+          row.some(c => c.includes("cnpj"))) {
         headerIdx = i; break;
       }
     }
+    if (headerIdx === -1) { alert("Cabeçalho não encontrado. Verifique se a planilha tem colunas Fornecedor e CNPJ."); return; }
 
     const headers = rows[headerIdx].map(h => String(h||"").toLowerCase().trim());
-    const col = kws => {
-      const idx = headers.findIndex(h => kws.some(k => h.includes(k)));
-      return idx >= 0 ? idx : null;
-    };
+    const col = (...kws) => headers.findIndex(h => kws.some(k => h.includes(k)));
 
-    const cForn  = col(["prestador","fornecedor","nome"]);
-    const cCnpj  = col(["cnpj"]);
-    const cNum   = col(["nota","número","nº","nf"]);
-    const cServ  = col(["serviço","servi","descri","historico","histórico"]);
-    const cVal   = col(["valor"]);
-    const cEmis  = col(["emissão","emiss","data","vencimento"]);
+    const cForn = col("fornecedor","prestador");
+    const cCnpj = col("cnpj");
+    const cNum  = col("nº nota","nota","nº","nf");
+    const cServ = col("serviço","servi","histórico","historico","descri");
+    const cVal  = col("valor");
+    const cEmis = col("emissão","emiss","data");
+
+    function parseValorCell(v) {
+      // Suporta 1234.56, 1.234,56, 1234,56
+      const s = String(v||"").replace(/[^\d,\.]/g,"").trim();
+      if (!s) return "";
+      // Se tem vírgula depois de ponto: formato 1.234,56
+      if (s.includes(",") && s.lastIndexOf(",") > s.lastIndexOf(".")) {
+        return s.replace(/\./g,"").replace(",",".");
+      }
+      return s.replace(",",".");
+    }
 
     const notas = [];
     for (let i = headerIdx + 1; i < rows.length; i++) {
-      const row = rows[i];
+      const row  = rows[i];
       const forn = String(row[cForn] ?? "").trim();
-      const val  = String(row[cVal]  ?? "").trim();
-      if (!forn && !val) continue; // linha vazia
+      const cnpj = cCnpj >= 0 ? String(row[cCnpj] ?? "").trim() : "";
+      const val  = cVal  >= 0 ? parseValorCell(row[cVal]) : "";
+
+      // Pula linhas vazias, subtotais e totais
+      if (!forn) continue;
+      if (/^(total|subtotal)/i.test(forn)) continue;
+      if (!cnpj && !val) continue; // linha de título/header duplicado
+
       notas.push({
         fornecedor: forn,
-        cnpj:       cCnpj  != null ? String(row[cCnpj]  ?? "").trim() : "",
-        numero:     cNum   != null ? String(row[cNum]   ?? "").trim() : "",
-        servico:    cServ  != null ? String(row[cServ]  ?? "").trim() : "",
-        valor:      val.replace(/[^\d,\.]/g,"").replace(",","."),
-        emissao:    cEmis  != null ? String(row[cEmis]  ?? "").trim() : "",
+        cnpj,
+        numero:  cNum  >= 0 ? String(row[cNum]  ?? "").trim() : "",
+        servico: cServ >= 0 ? String(row[cServ] ?? "").trim() : "",
+        valor:   val,
+        emissao: cEmis >= 0 ? String(row[cEmis] ?? "").trim() : "",
       });
     }
 
-    if (notas.length === 0) { alert("Nenhuma nota encontrada na planilha."); return; }
+    if (notas.length === 0) { alert("Nenhuma nota encontrada. Verifique o formato da planilha."); return; }
 
     fechamentoData = { notas };
     const p = document.getElementById("fechamento-panel");
