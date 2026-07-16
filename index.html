@@ -618,12 +618,11 @@ async function criarTarefaTransferencia(chave, { dataEmissao, natureza, itens, m
     nfNumero: chave,
     subtarefas: [
       { texto: "Gerar complemento de IPI", feito: false },
-      { texto: "Atualizar custo envio full", feito: false },
+      { texto: "Atualizar custos no envio Full", feito: false },
       { texto: "Gerar NF Full", feito: false },
-      { texto: "Balanço de estoque Filial (Bling/ ML)", feito: false },
-      { texto: "Calcular novo custo ponderado", feito: false },
-      { texto: "Lançar Estoque Filial no Bling)", feito: false },
-      { texto: "Atualizar novos custos Bling e MT Filial", feito: false },
+      { texto: "Balanço de estoque Filial (Bling)", feito: false },
+      { texto: "Lançar Estoque Filial (Bling)", feito: false },
+      { texto: "Lançar custos MT Filial", feito: false },
     ],
   });
   await set(ref(db, `/nfes_processadas/${chave}`), {
@@ -2013,7 +2012,7 @@ function render(){
         if(member.locked){
           if(!window._diogotab)window._diogotab="tarefas";
           const tabs=document.createElement("div");tabs.className="tabs";
-          ["tarefas","concluidas","conversas","estoque","cancelamentos"].forEach(tab=>{
+          ["tarefas","concluidas","conversas","estoque","cancelamentos","fechamento"].forEach(tab=>{
             const btn=document.createElement("button");
             btn.className="tab-btn"+(window._diogotab===tab?" active":"");
             if(tab==="concluidas"){
@@ -2024,6 +2023,8 @@ function render(){
               btn.textContent="Estoque";
             } else if(tab==="cancelamentos") {
               btn.textContent="Cancelamentos";
+            } else if(tab==="fechamento") {
+              btn.textContent="Fechamento";
             } else {
               btn.textContent="Conversas";
             }
@@ -2308,6 +2309,9 @@ function render(){
               }
             }
             renderCancelamentos(cancelPanel);
+          }else if(window._diogotab==="fechamento"){
+            panel.style.maxHeight="none"; panel.style.overflowY="auto";
+            renderFechamentoMensal(panel, color);
           }else if(window._diogotab==="concluidas"){
             if(Object.keys(completionAlerts).length>0){
               const sec=document.createElement("div");sec.style.marginBottom="12px";sec.innerHTML=`<div class="section-label" style="color:#00e676;margin-bottom:8px">Novas conclusões</div>`;
@@ -3612,6 +3616,383 @@ function renderSaudeChart(panel, enriched) {
 }
 
 
+
+// ── FECHAMENTO MENSAL ────────────────────────────────────────────────────────
+let fechamentoMes = new Date().toISOString().slice(0, 7); // "2026-07"
+let fechamentoData = null;   // resultado do buscar
+let fechamentoLoading = false;
+let fechamentoErro = null;
+// Sobrescritas manuais por fornecedor: { cnpj: { confirmado: bool, fileId: string, fileName: string, fileLocal: File } }
+let fechamentoOverrides = {};
+
+async function fetchFechamento(mes) {
+  fechamentoLoading = true; fechamentoErro = null; fechamentoData = null;
+  const p = document.getElementById("fechamento-panel");
+  if(p){ p.innerHTML=""; renderFechamentoMensal(p, themeColor("Diogo")); }
+  try {
+    const r = await fetch(`${VERCEL_BACKEND}/api/google?action=buscar&mes=${mes}`);
+    const d = await r.json();
+    if(!r.ok || !d.ok) throw new Error(d.error || "falha ao buscar");
+    fechamentoData = d;
+  } catch(e) {
+    fechamentoErro = e.message;
+  }
+  fechamentoLoading = false;
+  const p2 = document.getElementById("fechamento-panel");
+  if(p2){ p2.innerHTML=""; renderFechamentoMensal(p2, themeColor("Diogo")); }
+}
+
+function renderFechamentoMensal(panel, color) {
+  const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+  const [ano, mesNum] = fechamentoMes.split("-");
+  const nomeMes = `${MESES[Number(mesNum)-1]} ${ano}`;
+
+  // ── Header: seletor de mês + status Google ──────────────────
+  const header = document.createElement("div");
+  header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;";
+
+  const monthWrap = document.createElement("div");
+  monthWrap.style.cssText = "display:flex;align-items:center;gap:8px;";
+  const prevBtn = document.createElement("button");
+  prevBtn.textContent = "‹";
+  prevBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text2);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:16px;";
+  prevBtn.addEventListener("click", () => {
+    const d = new Date(`${fechamentoMes}-01`); d.setMonth(d.getMonth()-1);
+    fechamentoMes = d.toISOString().slice(0,7);
+    fechamentoData = null; fechamentoOverrides = {};
+    fetchFechamento(fechamentoMes);
+  });
+  const monthLabel = document.createElement("span");
+  monthLabel.style.cssText = "font-size:13px;font-weight:600;color:var(--text);letter-spacing:1px;min-width:130px;text-align:center;";
+  monthLabel.textContent = nomeMes;
+  const nextBtn = document.createElement("button");
+  nextBtn.textContent = "›";
+  nextBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text2);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:16px;";
+  nextBtn.addEventListener("click", () => {
+    const d = new Date(`${fechamentoMes}-01`); d.setMonth(d.getMonth()+1);
+    fechamentoMes = d.toISOString().slice(0,7);
+    fechamentoData = null; fechamentoOverrides = {};
+    fetchFechamento(fechamentoMes);
+  });
+  monthWrap.appendChild(prevBtn); monthWrap.appendChild(monthLabel); monthWrap.appendChild(nextBtn);
+
+  const rightWrap = document.createElement("div");
+  rightWrap.style.cssText = "display:flex;gap:8px;align-items:center;";
+
+  // Status Google
+  const googleStatus = document.createElement("div");
+  googleStatus.style.cssText = "font-size:9px;color:var(--text3);";
+  if(state.google_token?.access_token) {
+    googleStatus.innerHTML = `<span style="color:#00dfc3">● Google conectado</span>`;
+  } else {
+    const connectBtn = document.createElement("button");
+    connectBtn.textContent = "Conectar Google";
+    connectBtn.style.cssText = "background:none;border:1px solid #4285f466;color:#4285f4;border-radius:4px;padding:4px 10px;font-size:10px;cursor:pointer;font-family:inherit;";
+    connectBtn.addEventListener("click", () => window.open(`${VERCEL_BACKEND}/api/google?action=auth`, "_blank"));
+    googleStatus.appendChild(connectBtn);
+  }
+  rightWrap.appendChild(googleStatus);
+
+  const buscarBtn = document.createElement("button");
+  buscarBtn.textContent = fechamentoLoading ? "↻ Buscando..." : "↻ Buscar NFS-e";
+  buscarBtn.disabled = fechamentoLoading;
+  buscarBtn.style.cssText = `background:none;border:1px solid ${color}66;color:${color};border-radius:4px;padding:5px 12px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:1px;`;
+  buscarBtn.addEventListener("click", () => fetchFechamento(fechamentoMes));
+  rightWrap.appendChild(buscarBtn);
+
+  header.appendChild(monthWrap); header.appendChild(rightWrap);
+  panel.appendChild(header);
+
+  // ── Loading ──────────────────────────────────────────────────
+  if(fechamentoLoading) {
+    const l = document.createElement("div");
+    l.style.cssText = "text-align:center;padding:40px 0;color:var(--text3);font-size:12px;";
+    l.innerHTML = '<span class="spinning">↻</span> Buscando NFS-e no Gmail e Drive...';
+    panel.appendChild(l); return;
+  }
+
+  // ── Erro ─────────────────────────────────────────────────────
+  if(fechamentoErro) {
+    const err = document.createElement("div");
+    err.style.cssText = "padding:10px;background:#f8717110;border:1px solid #f8717133;border-radius:5px;font-size:11px;color:#f87171;margin-bottom:12px;";
+    err.textContent = `Erro: ${fechamentoErro}`;
+    panel.appendChild(err);
+  }
+
+  // ── Estado inicial: sem dados ─────────────────────────────────
+  if(!fechamentoData && !fechamentoErro) {
+    const info = document.createElement("div");
+    info.style.cssText = "text-align:center;padding:30px 0;color:var(--text3);font-size:11px;line-height:1.8;";
+    info.innerHTML = `Clique em <strong style="color:${color}">↻ Buscar NFS-e</strong> para pesquisar no Gmail e Drive do mês de ${nomeMes}.`;
+    panel.appendChild(info); return;
+  }
+
+  if(!fechamentoData) return;
+
+  // ── Alerta Doctor Clin ────────────────────────────────────────
+  if(fechamentoData.doctorClin) {
+    const alert = document.createElement("div");
+    alert.style.cssText = "padding:8px 12px;background:#fbbf2410;border:1px solid #fbbf2433;border-left:3px solid #fbbf24;border-radius:5px;font-size:11px;color:#fbbf24;margin-bottom:12px;";
+    alert.textContent = "⚠ Doctor Clin não detectado — baixe a NFS-e manualmente e anexe abaixo.";
+    panel.appendChild(alert);
+  }
+
+  // ── Checklist de fornecedores ─────────────────────────────────
+  const checkTitle = document.createElement("div");
+  checkTitle.style.cssText = "font-size:9px;color:var(--text3);letter-spacing:2px;margin-bottom:8px;text-transform:uppercase;";
+  checkTitle.textContent = "Fornecedores fixos";
+  panel.appendChild(checkTitle);
+
+  const checkList = document.createElement("div");
+  checkList.style.cssText = "background:var(--bg3);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px;";
+
+  (fechamentoData.checklist || []).forEach((f, idx) => {
+    const over = fechamentoOverrides[f.cnpj] || {};
+    const encontrado = f.encontrado || over.confirmado || over.fileId || over.fileLocal;
+    const isLast = idx === fechamentoData.checklist.length - 1;
+
+    const row = document.createElement("div");
+    row.style.cssText = `display:flex;align-items:center;justify-content:space-between;padding:9px 14px;gap:10px;${!isLast?"border-bottom:1px solid var(--border)":""};${!encontrado && f.manual ? "background:var(--bg2)11;" : ""}`;
+
+    // Ícone de status
+    const icon = document.createElement("span");
+    icon.style.cssText = `width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;background:${encontrado?"#00dfc318":f.manual?"#fbbf2418":"#88888818"};border:1px solid ${encontrado?"#00dfc344":f.manual?"#fbbf2444":"#88888844"};color:${encontrado?"#00dfc3":f.manual?"#fbbf24":"#888"};`;
+    icon.textContent = encontrado ? "✓" : f.manual ? "↑" : "?";
+    row.appendChild(icon);
+
+    // Nome + CNPJ
+    const info = document.createElement("div");
+    info.style.cssText = "flex:1;min-width:0;";
+    const nome = document.createElement("div");
+    nome.style.cssText = `font-size:12px;color:${encontrado?"var(--text)":"var(--text3)"};`;
+    nome.textContent = f.nome;
+    const cnpj = document.createElement("div");
+    cnpj.style.cssText = "font-size:10px;color:var(--text3);";
+    cnpj.textContent = f.cnpj + (over.fileLocal ? ` · ${over.fileLocal.name}` : over.fileName ? ` · ${over.fileName}` : encontrado && !over.fileId ? " · via email/Drive" : "");
+    info.appendChild(nome); info.appendChild(cnpj);
+    row.appendChild(info);
+
+    // Ações
+    const acoes = document.createElement("div");
+    acoes.style.cssText = "display:flex;align-items:center;gap:6px;flex-shrink:0;";
+
+    if(over.fileId) {
+      // Tem arquivo do Drive — link + trocar
+      const link = document.createElement("a");
+      link.href = `https://drive.google.com/open?id=${over.fileId}`;
+      link.target = "_blank";
+      link.style.cssText = "font-size:11px;color:var(--text3);text-decoration:none;border:1px solid var(--border2);border-radius:4px;padding:3px 8px;";
+      link.textContent = "Abrir";
+      acoes.appendChild(link);
+    } else if(encontrado && !f.manual && !over.fileLocal) {
+      // Detectado via Gmail/Drive — botão trocar
+      const trocarLabel = document.createElement("label");
+      trocarLabel.style.cssText = "font-size:10px;color:var(--text3);cursor:pointer;border:1px solid var(--border2);border-radius:4px;padding:3px 8px;";
+      trocarLabel.textContent = "Trocar";
+      const fi = document.createElement("input"); fi.type="file"; fi.accept=".pdf"; fi.style.display="none";
+      fi.addEventListener("change", e => {
+        const file = e.target.files[0]; if(!file) return;
+        fechamentoOverrides[f.cnpj] = { ...over, fileLocal: file, confirmado: true };
+        const p = document.getElementById("fechamento-panel");
+        if(p){ p.innerHTML=""; renderFechamentoMensal(p, color); }
+      });
+      trocarLabel.appendChild(fi);
+      acoes.appendChild(trocarLabel);
+    } else if(!encontrado || f.manual) {
+      // Não encontrado ou manual — botão confirmar + anexar
+      if(!f.manual && !over.confirmado) {
+        const confBtn = document.createElement("button");
+        confBtn.textContent = "✓ Confirmar";
+        confBtn.style.cssText = "font-size:10px;color:#00dfc3;border:1px solid #00dfc344;background:none;border-radius:4px;padding:3px 8px;cursor:pointer;font-family:inherit;";
+        confBtn.addEventListener("click", () => {
+          fechamentoOverrides[f.cnpj] = { ...over, confirmado: true };
+          const p = document.getElementById("fechamento-panel");
+          if(p){ p.innerHTML=""; renderFechamentoMensal(p, color); }
+        });
+        acoes.appendChild(confBtn);
+      }
+      const anexarLabel = document.createElement("label");
+      anexarLabel.style.cssText = `font-size:10px;color:${f.manual?"#fbbf24":"var(--text3)"};cursor:pointer;border:1px solid ${f.manual?"#fbbf2466":"var(--border2)"};border-radius:4px;padding:3px 8px;`;
+      anexarLabel.textContent = "↑ Anexar PDF";
+      const fi = document.createElement("input"); fi.type="file"; fi.accept=".pdf"; fi.style.display="none";
+      fi.addEventListener("change", e => {
+        const file = e.target.files[0]; if(!file) return;
+        fechamentoOverrides[f.cnpj] = { ...over, fileLocal: file, confirmado: true };
+        const p = document.getElementById("fechamento-panel");
+        if(p){ p.innerHTML=""; renderFechamentoMensal(p, color); }
+      });
+      anexarLabel.appendChild(fi);
+      acoes.appendChild(anexarLabel);
+    }
+
+    row.appendChild(acoes);
+    checkList.appendChild(row);
+  });
+  panel.appendChild(checkList);
+
+  // ── Emails não categorizados ──────────────────────────────────
+  const naoCateg = (fechamentoData.emails || []).filter(e => {
+    const subj = (e.subject + e.from).toLowerCase();
+    return (subj.includes("nfs-e") || subj.includes("nota fiscal") || subj.includes("nfse")) &&
+      !(fechamentoData.checklist || []).some(f =>
+        subj.includes(f.cnpj.replace(/\D/g,"")) || subj.includes(f.cnpj)
+      );
+  });
+
+  if(naoCateg.length > 0) {
+    const ncTitle = document.createElement("div");
+    ncTitle.style.cssText = "font-size:9px;color:var(--text3);letter-spacing:2px;margin-bottom:8px;text-transform:uppercase;";
+    ncTitle.textContent = "NFS-e não categorizadas";
+    panel.appendChild(ncTitle);
+
+    const ncList = document.createElement("div");
+    ncList.style.cssText = "background:var(--bg3);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px;";
+
+    naoCateg.forEach((e, idx) => {
+      const isIgnored = fechamentoOverrides[`ignore_${e.id}`];
+      if(isIgnored) return;
+      const isLast = idx === naoCateg.length - 1;
+      const row = document.createElement("div");
+      row.style.cssText = `display:flex;align-items:center;justify-content:space-between;padding:9px 14px;gap:10px;${!isLast?"border-bottom:1px solid var(--border)":""}`;
+
+      const info = document.createElement("div");
+      info.style.cssText = "flex:1;min-width:0;";
+      const subj = document.createElement("div");
+      subj.style.cssText = "font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;";
+      subj.textContent = e.subject;
+      const from = document.createElement("div");
+      from.style.cssText = "font-size:9px;color:var(--text3);margin-top:2px;";
+      from.textContent = `${e.from} · ${e.date?.slice(0,16) || "—"}`;
+      info.appendChild(subj); info.appendChild(from);
+      row.appendChild(info);
+
+      const acoes = document.createElement("div");
+      acoes.style.cssText = "display:flex;gap:6px;flex-shrink:0;";
+
+      const ignBtn = document.createElement("button");
+      ignBtn.textContent = "Ignorar";
+      ignBtn.style.cssText = "font-size:10px;color:var(--text3);border:1px solid var(--border2);background:none;border-radius:4px;padding:3px 8px;cursor:pointer;font-family:inherit;";
+      ignBtn.addEventListener("click", () => {
+        fechamentoOverrides[`ignore_${e.id}`] = true;
+        const p = document.getElementById("fechamento-panel");
+        if(p){ p.innerHTML=""; renderFechamentoMensal(p, color); }
+      });
+
+      const mailLink = document.createElement("a");
+      mailLink.href = `https://mail.google.com/mail/u/0/#inbox/${e.id}`;
+      mailLink.target = "_blank";
+      mailLink.style.cssText = "font-size:10px;color:var(--text3);text-decoration:none;border:1px solid var(--border2);border-radius:4px;padding:3px 8px;";
+      mailLink.textContent = "Ver email";
+
+      acoes.appendChild(ignBtn); acoes.appendChild(mailLink);
+      row.appendChild(acoes);
+      ncList.appendChild(row);
+    });
+    panel.appendChild(ncList);
+  }
+
+  // ── Drive: arquivos do mês ────────────────────────────────────
+  if(fechamentoData.drive?.encontrada && fechamentoData.drive.arquivos?.length) {
+    const driveTitle = document.createElement("div");
+    driveTitle.style.cssText = "font-size:9px;color:var(--text3);letter-spacing:2px;margin-bottom:8px;text-transform:uppercase;";
+    driveTitle.textContent = `Drive · ${fechamentoData.drive.pasta}`;
+    panel.appendChild(driveTitle);
+
+    const driveList = document.createElement("div");
+    driveList.style.cssText = "background:var(--bg3);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px;";
+
+    fechamentoData.drive.arquivos.forEach((arq, idx) => {
+      const isLast = idx === fechamentoData.drive.arquivos.length - 1;
+      const row = document.createElement("div");
+      row.style.cssText = `display:flex;align-items:center;justify-content:space-between;padding:8px 14px;gap:10px;${!isLast?"border-bottom:1px solid var(--border)":""}`;
+
+      const nome = document.createElement("div");
+      nome.style.cssText = "flex:1;font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;";
+      nome.textContent = arq.name;
+      row.appendChild(nome);
+
+      const link = document.createElement("a");
+      link.href = `https://drive.google.com/open?id=${arq.id}`;
+      link.target = "_blank";
+      link.style.cssText = "font-size:10px;color:var(--text3);text-decoration:none;border:1px solid var(--border2);border-radius:4px;padding:3px 8px;flex-shrink:0;";
+      link.textContent = "Abrir";
+      row.appendChild(link);
+      driveList.appendChild(row);
+    });
+    panel.appendChild(driveList);
+  }
+
+  // ── Rodapé: Gerar CSV + Criar rascunho ───────────────────────
+  const rodape = document.createElement("div");
+  rodape.style.cssText = "display:flex;gap:10px;padding-top:14px;border-top:1px solid var(--border);";
+
+  const csvBtn = document.createElement("button");
+  csvBtn.style.cssText = `flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;font-size:11px;background:none;border:1px solid var(--border2);border-radius:6px;cursor:pointer;color:var(--text);font-family:inherit;letter-spacing:1px;`;
+  csvBtn.innerHTML = "↓ Gerar CSV";
+  csvBtn.addEventListener("click", async () => {
+    // Monta lista de NFS-e confirmadas
+    const nfses = (fechamentoData.checklist || [])
+      .filter(f => f.encontrado || fechamentoOverrides[f.cnpj]?.confirmado || fechamentoOverrides[f.cnpj]?.fileLocal)
+      .map(f => ({ fornecedor: f.nome, cnpj: f.cnpj, valor: "0", dataEmissao: `${mesNum}/${ano}`, numero: "" }));
+    try {
+      const r = await fetch(`${VERCEL_BACKEND}/api/google?action=csv&mes=${fechamentoMes}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nfses }),
+      });
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href=url; a.download=`contas_pagar_${fechamentoMes}.csv`; a.click();
+      URL.revokeObjectURL(url);
+    } catch(e) { alert("Erro ao gerar CSV: " + e.message); }
+  });
+
+  const rascunhoBtn = document.createElement("button");
+  rascunhoBtn.style.cssText = `flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;font-size:11px;background:${color}22;border:1px solid ${color}66;border-radius:6px;cursor:pointer;color:${color};font-family:inherit;letter-spacing:1px;`;
+  rascunhoBtn.innerHTML = "✉ Criar rascunho Gmail";
+  rascunhoBtn.addEventListener("click", async () => {
+    const confirmados = (fechamentoData.checklist || []).filter(f =>
+      f.encontrado || fechamentoOverrides[f.cnpj]?.confirmado || fechamentoOverrides[f.cnpj]?.fileLocal
+    );
+    const corpo = `Leonardo,
+
+Segue o fechamento de NFS-e de ${nomeMes}:
+
+${confirmados.map(f => `• ${f.nome} (${f.cnpj})`).join("\n")}
+
+${fechamentoData.doctorClin ? "\n⚠ Doctor Clin: verificar se chegou a NFS-e." : ""}
+
+Att,
+Diogo`;
+    try {
+      const r = await fetch(`${VERCEL_BACKEND}/api/google?action=rascunho`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          para: "leonardo@resicontabilidade.com.br",
+          assunto: `NFS-e ${nomeMes} — Digoo Brasil`,
+          corpo,
+        }),
+      });
+      const d = await r.json();
+      if(d.ok) {
+        rascunhoBtn.textContent = "✓ Rascunho criado!";
+        rascunhoBtn.style.color = "#00dfc3";
+        rascunhoBtn.style.borderColor = "#00dfc366";
+        setTimeout(() => {
+          rascunhoBtn.innerHTML = "✉ Criar rascunho Gmail";
+          rascunhoBtn.style.color = color;
+          rascunhoBtn.style.borderColor = `${color}66`;
+        }, 3000);
+      } else {
+        alert("Erro: " + (d.error || "falha desconhecida"));
+      }
+    } catch(e) { alert("Erro: " + e.message); }
+  });
+
+  rodape.appendChild(csvBtn); rodape.appendChild(rascunhoBtn);
+  panel.appendChild(rodape);
+}
 
 document.getElementById("user-label").addEventListener("click",()=>{localStorage.removeItem(STORAGE_KEY);currentUser=null;const s=document.getElementById("identity-screen");s.innerHTML="";s.style.display="flex";setupIdentityScreen();});
 
