@@ -3850,9 +3850,9 @@ function renderFechamentoMensal(panel, color) {
       totalEl.style.cssText = "display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;margin-bottom:12px;";
       cardsWrap.parentNode.insertBefore(totalEl, cardsWrap.nextSibling);
     }
-    const ativas = notasState.filter(nf => !nf._removido);
+    const ativasCount = notasState.filter(nf => !nf._removido);
     totalEl.innerHTML = `
-      <span style="font-size:11px;color:var(--text3);letter-spacing:1px;">TOTAL GERAL — ${ativas.length} nota${ativas.length!==1?"s":""}</span>
+      <span style="font-size:11px;color:var(--text3);letter-spacing:1px;">TOTAL GERAL — ${ativasCount.length} nota${ativasCount.length!==1?"s":""}</span>
       <span id="fechamento-total" style="font-size:16px;font-weight:600;color:#4ade80;">${total > 0 ? "R$ "+total.toLocaleString("pt-BR",{minimumFractionDigits:2}) : "—"}</span>`;
   }
 
