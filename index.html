@@ -3666,12 +3666,13 @@ function renderFechamentoMensal(panel, color) {
   const [ano, mesNum] = fechamentoMes.split("-");
   const nomeMes = `${MESES[Number(mesNum)-1]} ${ano}`;
 
-  // ── Header ──────────────────────────────────────────────────
+  // Header
   const header = document.createElement("div");
   header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;";
 
   const monthWrap = document.createElement("div");
   monthWrap.style.cssText = "display:flex;align-items:center;gap:8px;";
+
   const prevBtn = document.createElement("button");
   prevBtn.textContent = "‹";
   prevBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text2);border-radius:4px;padding:2px 10px;cursor:pointer;font-size:18px;";
@@ -3682,9 +3683,11 @@ function renderFechamentoMensal(panel, color) {
     const p = document.getElementById("fechamento-panel");
     if(p){ p.innerHTML=""; renderFechamentoMensal(p, color); }
   });
+
   const monthLabel = document.createElement("span");
   monthLabel.style.cssText = "font-size:14px;font-weight:600;color:var(--text);min-width:120px;text-align:center;";
   monthLabel.textContent = nomeMes;
+
   const nextBtn = document.createElement("button");
   nextBtn.textContent = "›";
   nextBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text2);border-radius:4px;padding:2px 10px;cursor:pointer;font-size:18px;";
@@ -3695,6 +3698,7 @@ function renderFechamentoMensal(panel, color) {
     const p = document.getElementById("fechamento-panel");
     if(p){ p.innerHTML=""; renderFechamentoMensal(p, color); }
   });
+
   monthWrap.appendChild(prevBtn); monthWrap.appendChild(monthLabel); monthWrap.appendChild(nextBtn);
 
   const rightWrap = document.createElement("div");
@@ -3714,7 +3718,7 @@ function renderFechamentoMensal(panel, color) {
   header.appendChild(monthWrap); header.appendChild(rightWrap);
   panel.appendChild(header);
 
-  // ── Dados ────────────────────────────────────────────────────
+  // Dados
   const dadosSalvos = state.fechamentos?.[fechamentoMes.replace("-","_")];
   const notas = fechamentoData?.notas || dadosSalvos?.notas || [];
   const savedAt = dadosSalvos?.savedAt;
@@ -3749,120 +3753,129 @@ function renderFechamentoMensal(panel, color) {
     return n > 0 ? n.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}) : "";
   }
 
-  // ── Cards ────────────────────────────────────────────────────
   const cardsWrap = document.createElement("div");
-  cardsWrap.id = "fechamento-cards";
-  cardsWrap.style.cssText = "display:flex;flex-direction:column;gap:8px;margin-bottom:12px;";
+  cardsWrap.style.cssText = "display:flex;flex-direction:column;gap:10px;margin-bottom:10px;";
   panel.appendChild(cardsWrap);
 
-  function inpInline(val, placeholder, cor, width) {
+  function inpClean(val, placeholder, cor, mono) {
     const inp = document.createElement("input");
     const vazio = !val || String(val).toUpperCase().includes("NÃO") || String(val) === "—";
     inp.value = vazio ? "" : (val || "");
-    inp.placeholder = placeholder || "";
-    inp.style.cssText = `background:none;border:none;border-bottom:1px solid ${vazio?"#f8717155":"var(--border2)"};color:${vazio?"#f87171":(cor||"var(--text2)")};font-family:inherit;font-size:12px;padding:1px 4px;outline:none;width:${width||"auto"};min-width:40px;`;
+    inp.placeholder = vazio ? "⚠ preencher" : (placeholder || "");
+    inp.style.cssText = `background:none;border:none;border-bottom:1px solid ${vazio?"#f8717144":"transparent"};color:${vazio?"#f87171":(cor||"var(--text)")};font-family:${mono?"var(--font-mono, monospace)":"inherit"};font-size:inherit;padding:0;outline:none;width:100%;`;
     inp.addEventListener("focus", () => inp.style.borderBottomColor = color);
-    inp.addEventListener("blur",  () => inp.style.borderBottomColor = "var(--border2)");
+    inp.addEventListener("blur",  () => { inp.style.borderBottomColor = "transparent"; if(inp.value) inp.style.color = cor||"var(--text)"; });
     return inp;
   }
 
   function renderCards() {
     cardsWrap.innerHTML = "";
-    let total = 0;
     const ativas = notasState.filter(nf => !nf._removido);
+    let total = 0;
 
     ativas.forEach(nf => {
+      const valNum = parseValorStr(nf.valor);
+      const semValor = !nf.valor || parseValorStr(nf.valor) === 0;
+      total += valNum;
+
       const card = document.createElement("div");
-      card.style.cssText = "background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;";
+      card.style.cssText = `background:var(--bg3);border:1px solid ${semValor?"#fbbf2444":"var(--border)"};border-radius:10px;padding:14px 16px;`;
 
-      // Linha 1: Prestador (esquerda) + Valor (direita)
-      const linha1 = document.createElement("div");
-      linha1.style.cssText = "display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px;";
+      // Linha topo: nome + valor
+      const topo = document.createElement("div");
+      topo.style.cssText = "display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:12px;";
 
-      const iNome = inpInline(nf.fornecedor, "Prestador", "var(--text)", "100%");
-      iNome.style.cssText += "font-size:13px;font-weight:600;color:var(--text);flex:1;";
+      const nomeWrap = document.createElement("div");
+      nomeWrap.style.cssText = "flex:1;min-width:0;";
+      const iNome = inpClean(nf.fornecedor, "Prestador", "var(--text)");
+      iNome.style.cssText += "font-size:13px;font-weight:600;";
       iNome.addEventListener("input", () => { nf.fornecedor = iNome.value; });
+      const iCnpj = inpClean(nf.cnpj, "CNPJ", "var(--text3)", true);
+      iCnpj.style.cssText += "font-size:10px;margin-top:2px;";
+      iCnpj.addEventListener("input", () => { nf.cnpj = iCnpj.value; });
+      nomeWrap.appendChild(iNome); nomeWrap.appendChild(iCnpj);
 
       const valorWrap = document.createElement("div");
-      valorWrap.style.cssText = "display:flex;align-items:center;gap:4px;flex-shrink:0;";
-      const rLabel = document.createElement("span");
-      rLabel.style.cssText = "font-size:11px;color:var(--text3);";
-      rLabel.textContent = "R$";
-      const iVal = inpInline(fmtValor(nf.valor), "0,00", "#4ade80", "90px");
-      iVal.style.cssText += "font-size:14px;font-weight:600;color:#4ade80;text-align:right;";
-      iVal.addEventListener("input", () => { nf.valor = iVal.value; atualizarTotal(); });
-      valorWrap.appendChild(rLabel); valorWrap.appendChild(iVal);
+      valorWrap.style.cssText = "text-align:right;flex-shrink:0;";
+      const vLabel = document.createElement("div");
+      vLabel.style.cssText = "font-size:10px;color:var(--text3);margin-bottom:2px;";
+      vLabel.textContent = "Valor";
+      const iValWrap = document.createElement("div");
+      iValWrap.style.cssText = "display:flex;align-items:baseline;gap:3px;justify-content:flex-end;";
+      const rSign = document.createElement("span");
+      rSign.style.cssText = "font-size:11px;color:var(--text3);";
+      rSign.textContent = "R$";
+      const iVal = inpClean(fmtValor(nf.valor), "0,00", semValor?"#fbbf24":"#4ade80");
+      iVal.style.cssText += `font-size:15px;font-weight:600;text-align:right;width:90px;color:${semValor?"#fbbf24":"#4ade80"};`;
+      iVal.addEventListener("input", () => {
+        nf.valor = iVal.value;
+        iVal.style.color = "#4ade80";
+        card.style.borderColor = "var(--border)";
+        atualizarTotal();
+      });
+      iValWrap.appendChild(rSign); iValWrap.appendChild(iVal);
+      valorWrap.appendChild(vLabel); valorWrap.appendChild(iValWrap);
 
-      linha1.appendChild(iNome); linha1.appendChild(valorWrap);
-      card.appendChild(linha1);
+      topo.appendChild(nomeWrap); topo.appendChild(valorWrap);
+      card.appendChild(topo);
 
-      // Linha 2: CNPJ · NF · Data
-      const linha2 = document.createElement("div");
-      linha2.style.cssText = "display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;";
+      // Linha detalhes: NF · Serviço · Emissão
+      const detalhes = document.createElement("div");
+      detalhes.style.cssText = "display:flex;gap:20px;border-top:1px solid var(--border2);padding-top:10px;align-items:flex-start;flex-wrap:wrap;";
 
-      const iCnpj = inpInline(nf.cnpj, "CNPJ", "var(--text3)", "130px");
-      iCnpj.style.fontSize = "10px";
-      iCnpj.addEventListener("input", () => { nf.cnpj = iCnpj.value; });
+      function detalheCol(label, val, cor, mono, width) {
+        const col = document.createElement("div");
+        col.style.cssText = `${width?"width:"+width+";flex-shrink:0;":"flex:1;min-width:80px;"}`;
+        const lbl = document.createElement("div");
+        lbl.style.cssText = "font-size:10px;color:var(--text3);margin-bottom:3px;letter-spacing:0.03em;";
+        lbl.textContent = label;
+        const inp = inpClean(val, "—", cor||"var(--text2)", mono);
+        inp.style.fontSize = "12px";
+        col.appendChild(lbl); col.appendChild(inp);
+        return { col, inp };
+      }
 
-      const sep1 = document.createElement("span"); sep1.style.cssText = "color:var(--border2);font-size:10px;"; sep1.textContent = "·";
+      const nfCol   = detalheCol("Nº nota", nf.numero, "var(--text-accent, #00dfc3)", true, "80px");
+      nfCol.inp.addEventListener("input", () => { nf.numero = nfCol.inp.value; });
+      const servCol = detalheCol("Serviço", nf.servico, "var(--text2)");
+      servCol.inp.addEventListener("input", () => { nf.servico = servCol.inp.value; });
+      const emisCol = detalheCol("Emissão", nf.emissao, "var(--text3)", false, "80px");
+      emisCol.inp.addEventListener("input", () => { nf.emissao = emisCol.inp.value; });
 
-      const nfLabel = document.createElement("span"); nfLabel.style.cssText = "font-size:10px;color:var(--text3);"; nfLabel.textContent = "NF";
-      const iNum = inpInline(nf.numero, "—", "#00dfc3", "70px");
-      iNum.style.fontSize = "10px";
-      iNum.addEventListener("input", () => { nf.numero = iNum.value; });
-
-      const sep2 = document.createElement("span"); sep2.style.cssText = "color:var(--border2);font-size:10px;"; sep2.textContent = "·";
-
-      const iEmis = inpInline(nf.emissao, "DD/MM/AAAA", "var(--text3)", "80px");
-      iEmis.style.fontSize = "10px";
-      iEmis.addEventListener("input", () => { nf.emissao = iEmis.value; });
-
-      linha2.appendChild(iCnpj); linha2.appendChild(sep1);
-      linha2.appendChild(nfLabel); linha2.appendChild(iNum);
-      linha2.appendChild(sep2); linha2.appendChild(iEmis);
-      card.appendChild(linha2);
-
-      // Linha 3: Serviço + botão remover
-      const linha3 = document.createElement("div");
-      linha3.style.cssText = "display:flex;align-items:center;gap:8px;";
-
-      const iServ = inpInline(nf.servico, "descrição do serviço", "var(--text3)", "100%");
-      iServ.style.cssText += "flex:1;font-size:11px;";
-      iServ.addEventListener("input", () => { nf.servico = iServ.value; });
-
+      // Botão remover
       const delBtn = document.createElement("button");
       delBtn.textContent = "×";
-      delBtn.style.cssText = "background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;opacity:0.3;flex-shrink:0;padding:0 2px;";
+      delBtn.style.cssText = "background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;opacity:0.3;padding:0;margin-left:auto;align-self:flex-end;";
       delBtn.addEventListener("click", () => { nf._removido = true; renderCards(); atualizarTotal(); });
 
-      linha3.appendChild(iServ); linha3.appendChild(delBtn);
-      card.appendChild(linha3);
-
-      total += parseValorStr(nf.valor);
+      detalhes.appendChild(nfCol.col);
+      detalhes.appendChild(servCol.col);
+      detalhes.appendChild(emisCol.col);
+      detalhes.appendChild(delBtn);
+      card.appendChild(detalhes);
       cardsWrap.appendChild(card);
     });
 
-    // Total
-    let totalEl = document.getElementById("fechamento-total-wrap");
-    if (!totalEl) {
-      totalEl = document.createElement("div");
-      totalEl.id = "fechamento-total-wrap";
-      totalEl.style.cssText = "display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;margin-bottom:12px;";
-      cardsWrap.parentNode.insertBefore(totalEl, cardsWrap.nextSibling);
+    // Card total
+    let totalCard = document.getElementById("fechamento-total-card");
+    if(!totalCard) {
+      totalCard = document.createElement("div");
+      totalCard.id = "fechamento-total-card";
+      totalCard.style.cssText = "background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;";
+      cardsWrap.parentNode.insertBefore(totalCard, cardsWrap.nextSibling);
     }
-    const ativasCount = notasState.filter(nf => !nf._removido);
-    totalEl.innerHTML = `
-      <span style="font-size:11px;color:var(--text3);letter-spacing:1px;">TOTAL GERAL — ${ativasCount.length} nota${ativasCount.length!==1?"s":""}</span>
-      <span id="fechamento-total" style="font-size:16px;font-weight:600;color:#4ade80;">${total > 0 ? "R$ "+total.toLocaleString("pt-BR",{minimumFractionDigits:2}) : "—"}</span>`;
+    totalCard.innerHTML = `
+      <span style="font-size:10px;color:var(--text3);letter-spacing:0.08em;">TOTAL GERAL — ${ativas.length} nota${ativas.length!==1?"s":""}</span>
+      <span id="fechamento-total" style="font-size:17px;font-weight:600;color:#4ade80;">${total>0?"R$ "+total.toLocaleString("pt-BR",{minimumFractionDigits:2}):"—"}</span>`;
   }
 
   function atualizarTotal() {
     const ativas = notasState.filter(nf => !nf._removido);
-    const total  = ativas.reduce((s, nf) => s + parseValorStr(nf.valor), 0);
+    const total  = ativas.reduce((s,nf) => s + parseValorStr(nf.valor), 0);
     const el = document.getElementById("fechamento-total");
-    if(el) el.textContent = total > 0 ? `R$ ${total.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : "—";
-    const wrap = document.getElementById("fechamento-total-wrap");
-    if(wrap) wrap.querySelector("span").textContent = `TOTAL GERAL — ${ativas.length} nota${ativas.length!==1?"s":""}`;
+    if(el) el.textContent = total>0 ? `R$ ${total.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : "—";
+    const card = document.getElementById("fechamento-total-card");
+    if(card) card.querySelector("span").textContent = `TOTAL GERAL — ${ativas.length} nota${ativas.length!==1?"s":""}`;
   }
 
   renderCards();
@@ -3870,7 +3883,7 @@ function renderFechamentoMensal(panel, color) {
   // Botão adicionar
   const addBtn = document.createElement("button");
   addBtn.textContent = "+ adicionar nota manualmente";
-  addBtn.style.cssText = `width:100%;background:none;border:1px dashed ${color}33;color:${color};border-radius:6px;padding:8px;font-size:10px;cursor:pointer;font-family:inherit;margin-bottom:14px;opacity:0.6;`;
+  addBtn.style.cssText = `width:100%;background:none;border:1px dashed ${color}33;color:${color};border-radius:8px;padding:8px;font-size:10px;cursor:pointer;font-family:inherit;margin-bottom:12px;opacity:0.6;`;
   addBtn.addEventListener("click", () => {
     notasState.push({ fornecedor:"", cnpj:"", numero:"", servico:"", valor:"", emissao:"", _idx:notasState.length, _removido:false });
     renderCards();
@@ -3882,7 +3895,7 @@ function renderFechamentoMensal(panel, color) {
   rodape.style.cssText = "display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding-top:12px;border-top:1px solid var(--border);";
 
   const salvarBtn = document.createElement("button");
-  salvarBtn.style.cssText = "padding:10px;font-size:11px;background:#00dfc322;border:1px solid #00dfc366;border-radius:6px;cursor:pointer;color:#00dfc3;font-family:inherit;";
+  salvarBtn.style.cssText = "padding:10px;font-size:11px;background:#00dfc322;border:1px solid #00dfc366;border-radius:6px;cursor:pointer;color:#00dfc3;font-family:inherit;letter-spacing:0.5px;";
   salvarBtn.textContent = "✓ Salvar";
   salvarBtn.addEventListener("click", async () => {
     const ativas = notasState.filter(nf => !nf._removido);
@@ -3893,7 +3906,7 @@ function renderFechamentoMensal(panel, color) {
   });
 
   const csvBtn = document.createElement("button");
-  csvBtn.style.cssText = "padding:10px;font-size:11px;background:none;border:1px solid var(--border2);border-radius:6px;cursor:pointer;color:var(--text);font-family:inherit;";
+  csvBtn.style.cssText = "padding:10px;font-size:11px;background:none;border:1px solid var(--border2);border-radius:6px;cursor:pointer;color:var(--text);font-family:inherit;letter-spacing:0.5px;";
   csvBtn.textContent = "↓ Gerar CSV";
   csvBtn.addEventListener("click", async () => {
     const ativas = notasState.filter(nf => !nf._removido);
@@ -3910,13 +3923,13 @@ function renderFechamentoMensal(panel, color) {
   });
 
   const rascunhoBtn = document.createElement("button");
-  rascunhoBtn.style.cssText = `padding:10px;font-size:11px;background:${color}22;border:1px solid ${color}66;border-radius:6px;cursor:pointer;color:${color};font-family:inherit;`;
+  rascunhoBtn.style.cssText = `padding:10px;font-size:11px;background:${color}22;border:1px solid ${color}66;border-radius:6px;cursor:pointer;color:${color};font-family:inherit;letter-spacing:0.5px;`;
   rascunhoBtn.textContent = "✉ Rascunho Gmail";
   rascunhoBtn.addEventListener("click", async () => {
     const ativas = notasState.filter(nf => !nf._removido);
     const total  = ativas.reduce((s,nf) => s + parseValorStr(nf.valor), 0);
     const linhas = ativas.map(nf => {
-      const val = parseValorStr(nf.valor) > 0 ? `R$ ${parseValorStr(nf.valor).toLocaleString("pt-BR",{minimumFractionDigits:2})}` : "—";
+      const val = parseValorStr(nf.valor)>0 ? `R$ ${parseValorStr(nf.valor).toLocaleString("pt-BR",{minimumFractionDigits:2})}` : "—";
       return `${nf.fornecedor} | ${nf.cnpj} | NF ${nf.numero||"—"} | ${nf.servico||"—"} | ${val} | ${nf.emissao||"—"}`;
     }).join("\n");
     const corpo = `Leonardo,\n\nSegue o fechamento de NFS-e de ${nomeMes}:\n\n${"—".repeat(80)}\n${linhas}\n${"—".repeat(80)}\nTotal Geral — ${ativas.length} notas | R$ ${total.toLocaleString("pt-BR",{minimumFractionDigits:2})}\n\nAtt,\nDiogo`;
