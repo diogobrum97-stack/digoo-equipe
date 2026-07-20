@@ -66,7 +66,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, onValue, push, remove, update, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, onValue, push, remove, update, set, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBbaxrk7TXl9BiAZJzHwnJ6vI_LA5g-zzk",
@@ -1024,6 +1024,161 @@ function renderCalcIpiPanel(container, task){
   container.appendChild(wrap);
   montarLinhas();
   recalcular();
+
+  // ── Seção Custo Médio Ponderado ───────────────────────────────
+  const cmpWrap = document.createElement("div");
+  cmpWrap.style.cssText = "margin-top:16px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;";
+
+  const cmpHeader = document.createElement("div");
+  cmpHeader.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;";
+  const cmpTitle = document.createElement("div");
+  cmpTitle.style.cssText = "font-size:10px;color:var(--text3);letter-spacing:1.5px;";
+  cmpTitle.textContent = "CUSTO MÉDIO PONDERADO — FILIAL SP";
+  const cmpBuscarBtn = document.createElement("button");
+  cmpBuscarBtn.textContent = "↻ Calcular CMP";
+  cmpBuscarBtn.style.cssText = "background:none;border:1px solid #00dfc366;color:#00dfc3;border-radius:4px;padding:4px 12px;font-size:10px;cursor:pointer;font-family:inherit;";
+  cmpHeader.appendChild(cmpTitle); cmpHeader.appendChild(cmpBuscarBtn);
+  cmpWrap.appendChild(cmpHeader);
+
+  const cmpContent = document.createElement("div");
+  cmpContent.style.cssText = "font-size:11px;color:var(--text3);";
+  cmpContent.textContent = "Clique em ↻ Calcular CMP para buscar o custo atual da Filial e calcular o novo custo médio ponderado.";
+  cmpWrap.appendChild(cmpContent);
+
+  cmpBuscarBtn.addEventListener("click", async () => {
+    const produtosComCmv = calc.produtos.filter(p => p.precoVenda != null && p.qtd > 0);
+    if (produtosComCmv.length === 0) { cmpContent.textContent = "Preencha os preços de venda primeiro."; return; }
+
+    cmpBuscarBtn.textContent = "↻ Buscando...";
+    cmpBuscarBtn.disabled = true;
+    cmpContent.innerHTML = "";
+
+    try {
+      // Busca estoque atual da Filial via ML
+      const rEstoque = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?estoque=1`).then(r=>r.json());
+      const estoquePorSku = {};
+      (rEstoque.rows || []).forEach(r => {
+        if(r.sku) estoquePorSku[r.sku.toLowerCase()] = r.aptas || 0;
+      });
+
+      // Busca custos salvos no Firebase (último CMP calculado por SKU)
+      const custosSalvosSnap = await get(ref(db, "/custos_medios_filial"));
+      const custosSalvos = custosSalvosSnap.val() || {};
+
+      // Monta tabela editável
+      const tbl = document.createElement("table");
+      tbl.style.cssText = "width:100%;border-collapse:collapse;font-size:11px;";
+      tbl.innerHTML = `<thead><tr style="border-bottom:1px solid var(--sep);">
+        <th style="text-align:left;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">SKU</th>
+        <th style="text-align:right;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">QTD NF</th>
+        <th style="text-align:right;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">CMV NF</th>
+        <th style="text-align:right;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">ESTOQUE FILIAL</th>
+        <th style="text-align:right;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">CUSTO ATUAL</th>
+        <th style="text-align:right;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">NOVO CMP</th>
+      </tr></thead><tbody></tbody>`;
+      const tbody2 = tbl.querySelector("tbody");
+
+      // Estado local editável
+      const linhasCmp = produtosComCmv.map(p => {
+        const r = calcularLinhaIpi(p);
+        const cmvUnit = p.valorNf + (r.ipi / p.qtd);
+        const skuKey = (p.sku||"").toLowerCase();
+        const custoSalvo = custosSalvos[skuKey]?.novoCmp ?? null;
+        const estoqueAtual = estoquePorSku[skuKey] ?? 0;
+        return { sku: p.sku, skuKey, qtd: p.qtd, cmvUnit, estoqueAtual, custoAtual: custoSalvo, novoCmp: null };
+      });
+
+      function calcNovoCmp(l) {
+        if (l.custoAtual == null || l.custoAtual === "") return null;
+        const ca = parseFloat(String(l.custoAtual).replace(",",".")) || 0;
+        return (l.qtd * l.cmvUnit + l.estoqueAtual * ca) / (l.qtd + l.estoqueAtual);
+      }
+
+      function renderLinhasCmp() {
+        tbody2.innerHTML = "";
+        linhasCmp.forEach(l => {
+          l.novoCmp = calcNovoCmp(l);
+          const tr2 = document.createElement("tr");
+          tr2.style.cssText = "border-bottom:1px solid var(--sep2);";
+          const fmt = v => v != null ? `R$ ${Number(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}` : "—";
+          const semCusto = l.custoAtual == null || l.custoAtual === "";
+
+          // Células fixas
+          const tdSku = document.createElement("td"); tdSku.style.cssText="padding:8px;color:#00dfc3;font-size:10px;"; tdSku.textContent=l.sku||"—";
+          const tdQtd = document.createElement("td"); tdQtd.style.cssText="padding:8px;text-align:right;"; tdQtd.textContent=l.qtd;
+          const tdCmv = document.createElement("td"); tdCmv.style.cssText="padding:8px;text-align:right;"; tdCmv.textContent=fmt(l.cmvUnit);
+          const tdEst = document.createElement("td"); tdEst.style.cssText="padding:8px;text-align:right;"; tdEst.textContent=l.estoqueAtual;
+
+          // Custo atual — editável
+          const tdCusto = document.createElement("td"); tdCusto.style.cssText="padding:6px 8px;text-align:right;";
+          const iCusto = document.createElement("input");
+          iCusto.type = "number";
+          iCusto.value = l.custoAtual != null ? String(l.custoAtual).replace(".",",") : "";
+          iCusto.placeholder = semCusto ? "⚠ preencher" : "";
+          iCusto.style.cssText = `width:80px;background:none;border:none;border-bottom:1px solid ${semCusto?"#f8717166":"var(--border2)"};color:${semCusto?"#f87171":"var(--text)"};font-family:inherit;font-size:11px;text-align:right;outline:none;padding:2px 4px;`;
+          iCusto.addEventListener("input", () => {
+            l.custoAtual = iCusto.value;
+            iCusto.style.borderBottomColor = "var(--border2)";
+            iCusto.style.color = "var(--text)";
+            // Atualiza novo CMP da linha
+            l.novoCmp = calcNovoCmp(l);
+            tdNovoCmp.textContent = fmt(l.novoCmp);
+            tdNovoCmp.style.color = l.novoCmp ? "#4ade80" : "var(--text3)";
+          });
+          tdCusto.appendChild(iCusto);
+
+          // Novo CMP
+          const tdNovoCmp = document.createElement("td");
+          tdNovoCmp.style.cssText = `padding:8px;text-align:right;font-weight:600;color:${l.novoCmp?"#4ade80":"var(--text3)"};`;
+          tdNovoCmp.textContent = fmt(l.novoCmp);
+
+          tr2.appendChild(tdSku); tr2.appendChild(tdQtd); tr2.appendChild(tdCmv);
+          tr2.appendChild(tdEst); tr2.appendChild(tdCusto); tr2.appendChild(tdNovoCmp);
+          tbody2.appendChild(tr2);
+        });
+      }
+
+      renderLinhasCmp();
+      cmpContent.appendChild(tbl);
+
+      // Botão salvar CMP
+      const salvarCmpBtn = document.createElement("button");
+      salvarCmpBtn.textContent = "✓ Salvar CMP";
+      salvarCmpBtn.style.cssText = "margin-top:12px;background:none;border:1px solid #00dfc366;color:#00dfc3;border-radius:4px;padding:6px 16px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:0.5px;";
+      salvarCmpBtn.addEventListener("click", async () => {
+        const updates = {};
+        let algumVazio = false;
+        linhasCmp.forEach(l => {
+          if (!l.novoCmp) { algumVazio = true; return; }
+          updates[l.skuKey] = {
+            sku: l.sku,
+            novoCmp: l.novoCmp,
+            custoAtual: parseFloat(String(l.custoAtual).replace(",",".")) || 0,
+            atualizadoEm: Date.now(),
+            nfOrigem: calc.nfUsada || null,
+          };
+        });
+        if (algumVazio) { alert("Preencha o custo atual de todos os produtos antes de salvar."); return; }
+        await set(ref(db, "/custos_medios_filial"), { ...custosSalvos, ...updates });
+        salvarCmpBtn.textContent = "✓ Salvo!";
+        salvarCmpBtn.style.color = "#4ade80";
+        salvarCmpBtn.style.borderColor = "#4ade8066";
+        setTimeout(() => {
+          salvarCmpBtn.textContent = "✓ Salvar CMP";
+          salvarCmpBtn.style.color = "#00dfc3";
+          salvarCmpBtn.style.borderColor = "#00dfc366";
+        }, 2500);
+      });
+      cmpContent.appendChild(salvarCmpBtn);
+
+    } catch(e) {
+      cmpContent.textContent = `Erro: ${e.message}`;
+    }
+    cmpBuscarBtn.textContent = "↻ Calcular CMP";
+    cmpBuscarBtn.disabled = false;
+  });
+
+  container.appendChild(cmpWrap);
 }
 
 async function fetchVendas(days) {
