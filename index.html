@@ -2296,6 +2296,7 @@ function render(){
            }
           }else if(window._diogotab==="estoque"){
             if(diogIsFullAuto){panel.style.maxHeight="none";panel.style.overflowY="auto";}else{panel.style.maxHeight="";panel.style.overflowY="";}
+            panel.id = "estoque-panel-inner";
             renderEstoqueTab(panel, color);
           }else if(window._diogotab==="cancelamentos"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
@@ -2926,12 +2927,12 @@ async function fetchEstoqueAutomatico(forcar) {
     const dVendas = await rVendas.json();
     const vendasPorSku = {};
     (dVendas.allProducts || []).forEach(p => {
-      if (p.sku) vendasPorSku[String(p.sku).trim().toLowerCase()] = p.qty || 0;
+      if (p.sku) vendasPorSku[String(p.sku).trim().toLowerCase().replace(/\s+/g,"")] = p.qty || 0;
     });
 
     const rows = dEstoque.rows.map(r => ({
       ...r,
-      vendas30: vendasPorSku[String(r.sku).trim().toLowerCase()] || 0,
+      vendas30: vendasPorSku[String(r.sku).trim().toLowerCase().replace(/\s+/g,"")] || 0,
     }));
 
     estoqueExcelData = { fileName: "(automático via Mercado Livre Full)", rows, automatico: true };
@@ -2941,7 +2942,14 @@ async function fetchEstoqueAutomatico(forcar) {
   }
   estoqueAutoLoading = false;
   estoqueAutoCheckDone = true;
-  render();
+  // Re-renderiza só o painel de estoque sem duplicar
+  const estoquePanel = document.getElementById("estoque-panel-inner");
+  if (estoquePanel) {
+    estoquePanel.innerHTML = "";
+    renderEstoqueTab(estoquePanel, themeColor("Diogo"));
+  } else {
+    render();
+  }
 }
 
 async function checkPriceChangesAuto() {
