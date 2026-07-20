@@ -2048,6 +2048,22 @@ function render(){
               backBtn.style.cssText="background:none;border:1px solid var(--border2);color:var(--text2);border-radius:4px;padding:5px 12px;font-size:11px;cursor:pointer;font-family:inherit;margin-bottom:10px;";
               backBtn.addEventListener("click",()=>{calcIpiFullscreen=null;render();});
               panel.appendChild(backBtn);
+
+              // Botão recarregar NF do Bling
+              const recarregarBtn = document.createElement("button");
+              recarregarBtn.textContent = "↻ Recarregar NF do Bling";
+              recarregarBtn.style.cssText = "background:none;border:1px solid #fbbf2466;color:#fbbf24;border-radius:4px;padding:5px 12px;font-size:11px;cursor:pointer;font-family:inherit;margin-bottom:10px;margin-left:8px;";
+              recarregarBtn.addEventListener("click", async () => {
+                const chave = extrairNumeroNFDaTarefa(taskFS) || calcIpiState[taskFS.id]?.nfUsada;
+                if (!chave) { alert("Número da NF não identificado."); return; }
+                recarregarBtn.textContent = "↻ Recarregando...";
+                recarregarBtn.disabled = true;
+                // Apaga os itens salvos no Firebase pra forçar novo fetch
+                await set(ref(db, `/nfes_processadas/${chave}/itens`), null);
+                calcIpiState[taskFS.id] = null;
+                await initCalcIpi(taskFS);
+              });
+              panel.appendChild(recarregarBtn);
               const nfLabel=document.createElement("div");
               nfLabel.style.cssText="font-size:11px;color:var(--text3);margin-bottom:14px;";
               nfLabel.textContent=taskFS.text;
