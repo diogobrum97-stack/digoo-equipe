@@ -839,7 +839,11 @@ function renderCalcIpiPanel(container, task){
 
   const totalRow = document.createElement("div");
   totalRow.style.cssText = "margin-top:12px;padding-top:10px;border-top:1px solid var(--sep);display:flex;justify-content:space-between;align-items:center;";
-  totalRow.innerHTML = `<span style="font-size:9px;color:var(--text3);letter-spacing:1px;">TOTAL IPI E NOTA</span><span id="calcIpiTotal-${task.id}" style="font-size:18px;font-weight:600;color:#00dfc3;">R$ 0,00</span>`;
+  const totalSpan = document.createElement("span");
+  totalSpan.style.cssText = "font-size:18px;font-weight:600;color:#00dfc3;";
+  totalSpan.textContent = "R$ 0,00";
+  totalRow.innerHTML = `<span style="font-size:9px;color:var(--text3);letter-spacing:1px;">TOTAL IPI E NOTA</span>`;
+  totalRow.appendChild(totalSpan);
   wrap.appendChild(totalRow);
 
   function montarLinhas(){
@@ -1013,7 +1017,7 @@ function renderCalcIpiPanel(container, task){
     }else{
       avisoBox.style.display="none";
     }
-    const totalEl = document.getElementById(`calcIpiTotal-${task.id}`);
+    const totalEl = totalSpan;
     if(totalEl) totalEl.textContent = `R$ ${total.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
   }
 
