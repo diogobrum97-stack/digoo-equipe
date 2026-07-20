@@ -3400,7 +3400,7 @@ function renderSaudeChart(panel, enriched) {
   // Legenda
   const leg = document.createElement("div");
   leg.style.cssText = "display:flex;gap:14px;margin-bottom:14px;font-size:10px;flex-wrap:wrap;";
-  [{c:"#00dfc3",l:"<15d — subir"},{c:"#019391",l:"15–90d — acompanhar"},{c:"#00606c",l:">90d — baixar"}].forEach(({c,l}) => {
+  [{c:"#ff3d3d",l:"<15d — subir"},{c:"#ffcc00",l:"15–90d — acompanhar"},{c:"#00ffb8",l:">90d — baixar"}].forEach(({c,l}) => {
     const s = document.createElement("span");
     s.style.cssText = "display:flex;align-items:center;gap:4px;color:var(--text3);";
     s.innerHTML = '<span style="width:8px;height:8px;border-radius:2px;background:' + c + ';display:inline-block;flex-shrink:0;"></span>' + l;
@@ -3422,7 +3422,7 @@ function renderSaudeChart(panel, enriched) {
     return {...r, vendas30, aptas, dias};
   }).sort((a,b) => b.dias - a.dias);
 
-  const cor = d => d.dias <= 15 ? "#00dfc3" : d.dias <= 90 ? "#019391" : "#00606c";
+  const cor = d => d.dias <= 15 ? "#ff3d3d" : d.dias <= 90 ? "#ffcc00" : "#00ffb8";
   const categoriaKey = d => d.dias <= 15 ? "verde" : d.dias <= 90 ? "amarelo" : "vermelho";
   const badgeText = d => d.dias <= 15 ? "↑ SUBIR" : d.dias <= 90 ? "~ ACOMPANHAR" : "↓ BAIXAR";
   const diasLabel = d => d.dias >= 999 ? "sem vendas" : d.dias + "d";
@@ -3448,12 +3448,12 @@ function renderSaudeChart(panel, enriched) {
     }
 
     const chip = document.createElement("div");
-    chip.style.cssText = "position:relative;display:flex;flex-direction:column;gap:3px;padding:8px 10px;border-radius:6px;border:1px solid " + c + "44;background:" + c + "10;cursor:pointer;min-width:110px;transition:all 0.15s;";
+    chip.style.cssText = "position:relative;display:flex;flex-direction:column;gap:3px;padding:8px 10px;border-radius:6px;border:1px solid " + c + "55;border-top:2px solid " + c + ";background:linear-gradient(135deg," + c + "33 0%,#161616 65%);cursor:pointer;min-width:110px;transition:all 0.15s;";
     chip.innerHTML =
       (mostrarPonto ? '<div style="position:absolute;top:6px;right:6px;width:6px;height:6px;border-radius:50%;background:' + c + ';box-shadow:0 0 4px ' + c + ';"></div>' : '') +
       '<div style="font-size:9px;color:' + c + ';font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px;">' + d.sku + '</div>' +
       '<div style="font-size:12px;font-weight:600;color:' + c + ';">' + diasLabel(d) + '</div>' +
-      '<div style="font-size:9px;color:var(--text3);">R$' + Math.round(d.valor / 1000) + 'k · ' + d.vendas30 + '/mês</div>';
+      '<div style="font-size:9px;color:#aaa;">R$' + Math.round(d.valor / 1000) + 'k · ' + d.vendas30 + '/mês</div>';
 
     chip.addEventListener("click", () => {
       if (mostrarPonto) update(ref(db, `/categoria_saude/${skuKey}`), { vista: true });
