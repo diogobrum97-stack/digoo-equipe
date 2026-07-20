@@ -785,7 +785,7 @@ function renderCalcIpiPanel(container, task){
     campo.appendChild(inpNumero);
     const buscarBtn = document.createElement("button");
     buscarBtn.textContent = "Buscar";
-    buscarBtn.style.cssText = "background:none;border:1px solid #18E0A466;color:#18E0A4;border-radius:4px;padding:7px 14px;font-size:11px;cursor:pointer;font-family:inherit;white-space:nowrap;";
+    buscarBtn.style.cssText = "background:none;border:1px solid #00dfc366;color:#00dfc3;border-radius:4px;padding:7px 14px;font-size:11px;cursor:pointer;font-family:inherit;white-space:nowrap;";
     buscarBtn.addEventListener("click", ()=>{ if(inpNumero.value.trim()) initCalcIpi(task, inpNumero.value.trim()); });
     manualBox.appendChild(campo); manualBox.appendChild(buscarBtn);
     wrap.appendChild(manualBox);
@@ -833,13 +833,13 @@ function renderCalcIpiPanel(container, task){
 
   const addBtn = document.createElement("button");
   addBtn.textContent = "+ adicionar produto";
-  addBtn.style.cssText = "margin-top:8px;width:100%;background:none;border:1px dashed #18E0A466;color:#18E0A4;border-radius:5px;padding:6px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:0.5px;";
+  addBtn.style.cssText = "margin-top:8px;width:100%;background:none;border:1px dashed #00dfc366;color:#00dfc3;border-radius:5px;padding:6px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:0.5px;";
   addBtn.addEventListener("click", ()=>{ calc.produtos.push({sku:"",produto:"",qtd:0,valorNf:0,ncm:"",precoVenda:null,aliquotaValor:null,automatico:false}); render(); });
   wrap.appendChild(addBtn);
 
   const totalRow = document.createElement("div");
   totalRow.style.cssText = "margin-top:12px;padding-top:10px;border-top:1px solid var(--sep);display:flex;justify-content:space-between;align-items:center;";
-  totalRow.innerHTML = `<span style="font-size:9px;color:var(--text3);letter-spacing:1px;">TOTAL IPI E NOTA</span><span id="calcIpiTotal-${task.id}" style="font-size:18px;font-weight:600;color:#18E0A4;">R$ 0,00</span>`;
+  totalRow.innerHTML = `<span style="font-size:9px;color:var(--text3);letter-spacing:1px;">TOTAL IPI E NOTA</span><span id="calcIpiTotal-${task.id}" style="font-size:18px;font-weight:600;color:#00dfc3;">R$ 0,00</span>`;
   wrap.appendChild(totalRow);
 
   function montarLinhas(){
@@ -855,11 +855,11 @@ function renderCalcIpiPanel(container, task){
         : `<span class="aliqBadge" style="color:var(--text3);font-size:9px;">${(val*100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}%</span>`;
       const seta = calc.linhaExpandida===i ? "▾" : "▸";
       if(p.automatico){
-        tdSku.innerHTML = `<div style="color:#18E0A4;font-weight:600;">${p.sku} <span style="color:var(--border2);">·</span> ${aliqTextoHtml(p.aliquotaValor)} <span style="color:var(--text3);font-size:9px;">${seta}</span></div><div style="color:var(--text3);font-size:9.5px;margin-top:2px;">${p.produto||""}</div>`;
+        tdSku.innerHTML = `<div style="color:#00dfc3;font-weight:600;">${p.sku} <span style="color:var(--border2);">·</span> ${aliqTextoHtml(p.aliquotaValor)} <span style="color:var(--text3);font-size:9px;">${seta}</span></div><div style="color:var(--text3);font-size:9.5px;margin-top:2px;">${p.produto||""}</div>`;
       }else{
-        tdSku.innerHTML = `<div style="color:#18E0A4;font-weight:600;">· ${aliqTextoHtml(p.aliquotaValor)} <span style="color:var(--text3);font-size:9px;">${seta}</span></div>`;
+        tdSku.innerHTML = `<div style="color:#00dfc3;font-weight:600;">· ${aliqTextoHtml(p.aliquotaValor)} <span style="color:var(--text3);font-size:9px;">${seta}</span></div>`;
         const inpSku=document.createElement("input"); inpSku.value=p.sku; inpSku.placeholder="SKU";
-        inpSku.style.cssText="width:100px;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:3px 5px;color:#18E0A4;font-family:inherit;font-size:11px;margin-top:2px;";
+        inpSku.style.cssText="width:100px;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:3px 5px;color:#00dfc3;font-family:inherit;font-size:11px;margin-top:2px;";
         inpSku.addEventListener("click",e=>e.stopPropagation());
         inpSku.addEventListener("input",()=>{p.sku=inpSku.value;});
         tdSku.insertBefore(inpSku, tdSku.firstChild.nextSibling);
@@ -893,7 +893,7 @@ function renderCalcIpiPanel(container, task){
       tdPreco.appendChild(inpPreco);
       tr.appendChild(tdPreco);
 
-      const tdIpi = document.createElement("td"); tdIpi.className="celulaIpi"; tdIpi.style.cssText="padding:6px 3px;text-align:right;color:#18E0A4;";
+      const tdIpi = document.createElement("td"); tdIpi.className="celulaIpi"; tdIpi.style.cssText="padding:6px 3px;text-align:right;color:#00dfc3;";
       tr.appendChild(tdIpi);
 
       const tdCmv = document.createElement("td"); tdCmv.className="celulaCmv"; tdCmv.style.cssText="padding:6px 3px;text-align:right;color:#7F77DD;";
@@ -1000,7 +1000,7 @@ function renderCalcIpiPanel(container, task){
         </div>
         <div style="padding:7px;text-align:center;border-top:1px solid var(--sep);">
           <div style="font-size:9px;color:var(--text3);">VALOR</div>
-          <div style="font-size:12px;color:#18E0A4;">R$ ${d.valor.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+          <div style="font-size:12px;color:#00dfc3;">R$ ${d.valor.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
         </div>`;
       cardsWrap.appendChild(card);
     });
@@ -2177,14 +2177,14 @@ function render(){
               }
               const chk=document.createElement("button");chk.className="task-check"+(task.done?" done":task.progress?" progress":"");
               const todosPassosFeitos = Array.isArray(task.subtarefas) && task.subtarefas.length>0 && task.subtarefas.every(s=>s.feito);
-              chk.style.borderColor= todosPassosFeitos && !task.done ? "#18E0A4" : pc;
+              chk.style.borderColor= todosPassosFeitos && !task.done ? "#00dfc3" : pc;
               if(task.done) chk.style.background=pc;
               else if(task.progress) chk.style.background=`linear-gradient(to top, ${pc} 50%, transparent 50%)`;
               else chk.style.background="none";
               chk.addEventListener("click",()=>toggleTask(task.id,task.done,task.progress));
               const tw=document.createElement("div");tw.style.flex="1";const tt=document.createElement("div");tt.className="task-text"+(task.done?" done":"");tt.textContent=task.text;tw.appendChild(tt);
               const pb=document.createElement("div");pb.className="task-prio";pb.style.justifyContent="space-between";const puls=task.prio==="superurgente"?"animation:siren 0.6s infinite;":"";
-              const progressoTxt = Array.isArray(task.subtarefas) && task.subtarefas.length>0 ? `<span style="font-size:9px;color:${todosPassosFeitos?"#18E0A4":"var(--text3)"};letter-spacing:0.5px;">${task.subtarefas.filter(s=>s.feito).length}/${task.subtarefas.length} passos</span>` : "";
+              const progressoTxt = Array.isArray(task.subtarefas) && task.subtarefas.length>0 ? `<span style="font-size:9px;color:${todosPassosFeitos?"#00dfc3":"var(--text3)"};letter-spacing:0.5px;">${task.subtarefas.filter(s=>s.feito).length}/${task.subtarefas.length} passos</span>` : "";
               pb.innerHTML=`<span style="display:flex;align-items:center;gap:4px;"><span class="dot" style="background:${pc};${puls}"></span><span style="color:${pc};font-weight:${task.prio==="superurgente"?"700":"400"};${puls}">${PRIO[task.prio].label}</span></span>${overdueBadgeHtml(task)||progressoTxt}`;tw.appendChild(pb);
               if(Array.isArray(task.subtarefas) && task.subtarefas.length>0){
                 const checklist=document.createElement("div");
@@ -2193,7 +2193,7 @@ function render(){
                   const subRow=document.createElement("div");
                   subRow.style.cssText="display:flex;align-items:center;gap:8px;padding:4px 0;";
                   const subChk=document.createElement("button");
-                  subChk.style.cssText=`width:16px;height:16px;border-radius:4px;border:1.5px solid ${sub.feito?"#18E0A4":"var(--border2)"};background:${sub.feito?"#18E0A4":"none"};flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#000;font-size:10px;font-weight:700;`;
+                  subChk.style.cssText=`width:16px;height:16px;border-radius:4px;border:1.5px solid ${sub.feito?"#00dfc3":"var(--border2)"};background:${sub.feito?"#00dfc3":"none"};flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#000;font-size:10px;font-weight:700;`;
                   subChk.textContent=sub.feito?"✓":"";
                   subChk.addEventListener("click",()=>{update(ref(db,`/tasks/${task.id}/subtarefas/${idx}`),{feito:!sub.feito});});
                   const subLabel=document.createElement("span");
@@ -2633,7 +2633,7 @@ function renderCancelamentos(panel) {
   const statusDefs = {
     nf_pendente:        { cor: "#f87171", texto: "Cancelar NF",          icone: "⚠" },
     devolucao_pendente: { cor: "#fbbf24", texto: "Devolução — processar", icone: "↩" },
-    nf_cancelada:       { cor: "#18E0A4", texto: "NF cancelada",          icone: "✓" },
+    nf_cancelada:       { cor: "#00dfc3", texto: "NF cancelada",          icone: "✓" },
   };
 
   // Ordena: cancelar NF direto primeiro, depois devolução pendente, depois já ok
@@ -2654,7 +2654,7 @@ function renderCancelamentos(panel) {
   function badgeSituacao(situacao) {
     const s = String(situacao||"").toLowerCase();
     if(/cancelad/.test(s)) return { bg:"#33333380", cor:"#888", borda:"#44444480" };
-    if(/autoriz/.test(s))  return { bg:"#18E0A418", cor:"#18E0A4", borda:"#18E0A433" };
+    if(/autoriz/.test(s))  return { bg:"#00dfc318", cor:"#00dfc3", borda:"#00dfc333" };
     return { bg:"#fbbf2418", cor:"#fbbf24", borda:"#fbbf2433" };
   }
 
@@ -2667,7 +2667,7 @@ function renderCancelamentos(panel) {
       e.stopPropagation();
       navigator.clipboard.writeText(texto).catch(()=>{});
       const orig = span.style.color;
-      span.style.color = "#18E0A4";
+      span.style.color = "#00dfc3";
       setTimeout(()=>span.style.color=orig, 800);
     });
     return span;
@@ -2777,7 +2777,7 @@ function renderCancelamentosBruno(panel) {
 
   if(pendentes.length === 0) {
     const ok = document.createElement("div");
-    ok.style.cssText = "text-align:center;padding:30px 0;color:#18E0A4;font-size:13px;";
+    ok.style.cssText = "text-align:center;padding:30px 0;color:#00dfc3;font-size:13px;";
     ok.textContent = "✓ Tudo ok, nenhuma NF pra cancelar";
     panel.appendChild(ok); return;
   }
@@ -2808,7 +2808,7 @@ function renderCancelamentosBruno(panel) {
     copyBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:3px 10px;font-size:10px;cursor:pointer;font-family:inherit;flex-shrink:0;";
     copyBtn.addEventListener("click", () => {
       navigator.clipboard.writeText(txt).catch(()=>{});
-      copyBtn.textContent = "✓"; copyBtn.style.color="#18E0A4";
+      copyBtn.textContent = "✓"; copyBtn.style.color="#00dfc3";
       setTimeout(()=>{ copyBtn.textContent="Copiar"; copyBtn.style.color="var(--text3)"; }, 1200);
     });
     row.appendChild(label); row.appendChild(copyBtn);
@@ -2824,7 +2824,7 @@ function renderCancelamentosBruno(panel) {
     span.addEventListener("click", e => {
       e.stopPropagation();
       navigator.clipboard.writeText(texto).catch(()=>{});
-      const orig = span.style.color; span.style.color="#18E0A4";
+      const orig = span.style.color; span.style.color="#00dfc3";
       setTimeout(()=>span.style.color=orig, 800);
     });
     return span;
@@ -2875,7 +2875,7 @@ function renderCancelamentosBruno(panel) {
     pedidoNum.title = "Clique pra copiar";
     pedidoNum.addEventListener("click", () => {
       navigator.clipboard.writeText(String(it.numeroPedido)).catch(()=>{});
-      const orig = pedidoNum.style.color; pedidoNum.style.color="#18E0A4";
+      const orig = pedidoNum.style.color; pedidoNum.style.color="#00dfc3";
       setTimeout(()=>pedidoNum.style.color=orig, 800);
     });
     pedidoWrap.appendChild(pedidoLabel); pedidoWrap.appendChild(pedidoNum);
@@ -2893,11 +2893,11 @@ function renderCancelamentosBruno(panel) {
       nfNum.title = "Clique pra copiar";
       nfNum.addEventListener("click", () => {
         navigator.clipboard.writeText(String(it.nf.nfNumero)).catch(()=>{});
-        const orig = nfNum.style.color; nfNum.style.color="#18E0A4";
+        const orig = nfNum.style.color; nfNum.style.color="#00dfc3";
         setTimeout(()=>nfNum.style.color=orig, 800);
       });
       const nfBadge = document.createElement("span");
-      nfBadge.style.cssText = "background:#18E0A418;color:#18E0A4;border:1px solid #18E0A433;border-radius:3px;padding:1px 7px;font-size:9px;";
+      nfBadge.style.cssText = "background:#00dfc318;color:#00dfc3;border:1px solid #00dfc333;border-radius:3px;padding:1px 7px;font-size:9px;";
       nfBadge.textContent = it.nf.nfSituacao;
       nfWrap.appendChild(nfLabel); nfWrap.appendChild(nfNum); nfWrap.appendChild(nfBadge);
       bottomRow.appendChild(nfWrap);
@@ -3092,7 +3092,7 @@ function renderFilialSP(panel, color) {
     blingStatus.appendChild(authBtn);
   } else if (estoqueBlingData) {
     const count = Object.keys(estoqueBlingData).length;
-    blingStatus.innerHTML = `<span style="color:#18E0A4">●</span><span style="color:var(--text3)">${count} SKUs Bling</span>`;
+    blingStatus.innerHTML = `<span style="color:#00dfc3">●</span><span style="color:var(--text3)">${count} SKUs Bling</span>`;
     const refBtn = document.createElement("button");
     refBtn.textContent = "↻";
     refBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:3px;padding:2px 7px;font-size:10px;cursor:pointer;";
@@ -3123,7 +3123,7 @@ function renderFilialSP(panel, color) {
   mlFilialWrap.style.cssText = "display:flex;align-items:center;gap:6px;font-size:9px;";
   if(state.ml_token_filial?.access_token){
     const nick = state.ml_token_filial.nickname ? ` · ${state.ml_token_filial.nickname}` : "";
-    mlFilialWrap.innerHTML = `<span style="color:#18E0A4">●</span><span style="color:var(--text3)">ML Filial${nick}</span>`;
+    mlFilialWrap.innerHTML = `<span style="color:#00dfc3">●</span><span style="color:var(--text3)">ML Filial${nick}</span>`;
     const reconBtn = document.createElement("button");
     reconBtn.textContent = "Reconectar";
     reconBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer;letter-spacing:1px;margin-left:4px;";
@@ -3176,7 +3176,7 @@ function renderFilialSP(panel, color) {
   });
 
   [
-    { label:"VALOR EM ESTOQUE", value: estoqueBlingData ? `R$ ${totalValor.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : "—", color:"#18E0A4", sub: skusSemCusto > 0 ? `${skusSemCusto} SKUs sem custo` : "todos com custo" },
+    { label:"VALOR EM ESTOQUE", value: estoqueBlingData ? `R$ ${totalValor.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : "—", color:"#00dfc3", sub: skusSemCusto > 0 ? `${skusSemCusto} SKUs sem custo` : "todos com custo" },
     { label:"UNIDADES APTAS", value: totalAptas.toLocaleString("pt-BR"), color:"#378ADD", sub:`${rows.length} SKUs` },
     { label:"EM TRANSFERÊNCIA", value: totalTransf.toLocaleString("pt-BR"), color:"#fbbf24", sub:"entre centros do Full" },
     { label:"TOTAL NO FULL", value: (totalAptas+totalTransf).toLocaleString("pt-BR"), color:"#7F77DD", sub:"aptas + transferência" },
@@ -3234,7 +3234,7 @@ function renderFilialSP(panel, color) {
         <td style="padding:8px 8px;text-align:center;color:var(--text3);">${r.transf||"—"}</td>
         <td style="padding:8px 8px;text-align:center;color:${r.pendente>0?"#fbbf24":"var(--text3)"};font-weight:${r.pendente>0?"500":"400"};">${r.pendente||"—"}</td>
         <td style="padding:8px 8px;text-align:right;color:${semCusto?"#f87171":"var(--text2)"};">${custoStr}</td>
-        <td style="padding:8px 8px;text-align:right;color:${semCusto?"var(--text3)":r.valor>5000?"#18E0A4":r.valor>1000?"#18E0A4":"var(--text2)"};font-weight:500;">${valorStr}</td>`;
+        <td style="padding:8px 8px;text-align:right;color:${semCusto?"var(--text3)":r.valor>5000?"#00dfc3":r.valor>1000?"#00dfc3":"var(--text2)"};font-weight:500;">${valorStr}</td>`;
       tbody.appendChild(tr);
     });
 
@@ -3289,7 +3289,7 @@ function renderMatrizRS(panel, color) {
   mlMatrizWrap.style.cssText = "display:flex;align-items:center;gap:6px;font-size:9px;";
   if(state.ml_token?.access_token){
     const nick = state.ml_token.nickname ? ` · ${state.ml_token.nickname}` : "";
-    mlMatrizWrap.innerHTML = `<span style="color:#18E0A4">●</span><span style="color:var(--text3)">ML Matriz${nick}</span>`;
+    mlMatrizWrap.innerHTML = `<span style="color:#00dfc3">●</span><span style="color:var(--text3)">ML Matriz${nick}</span>`;
     const reconBtn = document.createElement("button");
     reconBtn.textContent = "Reconectar";
     reconBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer;letter-spacing:1px;margin-left:4px;";
@@ -3322,7 +3322,7 @@ function renderMatrizRS(panel, color) {
   const resumo = document.createElement("div");
   resumo.style.cssText = "display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;";
   [
-    { label:"VALOR EM ESTOQUE", value:`R$ ${totalValor.toLocaleString("pt-BR",{minimumFractionDigits:2})}`, color:"#18E0A4", sub:`${matrizRows.length} SKUs` },
+    { label:"VALOR EM ESTOQUE", value:`R$ ${totalValor.toLocaleString("pt-BR",{minimumFractionDigits:2})}`, color:"#00dfc3", sub:`${matrizRows.length} SKUs` },
     { label:"UNIDADES", value: totalQty.toLocaleString("pt-BR"), color:"#378ADD", sub:"peças" },
     { label:"CUSTO MÉDIO/UN", value:`R$ ${custoMedio.toLocaleString("pt-BR",{minimumFractionDigits:2})}`, color:"#7F77DD", sub:"ponderado" },
   ].forEach(s => {
@@ -3372,7 +3372,7 @@ function renderMatrizRS(panel, color) {
         <td style="padding:8px 8px;color:var(--text2);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;">${r.produto}</td>
         <td style="padding:8px 8px;text-align:center;color:${r.qty>0?"var(--text)":"var(--text3)"};font-weight:${r.qty>0?"500":"400"};">${r.qty||"—"}</td>
         <td style="padding:8px 8px;text-align:right;color:var(--text2);">${r.custo>0?`R$ ${r.custo.toLocaleString("pt-BR",{minimumFractionDigits:2})}`:"—"}</td>
-        <td style="padding:8px 8px;text-align:right;color:${r.valor>5000?"#18E0A4":r.valor>1000?"#18E0A4":"var(--text2)"};font-weight:500;">${r.valor>0?`R$ ${r.valor.toLocaleString("pt-BR",{minimumFractionDigits:2})}`:"—"}</td>`;
+        <td style="padding:8px 8px;text-align:right;color:${r.valor>5000?"#00dfc3":r.valor>1000?"#00dfc3":"var(--text2)"};font-weight:500;">${r.valor>0?`R$ ${r.valor.toLocaleString("pt-BR",{minimumFractionDigits:2})}`:"—"}</td>`;
       tbody.appendChild(tr);
     });
   } else {
@@ -3400,7 +3400,7 @@ function renderSaudeChart(panel, enriched) {
   // Legenda
   const leg = document.createElement("div");
   leg.style.cssText = "display:flex;gap:14px;margin-bottom:14px;font-size:10px;flex-wrap:wrap;";
-  [{c:"#ff3d3d",l:"<15d — subir"},{c:"#ffcc00",l:"15–90d — acompanhar"},{c:"#18E0A4",l:">90d — baixar"}].forEach(({c,l}) => {
+  [{c:"#00ffb8",l:"<15d — subir"},{c:"#ffcc00",l:"15–90d — acompanhar"},{c:"#ff3d3d",l:">90d — baixar"}].forEach(({c,l}) => {
     const s = document.createElement("span");
     s.style.cssText = "display:flex;align-items:center;gap:4px;color:var(--text3);";
     s.innerHTML = '<span style="width:8px;height:8px;border-radius:2px;background:' + c + ';display:inline-block;flex-shrink:0;"></span>' + l;
@@ -3422,7 +3422,7 @@ function renderSaudeChart(panel, enriched) {
     return {...r, vendas30, aptas, dias};
   }).sort((a,b) => b.dias - a.dias);
 
-  const cor = d => d.dias <= 15 ? "#ff3d3d" : d.dias <= 90 ? "#ffcc00" : "#18E0A4";
+  const cor = d => d.dias <= 15 ? "#00ffb8" : d.dias <= 90 ? "#ffcc00" : "#ff3d3d";
   const categoriaKey = d => d.dias <= 15 ? "verde" : d.dias <= 90 ? "amarelo" : "vermelho";
   const badgeText = d => d.dias <= 15 ? "↑ SUBIR" : d.dias <= 90 ? "~ ACOMPANHAR" : "↓ BAIXAR";
   const diasLabel = d => d.dias >= 999 ? "sem vendas" : d.dias + "d";
@@ -3448,7 +3448,7 @@ function renderSaudeChart(panel, enriched) {
     }
 
     const chip = document.createElement("div");
-    chip.style.cssText = "position:relative;display:flex;flex-direction:column;gap:3px;padding:8px 10px;border-radius:6px;border:1px solid " + c + "55;border-top:2px solid " + c + ";background:linear-gradient(135deg," + c + "33 0%,#161616 65%);cursor:pointer;min-width:110px;transition:all 0.15s;";
+    chip.style.cssText = "position:relative;display:flex;flex-direction:column;gap:3px;padding:8px 10px;border-radius:6px;border:1px solid " + c + "28;border-top:2px solid " + c + ";background:linear-gradient(135deg," + c + "18 0%,#161616 65%);cursor:pointer;min-width:110px;transition:all 0.15s;";
     chip.innerHTML =
       (mostrarPonto ? '<div style="position:absolute;top:6px;right:6px;width:6px;height:6px;border-radius:50%;background:' + c + ';box-shadow:0 0 4px ' + c + ';"></div>' : '') +
       '<div style="font-size:9px;color:' + c + ';font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px;">' + d.sku + '</div>' +
@@ -3579,7 +3579,7 @@ function renderSaudeChart(panel, enriched) {
         info.style.cssText = "margin-bottom:10px;";
         if(pc.priceBefore!=null && pc.priceAfter!=null){
           const subiu = Number(pc.priceAfter) > Number(pc.priceBefore);
-          const precoColor = subiu ? "#18E0A4" : "#00606c";
+          const precoColor = subiu ? "#00dfc3" : "#00606c";
           info.innerHTML =
             '<div style="font-size:9px;color:var(--text3);letter-spacing:1px;margin-bottom:6px;">MUDANÇA DE PREÇO · há ' + diasDesde + 'd</div>' +
             '<div style="font-size:15px;">R$ ' + Number(pc.priceBefore).toFixed(2) + ' <span style="color:var(--text3);">→</span> <span style="color:' + precoColor + ';font-weight:600;">R$ ' + Number(pc.priceAfter).toFixed(2) + '</span></div>';
@@ -3835,7 +3835,7 @@ function renderFechamentoMensal(panel, color) {
         return { col, inp };
       }
 
-      const nfCol   = detalheCol("Nº nota", nf.numero, "var(--text-accent, #18E0A4)", true, "80px");
+      const nfCol   = detalheCol("Nº nota", nf.numero, "var(--text-accent, #00dfc3)", true, "80px");
       nfCol.inp.addEventListener("input", () => { nf.numero = nfCol.inp.value; });
       const servCol = detalheCol("Serviço", nf.servico, "var(--text2)");
       servCol.inp.addEventListener("input", () => { nf.servico = servCol.inp.value; });
@@ -3895,7 +3895,7 @@ function renderFechamentoMensal(panel, color) {
   rodape.style.cssText = "display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding-top:12px;border-top:1px solid var(--border);";
 
   const salvarBtn = document.createElement("button");
-  salvarBtn.style.cssText = "padding:10px;font-size:11px;background:#18E0A422;border:1px solid #18E0A466;border-radius:6px;cursor:pointer;color:#18E0A4;font-family:inherit;letter-spacing:0.5px;";
+  salvarBtn.style.cssText = "padding:10px;font-size:11px;background:#00dfc322;border:1px solid #00dfc366;border-radius:6px;cursor:pointer;color:#00dfc3;font-family:inherit;letter-spacing:0.5px;";
   salvarBtn.textContent = "✓ Salvar";
   salvarBtn.addEventListener("click", async () => {
     const ativas = notasState.filter(nf => !nf._removido);
