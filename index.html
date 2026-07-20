@@ -2942,7 +2942,8 @@ async function fetchEstoqueAutomatico(forcar) {
   }
   estoqueAutoLoading = false;
   estoqueAutoCheckDone = true;
-  render();
+  if (window._diogotab === "estoque") render();
+}
 
 async function checkPriceChangesAuto() {
   if (precoAutoCheckDone || precoAutoCheckLoading) return;
