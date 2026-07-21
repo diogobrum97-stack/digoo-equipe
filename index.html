@@ -1026,6 +1026,9 @@ function renderCalcIpiPanel(container, task){
   recalcular();
 
   // ── Seção Custo Médio Ponderado ───────────────────────────────
+  // Estado de expansão do card CMP: 0=pequeno, 1=médio, 2=fullscreen
+  if(window._cmpExpand === undefined) window._cmpExpand = 0;
+
   const cmpWrap = document.createElement("div");
   cmpWrap.style.cssText = "margin-top:16px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;";
 
@@ -1034,16 +1037,67 @@ function renderCalcIpiPanel(container, task){
   const cmpTitle = document.createElement("div");
   cmpTitle.style.cssText = "font-size:10px;color:var(--text3);letter-spacing:1.5px;";
   cmpTitle.textContent = "CUSTO MÉDIO PONDERADO — FILIAL SP";
+
+  const cmpRightBtns = document.createElement("div");
+  cmpRightBtns.style.cssText = "display:flex;gap:6px;align-items:center;";
+
+  // Botão expandir — cicla entre 3 estados
+  const expandIcons = ["⤢", "⤡", "✕"];
+  const expandLabels = ["", "", ""];
+  const expandBtn = document.createElement("button");
+  expandBtn.title = "Expandir";
+  expandBtn.textContent = "⤢";
+  expandBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:3px 8px;font-size:12px;cursor:pointer;font-family:inherit;";
+  expandBtn.addEventListener("click", () => {
+    window._cmpExpand = (window._cmpExpand + 1) % 3;
+    aplicarExpansaoCmp();
+  });
+
   const cmpBuscarBtn = document.createElement("button");
   cmpBuscarBtn.textContent = "↻ Calcular CMP";
   cmpBuscarBtn.style.cssText = "background:none;border:1px solid #00dfc366;color:#00dfc3;border-radius:4px;padding:4px 12px;font-size:10px;cursor:pointer;font-family:inherit;";
-  cmpHeader.appendChild(cmpTitle); cmpHeader.appendChild(cmpBuscarBtn);
+
+  cmpRightBtns.appendChild(expandBtn);
+  cmpRightBtns.appendChild(cmpBuscarBtn);
+  cmpHeader.appendChild(cmpTitle); cmpHeader.appendChild(cmpRightBtns);
   cmpWrap.appendChild(cmpHeader);
 
   const cmpContent = document.createElement("div");
   cmpContent.style.cssText = "font-size:11px;color:var(--text3);";
   cmpContent.textContent = "Clique em ↻ Calcular CMP para buscar o custo atual da Filial e calcular o novo custo médio ponderado.";
   cmpWrap.appendChild(cmpContent);
+
+  // Overlay fullscreen
+  let fsOverlay = null;
+  function aplicarExpansaoCmp() {
+    expandBtn.textContent = ["⤢","⤡","✕"][window._cmpExpand];
+
+    if(window._cmpExpand === 0) {
+      // Pequeno — remove fullscreen se existir
+      if(fsOverlay) { fsOverlay.remove(); fsOverlay = null; }
+      cmpWrap.style.position = "";
+      cmpWrap.style.zIndex = "";
+      cmpWrap.style.top = "";
+      cmpWrap.style.left = "";
+      cmpWrap.style.width = "";
+      cmpWrap.style.height = "";
+      cmpWrap.style.borderRadius = "8px";
+      cmpWrap.style.overflow = "";
+    } else if(window._cmpExpand === 1) {
+      // Médio — sem mudança visual, mas panel pai já é largo
+      if(fsOverlay) { fsOverlay.remove(); fsOverlay = null; }
+      cmpWrap.style.position = "";
+      cmpWrap.style.zIndex = "";
+    } else {
+      // Fullscreen
+      fsOverlay = document.createElement("div");
+      fsOverlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:999;display:flex;align-items:center;justify-content:center;";
+      fsOverlay.addEventListener("click", e => { if(e.target===fsOverlay){ window._cmpExpand=0; aplicarExpansaoCmp(); }});
+      document.body.appendChild(fsOverlay);
+      fsOverlay.appendChild(cmpWrap);
+      cmpWrap.style.cssText = "background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:20px;width:90vw;max-height:85vh;overflow-y:auto;";
+    }
+  }
 
   cmpBuscarBtn.addEventListener("click", async () => {
     const produtosComCmv = calc.produtos.filter(p => p.precoVenda != null && p.qtd > 0);
@@ -1102,12 +1156,12 @@ function renderCalcIpiPanel(container, task){
           const fmt = v => v != null ? `R$ ${Number(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}` : "—";
           const semCusto = l.custoAtual == null || l.custoAtual === "";
 
-          // Células fixas
-          const tdSku = document.createElement("td"); tdSku.style.cssText="padding:8px;"; 
-          tdSku.innerHTML = `<div style="color:#00dfc3;font-weight:600;font-size:11px;">${l.sku||"—"}</div>`;
-          const tdQtd = document.createElement("td"); tdQtd.style.cssText="padding:8px;text-align:right;color:var(--text);font-weight:600;"; tdQtd.textContent=l.qtd;
-          const tdCmv = document.createElement("td"); tdCmv.style.cssText="padding:8px;text-align:right;color:#7F77DD;font-weight:600;"; tdCmv.textContent=fmt(l.cmvUnit);
-          const tdEst = document.createElement("td"); tdEst.style.cssText="padding:8px;text-align:right;color:var(--text);font-weight:600;"; tdEst.textContent=l.estoqueAtual;
+          // Células fixas — visual igual à tabela de IPI acima
+          const tdSku = document.createElement("td"); tdSku.style.cssText="padding:6px 3px;";
+          tdSku.innerHTML = `<div style="color:#00dfc3;font-weight:600;">${l.sku||"—"}</div>`;
+          const tdQtd = document.createElement("td"); tdQtd.style.cssText="padding:6px 3px;text-align:center;color:var(--text2);"; tdQtd.textContent=l.qtd;
+          const tdCmv = document.createElement("td"); tdCmv.style.cssText="padding:6px 3px;text-align:right;color:#7F77DD;"; tdCmv.textContent=fmt(l.cmvUnit);
+          const tdEst = document.createElement("td"); tdEst.style.cssText="padding:6px 3px;text-align:right;color:var(--text2);"; tdEst.textContent=l.estoqueAtual;
 
           // Custo atual — editável
           const tdCusto = document.createElement("td"); tdCusto.style.cssText="padding:6px 8px;text-align:right;";
@@ -1115,7 +1169,7 @@ function renderCalcIpiPanel(container, task){
           iCusto.type = "number";
           iCusto.value = l.custoAtual != null ? String(l.custoAtual).replace(".",",") : "";
           iCusto.placeholder = semCusto ? "⚠ preencher" : "";
-          iCusto.style.cssText = `width:80px;background:none;border:none;border-bottom:1px solid ${semCusto?"#f8717166":"var(--border2)"};color:${semCusto?"#f87171":"#fbbf24"};font-family:inherit;font-size:11px;font-weight:600;text-align:right;outline:none;padding:2px 4px;`;
+          iCusto.style.cssText = `width:80px;background:none;border:none;border-bottom:1px solid ${semCusto?"#f8717166":"var(--border2)"};color:${semCusto?"#f87171":"#fbbf24"};font-family:inherit;font-size:11px;text-align:right;outline:none;padding:2px 4px;`;
           iCusto.addEventListener("input", () => {
             l.custoAtual = iCusto.value;
             iCusto.style.borderBottomColor = "var(--border2)";
@@ -1128,7 +1182,7 @@ function renderCalcIpiPanel(container, task){
 
           // Novo CMP
           const tdNovoCmp = document.createElement("td");
-          tdNovoCmp.style.cssText = `padding:8px;text-align:right;font-weight:600;color:${l.novoCmp?"#4ade80":"var(--text3)"};font-size:12px;`;
+          tdNovoCmp.style.cssText = `padding:6px 3px;text-align:right;font-weight:600;color:${l.novoCmp?"#4ade80":"var(--text3)"};`;
           tdNovoCmp.textContent = fmt(l.novoCmp);
 
           tr2.appendChild(tdSku); tr2.appendChild(tdQtd); tr2.appendChild(tdCmv);
