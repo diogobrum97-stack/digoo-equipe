@@ -1159,7 +1159,8 @@ function renderCalcIpiPanel(container, task){
           };
         });
         if (algumVazio) { alert("Preencha o custo atual de todos os produtos antes de salvar."); return; }
-        await set(ref(db, "/custos_medios_filial"), { ...custosSalvos, ...updates });
+        const custosMerged = { ...custosSalvos, ...updates };
+        await set(ref(db, "/custos_medios_filial"), custosMerged);
         salvarCmpBtn.textContent = "✓ Salvo!";
         salvarCmpBtn.style.color = "#4ade80";
         salvarCmpBtn.style.borderColor = "#4ade8066";
@@ -1168,8 +1169,22 @@ function renderCalcIpiPanel(container, task){
           salvarCmpBtn.style.color = "#00dfc3";
           salvarCmpBtn.style.borderColor = "#00dfc366";
         }, 2500);
+
+        // Gera CSV de atributos atualizado automaticamente
+        gerarCSVAtributos(custosMerged);
+      });
+
+      // Botão gerar CSV separado
+      const csvAtribBtn = document.createElement("button");
+      csvAtribBtn.textContent = "↓ Gerar CSV de Atributos";
+      csvAtribBtn.style.cssText = "margin-top:0;margin-left:8px;background:none;border:1px solid #fbbf2466;color:#fbbf24;border-radius:4px;padding:6px 16px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:0.5px;";
+      csvAtribBtn.addEventListener("click", async () => {
+        const snap = await get(ref(db, "/custos_medios_filial"));
+        const custos = snap.val() || {};
+        gerarCSVAtributos(custos);
       });
       cmpContent.appendChild(salvarCmpBtn);
+      cmpContent.appendChild(csvAtribBtn);
 
     } catch(e) {
       cmpContent.textContent = `Erro: ${e.message}`;
@@ -4204,7 +4219,6 @@ async function processarPlanilhaFechamento(file, fbKey, nomeMes, color) {
 
 // ── CONFIGURAÇÕES ─────────────────────────────────────────────────────────────
 function renderConfig(panel, color) {
-  panel.innerHTML = "";
 
   // ── Seção: Planilha de Atributos ──────────────────────────────
   const secAtrib = criarSecaoConfig("Planilha de Atributos (Custos ML)", color);
@@ -4385,6 +4399,80 @@ async function processarPlanilhaKits(file, statusEl, color) {
     if(p && window._diogotab === "config") { p.innerHTML=""; renderConfig(p, color); }
   } catch(e) {
     statusEl.innerHTML = `<span style="color:#f87171;">Erro: ${e.message}</span>`;
+  }
+}
+
+// ── Gera CSV de atributos atualizado com CMPs calculados ─────────────────────
+async function gerarCSVAtributos(custosMedios) {
+  try {
+    // Pega composições de kits e atributos base do state
+    const composicoes = state.config_kits?.composicoes || {};
+    const atribBase   = state.config_atributos?.atributos || {};
+
+    if (!Object.keys(atribBase).length) {
+      alert("Importe a planilha de atributos na aba Config primeiro.");
+      return;
+    }
+
+    // Mapa de CMP por SKU (normalizado lowercase)
+    const cmpPorSku = {};
+    Object.values(custosMedios).forEach(v => {
+      if(v.sku && v.novoCmp) cmpPorSku[v.sku.toLowerCase()] = v.novoCmp;
+    });
+
+    // Calcula custo dos kits a partir dos componentes
+    function calcularCustoKit(kitSku) {
+      const comps = composicoes[kitSku];
+      if (!comps) return null;
+      let total = 0;
+      for (const c of comps) {
+        const cmp = cmpPorSku[c.sku.toLowerCase()];
+        if (cmp == null) return null; // componente sem CMP conhecido
+        total += c.qtd * cmp;
+      }
+      return total;
+    }
+
+    // Monta CSV — atualiza SKUs com CMP calculado
+    const linhas = ["CUSTO;IMPOSTO;SKU"];
+    const skusProcessados = new Set();
+
+    Object.entries(atribBase).forEach(([sku, dados]) => {
+      const skuLower = sku.toLowerCase();
+      skusProcessados.add(sku);
+
+      // Verifica se é unitário com CMP
+      let novoCusto = cmpPorSku[skuLower] ?? null;
+
+      // Verifica se é kit
+      if (novoCusto == null) {
+        novoCusto = calcularCustoKit(sku);
+      }
+
+      const custo = novoCusto != null
+        ? novoCusto.toFixed(2).replace(".", ",")
+        : String(dados.custo || "0").replace(".", ",");
+      const imposto = String(dados.imposto || "0").replace(".", ",");
+      linhas.push(`${custo};${imposto};${sku}`);
+    });
+
+    // Adiciona SKUs com CMP que não estavam na planilha base
+    Object.values(custosMedios).forEach(v => {
+      if(v.sku && !skusProcessados.has(v.sku) && !skusProcessados.has(v.sku.toLowerCase())) {
+        const custo = v.novoCmp.toFixed(2).replace(".", ",");
+        linhas.push(`${custo};0,00;${v.sku}`);
+      }
+    });
+
+    const csv = "\uFEFF" + linhas.join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href = url; a.download = `atributos_custos_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch(e) {
+    alert("Erro ao gerar CSV: " + e.message);
   }
 }
 
