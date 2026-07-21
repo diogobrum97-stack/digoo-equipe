@@ -812,6 +812,9 @@ function renderCalcIpiPanel(container, task){
 
   const table = document.createElement("table");
   table.style.cssText = "width:100%;border-collapse:collapse;font-size:10.5px;";
+  // Wrapper com scroll pra tabela não empurrar CMP pra fora
+  const tableScrollWrap = document.createElement("div");
+  tableScrollWrap.style.cssText = "max-height:55vh;overflow-y:auto;margin-bottom:0;";
   table.innerHTML = `<thead><tr style="border-bottom:1px solid var(--sep);">
     <th style="text-align:left;padding:5px 3px;color:var(--text3);font-weight:400;">SKU / PRODUTO</th>
     <th style="text-align:center;padding:5px 3px;color:var(--text3);font-weight:400;">QTD</th>
@@ -823,7 +826,8 @@ function renderCalcIpiPanel(container, task){
   </tr></thead><tbody></tbody><tfoot></tfoot>`;
   const tbody = table.querySelector("tbody");
   const tfoot = table.querySelector("tfoot");
-  wrap.appendChild(table);
+  tableScrollWrap.appendChild(table);
+  wrap.appendChild(tableScrollWrap);
 
   if(!calc.linhaExpandida) calc.linhaExpandida = null; // índice do produto expandido pra editar NCM/alíquota, ou null
 
@@ -2177,10 +2181,7 @@ function render(){
     const card=document.createElement("div");card.className="card"+(hasPending||isFlashing?" flashing":"");
     card.style.setProperty("--c",color);
     card.style.borderColor=isOpen?color+"88":(hasPending||isFlashing)?color:"var(--border)";
-    if(diogIsFullAuto && member.name==="Diogo") {
-    card.classList.add("card-expanded");
-    card.style.gridColumn="1 / -1";
-    }
+    if(diogIsFullAuto && member.name==="Diogo") card.style.gridColumn="1 / -1";
     if(diogoCardFullscreen && member.name==="Diogo") {
       card.classList.add("card-fullscreen");
     }
@@ -2312,16 +2313,16 @@ function render(){
                 window._nfExpand = (window._nfExpand % 3) + 1;
                 nfExpandBtn.textContent = nfExpandIcons[window._nfExpand - 1];
                 if(window._nfExpand === 1) {
-                  panel.style.maxHeight = "75vh"; panel.style.overflowY = "auto";
+                  panel.style.maxHeight = "none"; panel.style.overflow = "visible";
                 } else if(window._nfExpand === 2) {
-                  panel.style.maxHeight = "none"; panel.style.overflowY = "auto";
+                  panel.style.maxHeight = "none"; panel.style.overflow = "visible";
                 } else {
                   panel.style.maxHeight = "calc(100vh - 120px)"; panel.style.overflowY = "auto";
                 }
               });
               // Aplica estado atual
-              if(window._nfExpand === 1) { panel.style.maxHeight = "75vh"; panel.style.overflowY = "auto"; }
-              else if(window._nfExpand === 2) { panel.style.maxHeight = "none"; panel.style.overflowY = "auto"; }
+              if(window._nfExpand === 1) { panel.style.maxHeight = "none"; panel.style.overflow = "visible"; }
+              else if(window._nfExpand === 2) { panel.style.maxHeight = "none"; panel.style.overflow = "visible"; }
               else { panel.style.maxHeight = "calc(100vh - 120px)"; panel.style.overflowY = "auto"; }
 
               topBar.appendChild(backBtn);
