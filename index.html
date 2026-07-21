@@ -823,11 +823,17 @@ function renderCalcIpiPanel(container, task){
     <th style="text-align:right;padding:5px 3px;color:var(--text3);font-weight:400;">VALOR DO IPI</th>
     <th style="text-align:right;padding:5px 3px;color:var(--text3);font-weight:400;">CMV C/ IPI+FRETE</th>
     <th style="width:16px;"></th>
-  </tr></thead><tbody></tbody><tfoot></tfoot>`;
+  </tr></thead><tbody></tbody>`;
   const tbody = table.querySelector("tbody");
-  const tfoot = table.querySelector("tfoot");
   tableScrollWrap.appendChild(table);
   wrap.appendChild(tableScrollWrap);
+
+  // tfoot fora do scroll — sempre visível
+  const tfootTable = document.createElement("table");
+  tfootTable.style.cssText = "width:100%;border-collapse:collapse;font-size:10.5px;";
+  tfootTable.innerHTML = `<tfoot></tfoot>`;
+  const tfoot = tfootTable.querySelector("tfoot");
+  wrap.appendChild(tfootTable);
 
   if(!calc.linhaExpandida) calc.linhaExpandida = null; // índice do produto expandido pra editar NCM/alíquota, ou null
 
