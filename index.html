@@ -255,7 +255,7 @@ function setSyncing(v){syncDot.style.opacity=v?"0.4":"1";}
 
 onValue(ref(db,"/"),snap=>{
   const d=snap.val()||{};
-  d.tasks=d.tasks||{};d.messages=d.messages||{};d.flashes=d.flashes||{};d.notices=d.notices||{};d.ml_token=d.ml_token||null;d.ml_cache=d.ml_cache||null;d.price_changes=d.price_changes||{};d.ml_token_filial=d.ml_token_filial||null;d.last_known_prices=d.last_known_prices||{};d.nfes_processadas=d.nfes_processadas||{};d.categoria_saude=d.categoria_saude||{};d.aliquotas_ipi_extra=d.aliquotas_ipi_extra||{};d.precos_venda_manual=d.precos_venda_manual||{};d.ordem_tarefas=d.ordem_tarefas||[];d.google_token=d.google_token||null;d.fechamentos=d.fechamentos||{};
+  d.tasks=d.tasks||{};d.messages=d.messages||{};d.flashes=d.flashes||{};d.notices=d.notices||{};d.ml_token=d.ml_token||null;d.ml_cache=d.ml_cache||null;d.price_changes=d.price_changes||{};d.ml_token_filial=d.ml_token_filial||null;d.last_known_prices=d.last_known_prices||{};d.nfes_processadas=d.nfes_processadas||{};d.categoria_saude=d.categoria_saude||{};d.aliquotas_ipi_extra=d.aliquotas_ipi_extra||{};d.precos_venda_manual=d.precos_venda_manual||{};d.ordem_tarefas=d.ordem_tarefas||[];d.google_token=d.google_token||null;d.fechamentos=d.fechamentos||{};d.config_atributos=d.config_atributos||null;d.config_kits=d.config_kits||null;
   const seenTasks=JSON.parse(localStorage.getItem("digoo_seen_tasks")||"{}");
   let seenChanged=false;
   Object.entries(d.tasks).filter(([,t])=>t!=null).forEach(([id,task])=>{
@@ -2171,7 +2171,7 @@ function render(){
         if(member.locked){
           if(!window._diogotab)window._diogotab="tarefas";
           const tabs=document.createElement("div");tabs.className="tabs";
-          ["tarefas","concluidas","conversas","estoque","cancelamentos","fechamento"].forEach(tab=>{
+          ["tarefas","concluidas","conversas","estoque","cancelamentos","fechamento","config"].forEach(tab=>{
             const btn=document.createElement("button");
             btn.className="tab-btn"+(window._diogotab===tab?" active":"");
             if(tab==="concluidas"){
@@ -2184,6 +2184,8 @@ function render(){
               btn.textContent="Cancelamentos";
             } else if(tab==="fechamento") {
               btn.textContent="Fechamento";
+            } else if(tab==="config") {
+              btn.textContent="Config";
             } else {
               btn.textContent="Conversas";
             }
@@ -2499,6 +2501,9 @@ function render(){
               l.innerHTML = '<span class="spinning">↻</span> Buscando NFS-e no Gmail e Drive...';
               fechPanel.appendChild(l);
             }
+          }else if(window._diogotab==="config"){
+            panel.style.maxHeight="none"; panel.style.overflowY="auto";
+            renderConfig(panel, color);
           }else if(window._diogotab==="concluidas"){
             if(Object.keys(completionAlerts).length>0){
               const sec=document.createElement("div");sec.style.marginBottom="12px";sec.innerHTML=`<div class="section-label" style="color:#00e676;margin-bottom:8px">Novas conclusões</div>`;
@@ -4194,6 +4199,191 @@ async function processarPlanilhaFechamento(file, fbKey, nomeMes, color) {
     if(p){ p.innerHTML=""; renderFechamentoMensal(p, color); }
   } catch(e) {
     alert("Erro ao ler planilha: " + e.message);
+  }
+}
+
+// ── CONFIGURAÇÕES ─────────────────────────────────────────────────────────────
+function renderConfig(panel, color) {
+  panel.innerHTML = "";
+
+  // ── Seção: Planilha de Atributos ──────────────────────────────
+  const secAtrib = criarSecaoConfig("Planilha de Atributos (Custos ML)", color);
+  const descAtrib = document.createElement("div");
+  descAtrib.style.cssText = "font-size:11px;color:var(--text3);margin-bottom:12px;line-height:1.7;";
+  descAtrib.innerHTML = `Importe a planilha <strong style="color:var(--text2);">CUSTO;IMPOSTO;SKU</strong> exportada do seu sistema de vendas.<br>Usada para gerar o CSV atualizado após calcular o CMP.`;
+  secAtrib.body.appendChild(descAtrib);
+
+  const atribStatus = document.createElement("div");
+  atribStatus.style.cssText = "font-size:10px;margin-bottom:10px;";
+  const atribSalvo = state.config_atributos;
+  if(atribSalvo?.total) {
+    atribStatus.innerHTML = `<span style="color:#00dfc3;">✓ ${atribSalvo.total} SKUs carregados</span> <span style="color:var(--text3);">· atualizado em ${new Date(atribSalvo.atualizadoEm).toLocaleDateString("pt-BR")}</span>`;
+  } else {
+    atribStatus.innerHTML = `<span style="color:var(--text3);">Nenhuma planilha importada ainda</span>`;
+  }
+  secAtrib.body.appendChild(atribStatus);
+
+  const atribUpload = criarBotaoUpload("↑ Importar planilha de atributos (.csv)", color, async (file) => {
+    await processarPlanilhaAtributos(file, atribStatus, color);
+  });
+  secAtrib.body.appendChild(atribUpload);
+  panel.appendChild(secAtrib.wrap);
+
+  // ── Seção: Composição de Kits ─────────────────────────────────
+  const secKits = criarSecaoConfig("Composição de Kits (Bling)", color);
+  const descKits = document.createElement("div");
+  descKits.style.cssText = "font-size:11px;color:var(--text3);margin-bottom:12px;line-height:1.7;";
+  descKits.innerHTML = `Importe a planilha <strong style="color:var(--text2);">produtos_estrutura</strong> exportada do Bling.<br>Define a composição dos kits para calcular o custo automaticamente.`;
+  secKits.body.appendChild(descKits);
+
+  const kitsStatus = document.createElement("div");
+  kitsStatus.style.cssText = "font-size:10px;margin-bottom:10px;";
+  const kitsSalvos = state.config_kits;
+  if(kitsSalvos?.total) {
+    kitsStatus.innerHTML = `<span style="color:#00dfc3;">✓ ${kitsSalvos.total} kits carregados</span> <span style="color:var(--text3);">· atualizado em ${new Date(kitsSalvos.atualizadoEm).toLocaleDateString("pt-BR")}</span>`;
+  } else {
+    kitsStatus.innerHTML = `<span style="color:var(--text3);">Nenhuma planilha importada ainda</span>`;
+  }
+  secKits.body.appendChild(kitsStatus);
+
+  const kitsUpload = criarBotaoUpload("↑ Importar estrutura de produtos (.csv)", color, async (file) => {
+    await processarPlanilhaKits(file, kitsStatus, color);
+  });
+  secKits.body.appendChild(kitsUpload);
+
+  // Mostra kits salvos
+  if(kitsSalvos?.composicoes) {
+    const listaKits = document.createElement("div");
+    listaKits.style.cssText = "margin-top:14px;display:flex;flex-direction:column;gap:6px;max-height:400px;overflow-y:auto;";
+    Object.entries(kitsSalvos.composicoes).forEach(([kit, comps]) => {
+      const row = document.createElement("div");
+      row.style.cssText = "background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;";
+      const kitSku = document.createElement("div");
+      kitSku.style.cssText = "font-size:11px;font-weight:600;color:#00dfc3;margin-bottom:4px;";
+      kitSku.textContent = kit;
+      const compsRow = document.createElement("div");
+      compsRow.style.cssText = "display:flex;gap:6px;flex-wrap:wrap;";
+      comps.forEach(c => {
+        const tag = document.createElement("span");
+        tag.style.cssText = "background:var(--bg3);border:1px solid var(--border2);border-radius:4px;padding:2px 8px;font-size:10px;color:var(--text2);";
+        tag.textContent = `${c.sku} × ${c.qtd}`;
+        compsRow.appendChild(tag);
+      });
+      row.appendChild(kitSku); row.appendChild(compsRow);
+      listaKits.appendChild(row);
+    });
+    secKits.body.appendChild(listaKits);
+  }
+
+  panel.appendChild(secKits.wrap);
+}
+
+function criarSecaoConfig(titulo, color) {
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:12px;";
+  const header = document.createElement("div");
+  header.style.cssText = "font-size:9px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;";
+  header.textContent = titulo;
+  const body = document.createElement("div");
+  wrap.appendChild(header); wrap.appendChild(body);
+  return { wrap, body };
+}
+
+function criarBotaoUpload(label, color, onFile) {
+  const lbl = document.createElement("label");
+  lbl.style.cssText = `display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:none;border:1px dashed ${color}66;border-radius:5px;color:${color};font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:0.5px;`;
+  lbl.textContent = label;
+  const inp = document.createElement("input");
+  inp.type = "file"; inp.accept = ".csv"; inp.style.display = "none";
+  inp.addEventListener("change", e => { const f = e.target.files[0]; if(f) onFile(f); });
+  lbl.appendChild(inp);
+  return lbl;
+}
+
+async function processarPlanilhaAtributos(file, statusEl, color) {
+  try {
+    const XLSX = await import("https://cdn.jsdelivr.net/npm/xlsx@0.18.5/+esm");
+    const ab = await file.arrayBuffer();
+    const wb = XLSX.read(ab, { type:"array" });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:"" });
+
+    // Detecta separador — tenta ler como CSV com ponto e vírgula
+    const text = new TextDecoder().decode(ab);
+    const linhas = text.trim().split("\n");
+    const sep = linhas[0].includes(";") ? ";" : ",";
+    const header = linhas[0].split(sep).map(h => h.trim().toUpperCase());
+    const iCusto = header.indexOf("CUSTO");
+    const iImposto = header.indexOf("IMPOSTO");
+    const iSku = header.indexOf("SKU");
+
+    if(iCusto < 0 || iSku < 0) throw new Error("Colunas CUSTO e SKU não encontradas");
+
+    const atributos = {};
+    linhas.slice(1).forEach(linha => {
+      const cols = linha.split(sep);
+      const sku = (cols[iSku]||"").trim();
+      const custo = parseFloat((cols[iCusto]||"0").replace(",",".")) || 0;
+      const imposto = parseFloat((cols[iImposto]||"0").replace(",",".")) || 0;
+      if(sku) atributos[sku] = { custo, imposto };
+    });
+
+    const total = Object.keys(atributos).length;
+    await set(ref(db, "/config_atributos"), { atributos, total, atualizadoEm: Date.now() });
+    statusEl.innerHTML = `<span style="color:#00dfc3;">✓ ${total} SKUs importados com sucesso</span>`;
+  } catch(e) {
+    statusEl.innerHTML = `<span style="color:#f87171;">Erro: ${e.message}</span>`;
+  }
+}
+
+async function processarPlanilhaKits(file, statusEl, color) {
+  try {
+    const text = await file.text();
+    const linhas = text.trim().split("\n");
+    const sep = linhas[0].includes(";") ? ";" : ",";
+    const header = linhas[0].split(sep).map(h => h.trim());
+
+    const iKitSku   = header.findIndex(h => h.toLowerCase().includes("código da composição"));
+    const iCompSku  = header.findIndex(h => h.toLowerCase().includes("código do componente"));
+    const iQtd      = header.findIndex(h => h.toLowerCase().includes("quantidade"));
+
+    if(iKitSku < 0 || iCompSku < 0) throw new Error("Colunas de composição não encontradas");
+
+    // Carrega composições existentes do Firebase para detectar novos
+    const snapExist = await get(ref(db, "/config_kits/composicoes"));
+    const composicoesExistentes = snapExist.val() || {};
+
+    const composicoes = {};
+    linhas.slice(1).forEach(linha => {
+      const cols = linha.split(sep);
+      const kitSku  = (cols[iKitSku]||"").trim();
+      const compSku = (cols[iCompSku]||"").trim();
+      const qtd     = parseFloat((cols[iQtd]||"1").replace(",",".")) || 1;
+      if(!kitSku || !compSku || compSku === "nan") return;
+      if(!composicoes[kitSku]) composicoes[kitSku] = [];
+      composicoes[kitSku].push({ sku: compSku, qtd });
+    });
+
+    // Detecta novos kits
+    const novos = Object.keys(composicoes).filter(k => !composicoesExistentes[k]);
+    const alterados = Object.keys(composicoes).filter(k => {
+      if(!composicoesExistentes[k]) return false;
+      return JSON.stringify(composicoes[k]) !== JSON.stringify(composicoesExistentes[k]);
+    });
+
+    const total = Object.keys(composicoes).length;
+    await set(ref(db, "/config_kits"), { composicoes, total, atualizadoEm: Date.now() });
+
+    let msg = `<span style="color:#00dfc3;">✓ ${total} kits importados</span>`;
+    if(novos.length) msg += ` <span style="color:#fbbf24;">· ${novos.length} novo(s): ${novos.join(", ")}</span>`;
+    if(alterados.length) msg += ` <span style="color:#60a5fa;">· ${alterados.length} alterado(s)</span>`;
+    statusEl.innerHTML = msg;
+
+    // Re-renderiza pra mostrar a lista atualizada
+    const p = document.querySelector("#diogo-panel");
+    if(p && window._diogotab === "config") { p.innerHTML=""; renderConfig(p, color); }
+  } catch(e) {
+    statusEl.innerHTML = `<span style="color:#f87171;">Erro: ${e.message}</span>`;
   }
 }
 
