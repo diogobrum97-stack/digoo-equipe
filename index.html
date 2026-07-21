@@ -2570,7 +2570,7 @@ function render(){
             active.length=0;
            }
           }else if(window._diogotab==="estoque"){
-            if(diogIsFullAuto){panel.style.maxHeight="none";panel.style.overflowY="auto";}else{panel.style.maxHeight="";panel.style.overflowY="";}
+            if(diogoCardFullscreen || diogIsFullAuto){panel.style.maxHeight="none";panel.style.overflowY="auto";}else{panel.style.maxHeight="";panel.style.overflowY="";}
             panel.id = "estoque-panel-inner";
             renderEstoqueTab(panel, color);
           }else if(window._diogotab==="cancelamentos"){
