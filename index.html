@@ -4339,32 +4339,34 @@ async function processarPlanilhaAtributos(file, statusEl, color) {
 async function processarPlanilhaKits(file, statusEl, color) {
   try {
     const text = await file.text();
-    const linhas = text.trim().split("\n");
+    // Remove BOM e aspas duplas dos headers
+    const linhas = text.trim().split(/\r?\n/);
     const sep = linhas[0].includes(";") ? ";" : ",";
-    const header = linhas[0].split(sep).map(h => h.trim());
+    const header = linhas[0].replace(/^\ufeff/, "").split(sep).map(h => h.trim().replace(/^"|"$/g, "").toLowerCase());
 
-    const iKitSku   = header.findIndex(h => h.toLowerCase().includes("código da composição"));
-    const iCompSku  = header.findIndex(h => h.toLowerCase().includes("código do componente"));
-    const iQtd      = header.findIndex(h => h.toLowerCase().includes("quantidade"));
+    const iKitSku  = header.findIndex(h => h.includes("código da composição") || h.includes("codigo da composicao"));
+    const iCompSku = header.findIndex(h => h.includes("código do componente") || h.includes("codigo do componente"));
+    const iQtd     = header.findIndex(h => h.includes("quantidade"));
 
-    if(iKitSku < 0 || iCompSku < 0) throw new Error("Colunas de composição não encontradas");
+    if(iKitSku < 0 || iCompSku < 0) throw new Error(`Colunas não encontradas. Headers detectados: ${header.join(", ")}`);
 
-    // Carrega composições existentes do Firebase para detectar novos
+    // Carrega composições existentes para detectar novos
     const snapExist = await get(ref(db, "/config_kits/composicoes"));
     const composicoesExistentes = snapExist.val() || {};
 
     const composicoes = {};
     linhas.slice(1).forEach(linha => {
-      const cols = linha.split(sep);
-      const kitSku  = (cols[iKitSku]||"").trim();
-      const compSku = (cols[iCompSku]||"").trim();
-      const qtd     = parseFloat((cols[iQtd]||"1").replace(",",".")) || 1;
+      if(!linha.trim()) return;
+      const cols = linha.split(sep).map(c => c.trim().replace(/^"|"$/g, ""));
+      const kitSku  = (cols[iKitSku]  || "").trim();
+      const compSku = (cols[iCompSku] || "").trim();
+      const qtdStr  = (cols[iQtd]     || "1").trim();
+      const qtd     = parseFloat(qtdStr.replace(",", ".")) || 1;
       if(!kitSku || !compSku || compSku === "nan") return;
       if(!composicoes[kitSku]) composicoes[kitSku] = [];
       composicoes[kitSku].push({ sku: compSku, qtd });
     });
 
-    // Detecta novos kits
     const novos = Object.keys(composicoes).filter(k => !composicoesExistentes[k]);
     const alterados = Object.keys(composicoes).filter(k => {
       if(!composicoesExistentes[k]) return false;
@@ -4379,7 +4381,6 @@ async function processarPlanilhaKits(file, statusEl, color) {
     if(alterados.length) msg += ` <span style="color:#60a5fa;">· ${alterados.length} alterado(s)</span>`;
     statusEl.innerHTML = msg;
 
-    // Re-renderiza pra mostrar a lista atualizada
     const p = document.querySelector("#diogo-panel");
     if(p && window._diogotab === "config") { p.innerHTML=""; renderConfig(p, color); }
   } catch(e) {
