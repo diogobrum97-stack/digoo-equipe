@@ -52,6 +52,8 @@ h1 { font-family: 'Bebas Neue', sans-serif; font-size: 44px; letter-spacing: 5px
 .task-row.dragover-hint { background:#00dfc322;border-radius:6px;outline:1px dashed #00dfc366; }
 .grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; max-width: 1280px; margin: 0 auto; align-items: start; }
 .card { border-radius: 10px; border: 1px solid var(--border); overflow: hidden; transition: border-color 0.3s, box-shadow 0.3s; }
+.card.card-fullscreen { position: fixed; inset: 0; z-index: 1000; border-radius: 0; overflow: hidden; margin: 0; height: 100vh; width: 100vw; box-sizing: border-box; display: flex; flex-direction: column; }
+.card.card-fullscreen .panel.open { flex: 1; overflow-y: auto; max-height: none; display: block; }
 @keyframes cardFlash { 0%,100% { box-shadow: none; } 50% { box-shadow: 0 0 40px var(--c), 0 0 80px var(--c); border-color: var(--c) !important; } }
 .card.flashing { animation: cardFlash 0.9s ease-in-out infinite; }
 .card-header { padding: 16px 14px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--sep); cursor: pointer; transition: filter 0.15s; user-select: none; }
