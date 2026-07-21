@@ -1069,12 +1069,12 @@ function renderCalcIpiPanel(container, task){
       const tbl = document.createElement("table");
       tbl.style.cssText = "width:100%;border-collapse:collapse;font-size:11px;";
       tbl.innerHTML = `<thead><tr style="border-bottom:1px solid var(--sep);">
-        <th style="text-align:left;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">SKU</th>
-        <th style="text-align:right;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">QTD NF</th>
-        <th style="text-align:right;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">CMV NF</th>
-        <th style="text-align:right;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">ESTOQUE FILIAL</th>
-        <th style="text-align:right;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">CUSTO ATUAL</th>
-        <th style="text-align:right;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">NOVO CMP</th>
+        <th style="text-align:left;padding:8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">SKU</th>
+        <th style="text-align:right;padding:8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">QTD NF</th>
+        <th style="text-align:right;padding:8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">CMV NF</th>
+        <th style="text-align:right;padding:8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">ESTOQUE FILIAL</th>
+        <th style="text-align:right;padding:8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">CUSTO ATUAL</th>
+        <th style="text-align:right;padding:8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">NOVO CMP</th>
       </tr></thead><tbody></tbody>`;
       const tbody2 = tbl.querySelector("tbody");
 
@@ -1099,15 +1099,16 @@ function renderCalcIpiPanel(container, task){
         linhasCmp.forEach(l => {
           l.novoCmp = calcNovoCmp(l);
           const tr2 = document.createElement("tr");
-          tr2.style.cssText = "border-bottom:1px solid var(--sep2);";
+          tr2.style.cssText = "border-bottom:1px solid var(--sep);";
           const fmt = v => v != null ? `R$ ${Number(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}` : "—";
           const semCusto = l.custoAtual == null || l.custoAtual === "";
 
           // Células fixas
-          const tdSku = document.createElement("td"); tdSku.style.cssText="padding:8px;color:#00dfc3;font-size:10px;"; tdSku.textContent=l.sku||"—";
-          const tdQtd = document.createElement("td"); tdQtd.style.cssText="padding:8px;text-align:right;"; tdQtd.textContent=l.qtd;
-          const tdCmv = document.createElement("td"); tdCmv.style.cssText="padding:8px;text-align:right;"; tdCmv.textContent=fmt(l.cmvUnit);
-          const tdEst = document.createElement("td"); tdEst.style.cssText="padding:8px;text-align:right;"; tdEst.textContent=l.estoqueAtual;
+          const tdSku = document.createElement("td"); tdSku.style.cssText="padding:8px;"; 
+          tdSku.innerHTML = `<div style="color:#00dfc3;font-weight:600;font-size:11px;">${l.sku||"—"}</div>`;
+          const tdQtd = document.createElement("td"); tdQtd.style.cssText="padding:8px;text-align:right;color:var(--text);font-weight:600;"; tdQtd.textContent=l.qtd;
+          const tdCmv = document.createElement("td"); tdCmv.style.cssText="padding:8px;text-align:right;color:#7F77DD;font-weight:600;"; tdCmv.textContent=fmt(l.cmvUnit);
+          const tdEst = document.createElement("td"); tdEst.style.cssText="padding:8px;text-align:right;color:var(--text);font-weight:600;"; tdEst.textContent=l.estoqueAtual;
 
           // Custo atual — editável
           const tdCusto = document.createElement("td"); tdCusto.style.cssText="padding:6px 8px;text-align:right;";
@@ -1115,12 +1116,11 @@ function renderCalcIpiPanel(container, task){
           iCusto.type = "number";
           iCusto.value = l.custoAtual != null ? String(l.custoAtual).replace(".",",") : "";
           iCusto.placeholder = semCusto ? "⚠ preencher" : "";
-          iCusto.style.cssText = `width:80px;background:none;border:none;border-bottom:1px solid ${semCusto?"#f8717166":"var(--border2)"};color:${semCusto?"#f87171":"var(--text)"};font-family:inherit;font-size:11px;text-align:right;outline:none;padding:2px 4px;`;
+          iCusto.style.cssText = `width:80px;background:none;border:none;border-bottom:1px solid ${semCusto?"#f8717166":"var(--border2)"};color:${semCusto?"#f87171":"#fbbf24"};font-family:inherit;font-size:11px;font-weight:600;text-align:right;outline:none;padding:2px 4px;`;
           iCusto.addEventListener("input", () => {
             l.custoAtual = iCusto.value;
             iCusto.style.borderBottomColor = "var(--border2)";
-            iCusto.style.color = "var(--text)";
-            // Atualiza novo CMP da linha
+            iCusto.style.color = "#fbbf24";
             l.novoCmp = calcNovoCmp(l);
             tdNovoCmp.textContent = fmt(l.novoCmp);
             tdNovoCmp.style.color = l.novoCmp ? "#4ade80" : "var(--text3)";
@@ -1129,7 +1129,7 @@ function renderCalcIpiPanel(container, task){
 
           // Novo CMP
           const tdNovoCmp = document.createElement("td");
-          tdNovoCmp.style.cssText = `padding:8px;text-align:right;font-weight:600;color:${l.novoCmp?"#4ade80":"var(--text3)"};`;
+          tdNovoCmp.style.cssText = `padding:8px;text-align:right;font-weight:600;color:${l.novoCmp?"#4ade80":"var(--text3)"};font-size:12px;`;
           tdNovoCmp.textContent = fmt(l.novoCmp);
 
           tr2.appendChild(tdSku); tr2.appendChild(tdQtd); tr2.appendChild(tdCmv);
