@@ -1041,23 +1041,10 @@ function renderCalcIpiPanel(container, task){
   const cmpRightBtns = document.createElement("div");
   cmpRightBtns.style.cssText = "display:flex;gap:6px;align-items:center;";
 
-  // Botão expandir — cicla entre 3 estados
-  const expandIcons = ["⤢", "⤡", "✕"];
-  const expandLabels = ["", "", ""];
-  const expandBtn = document.createElement("button");
-  expandBtn.title = "Expandir";
-  expandBtn.textContent = "⤢";
-  expandBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:3px 8px;font-size:12px;cursor:pointer;font-family:inherit;";
-  expandBtn.addEventListener("click", () => {
-    window._cmpExpand = (window._cmpExpand + 1) % 3;
-    aplicarExpansaoCmp();
-  });
-
   const cmpBuscarBtn = document.createElement("button");
   cmpBuscarBtn.textContent = "↻ Calcular CMP";
   cmpBuscarBtn.style.cssText = "background:none;border:1px solid #00dfc366;color:#00dfc3;border-radius:4px;padding:4px 12px;font-size:10px;cursor:pointer;font-family:inherit;";
 
-  cmpRightBtns.appendChild(expandBtn);
   cmpRightBtns.appendChild(cmpBuscarBtn);
   cmpHeader.appendChild(cmpTitle); cmpHeader.appendChild(cmpRightBtns);
   cmpWrap.appendChild(cmpHeader);
@@ -1121,10 +1108,11 @@ function renderCalcIpiPanel(container, task){
 
       // Monta tabela editável
       const tbl = document.createElement("table");
+      tbl.style.cssText = "width:100%;border-collapse:collapse;font-size:11px;";
       tbl.innerHTML = `<thead><tr style="border-bottom:1px solid var(--sep);">
-        <th style="text-align:left;padding:8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">SKU</th>
-        <th style="text-align:right;padding:8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">QTD NF</th>
-        <th style="text-align:right;padding:8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">CMV NF</th>
+        <th style="text-align:left;padding:6px 3px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">SKU</th>
+        <th style="text-align:right;padding:6px 3px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">QTD NF</th>
+        <th style="text-align:right;padding:6px 3px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">CMV NF</th>
         <th style="text-align:right;padding:8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">ESTOQUE FILIAL</th>
         <th style="text-align:right;padding:8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">CUSTO ATUAL</th>
         <th style="text-align:right;padding:8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">NOVO CMP</th>
@@ -2276,27 +2264,55 @@ function render(){
            if(calcIpiFullscreen){
             const taskFS = Object.entries(state.tasks||{}).filter(([,t])=>t!=null).map(([id,t])=>({...t,id})).find(t=>t.id===calcIpiFullscreen);
             if(taskFS){
+              // Barra de botões topo
+              const topBar = document.createElement("div");
+              topBar.style.cssText = "display:flex;align-items:center;gap:8px;margin-bottom:10px;";
+
               const backBtn=document.createElement("button");
               backBtn.textContent="← Voltar";
-              backBtn.style.cssText="background:none;border:1px solid var(--border2);color:var(--text2);border-radius:4px;padding:5px 12px;font-size:11px;cursor:pointer;font-family:inherit;margin-bottom:10px;";
-              backBtn.addEventListener("click",()=>{calcIpiFullscreen=null;render();});
-              panel.appendChild(backBtn);
+              backBtn.style.cssText="background:none;border:1px solid var(--border2);color:var(--text2);border-radius:4px;padding:5px 12px;font-size:11px;cursor:pointer;font-family:inherit;";
+              backBtn.addEventListener("click",()=>{calcIpiFullscreen=null;window._nfExpand=0;render();});
 
-              // Botão recarregar NF do Bling
               const recarregarBtn = document.createElement("button");
               recarregarBtn.textContent = "↻ Recarregar NF do Bling";
-              recarregarBtn.style.cssText = "background:none;border:1px solid #fbbf2466;color:#fbbf24;border-radius:4px;padding:5px 12px;font-size:11px;cursor:pointer;font-family:inherit;margin-bottom:10px;margin-left:8px;";
+              recarregarBtn.style.cssText = "background:none;border:1px solid #fbbf2466;color:#fbbf24;border-radius:4px;padding:5px 12px;font-size:11px;cursor:pointer;font-family:inherit;";
               recarregarBtn.addEventListener("click", async () => {
                 const chave = extrairNumeroNFDaTarefa(taskFS) || calcIpiState[taskFS.id]?.nfUsada;
                 if (!chave) { alert("Número da NF não identificado."); return; }
                 recarregarBtn.textContent = "↻ Recarregando...";
                 recarregarBtn.disabled = true;
-                // Apaga os itens salvos no Firebase pra forçar novo fetch
                 await set(ref(db, `/nfes_processadas/${chave}/itens`), null);
                 calcIpiState[taskFS.id] = null;
                 await initCalcIpi(taskFS);
               });
-              panel.appendChild(recarregarBtn);
+
+              // Botão expandir — cicla 3 estados
+              if(!window._nfExpand) window._nfExpand = 1;
+              const nfExpandBtn = document.createElement("button");
+              const nfExpandIcons = ["⤢","⤡","✕"];
+              nfExpandBtn.textContent = nfExpandIcons[window._nfExpand - 1] || "⤢";
+              nfExpandBtn.title = "Expandir / Tela cheia";
+              nfExpandBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:5px 10px;font-size:13px;cursor:pointer;font-family:inherit;margin-left:auto;";
+              nfExpandBtn.addEventListener("click", () => {
+                window._nfExpand = (window._nfExpand % 3) + 1;
+                nfExpandBtn.textContent = nfExpandIcons[window._nfExpand - 1];
+                if(window._nfExpand === 1) {
+                  panel.style.maxHeight = "75vh"; panel.style.overflowY = "auto";
+                } else if(window._nfExpand === 2) {
+                  panel.style.maxHeight = "none"; panel.style.overflowY = "auto";
+                } else {
+                  panel.style.maxHeight = "calc(100vh - 120px)"; panel.style.overflowY = "auto";
+                }
+              });
+              // Aplica estado atual
+              if(window._nfExpand === 1) { panel.style.maxHeight = "75vh"; panel.style.overflowY = "auto"; }
+              else if(window._nfExpand === 2) { panel.style.maxHeight = "none"; panel.style.overflowY = "auto"; }
+              else { panel.style.maxHeight = "calc(100vh - 120px)"; panel.style.overflowY = "auto"; }
+
+              topBar.appendChild(backBtn);
+              topBar.appendChild(recarregarBtn);
+              topBar.appendChild(nfExpandBtn);
+              panel.appendChild(topBar);
               const nfLabel=document.createElement("div");
               nfLabel.style.cssText="font-size:11px;color:var(--text3);margin-bottom:14px;";
               nfLabel.textContent=taskFS.text;
