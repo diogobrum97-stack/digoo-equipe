@@ -1139,7 +1139,15 @@ function renderCalcIpiPanel(container, task){
         const cmvUnit = p.valorNf + (r.ipi / p.qtd) + freteProporcional;
         const skuKey = (p.sku||"").toLowerCase();
         const fbKey  = skuKey.replace(/-/g, "_");
-        const custoSalvo = custosSalvos[fbKey]?.novoCmp ?? custosSalvos[fbKey]?.custoAtual ?? custosSalvos[skuKey]?.novoCmp ?? custosSalvos[skuKey]?.custoAtual ?? null;
+        // Busca em todas as variações de chave: underscore, hífen, uppercase
+        const custoSalvo = 
+          custosSalvos[fbKey]?.novoCmp ?? 
+          custosSalvos[fbKey]?.custoAtual ?? 
+          custosSalvos[skuKey]?.novoCmp ?? 
+          custosSalvos[skuKey]?.custoAtual ?? 
+          custosSalvos[p.sku]?.novoCmp ?? 
+          custosSalvos[p.sku]?.custoAtual ?? null;
+        console.log(`[CMP] SKU: ${p.sku} | fbKey: ${fbKey} | skuKey: ${skuKey} | custoSalvo: ${custoSalvo} | keys disponíveis:`, Object.keys(custosSalvos));
         const estoqueAtual = estoquePorSku[skuKey] ?? 0;
         return { sku: p.sku, skuKey, qtd: p.qtd, cmvUnit, estoqueAtual, custoAtual: custoSalvo, novoCmp: null };
       });
