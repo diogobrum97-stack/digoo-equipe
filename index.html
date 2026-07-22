@@ -814,7 +814,7 @@ function renderCalcIpiPanel(container, task){
   table.style.cssText = "width:100%;border-collapse:collapse;font-size:10.5px;";
   // Wrapper com scroll pra tabela não empurrar CMP pra fora
   const tableScrollWrap = document.createElement("div");
-  tableScrollWrap.style.cssText = "max-height:55vh;overflow-y:auto;margin-bottom:0;";
+  tableScrollWrap.style.cssText = "max-height:calc(100vh - 520px);min-height:120px;overflow-y:auto;margin-bottom:0;";
   table.innerHTML = `<thead><tr style="border-bottom:1px solid var(--sep);">
     <th style="text-align:left;padding:5px 3px;color:var(--text3);font-weight:400;">SKU / PRODUTO</th>
     <th style="text-align:center;padding:5px 3px;color:var(--text3);font-weight:400;">QTD</th>
