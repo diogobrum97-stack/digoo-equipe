@@ -249,7 +249,7 @@ function setupIdentityScreen() {
 function requestNotif(){if("Notification"in window&&Notification.permission==="default")Notification.requestPermission();}
 
 let state={tasks:{},messages:{},flashes:{}};
-let prevTasks={},flashQueue={},completionAlerts={},openCard=null,diogoPinUnlocked=false,diogoAutoFullscreen=false,diogoCardFullscreen=false,tabFlashInterval=null,faviconInterval=null;
+let prevTasks={},flashQueue={},completionAlerts={},openCard=null,diogoPinUnlocked=false,diogoAutoFullscreen=false,diogoCardFullscreen=false,tabFlashInterval=null,faviconInterval=null,cmpSalvando=false;
 const syncDot=document.getElementById("sync-dot");
 function setSyncing(v){syncDot.style.opacity=v?"0.4":"1";}
 
@@ -297,7 +297,7 @@ onValue(ref(db,"/"),snap=>{
     }
   });
   Object.keys(flashQueue).forEach(m=>{if(!d.flashes[m])delete flashQueue[m];});
-  prevTasks={...d.tasks};state=d;render();
+  prevTasks={...d.tasks};state=d;if(!cmpSalvando)render();
 },()=>{syncDot.style.background="#f87171";});
 
 function addTask(member,text,prio,sender){
@@ -1228,11 +1228,10 @@ function renderCalcIpiPanel(container, task){
           };
         });
         if (algumVazio) { alert("Preencha o custo atual de todos os produtos antes de salvar."); return; }
+        cmpSalvando = true;
         const custosMerged = { ...custosSalvos, ...updates };
-        // Usa update individual por SKU para não triggerar render completo
-        for (const [k, v] of Object.entries(updates)) {
-          await set(ref(db, `/custos_medios_filial/${k}`), v);
-        }
+        await update(ref(db, "/custos_medios_filial"), updates);
+        cmpSalvando = false;
         salvarCmpBtn.textContent = "✓ Salvo!";
         salvarCmpBtn.style.color = "#4ade80";
         salvarCmpBtn.style.borderColor = "#4ade8066";
