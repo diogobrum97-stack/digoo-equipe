@@ -824,17 +824,11 @@ function renderCalcIpiPanel(container, task){
     <th style="text-align:right;padding:5px 3px;color:var(--text3);font-weight:400;">VALOR DO IPI</th>
     <th style="text-align:right;padding:5px 3px;color:var(--text3);font-weight:400;">CMV C/ IPI+FRETE</th>
     <th style="width:16px;"></th>
-  </tr></thead><tbody></tbody>`;
+  </tr></thead><tbody></tbody><tfoot></tfoot>`;
   const tbody = table.querySelector("tbody");
+  const tfoot = table.querySelector("tfoot");
   tableScrollWrap.appendChild(table);
   wrap.appendChild(tableScrollWrap);
-
-  // tfoot fora do scroll — sempre visível
-  const tfootTable = document.createElement("table");
-  tfootTable.style.cssText = "width:100%;border-collapse:collapse;font-size:10.5px;";
-  tfootTable.innerHTML = `<tfoot></tfoot>`;
-  const tfoot = tfootTable.querySelector("tfoot");
-  wrap.appendChild(tfootTable);
 
   if(!calc.linhaExpandida) calc.linhaExpandida = null; // índice do produto expandido pra editar NCM/alíquota, ou null
 
@@ -960,7 +954,7 @@ function renderCalcIpiPanel(container, task){
 
     // Rodapé: total de SKUs e total de unidades
     const totalUnidades = calc.produtos.reduce((s,p)=>s+(p.qtd||0),0);
-    tfoot.innerHTML = `<tr style="border-top:1px solid var(--border2);">
+    tfoot.innerHTML = `<tr style="border-top:1px solid var(--border2);position:sticky;bottom:0;background:var(--bg3);">
       <td style="padding:8px 3px;color:var(--text2);font-size:10px;font-weight:600;">${calc.produtos.length} SKUs</td>
       <td style="padding:8px 3px;text-align:center;color:var(--text);font-size:10px;font-weight:600;">${totalUnidades.toLocaleString("pt-BR")} un.</td>
       <td colspan="5"></td>
