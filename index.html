@@ -1204,11 +1204,12 @@ function renderCalcIpiPanel(container, task){
         const updates = {};
         let algumVazio = false;
         linhasCmp.forEach(l => {
-          if (!l.novoCmp) { algumVazio = true; return; }
+          const custoNum = parseFloat(String(l.custoAtual||"").replace(",",".")) || 0;
+          if (!custoNum) { algumVazio = true; return; }
           updates[l.skuKey] = {
             sku: l.sku,
-            novoCmp: l.novoCmp,
-            custoAtual: parseFloat(String(l.custoAtual).replace(",",".")) || 0,
+            novoCmp: l.novoCmp || null,
+            custoAtual: custoNum,
             atualizadoEm: Date.now(),
             nfOrigem: calc.nfUsada || null,
           };
