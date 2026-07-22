@@ -1147,7 +1147,7 @@ function renderCalcIpiPanel(container, task){
           custosSalvos[skuKey]?.custoAtual ?? 
           custosSalvos[p.sku]?.novoCmp ?? 
           custosSalvos[p.sku]?.custoAtual ?? null;
-        console.log(`[CMP] SKU: ${p.sku} | fbKey: ${fbKey} | skuKey: ${skuKey} | custoSalvo: ${custoSalvo} | keys disponíveis:`, Object.keys(custosSalvos));
+        console.log(`[CMP] ${p.sku} custoSalvo: ${custoSalvo}`);
         const estoqueAtual = estoquePorSku[skuKey] ?? 0;
         return { sku: p.sku, skuKey, qtd: p.qtd, cmvUnit, estoqueAtual, custoAtual: custoSalvo, novoCmp: null };
       });
@@ -1178,7 +1178,8 @@ function renderCalcIpiPanel(container, task){
           const tdCusto = document.createElement("td"); tdCusto.style.cssText="padding:6px 8px;text-align:right;";
           const iCusto = document.createElement("input");
           iCusto.type = "number";
-          iCusto.value = l.custoAtual != null ? String(l.custoAtual).replace(".",",") : "";
+          iCusto.step = "0.01";
+          iCusto.value = l.custoAtual != null ? parseFloat(String(l.custoAtual).replace(",",".")).toFixed(2) : "";
           iCusto.placeholder = semCusto ? "⚠ preencher" : "";
           iCusto.style.cssText = `width:80px;background:none;border:none;border-bottom:1px solid ${semCusto?"#f8717166":"var(--border2)"};color:${semCusto?"#f87171":"#fbbf24"};font-family:inherit;font-size:11px;text-align:right;outline:none;padding:2px 4px;`;
           iCusto.addEventListener("input", () => {
