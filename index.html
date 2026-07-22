@@ -1128,6 +1128,7 @@ function renderCalcIpiPanel(container, task){
       // Monta tabela editável
       const tbl = document.createElement("table");
       tbl.style.cssText = "width:100%;border-collapse:collapse;font-size:11px;";
+      tbl.className = "cmp-table";
       tbl.innerHTML = `<thead><tr style="border-bottom:1px solid var(--sep);">
         <th style="text-align:left;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">SKU</th>
         <th style="text-align:right;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">QTD NF</th>
