@@ -214,5 +214,5 @@ footer { margin-top: 40px; text-align: center; font-size: 10px; color: #787878; 
   overflow-y: auto;
   max-height: none;
 }
-.cmp-table td, .cmp-table th { text-align: center; }
-.cmp-table td:first-child, .cmp-table th:first-child { text-align: left; }
+.cmp-table td, .cmp-table th { text-align: center !important; }
+.cmp-table td:first-child, .cmp-table th:first-child { text-align: left !important; }
