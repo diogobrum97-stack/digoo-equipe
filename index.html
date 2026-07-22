@@ -1096,6 +1096,12 @@ function renderCalcIpiPanel(container, task){
     }
   }
 
+  // Auto-carrega CMP se já foi calculado antes nesta sessão
+  if(calcIpiState[task.id]?.cmpDados) {
+    cmpBuscarBtn.textContent = "↻ Atualizar CMP";
+    setTimeout(() => cmpBuscarBtn.click(), 50);
+  }
+
   cmpBuscarBtn.addEventListener("click", async () => {
     const produtosComCmv = calc.produtos.filter(p => p.precoVenda != null && p.qtd > 0);
     if (produtosComCmv.length === 0) { cmpContent.textContent = "Preencha os preços de venda primeiro."; return; }
@@ -1116,16 +1122,19 @@ function renderCalcIpiPanel(container, task){
       const custosSalvosSnap = await get(ref(db, "/custos_medios_filial"));
       const custosSalvos = custosSalvosSnap.val() || {};
 
+      // Salva no calcIpiState para persistir entre renders
+      calcIpiState[task.id].cmpDados = { estoquePorSku, custosSalvos };
+
       // Monta tabela editável
       const tbl = document.createElement("table");
       tbl.style.cssText = "width:100%;border-collapse:collapse;font-size:11px;";
       tbl.innerHTML = `<thead><tr style="border-bottom:1px solid var(--sep);">
-        <th style="text-align:left;padding:6px 3px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">SKU</th>
-        <th style="text-align:right;padding:6px 3px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">QTD NF</th>
-        <th style="text-align:right;padding:6px 3px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">CMV NF</th>
-        <th style="text-align:right;padding:8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">ESTOQUE FILIAL</th>
-        <th style="text-align:right;padding:8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">CUSTO ATUAL</th>
-        <th style="text-align:right;padding:8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">NOVO CMP</th>
+        <th style="text-align:left;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">SKU</th>
+        <th style="text-align:right;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">QTD NF</th>
+        <th style="text-align:right;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">CMV NF</th>
+        <th style="text-align:right;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">ESTOQUE FILIAL</th>
+        <th style="text-align:right;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">CUSTO ATUAL</th>
+        <th style="text-align:right;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">NOVO CMP</th>
       </tr></thead><tbody></tbody>`;
       const tbody2 = tbl.querySelector("tbody");
 
@@ -1168,11 +1177,11 @@ function renderCalcIpiPanel(container, task){
           const semCusto = l.custoAtual == null || l.custoAtual === "";
 
           // Células fixas — visual igual à tabela de IPI acima
-          const tdSku = document.createElement("td"); tdSku.style.cssText="padding:6px 3px;";
+          const tdSku = document.createElement("td"); tdSku.style.cssText="padding:6px 8px;";
           tdSku.innerHTML = `<div style="color:#00dfc3;font-weight:600;">${l.sku||"—"}</div>`;
-          const tdQtd = document.createElement("td"); tdQtd.style.cssText="padding:6px 3px;text-align:center;color:var(--text2);"; tdQtd.textContent=l.qtd;
-          const tdCmv = document.createElement("td"); tdCmv.style.cssText="padding:6px 3px;text-align:right;color:#7F77DD;"; tdCmv.textContent=fmt(l.cmvUnit);
-          const tdEst = document.createElement("td"); tdEst.style.cssText="padding:6px 3px;text-align:right;color:var(--text2);"; tdEst.textContent=l.estoqueAtual;
+          const tdQtd = document.createElement("td"); tdQtd.style.cssText="padding:6px 8px;text-align:right;color:var(--text2);"; tdQtd.textContent=l.qtd;
+          const tdCmv = document.createElement("td"); tdCmv.style.cssText="padding:6px 8px;text-align:right;color:#7F77DD;"; tdCmv.textContent=fmt(l.cmvUnit);
+          const tdEst = document.createElement("td"); tdEst.style.cssText="padding:6px 8px;text-align:right;color:var(--text2);"; tdEst.textContent=l.estoqueAtual;
 
           // Custo atual — editável
           const tdCusto = document.createElement("td"); tdCusto.style.cssText="padding:6px 8px;text-align:right;";
