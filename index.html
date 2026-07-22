@@ -812,6 +812,7 @@ function renderCalcIpiPanel(container, task){
 
   const table = document.createElement("table");
   table.style.cssText = "width:100%;border-collapse:collapse;font-size:10.5px;";
+  table.className = "ipi-table";
   // Wrapper com scroll pra tabela não empurrar CMP pra fora
   const tableScrollWrap = document.createElement("div");
   tableScrollWrap.style.cssText = "max-height:calc(100vh - 520px);min-height:120px;overflow-y:auto;margin-bottom:0;";
