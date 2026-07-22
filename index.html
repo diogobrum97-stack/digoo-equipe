@@ -1138,7 +1138,7 @@ function renderCalcIpiPanel(container, task){
         const freteProporcional = baseRateio > 0 ? (p.valorNf / baseRateio) * totalDiluir : 0;
         const cmvUnit = p.valorNf + (r.ipi / p.qtd) + freteProporcional;
         const skuKey = (p.sku||"").toLowerCase();
-        const custoSalvo = custosSalvos[skuKey]?.novoCmp ?? custosSalvos[p.sku]?.novoCmp ?? null;
+        const custoSalvo = custosSalvos[skuKey]?.novoCmp ?? custosSalvos[p.sku]?.novoCmp ?? custosSalvos[skuKey]?.custoAtual ?? null;
         const estoqueAtual = estoquePorSku[skuKey] ?? 0;
         return { sku: p.sku, skuKey, qtd: p.qtd, cmvUnit, estoqueAtual, custoAtual: custoSalvo, novoCmp: null };
       });
@@ -1229,7 +1229,7 @@ function renderCalcIpiPanel(container, task){
         }, 2500);
 
         // Gera CSV de atributos atualizado automaticamente
-        gerarCSVAtributos(custosMerged);
+        // CSV gerado só quando usuário clicar no botão manual
       });
 
       // Botão gerar CSV separado
