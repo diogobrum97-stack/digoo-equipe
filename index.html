@@ -2277,7 +2277,7 @@ function render(){
         if(member.locked){
           if(!window._diogotab)window._diogotab="tarefas";
           const tabs=document.createElement("div");tabs.className="tabs";
-          ["tarefas","concluidas","conversas","estoque","cancelamentos","fechamento","config"].forEach(tab=>{
+          ["tarefas","concluidas","conversas","estoque","cancelamentos","fechamento","conferencia","config"].forEach(tab=>{
             const btn=document.createElement("button");
             btn.className="tab-btn"+(window._diogotab===tab?" active":"");
             if(tab==="concluidas"){
@@ -2290,6 +2290,8 @@ function render(){
               btn.textContent="Cancelamentos";
             } else if(tab==="fechamento") {
               btn.textContent="Fechamento";
+            } else if(tab==="conferencia") {
+              btn.textContent="Conferência";
             } else if(tab==="config") {
               btn.textContent="Config";
             } else {
@@ -2634,6 +2636,9 @@ function render(){
               l.innerHTML = '<span class="spinning">↻</span> Buscando NFS-e no Gmail e Drive...';
               fechPanel.appendChild(l);
             }
+          }else if(window._diogotab==="conferencia"){
+            panel.style.maxHeight="none"; panel.style.overflowY="auto";
+            renderConferencia(panel, color);
           }else if(window._diogotab==="config"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
             renderConfig(panel, color);
@@ -4602,6 +4607,363 @@ if(urlParams.get("ml_error")){alert("Erro ao conectar ML: "+urlParams.get("ml_er
 
 setupIdentityScreen();
 setInterval(()=>{ try{ render(); }catch(e){} }, 5*60*1000); // mantém os badges de "atrasada" atualizados
+
+// ─── CONFERÊNCIA FINANCEIRA ────────────────────────────────────────────────
+let confState = {
+  extrato: null,       // [{data, descricao, razaoSocial, cnpj, valor}]
+  cartao: null,        // [{data, descricao, valor}]
+  impostos: [],        // [{nome, valor, competencia, arquivo}]
+  categorias: {},      // chave: index global → categoria string
+  aiLoading: false,
+};
+
+const CONF_CATS = ["Impostos","Frete","Contabilidade","Fornecedor","Marketing","Infraestrutura","Pessoal","Outros","Ignorar"];
+
+function parseExcelDate(v) {
+  if(!v) return "";
+  if(typeof v === "string" && v.includes("/")) return v;
+  // serial Excel: dias desde 1899-12-30
+  if(typeof v === "number") {
+    const d = new Date(Math.round((v - 25569) * 86400 * 1000));
+    return d.toLocaleDateString("pt-BR");
+  }
+  return String(v);
+}
+
+async function lerExtratoItau(file) {
+  const XLSX = await import("https://cdn.jsdelivr.net/npm/xlsx@0.18.5/+esm");
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, {type:"array"});
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:""});
+  const lancamentos = [];
+  let headerIdx = -1;
+  for(let i=0;i<rows.length;i++){
+    const r = rows[i];
+    if(r.some(c=>String(c).toLowerCase().includes("lançamento") && r.some(c2=>String(c2).toLowerCase().includes("valor")))){
+      headerIdx = i; break;
+    }
+  }
+  if(headerIdx < 0) return lancamentos;
+  for(let i=headerIdx+1;i<rows.length;i++){
+    const r = rows[i];
+    const data = parseExcelDate(r[0]);
+    const descricao = String(r[1]||"").trim();
+    const razaoSocial = String(r[2]||"").trim();
+    const cnpj = String(r[3]||"").trim();
+    const valor = parseFloat(r[4]);
+    if(!data || !descricao || isNaN(valor)) continue;
+    if(descricao.toUpperCase().includes("SALDO")) continue;
+    if(descricao.toUpperCase().includes("RENDIMENTO")) continue;
+    lancamentos.push({data, descricao, razaoSocial, cnpj, valor, origem:"extrato"});
+  }
+  return lancamentos;
+}
+
+async function lerFaturaCartao(file) {
+  const XLSX = await import("https://cdn.jsdelivr.net/npm/xlsx@0.18.5/+esm");
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, {type:"array"});
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:""});
+  const lancamentos = [];
+  let headerIdx = -1;
+  for(let i=0;i<rows.length;i++){
+    const r = rows[i];
+    if(r.some(c=>String(c).toLowerCase().includes("titularidade"))){
+      headerIdx = i; break;
+    }
+  }
+  if(headerIdx < 0) return lancamentos;
+  const hdr = rows[headerIdx].map(c=>String(c).toLowerCase());
+  const iData = hdr.findIndex(c=>c.includes("data"));
+  const iDesc = hdr.findIndex(c=>c.includes("lançamento"));
+  const iValor = hdr.findIndex(c=>c.includes("valor"));
+  const iTitular = hdr.findIndex(c=>c.includes("titularidade"));
+  const iNome = hdr.findIndex(c=>c.includes("nome") && !c.includes("cartão"));
+  const iCartao = hdr.findIndex(c=>c.includes("número do cartão") || c.includes("numero do cartao"));
+  for(let i=headerIdx+1;i<rows.length;i++){
+    const r = rows[i];
+    const titularidade = String(r[iTitular]||"").trim().toLowerCase();
+    const nome = String(r[iNome]||"").trim().toLowerCase();
+    const numCartao = String(r[iCartao]||"").trim();
+    // Filtrar só Digoo Brasil (Adicional) — cartão 5495
+    if(titularidade !== "adicional") continue;
+    if(!nome.includes("digoo")) continue;
+    const valor = parseFloat(r[iValor]);
+    if(isNaN(valor) || valor <= 0) continue;
+    const descricao = String(r[iDesc]||"").trim();
+    if(descricao.toLowerCase().includes("pagamento efetuado")) continue;
+    lancamentos.push({
+      data: parseExcelDate(r[iData]),
+      descricao,
+      razaoSocial: "Digoo Brasil (Cartão "+numCartao+")",
+      cnpj: "",
+      valor,
+      origem:"cartao"
+    });
+  }
+  return lancamentos;
+}
+
+async function categorizarComIA(lancamentos) {
+  confState.aiLoading = true;
+  renderConferenciaTabela();
+
+  const lista = lancamentos.map((l,i)=>
+    `${i}|${l.data}|${l.descricao}|${l.razaoSocial}|${l.cnpj}|R$${Math.abs(l.valor).toFixed(2)}`
+  ).join("\n");
+
+  const categorias = CONF_CATS.join(", ");
+
+  try {
+    const resp = await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        model:"claude-sonnet-4-6",
+        max_tokens:1000,
+        messages:[{
+          role:"user",
+          content:`Você é um assistente financeiro de uma empresa brasileira importadora de periféricos (Digoo Brasil).
+Categorize cada lançamento abaixo em UMA das categorias: ${categorias}.
+
+Regras:
+- GNRE, SEFAZ, RECEITA FEDERAL, DARF = Impostos
+- Frete, transportadoras, EXPRESSO = Frete
+- Contabilidade, contador, RESICON = Contabilidade
+- Fornecedores de produto/embalagem = Fornecedor
+- ML, Mercado Livre, marketing, ads = Marketing
+- LWSA, Bling, internet, coworking, cloud = Infraestrutura
+- Funcionário, salário, pró-labore = Pessoal
+- Transferência entre contas próprias, Honda (financiamento pessoal), gastos pessoais = Ignorar
+- Resto = Outros
+
+Formato de resposta: APENAS JSON, sem texto extra.
+{"0":"Impostos","1":"Frete",...}
+
+Lançamentos (índice|data|descrição|razão social|cnpj|valor):
+${lista}`
+        }]
+      })
+    });
+    const d = await resp.json();
+    const text = d.content?.[0]?.text || "{}";
+    const clean = text.replace(/```json|```/g,"").trim();
+    const result = JSON.parse(clean);
+    Object.assign(confState.categorias, result);
+  } catch(e) {
+    console.error("IA erro:", e);
+  }
+
+  confState.aiLoading = false;
+  renderConferenciaTabela();
+}
+
+function todosLancamentos() {
+  const ex = (confState.extrato||[]).filter(l=>l.valor<0).map(l=>({...l, valor: Math.abs(l.valor)}));
+  const ca = (confState.cartao||[]).map(l=>({...l}));
+  const im = confState.impostos.map(l=>({...l, origem:"imposto"}));
+  return [...ex, ...ca, ...im];
+}
+
+let _confTabelaEl = null;
+function renderConferenciaTabela() {
+  if(!_confTabelaEl) return;
+  const el = _confTabelaEl;
+  el.innerHTML = "";
+
+  const todos = todosLancamentos();
+  if(todos.length === 0) {
+    el.innerHTML = `<div style="color:var(--text3);font-size:12px;text-align:center;padding:24px 0;">Nenhum lançamento carregado.</div>`;
+    return;
+  }
+
+  if(confState.aiLoading) {
+    el.innerHTML = `<div style="color:var(--text3);font-size:12px;text-align:center;padding:24px 0;"><span class="spinning">↻</span> Categorizando com IA...</div>`;
+    return;
+  }
+
+  // Totais por categoria
+  const totais = {};
+  todos.forEach((l,i)=>{
+    const cat = confState.categorias[i] || "Sem categoria";
+    if(cat === "Ignorar") return;
+    totais[cat] = (totais[cat]||0) + l.valor;
+  });
+
+  // Cards de totais
+  const cardsWrap = document.createElement("div");
+  cardsWrap.style.cssText = "display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;";
+  const catCores = {
+    "Impostos":"#f87171","Frete":"#60a5fa","Contabilidade":"#a78bfa",
+    "Fornecedor":"#fbbf24","Marketing":"#34d399","Infraestrutura":"#22d3ee",
+    "Pessoal":"#fb923c","Outros":"#94a3b8"
+  };
+  let totalGeral = 0;
+  Object.entries(totais).sort((a,b)=>b[1]-a[1]).forEach(([cat,val])=>{
+    totalGeral += val;
+    const c = document.createElement("div");
+    c.style.cssText = `background:var(--bg3);border:1px solid ${catCores[cat]||"var(--border)"}44;border-radius:6px;padding:8px 12px;min-width:120px;`;
+    c.innerHTML = `<div style="font-size:9px;color:${catCores[cat]||"var(--text3)"};letter-spacing:1px;margin-bottom:2px;">${cat.toUpperCase()}</div>
+      <div style="font-size:14px;font-weight:700;color:var(--text);font-family:'IBM Plex Mono',monospace;">R$ ${val.toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>`;
+    cardsWrap.appendChild(c);
+  });
+  const totalCard = document.createElement("div");
+  totalCard.style.cssText = "background:var(--bg3);border:1px solid var(--accent);border-radius:6px;padding:8px 12px;min-width:120px;";
+  totalCard.innerHTML = `<div style="font-size:9px;color:var(--accent);letter-spacing:1px;margin-bottom:2px;">TOTAL SAÍDAS</div>
+    <div style="font-size:14px;font-weight:700;color:var(--text);font-family:'IBM Plex Mono',monospace;">R$ ${totalGeral.toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>`;
+  cardsWrap.appendChild(totalCard);
+  el.appendChild(cardsWrap);
+
+  // Tabela de lançamentos
+  const tbl = document.createElement("table");
+  tbl.className = "ipi-table";
+  tbl.style.cssText = "width:100%;border-collapse:collapse;font-size:11px;";
+  tbl.innerHTML = `<thead><tr style="border-bottom:1px solid var(--sep);">
+    <th style="text-align:left;padding:5px 4px;color:var(--text3);font-weight:400;">DATA</th>
+    <th style="text-align:left;padding:5px 4px;color:var(--text3);font-weight:400;">DESCRIÇÃO</th>
+    <th style="text-align:left;padding:5px 4px;color:var(--text3);font-weight:400;">RAZÃO SOCIAL</th>
+    <th style="text-align:center;padding:5px 4px;color:var(--text3);font-weight:400;">ORIGEM</th>
+    <th style="text-align:center;padding:5px 4px;color:var(--text3);font-weight:400;">CATEGORIA</th>
+    <th style="text-align:right;padding:5px 4px;color:var(--text3);font-weight:400;">VALOR</th>
+  </tr></thead><tbody></tbody>`;
+  const tbody = tbl.querySelector("tbody");
+
+  todos.forEach((l,i)=>{
+    const cat = confState.categorias[i] || "";
+    if(cat === "Ignorar") return;
+    const tr = document.createElement("tr");
+    tr.style.cssText = "border-bottom:1px solid var(--sep);";
+
+    const corOrigem = l.origem==="extrato"?"#60a5fa":l.origem==="cartao"?"#fbbf24":"#f87171";
+    const labelOrigem = l.origem==="extrato"?"Extrato":l.origem==="cartao"?"Cartão":"Imposto";
+
+    const sel = document.createElement("select");
+    sel.style.cssText = "background:var(--bg3);border:1px solid var(--border2);border-radius:3px;color:var(--text);font-size:10px;padding:2px 4px;font-family:inherit;cursor:pointer;";
+    ["", ...CONF_CATS].forEach(opt=>{
+      const o = document.createElement("option");
+      o.value = opt; o.textContent = opt||"— categoria —";
+      if(cat === opt) o.selected = true;
+      sel.appendChild(o);
+    });
+    sel.addEventListener("change", ()=>{
+      confState.categorias[i] = sel.value;
+      // Atualizar totais sem re-render completo
+      renderConferenciaTabela();
+    });
+
+    tr.innerHTML = `
+      <td style="padding:5px 4px;color:var(--text2);white-space:nowrap;">${l.data}</td>
+      <td style="padding:5px 4px;color:var(--text);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${l.descricao}">${l.descricao}</td>
+      <td style="padding:5px 4px;color:var(--text2);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${l.razaoSocial}">${l.razaoSocial||"—"}</td>
+      <td style="padding:5px 4px;text-align:center;"><span style="font-size:9px;font-weight:700;letter-spacing:1px;color:${corOrigem};">${labelOrigem}</span></td>
+      <td style="padding:5px 4px;text-align:center;" id="cat-sel-${i}"></td>
+      <td style="padding:5px 4px;text-align:right;color:var(--text);font-family:'IBM Plex Mono',monospace;white-space:nowrap;">R$ ${l.valor.toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
+    `;
+    tbody.appendChild(tr);
+    tr.querySelector(`#cat-sel-${i}`).appendChild(sel);
+  });
+
+  el.appendChild(tbl);
+}
+
+function renderConferencia(panel, color) {
+  panel.innerHTML = "";
+
+  const title = document.createElement("div");
+  title.style.cssText = "font-size:11px;letter-spacing:2px;color:var(--text3);font-weight:700;margin-bottom:16px;";
+  title.textContent = "CONFERÊNCIA FINANCEIRA";
+  panel.appendChild(title);
+
+  // ── Seção de uploads ──────────────────────────────────────────────
+  const uploads = document.createElement("div");
+  uploads.style.cssText = "display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px;";
+
+  function makeUploadCard(label, cor, onFile) {
+    const card = document.createElement("div");
+    card.style.cssText = `background:var(--bg3);border:1px dashed ${cor}55;border-radius:8px;padding:14px 18px;min-width:200px;cursor:pointer;transition:border-color .2s;`;
+    card.innerHTML = `<div style="font-size:9px;letter-spacing:1.5px;color:${cor};margin-bottom:6px;">${label}</div>
+      <div style="font-size:11px;color:var(--text3);" id="lbl-${label.replace(/\s/g,'_')}">Clique para anexar</div>`;
+    const input = document.createElement("input");
+    input.type = "file"; input.accept = ".xlsx,.xls,.pdf"; input.style.display = "none";
+    input.addEventListener("change", async ()=>{
+      const f = input.files[0]; if(!f) return;
+      card.querySelector(`#lbl-${label.replace(/\s/g,'_')}`).textContent = "⏳ Lendo...";
+      await onFile(f);
+      card.querySelector(`#lbl-${label.replace(/\s/g,'_')}`).textContent = "✓ "+f.name;
+      card.style.borderColor = cor;
+    });
+    card.addEventListener("click", ()=>input.click());
+    card.appendChild(input);
+    return card;
+  }
+
+  // Upload extrato
+  uploads.appendChild(makeUploadCard("EXTRATO CONTA CORRENTE", "#60a5fa", async (f)=>{
+    confState.extrato = await lerExtratoItau(f);
+    confState.categorias = {};
+    const todos = todosLancamentos();
+    if(todos.length > 0) await categorizarComIA(todos);
+    else renderConferenciaTabela();
+  }));
+
+  // Upload cartão
+  uploads.appendChild(makeUploadCard("FATURA CARTÃO 5495", "#fbbf24", async (f)=>{
+    confState.cartao = await lerFaturaCartao(f);
+    confState.categorias = {};
+    const todos = todosLancamentos();
+    if(todos.length > 0) await categorizarComIA(todos);
+    else renderConferenciaTabela();
+  }));
+
+  // Upload guias de imposto
+  uploads.appendChild(makeUploadCard("+ GUIA DE IMPOSTO", "#f87171", async (f)=>{
+    const nome = f.name.replace(/\.[^.]+$/,"");
+    const valorStr = prompt(`Valor da guia "${nome}" (R$):`);
+    const valor = parseFloat((valorStr||"0").replace(",","."));
+    const comp = prompt(`Competência (ex: 07/2026):`)||"";
+    if(!isNaN(valor) && valor > 0) {
+      confState.impostos.push({data: comp, descricao: nome, razaoSocial:"Guia de Imposto", cnpj:"", valor, competencia:comp, arquivo:f.name});
+      confState.categorias = {};
+      const todos = todosLancamentos();
+      if(todos.length > 0) await categorizarComIA(todos);
+      else renderConferenciaTabela();
+    }
+  }));
+
+  // Botão limpar
+  const btnLimpar = document.createElement("button");
+  btnLimpar.textContent = "Limpar tudo";
+  btnLimpar.style.cssText = "background:none;border:1px solid var(--border2);border-radius:6px;color:var(--text3);font-size:10px;padding:8px 14px;cursor:pointer;font-family:inherit;align-self:center;";
+  btnLimpar.addEventListener("click",()=>{
+    confState = {extrato:null,cartao:null,impostos:[],categorias:{},aiLoading:false};
+    renderConferencia(panel, color);
+  });
+  uploads.appendChild(btnLimpar);
+
+  panel.appendChild(uploads);
+
+  // Botão re-categorizar com IA
+  const btnAI = document.createElement("button");
+  btnAI.textContent = "↻ Re-categorizar com IA";
+  btnAI.style.cssText = `background:${color}22;border:1px solid ${color}55;border-radius:6px;color:${color};font-size:10px;padding:7px 14px;cursor:pointer;font-family:inherit;margin-bottom:14px;letter-spacing:1px;`;
+  btnAI.addEventListener("click", async ()=>{
+    const todos = todosLancamentos();
+    if(todos.length === 0) return;
+    confState.categorias = {};
+    await categorizarComIA(todos);
+  });
+  panel.appendChild(btnAI);
+
+  // Área da tabela
+  const tabelaEl = document.createElement("div");
+  _confTabelaEl = tabelaEl;
+  panel.appendChild(tabelaEl);
+  renderConferenciaTabela();
+}
+// ─── FIM CONFERÊNCIA FINANCEIRA ────────────────────────────────────────────
+
 </script>
 </body>
 </html>
