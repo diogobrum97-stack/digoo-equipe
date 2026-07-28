@@ -4640,18 +4640,27 @@ async function lerExtratoItau(file) {
   let headerIdx = -1;
   for(let i=0;i<rows.length;i++){
     const r = rows[i];
-    if(r.some(c=>String(c).toLowerCase().includes("lançamento") && r.some(c2=>String(c2).toLowerCase().includes("valor")))){
+    const cells = r.map(c=>String(c).toLowerCase());
+    // Linha de header real: tem "data" na primeira col E "lançamento" e "valor" em outras
+    if(cells[0]==="data" && cells.some(c=>c.includes("lançamento")) && cells.some(c=>c.includes("valor"))){
       headerIdx = i; break;
     }
   }
   if(headerIdx < 0) return lancamentos;
+  // Descobrir índices reais das colunas pelo header
+  const hdr = rows[headerIdx].map(c=>String(c).toLowerCase());
+  const iData = 0;
+  const iDesc = hdr.findIndex(c=>c.includes("lançamento"));
+  const iRazao = hdr.findIndex(c=>c.includes("razão") || c.includes("razao"));
+  const iCnpj = hdr.findIndex(c=>c.includes("cpf") || c.includes("cnpj"));
+  const iValor = hdr.findIndex(c=>c.includes("valor") && !c.includes("saldo"));
   for(let i=headerIdx+1;i<rows.length;i++){
     const r = rows[i];
-    const data = parseExcelDate(r[0]);
-    const descricao = String(r[1]||"").trim();
-    const razaoSocial = String(r[2]||"").trim();
-    const cnpj = String(r[3]||"").trim();
-    const valor = parseFloat(r[4]);
+    const data = parseExcelDate(r[iData]);
+    const descricao = String(r[iDesc]||"").trim();
+    const razaoSocial = String(r[iRazao >= 0 ? iRazao : 2]||"").trim();
+    const cnpj = String(r[iCnpj >= 0 ? iCnpj : 3]||"").trim();
+    const valor = parseFloat(r[iValor >= 0 ? iValor : 4]);
     if(!data || !descricao || isNaN(valor)) continue;
     if(descricao.toUpperCase().includes("SALDO")) continue;
     if(descricao.toUpperCase().includes("RENDIMENTO")) continue;
