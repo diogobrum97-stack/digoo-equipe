@@ -1,5 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Bebas+Neue&display=swap');
 
+@font-face {
+  font-family: 'Digoo';
+  src: url('DIGOO.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
@@ -42,7 +49,7 @@ body.light .toggle-thumb { transform: translateX(22px); background: #fff; }
 header { text-align: center; margin-bottom: 24px; }
 .sub { font-size: 10px; letter-spacing: 6px; color: #9a9a9a; margin-bottom: 6px; text-transform: uppercase; font-weight: 400; }
 /* h1 mantém Bebas Neue — é identidade visual, não tipografia de texto */
-h1 { font-family: 'Bebas Neue', sans-serif; font-size: 44px; letter-spacing: 5px; color: var(--text); }
+h1 { font-family: 'Digoo', 'Bebas Neue', sans-serif; font-size: 44px; letter-spacing: 5px; color: var(--text); }
 .sync { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--pn); margin-left: 10px; vertical-align: middle; box-shadow: 0 0 10px var(--pn); animation: pulse 2s infinite; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
 @keyframes siren { 0%,100%{opacity:1} 50%{opacity:0.15} }
@@ -58,7 +65,7 @@ h1 { font-family: 'Bebas Neue', sans-serif; font-size: 44px; letter-spacing: 5px
 .card-header:hover { filter: brightness(1.08); }
 .avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; letter-spacing: 1px; flex-shrink: 0; }
 /* member-name mantém Bebas Neue — identidade visual dos cards */
-.member-name { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 3px; }
+.member-name { font-family: 'Digoo', 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 3px; }
 .dots { display: flex; gap: 5px; margin-top: 4px; min-height: 8px; align-items: center; }
 .dot { width: 7px; height: 7px; border-radius: 50%; }
 .chevron { margin-left: auto; font-size: 11px; color: #9a9a9a; transition: transform 0.2s; }
