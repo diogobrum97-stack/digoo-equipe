@@ -2385,46 +2385,41 @@ function render(){
             const ownTasks=manualTasks;
             const teamTasks=active.filter(t=>t.delegatedBy&&t.delegatedBy!=="Diogo");
 
-            // Seção recorrentes
+            // Seção recorrentes — cards menores azuis
             if(recTasks.length>0){
               const recSec=document.createElement("div");
-              recSec.style.cssText="margin-bottom:14px;";
+              recSec.style.cssText="margin-bottom:16px;";
               const recLabel=document.createElement("div");
-              recLabel.style.cssText="font-size:8px;letter-spacing:2px;color:#00ffe544;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;";
-              recLabel.innerHTML='recorrentes de hoje <span style="flex:1;height:1px;background:#ffffff08;display:inline-block;margin-left:6px;"></span>';
-              recLabel.style.color="var(--text3)";
+              recLabel.style.cssText="font-size:8px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin-bottom:8px;";
+              recLabel.textContent="Recorrentes de hoje";
               recSec.appendChild(recLabel);
+              const recGrid=document.createElement("div");
+              recGrid.style.cssText="display:flex;gap:8px;flex-wrap:wrap;";
               recTasks.forEach(task=>{
-                const pc=themePrio(task.prio);
-                const row=document.createElement("div");row.className="task-row";
-                const chk=document.createElement("button");chk.className="task-check"+(task.done?" done":task.progress?" progress":"");
-                chk.style.borderColor="#3b82f6";
-                if(task.done) chk.style.background="#3b82f6";
-                else if(task.progress) chk.style.background=`linear-gradient(to top, #3b82f6 50%, transparent 50%)`;
-                else chk.style.background="none";
+                const card=document.createElement("div");
+                card.style.cssText=`background:var(--bg3);border:0.5px solid #3b82f633;border-top:2px solid #3b82f6;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;width:180px;flex-shrink:0;box-sizing:border-box;`;
+                const chk=document.createElement("button");
+                chk.style.cssText=`width:15px;height:15px;border-radius:3px;border:1.5px solid #3b82f6;background:${task.done?"#3b82f6":"none"};flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#000;font-size:9px;font-weight:700;`;
+                chk.textContent=task.done?"✓":"";
                 chk.addEventListener("click",()=>toggleTask(task.id,task.done,task.progress,true));
-                const tw=document.createElement("div");tw.style.flex="1";
-                const tt=document.createElement("div");tt.className="task-text"+(task.done?" done":"");tt.textContent=task.text;tw.appendChild(tt);
-                const recBadge=overdueBadgeHtml(task);
-                if(recBadge){const bd=document.createElement("div");bd.style.cssText="margin-top:9px;display:flex;";bd.innerHTML=recBadge;tw.appendChild(bd);}
-                row.appendChild(chk);row.appendChild(tw);
-                // Botões reabrir + OK quando concluída — na ponta direita
+                const tt=document.createElement("div");
+                tt.style.cssText=`font-size:11px;font-weight:500;color:${task.done?"var(--text3)":"var(--text)"};line-height:1.4;text-decoration:${task.done?"line-through":"none"};`;
+                tt.textContent=task.text;
+                const badge=document.createElement("span");
+                badge.style.cssText="font-size:9px;font-weight:700;letter-spacing:.8px;padding:2px 6px;border-radius:4px;background:#3b82f622;color:#3b82f6;width:fit-content;";
+                badge.textContent="RECORRENTE";
+                card.appendChild(chk);card.appendChild(tt);card.appendChild(badge);
                 if(task.done){
-                  const btnWrap=document.createElement("div");
-                  btnWrap.style.cssText="display:flex;gap:5px;flex-shrink:0;";
-                  const reopen=document.createElement("button");
-                  reopen.style.cssText="background:none;border:1px solid #3b82f644;border-radius:3px;color:#3b82f677;font-size:8px;letter-spacing:1px;padding:2px 7px;cursor:pointer;font-family:inherit;";
-                  reopen.textContent="Reabrir";
+                  const btnWrap=document.createElement("div");btnWrap.style.cssText="display:flex;gap:4px;margin-top:2px;";
+                  const reopen=document.createElement("button");reopen.style.cssText="background:none;border:1px solid #3b82f644;border-radius:3px;color:#3b82f677;font-size:8px;letter-spacing:1px;padding:2px 7px;cursor:pointer;font-family:inherit;";reopen.textContent="Reabrir";
                   reopen.addEventListener("click",(e)=>{e.stopPropagation();update(ref(db,`/tasks/${task.id}`),{done:false,progress:false});});
-                  const okBtn=document.createElement("button");
-                  okBtn.style.cssText="background:#3b82f6;border:none;border-radius:3px;color:#000;font-size:8px;font-weight:700;letter-spacing:1px;padding:2px 7px;cursor:pointer;font-family:inherit;";
-                  okBtn.textContent="OK";
+                  const okBtn=document.createElement("button");okBtn.style.cssText="background:#3b82f6;border:none;border-radius:3px;color:#000;font-size:8px;font-weight:700;letter-spacing:1px;padding:2px 7px;cursor:pointer;font-family:inherit;";okBtn.textContent="OK";
                   okBtn.addEventListener("click",(e)=>{e.stopPropagation();remove(ref(db,`/tasks/${task.id}`));});
-                  btnWrap.appendChild(reopen);btnWrap.appendChild(okBtn);
-                  row.appendChild(btnWrap);
+                  btnWrap.appendChild(reopen);btnWrap.appendChild(okBtn);card.appendChild(btnWrap);
                 }
-                recSec.appendChild(row);
+                recGrid.appendChild(card);
               });
+              recSec.appendChild(recGrid);
               panel.appendChild(recSec);
             }
 
@@ -2588,25 +2583,7 @@ function render(){
             panel.appendChild(btnWrapper);
 
             // Processar uma NF de transferência específica agora (sem esperar a detecção automática)
-            const nfManualWrap = document.createElement("div");
-            nfManualWrap.style.cssText = "margin-top:10px;";
-            const nfManualBtn = document.createElement("button");
-            nfManualBtn.className = "add-dashed";
-            nfManualBtn.textContent = processandoNotaManual ? "Processando..." : "🧾 Já tenho uma NF de transferência pra processar agora";
-            nfManualBtn.disabled = processandoNotaManual;
-            nfManualBtn.style.cssText = `border-color:${color};color:${color};opacity:0.85;`;
-            const nfManualForm = document.createElement("div");
-            nfManualForm.className = "input-box"; nfManualForm.style.display = "none";
-            nfManualForm.innerHTML = `<input placeholder="Número da NF, ex: 020061"><div class="btn-row"><button class="btn-primary" style="background:${color};color:#000">PROCESSAR</button><button class="btn-cancel">✕</button></div>`;
-            const nfInp = nfManualForm.querySelector("input");
-            const nfSubmit = () => { if(!nfInp.value.trim()) return; processarNotaManual(nfInp.value.trim()); nfInp.value=""; nfManualForm.style.display="none"; nfManualBtn.style.display=""; };
-            const nfCancel = () => { nfManualForm.style.display="none"; nfManualBtn.style.display=""; nfInp.value=""; };
-            nfManualForm.querySelector(".btn-primary").addEventListener("click", nfSubmit);
-            nfManualForm.querySelector(".btn-cancel").addEventListener("click", nfCancel);
-            nfInp.addEventListener("keydown", e=>{ if(e.key==="Enter") nfSubmit(); if(e.key==="Escape") nfCancel(); });
-            nfManualBtn.addEventListener("click", () => { nfManualBtn.style.display="none"; nfManualForm.style.display="block"; setTimeout(()=>nfInp.focus(),50); });
-            nfManualWrap.appendChild(nfManualBtn); nfManualWrap.appendChild(nfManualForm);
-            panel.appendChild(nfManualWrap);
+
 
             active.length=0;
            }
