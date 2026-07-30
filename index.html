@@ -4394,11 +4394,12 @@ function renderConfig(panel, color) {
     apisTitle.textContent = "Central de APIs";
     panel.appendChild(apisTitle);
 
-    // Função helper: verifica se token expirou via saved_at + expires_in
+    // Função helper: suporta expires_at (ML) e saved_at+expires_in (Bling)
     function tokenValido(t) {
       if(!t?.access_token) return false;
-      if(!t.saved_at || !t.expires_in) return true; // sem info, assume válido
-      return (Date.now() - t.saved_at) < (t.expires_in * 1000 * 0.9); // 90% do tempo
+      if(t.expires_at) return Date.now() < t.expires_at; // ML: timestamp absoluto
+      if(t.saved_at && t.expires_in) return (Date.now() - t.saved_at) < (t.expires_in * 1000 * 0.9); // Bling
+      return true; // sem info de expiração, assume válido
     }
     // ML Matriz
     const mlMatrizAtivo = tokenValido(state.ml_token);
