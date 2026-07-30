@@ -4374,6 +4374,93 @@ async function processarPlanilhaFechamento(file, fbKey, nomeMes, color) {
 // ── CONFIGURAÇÕES ─────────────────────────────────────────────────────────────
 function renderConfig(panel, color) {
 
+  // ── Sub-abas do Config ────────────────────────────────────────
+  if(!window._configTab) window._configTab = "geral";
+  const configTabs = document.createElement("div");
+  configTabs.style.cssText = "display:flex;gap:2px;margin-bottom:18px;background:var(--bg3);border-radius:7px;padding:3px;";
+  ["geral","apis"].forEach(t => {
+    const btn = document.createElement("button");
+    btn.textContent = t === "geral" ? "Geral" : "APIs";
+    btn.style.cssText = `flex:1;padding:6px;border:none;border-radius:5px;font-size:10px;letter-spacing:1px;cursor:pointer;font-family:inherit;transition:all .15s;background:${window._configTab===t?"var(--bg2)":"none"};color:${window._configTab===t?"var(--text)":"var(--text3)"};font-weight:${window._configTab===t?"600":"400"};`;
+    btn.addEventListener("click", () => { window._configTab = t; panel.innerHTML=""; renderConfig(panel, color); });
+    configTabs.appendChild(btn);
+  });
+  panel.appendChild(configTabs);
+
+  // ── Sub-aba: APIs ─────────────────────────────────────────────
+  if(window._configTab === "apis") {
+    const apisTitle = document.createElement("div");
+    apisTitle.style.cssText = "font-size:8px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin-bottom:14px;";
+    apisTitle.textContent = "Central de APIs";
+    panel.appendChild(apisTitle);
+
+    const apis = [
+      {
+        nome: "Mercado Livre — Matriz RS",
+        token: state.ml_token?.access_token,
+        url: `${VERCEL_BACKEND}/api/ml-auth?conta=matriz`,
+        cor: "#FF6900"
+      },
+      {
+        nome: "Mercado Livre — Filial SP",
+        token: state.ml_token_filial?.access_token,
+        url: `${VERCEL_BACKEND}/api/ml-auth?conta=filial`,
+        cor: "#FF6900"
+      },
+      {
+        nome: "Bling ERP",
+        token: state.bling_tokens?.access_token,
+        url: "https://digoo-backend.vercel.app/api/bling-auth",
+        cor: "#4fc3f7"
+      },
+      {
+        nome: "Gmail / Google Drive",
+        token: state.google_token?.access_token,
+        url: null,
+        cor: "#34A853"
+      }
+    ];
+
+    apis.forEach(api => {
+      const row = document.createElement("div");
+      row.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:0.5px solid var(--sep);";
+
+      const left = document.createElement("div");
+      left.style.cssText = "display:flex;align-items:center;gap:10px;";
+
+      const dot = document.createElement("div");
+      const ativo = !!api.token;
+      dot.style.cssText = `width:7px;height:7px;border-radius:50%;background:${ativo?"#22c55e":"#ef4444"};flex-shrink:0;${ativo?"":"animation:siren 1s infinite;"}`;
+
+      const info = document.createElement("div");
+      const nomeEl = document.createElement("div");
+      nomeEl.style.cssText = "font-size:11px;color:var(--text2);font-weight:500;";
+      nomeEl.textContent = api.nome;
+      const statusEl = document.createElement("div");
+      statusEl.style.cssText = `font-size:9px;color:${ativo?"#22c55e":"#ef4444"};margin-top:2px;`;
+      statusEl.textContent = ativo ? "Conectado" : "Não conectado";
+      info.appendChild(nomeEl); info.appendChild(statusEl);
+      left.appendChild(dot); left.appendChild(info);
+
+      const btn = document.createElement("button");
+      btn.style.cssText = `background:none;border:0.5px solid ${ativo?"var(--border2)":"#ef444455"};border-radius:5px;color:${ativo?"var(--text3)":"#ef4444"};font-size:9px;letter-spacing:1px;padding:5px 12px;cursor:pointer;font-family:inherit;`;
+      btn.textContent = ativo ? "Reconectar" : "Conectar";
+      if(api.url) {
+        btn.addEventListener("click", () => window.open(api.url, "_blank"));
+      } else {
+        btn.textContent = "Manual";
+        btn.style.opacity = "0.4";
+        btn.title = "Token gerenciado pelo sistema";
+      }
+
+      row.appendChild(left); row.appendChild(btn);
+      panel.appendChild(row);
+    });
+    return;
+  }
+
+  // ── Sub-aba: Geral ────────────────────────────────────────────
+
   // ── Seção: Planilha de Atributos ──────────────────────────────
   const secAtrib = criarSecaoConfig("Planilha de Atributos (Custos ML)", color);
   const descAtrib = document.createElement("div");
