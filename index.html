@@ -2448,87 +2448,91 @@ function render(){
               manLabel.innerHTML='minhas tarefas <span style="flex:1;height:1px;background:#ffffff08;display:inline-block;"></span>';
               panel.appendChild(manLabel);
             }
+            // Grid de cards de tarefas
+            const cardsGrid = document.createElement("div");
+            cardsGrid.style.cssText = "display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:4px;";
+            panel.appendChild(cardsGrid);
             let dragSrcId = null;
             ownTasks.forEach(task=>{
-              const pc=themePrio(task.prio);const row=document.createElement("div");row.className="task-row";
-              row.dataset.taskId = task.id;
-              // Alça de drag só em tarefas não recorrentes
-              if(!task.isRecorrente){
-                const handle = document.createElement("span");
-                handle.textContent = "⠿";
-                handle.style.cssText = "color:#ffffff22;font-size:13px;cursor:grab;flex-shrink:0;padding:2px 4px 0 0;user-select:none;";
-                handle.setAttribute("draggable","false");
-                row.setAttribute("draggable","true");
-                row.prepend(handle);
-                row.addEventListener("dragstart", e=>{
-                  dragSrcId = task.id;
-                  e.dataTransfer.effectAllowed = "move";
-                  setTimeout(()=>row.style.opacity="0.4", 0);
-                });
-                row.addEventListener("dragend", ()=>{
-                  row.style.opacity="";
-                  document.querySelectorAll(".task-row.dragover-hint").forEach(el=>el.classList.remove("dragover-hint"));
-                });
-                row.addEventListener("dragover", e=>{
-                  e.preventDefault();
-                  document.querySelectorAll(".task-row.dragover-hint").forEach(el=>el.classList.remove("dragover-hint"));
-                  if(dragSrcId && dragSrcId!==task.id) row.classList.add("dragover-hint");
-                });
-                row.addEventListener("drop", e=>{
-                  e.preventDefault();
-                  row.classList.remove("dragover-hint");
-                  if(!dragSrcId || dragSrcId===task.id) return;
-                  const ids = ownTasks.map(t=>t.id);
-                  const fromIdx = ids.indexOf(dragSrcId);
-                  const toIdx = ids.indexOf(task.id);
-                  if(fromIdx===-1||toIdx===-1) return;
-                  ids.splice(fromIdx,1); ids.splice(toIdx,0,dragSrcId);
-                  set(ref(db,"/ordem_tarefas"), ids);
-                  dragSrcId = null;
-                });
-              }
-              const chk=document.createElement("button");chk.className="task-check"+(task.done?" done":task.progress?" progress":"");
+              const pc=themePrio(task.prio);
               const todosPassosFeitos = Array.isArray(task.subtarefas) && task.subtarefas.length>0 && task.subtarefas.every(s=>s.feito);
-              chk.style.borderColor= todosPassosFeitos && !task.done ? "#00dfc3" : pc;
-              if(task.done) chk.style.background=pc;
-              else if(task.progress) chk.style.background=`linear-gradient(to top, ${pc} 50%, transparent 50%)`;
-              else chk.style.background="none";
-              chk.addEventListener("click",()=>toggleTask(task.id,task.done,task.progress));
-              const tw=document.createElement("div");tw.style.flex="1";const tt=document.createElement("div");tt.className="task-text"+(task.done?" done":"");tt.textContent=task.text;tw.appendChild(tt);
-              const pb=document.createElement("div");pb.className="task-prio";pb.style.justifyContent="space-between";const puls=task.prio==="superurgente"?"animation:siren 0.6s infinite;":"";
-              const progressoTxt = Array.isArray(task.subtarefas) && task.subtarefas.length>0 ? `<span style="font-size:9px;color:${todosPassosFeitos?"#00dfc3":"var(--text3)"};letter-spacing:0.5px;">${task.subtarefas.filter(s=>s.feito).length}/${task.subtarefas.length} passos</span>` : "";
-              pb.innerHTML=`<span style="display:flex;align-items:center;gap:4px;"><span class="dot" style="background:${pc};${puls}"></span><span style="color:${pc};font-weight:${task.prio==="superurgente"?"700":"400"};${puls}">${PRIO[task.prio].label}</span></span>${overdueBadgeHtml(task)||progressoTxt}`;tw.appendChild(pb);
+              const card=document.createElement("div");
+              card.dataset.taskId = task.id;
+              card.style.cssText=`background:var(--bg3);border:0.5px solid var(--border2);border-top:3px solid ${pc};border-radius:12px;padding:12px 12px 10px;display:flex;flex-direction:column;gap:8px;cursor:pointer;aspect-ratio:1;box-sizing:border-box;transition:border-color .15s;`;
+              // Checkbox topo esquerdo
+              const chkBtn=document.createElement("button");
+              chkBtn.style.cssText=`width:18px;height:18px;border-radius:4px;border:1.5px solid ${todosPassosFeitos&&!task.done?"#00dfc3":pc};background:${task.done?pc:"none"};flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#000;font-size:11px;font-weight:700;`;
+              chkBtn.textContent=task.done?"✓":"";
+              chkBtn.addEventListener("click",(e)=>{e.stopPropagation();toggleTask(task.id,task.done,task.progress);});
+              card.appendChild(chkBtn);
+              // Título
+              const tt=document.createElement("div");
+              tt.style.cssText=`font-size:11px;font-weight:500;color:${task.done?"var(--text3)":"var(--text)"};line-height:1.4;flex:1;text-decoration:${task.done?"line-through":"none"};overflow:hidden;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;`;
+              tt.textContent=task.text;
+              card.appendChild(tt);
+              // Barra de progresso se tem subtarefas
               if(Array.isArray(task.subtarefas) && task.subtarefas.length>0){
-                const checklist=document.createElement("div");
-                checklist.style.cssText="margin-top:8px;padding-top:8px;border-top:1px solid var(--sep);display:flex;flex-direction:column;gap:2px;";
-                task.subtarefas.forEach((sub,idx)=>{
-                  const subRow=document.createElement("div");
-                  subRow.style.cssText="display:flex;align-items:center;gap:8px;padding:4px 0;";
-                  const subChk=document.createElement("button");
-                  subChk.style.cssText=`width:16px;height:16px;border-radius:4px;border:1.5px solid ${sub.feito?"#00dfc3":"var(--border2)"};background:${sub.feito?"#00dfc3":"none"};flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#000;font-size:10px;font-weight:700;`;
-                  subChk.textContent=sub.feito?"✓":"";
-                  subChk.addEventListener("click",()=>{update(ref(db,`/tasks/${task.id}/subtarefas/${idx}`),{feito:!sub.feito});});
-                  const subLabel=document.createElement("span");
-                  subLabel.style.cssText=`font-size:12px;color:${sub.feito?"var(--text3)":"var(--text2)"};text-decoration:${sub.feito?"line-through":"none"};cursor:pointer;`;
-                  subLabel.textContent=`${idx+1}. ${sub.texto}`;
-                  const ehPassoIPI = /ipi/i.test(sub.texto) && !!extrairNumeroNFDaTarefa(task);
-                  if(ehPassoIPI){
-                    if(!sub.feito) subLabel.style.textDecoration="underline";
-                    subLabel.title="Clique pra abrir a calculadora";
-                    subLabel.addEventListener("click",()=>{
-                      calcIpiFullscreen=task.id;
-                      if(!calcIpiState[task.id]) initCalcIpi(task);
-                      render();
-                    });
-                  }else{
-                    subLabel.addEventListener("click",()=>{update(ref(db,`/tasks/${task.id}/subtarefas/${idx}`),{feito:!sub.feito});});
-                  }
-                  subRow.appendChild(subChk);subRow.appendChild(subLabel);
-                  checklist.appendChild(subRow);
-                });
-                tw.appendChild(checklist);
+                const feitos=task.subtarefas.filter(s=>s.feito).length;
+                const pct=Math.round(feitos/task.subtarefas.length*100);
+                const progWrap=document.createElement("div");
+                progWrap.style.cssText="display:flex;flex-direction:column;gap:3px;";
+                const barBg=document.createElement("div");barBg.style.cssText="background:var(--border2);border-radius:99px;height:3px;";
+                const barFill=document.createElement("div");barFill.style.cssText=`background:${todosPassosFeitos?"#00dfc3":pc};height:3px;border-radius:99px;width:${pct}%;transition:width .3s;`;
+                barBg.appendChild(barFill);
+                const progLabel=document.createElement("div");progLabel.style.cssText=`font-size:9px;color:${todosPassosFeitos?"#00dfc3":"var(--text3)"};`;
+                progLabel.textContent=`${feitos} de ${task.subtarefas.length} concluídas`;
+                progWrap.appendChild(barBg);progWrap.appendChild(progLabel);
+                card.appendChild(progWrap);
               }
-              row.appendChild(chk);row.appendChild(tw);
+              // Meta: badge prio + dias atrasado
+              const meta=document.createElement("div");meta.style.cssText="display:flex;flex-direction:column;gap:3px;margin-top:auto;";
+              const puls=task.prio==="superurgente"?"animation:siren 0.6s infinite;":"";
+              const prioBadge=document.createElement("span");prioBadge.style.cssText=`font-size:9px;font-weight:700;letter-spacing:.8px;padding:2px 6px;border-radius:4px;background:${pc}22;color:${pc};width:fit-content;${puls}`;
+              prioBadge.textContent=PRIO[task.prio].label.toUpperCase();
+              meta.appendChild(prioBadge);
+              const overdue=overdueBadgeHtml(task);
+              if(overdue){const od=document.createElement("span");od.style.cssText="font-size:9px;color:var(--text3);";od.innerHTML=overdue.replace(/<[^>]+>/g,"");meta.appendChild(od);}
+              card.appendChild(meta);
+              // Abrir subtarefas em overlay ao clicar
+              if(Array.isArray(task.subtarefas) && task.subtarefas.length>0){
+                card.addEventListener("click",()=>{
+                  // toggle expansão inline
+                  const existing=cardsGrid.querySelector(".subtask-overlay");
+                  if(existing && existing.dataset.forTask===task.id){existing.remove();return;}
+                  if(existing) existing.remove();
+                  const overlay=document.createElement("div");
+                  overlay.className="subtask-overlay";
+                  overlay.dataset.forTask=task.id;
+                  overlay.style.cssText=`grid-column:1/-1;background:var(--bg3);border:1px solid ${pc}44;border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;`;
+                  const overlayTitle=document.createElement("div");overlayTitle.style.cssText="font-size:11px;font-weight:600;color:var(--text);margin-bottom:4px;";overlayTitle.textContent=task.text;overlay.appendChild(overlayTitle);
+                  task.subtarefas.forEach((sub,idx)=>{
+                    const subRow=document.createElement("div");subRow.style.cssText="display:flex;align-items:center;gap:8px;padding:3px 0;";
+                    const subChk=document.createElement("button");
+                    subChk.style.cssText=`width:15px;height:15px;border-radius:3px;border:1.5px solid ${sub.feito?"#00dfc3":"var(--border2)"};background:${sub.feito?"#00dfc3":"none"};flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#000;font-size:9px;font-weight:700;`;
+                    subChk.textContent=sub.feito?"✓":"";
+                    subChk.addEventListener("click",(e)=>{e.stopPropagation();update(ref(db,`/tasks/${task.id}/subtarefas/${idx}`),{feito:!sub.feito});});
+                    const subLabel=document.createElement("span");
+                    subLabel.style.cssText=`font-size:11px;color:${sub.feito?"var(--text3)":"var(--text2)"};text-decoration:${sub.feito?"line-through":"none"};cursor:pointer;`;
+                    subLabel.textContent=`${idx+1}. ${sub.texto}`;
+                    const ehPassoIPI = /ipi/i.test(sub.texto) && !!extrairNumeroNFDaTarefa(task);
+                    if(ehPassoIPI){
+                      if(!sub.feito) subLabel.style.textDecoration="underline";
+                      subLabel.title="Clique pra abrir a calculadora";
+                      subLabel.addEventListener("click",(e)=>{e.stopPropagation();calcIpiFullscreen=task.id;if(!calcIpiState[task.id])initCalcIpi(task);render();});
+                    }else{
+                      subLabel.addEventListener("click",(e)=>{e.stopPropagation();update(ref(db,`/tasks/${task.id}/subtarefas/${idx}`),{feito:!sub.feito});});
+                    }
+                    subRow.appendChild(subChk);subRow.appendChild(subLabel);overlay.appendChild(subRow);
+                  });
+                  // botão fechar
+                  const closeOverlay=document.createElement("button");closeOverlay.textContent="Fechar";closeOverlay.style.cssText="align-self:flex-end;background:none;border:1px solid var(--border2);border-radius:4px;color:var(--text3);font-size:9px;letter-spacing:1px;padding:3px 10px;cursor:pointer;font-family:inherit;margin-top:4px;";
+                  closeOverlay.addEventListener("click",(e)=>{e.stopPropagation();overlay.remove();});
+                  overlay.appendChild(closeOverlay);
+                  // inserir após o card
+                  const cardEl=cardsGrid.querySelector(`[data-task-id="${task.id}"]`);
+                  cardEl.insertAdjacentElement("afterend",overlay);
+                });
+              }
               if(task.done){
                 const btnWrap=document.createElement("div");
                 btnWrap.style.cssText="display:flex;gap:5px;flex-shrink:0;";
@@ -2541,12 +2545,12 @@ function render(){
                 okBtn.textContent="OK";
                 okBtn.addEventListener("click",(e)=>{e.stopPropagation();deleteTask(task.id);});
                 btnWrap.appendChild(reopen);btnWrap.appendChild(okBtn);
-                row.appendChild(btnWrap);
+                card.appendChild(btnWrap);
               }else{
-                const del=document.createElement("button");del.className="del-btn";del.textContent="×";del.addEventListener("click",()=>deleteTask(task.id));
-                row.appendChild(del);
+                const del=document.createElement("button");del.style.cssText="background:none;border:none;color:var(--text3);font-size:14px;cursor:pointer;align-self:flex-end;padding:0;line-height:1;";del.textContent="×";del.addEventListener("click",(e)=>{e.stopPropagation();deleteTask(task.id);});
+                card.appendChild(del);
               }
-              panel.appendChild(row);
+              cardsGrid.appendChild(card);
             });
             if(teamTasks.length>0){
               const divider=document.createElement("div");divider.className="section";divider.innerHTML=`<div class="section-label">Mensagem da equipe</div>`;
