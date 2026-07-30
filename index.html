@@ -2283,7 +2283,12 @@ function render(){
             if(tab==="concluidas"){
               btn.innerHTML='<span style="line-height:1.3;display:inline-block;text-align:center;">Concluidas<br>Equipe</span>';
             } else if(tab==="tarefas"){
-              btn.textContent="Minhas Tarefas";
+              const urgCount = active.filter(t=>(!t.delegatedBy||t.delegatedBy==="Diogo")&&!t.isRecorrente&&!t.done&&(t.prio==="superurgente"||t.prio==="urgente")).length;
+              if(urgCount>0){
+                btn.innerHTML=`Minhas Tarefas <span style="background:#ef4444;color:#fff;font-size:9px;font-weight:700;border-radius:99px;padding:1px 6px;vertical-align:middle;">${urgCount}</span>`;
+              } else {
+                btn.textContent="Minhas Tarefas";
+              }
             } else if(tab==="estoque") {
               btn.textContent="Estoque";
             } else if(tab==="cancelamentos") {
@@ -2384,6 +2389,47 @@ function render(){
             const allOwnTasks=manualTasks; // alias para o código abaixo
             const ownTasks=manualTasks;
             const teamTasks=active.filter(t=>t.delegatedBy&&t.delegatedBy!=="Diogo");
+
+            // Modal diário de urgentes
+            const modalKey = "digoo_modal_visto_" + new Date().toISOString().slice(0,10);
+            const urgentes = ownTasks.filter(t=>!t.done&&(t.prio==="superurgente"||t.prio==="urgente"));
+            if(urgentes.length>0 && !sessionStorage.getItem(modalKey) && window._diogotab==="tarefas"){
+              sessionStorage.setItem(modalKey,"1");
+              const modalOverlay=document.createElement("div");
+              modalOverlay.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;";
+              const modalBox=document.createElement("div");
+              modalBox.style.cssText="background:var(--bg2);border:0.5px solid var(--border2);border-radius:14px;padding:20px 24px;width:340px;max-width:90vw;";
+              const mTitle=document.createElement("div");
+              mTitle.style.cssText="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;display:flex;align-items:center;gap:8px;";
+              mTitle.innerHTML=`<span style="color:#ef4444;font-size:16px;">⚠</span> Tarefas urgentes pendentes`;
+              const mSub=document.createElement("div");
+              mSub.style.cssText="font-size:11px;color:var(--text3);margin-bottom:14px;";
+              mSub.textContent=`${urgentes.length} tarefa${urgentes.length>1?"s precisam":"  precisa"} da sua atenção hoje`;
+              modalBox.appendChild(mTitle);modalBox.appendChild(mSub);
+              urgentes.forEach(t=>{
+                const pc=themePrio(t.prio);
+                const row=document.createElement("div");
+                row.style.cssText="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:0.5px solid var(--sep);";
+                const dot=document.createElement("span");
+                dot.style.cssText=`width:7px;height:7px;border-radius:50%;background:${pc};flex-shrink:0;`;
+                const txt=document.createElement("span");
+                txt.style.cssText="font-size:11px;color:var(--text);flex:1;";
+                txt.textContent=t.text;
+                const days=document.createElement("span");
+                days.style.cssText="font-size:10px;color:var(--text3);white-space:nowrap;";
+                if(t.dueDate){const diff=Math.floor((Date.now()-new Date(t.dueDate))/(1000*60*60*24));if(diff>0)days.textContent=diff+"d";}
+                row.appendChild(dot);row.appendChild(txt);row.appendChild(days);
+                modalBox.appendChild(row);
+              });
+              const mBtn=document.createElement("button");
+              mBtn.style.cssText="margin-top:14px;width:100%;padding:8px;border-radius:7px;border:0.5px solid var(--border2);background:none;font-size:11px;color:var(--text2);cursor:pointer;font-family:inherit;letter-spacing:0.5px;";
+              mBtn.textContent="Entendido, vou resolver";
+              mBtn.addEventListener("click",()=>modalOverlay.remove());
+              modalOverlay.addEventListener("click",(e)=>{if(e.target===modalOverlay)modalOverlay.remove();});
+              modalBox.appendChild(mBtn);
+              modalOverlay.appendChild(modalBox);
+              document.body.appendChild(modalOverlay);
+            }
 
             // Seção recorrentes — cards menores azuis
             if(recTasks.length>0){
