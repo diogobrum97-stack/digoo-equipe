@@ -65,7 +65,7 @@ h1 { font-family: 'Digoo', 'Bebas Neue', sans-serif; font-size: 44px; letter-spa
 .card-header:hover { filter: brightness(1.08); }
 .avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; letter-spacing: 1px; flex-shrink: 0; }
 /* member-name mantém Bebas Neue — identidade visual dos cards */
-.member-name { font-family: 'Digoo', 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 3px; }
+.member-name { font-family: 'Digoo', 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 3px; text-transform: uppercase; }
 .dots { display: flex; gap: 5px; margin-top: 4px; min-height: 8px; align-items: center; }
 .dot { width: 7px; height: 7px; border-radius: 50%; }
 .chevron { margin-left: auto; font-size: 11px; color: #9a9a9a; transition: transform 0.2s; }
