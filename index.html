@@ -4394,23 +4394,32 @@ function renderConfig(panel, color) {
     apisTitle.textContent = "Central de APIs";
     panel.appendChild(apisTitle);
 
-    // ML Matriz — ativo se tem token E não retornou erro de autenticação
-    const mlMatrizAtivo = !!state.ml_token?.access_token && !vendasData?.error?.includes("token");
+    // Função helper: verifica se token expirou via saved_at + expires_in
+    function tokenValido(t) {
+      if(!t?.access_token) return false;
+      if(!t.saved_at || !t.expires_in) return true; // sem info, assume válido
+      return (Date.now() - t.saved_at) < (t.expires_in * 1000 * 0.9); // 90% do tempo
+    }
+    // ML Matriz
+    const mlMatrizAtivo = tokenValido(state.ml_token);
     const mlMatrizNick = state.ml_token?.nickname || "";
+    const mlMatrizExpirado = !!state.ml_token?.access_token && !mlMatrizAtivo;
     // ML Filial
-    const mlFilialAtivo = !!state.ml_token_filial?.access_token;
+    const mlFilialAtivo = tokenValido(state.ml_token_filial);
     const mlFilialNick = state.ml_token_filial?.nickname || "";
-    // Bling — usa as variáveis reais de estado da requisição
-    const blingAtivo = !!estoqueBlingData && !estoqueBlingErro;
+    const mlFilialExpirado = !!state.ml_token_filial?.access_token && !mlFilialAtivo;
+    // Bling — checa state.bling_token (salvo pelo backend no Firebase)
+    const blingAtivo = tokenValido(state.bling_token);
+    const blingExpirado = !!state.bling_token?.access_token && !blingAtivo;
     const blingErro = !!estoqueBlingErro;
     // Google
     const googleAtivo = !!state.google_token?.access_token;
 
     const apis = [
-      { nome: "Mercado Livre — Matriz RS", sub: mlMatrizNick, ativo: mlMatrizAtivo, erro: !mlMatrizAtivo && !!state.ml_token?.access_token, url: `${VERCEL_BACKEND}/api/ml-auth?conta=matriz` },
-      { nome: "Mercado Livre — Filial SP", sub: mlFilialNick, ativo: mlFilialAtivo, erro: false, url: `${VERCEL_BACKEND}/api/ml-auth?conta=filial` },
-      { nome: "Bling ERP", sub: blingErro ? estoqueBlingErro : (blingAtivo ? Object.keys(estoqueBlingData).length+" SKUs" : ""), ativo: blingAtivo, erro: blingErro, url: "https://digoo-backend.vercel.app/api/bling-auth" },
-      { nome: "Gmail / Google Drive", sub: "", ativo: googleAtivo, erro: false, url: null },
+      { nome: "Mercado Livre — Matriz RS", sub: mlMatrizNick, ativo: mlMatrizAtivo, expirado: mlMatrizExpirado, url: `${VERCEL_BACKEND}/api/ml-auth?conta=matriz` },
+      { nome: "Mercado Livre — Filial SP", sub: mlFilialNick, ativo: mlFilialAtivo, expirado: mlFilialExpirado, url: `${VERCEL_BACKEND}/api/ml-auth?conta=filial` },
+      { nome: "Bling ERP", sub: blingErro ? (estoqueBlingErro||"") : "", ativo: blingAtivo, expirado: blingExpirado, url: "https://digoo-backend.vercel.app/api/bling-auth" },
+      { nome: "Gmail / Google Drive", sub: "", ativo: googleAtivo, expirado: false, url: null },
     ];
 
     apis.forEach(api => {
@@ -4421,7 +4430,7 @@ function renderConfig(panel, color) {
       left.style.cssText = "display:flex;align-items:center;gap:10px;";
 
       const dot = document.createElement("div");
-      const dotColor = api.ativo ? "#22c55e" : api.erro ? "#f59e0b" : "#ef4444";
+      const dotColor = api.ativo ? "#22c55e" : api.expirado ? "#f59e0b" : "#ef4444";
       dot.style.cssText = `width:7px;height:7px;border-radius:50%;background:${dotColor};flex-shrink:0;${!api.ativo?"animation:siren 1s infinite;":""}`;
 
       const info = document.createElement("div");
@@ -4430,7 +4439,7 @@ function renderConfig(panel, color) {
       nomeEl.textContent = api.nome;
       const statusEl = document.createElement("div");
       statusEl.style.cssText = `font-size:9px;color:${dotColor};margin-top:2px;`;
-      statusEl.textContent = api.ativo ? ("Conectado" + (api.sub ? " · "+api.sub : "")) : api.erro ? ("Erro · "+(api.sub||"token inválido")) : "Não conectado";
+      statusEl.textContent = api.ativo ? ("Conectado" + (api.sub ? " · "+api.sub : "")) : api.expirado ? "Token expirado" : (api.sub ? "Erro · "+api.sub : "Não conectado");
       info.appendChild(nomeEl); info.appendChild(statusEl);
       left.appendChild(dot); left.appendChild(info);
 
