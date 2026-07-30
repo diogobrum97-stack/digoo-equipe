@@ -4394,63 +4394,55 @@ function renderConfig(panel, color) {
     apisTitle.textContent = "Central de APIs";
     panel.appendChild(apisTitle);
 
+    // ML Matriz — ativo se tem token E não retornou erro de autenticação
+    const mlMatrizAtivo = !!state.ml_token?.access_token && !vendasData?.error?.includes("token");
+    const mlMatrizNick = state.ml_token?.nickname || "";
+    // ML Filial
+    const mlFilialAtivo = !!state.ml_token_filial?.access_token;
+    const mlFilialNick = state.ml_token_filial?.nickname || "";
+    // Bling — usa as variáveis reais de estado da requisição
+    const blingAtivo = !!estoqueBlingData && !estoqueBlingErro;
+    const blingErro = !!estoqueBlingErro;
+    // Google
+    const googleAtivo = !!state.google_token?.access_token;
+
     const apis = [
-      {
-        nome: "Mercado Livre — Matriz RS",
-        token: state.ml_token?.access_token,
-        url: `${VERCEL_BACKEND}/api/ml-auth?conta=matriz`,
-        cor: "#FF6900"
-      },
-      {
-        nome: "Mercado Livre — Filial SP",
-        token: state.ml_token_filial?.access_token,
-        url: `${VERCEL_BACKEND}/api/ml-auth?conta=filial`,
-        cor: "#FF6900"
-      },
-      {
-        nome: "Bling ERP",
-        token: state.bling_tokens?.access_token,
-        url: "https://digoo-backend.vercel.app/api/bling-auth",
-        cor: "#4fc3f7"
-      },
-      {
-        nome: "Gmail / Google Drive",
-        token: state.google_token?.access_token,
-        url: null,
-        cor: "#34A853"
-      }
+      { nome: "Mercado Livre — Matriz RS", sub: mlMatrizNick, ativo: mlMatrizAtivo, erro: !mlMatrizAtivo && !!state.ml_token?.access_token, url: `${VERCEL_BACKEND}/api/ml-auth?conta=matriz` },
+      { nome: "Mercado Livre — Filial SP", sub: mlFilialNick, ativo: mlFilialAtivo, erro: false, url: `${VERCEL_BACKEND}/api/ml-auth?conta=filial` },
+      { nome: "Bling ERP", sub: blingErro ? estoqueBlingErro : (blingAtivo ? Object.keys(estoqueBlingData).length+" SKUs" : ""), ativo: blingAtivo, erro: blingErro, url: "https://digoo-backend.vercel.app/api/bling-auth" },
+      { nome: "Gmail / Google Drive", sub: "", ativo: googleAtivo, erro: false, url: null },
     ];
 
     apis.forEach(api => {
       const row = document.createElement("div");
-      row.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:0.5px solid var(--sep);";
+      row.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:0.5px solid var(--sep);";
 
       const left = document.createElement("div");
       left.style.cssText = "display:flex;align-items:center;gap:10px;";
 
       const dot = document.createElement("div");
-      const ativo = !!api.token;
-      dot.style.cssText = `width:7px;height:7px;border-radius:50%;background:${ativo?"#22c55e":"#ef4444"};flex-shrink:0;${ativo?"":"animation:siren 1s infinite;"}`;
+      const dotColor = api.ativo ? "#22c55e" : api.erro ? "#f59e0b" : "#ef4444";
+      dot.style.cssText = `width:7px;height:7px;border-radius:50%;background:${dotColor};flex-shrink:0;${!api.ativo?"animation:siren 1s infinite;":""}`;
 
       const info = document.createElement("div");
       const nomeEl = document.createElement("div");
       nomeEl.style.cssText = "font-size:11px;color:var(--text2);font-weight:500;";
       nomeEl.textContent = api.nome;
       const statusEl = document.createElement("div");
-      statusEl.style.cssText = `font-size:9px;color:${ativo?"#22c55e":"#ef4444"};margin-top:2px;`;
-      statusEl.textContent = ativo ? "Conectado" : "Não conectado";
+      statusEl.style.cssText = `font-size:9px;color:${dotColor};margin-top:2px;`;
+      statusEl.textContent = api.ativo ? ("Conectado" + (api.sub ? " · "+api.sub : "")) : api.erro ? ("Erro · "+(api.sub||"token inválido")) : "Não conectado";
       info.appendChild(nomeEl); info.appendChild(statusEl);
       left.appendChild(dot); left.appendChild(info);
 
       const btn = document.createElement("button");
-      btn.style.cssText = `background:none;border:0.5px solid ${ativo?"var(--border2)":"#ef444455"};border-radius:5px;color:${ativo?"var(--text3)":"#ef4444"};font-size:9px;letter-spacing:1px;padding:5px 12px;cursor:pointer;font-family:inherit;`;
-      btn.textContent = ativo ? "Reconectar" : "Conectar";
+      btn.style.cssText = `background:none;border:0.5px solid ${api.ativo?"var(--border2)":dotColor+"55"};border-radius:5px;color:${api.ativo?"var(--text3)":dotColor};font-size:9px;letter-spacing:1px;padding:5px 12px;cursor:pointer;font-family:inherit;`;
+      btn.textContent = api.ativo ? "Reconectar" : "Conectar";
       if(api.url) {
         btn.addEventListener("click", () => window.open(api.url, "_blank"));
       } else {
-        btn.textContent = "Manual";
+        btn.textContent = "Via sistema";
         btn.style.opacity = "0.4";
-        btn.title = "Token gerenciado pelo sistema";
+        btn.style.cursor = "default";
       }
 
       row.appendChild(left); row.appendChild(btn);
