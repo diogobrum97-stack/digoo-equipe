@@ -204,7 +204,11 @@ function themeColor(name) {
 }
 function themeHbg(name) {
   const light = document.body.classList.contains("light");
-  return ({Diogo:light?"#d4f0ed":"#0a2820",Bruno:light?"#e0d9f8":"#12103a",Larissa:light?"#f8d9e8":"#280818"})[name]||"#111";
+  return ({
+    Diogo:  light?"linear-gradient(135deg,#ffffff44,#e0e0e0)":"linear-gradient(135deg,#ffffff44,#000)",
+    Bruno:  light?"linear-gradient(135deg,#9d7fff44,#e8e4ff)":"linear-gradient(135deg,#9d7fff44,#000)",
+    Larissa:light?"linear-gradient(135deg,#f472b644,#ffe4f0)":"linear-gradient(135deg,#f472b644,#000)"
+  })[name]||"#111";
 }
 function themePrio(p) {
   const light = document.body.classList.contains("light");
