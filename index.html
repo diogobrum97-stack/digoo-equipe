@@ -5156,41 +5156,49 @@ async function renderConferencia(panel, color) {
       const file = fileInput.files[0]; if(!file) return;
       uploadBtn.textContent = "⏳ Lendo documento..."; uploadBtn.disabled = true;
       try {
-        // Ler PDF como base64 pra mandar pra IA
+        // Ler PDF como base64
         const buf = await file.arrayBuffer();
         const bytes = new Uint8Array(buf);
         let binary = ""; bytes.forEach(b => binary += String.fromCharCode(b));
         const base64pdf = btoa(binary);
 
-        // Extrair valor e competência via Claude
+        // Renderizar primeira página do PDF como imagem via canvas
+        let base64img = null;
+        try {
+          const pdfjsLib = await import("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs");
+          pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs";
+          const pdfDoc = await pdfjsLib.getDocument({data: bytes}).promise;
+          const page = await pdfDoc.getPage(1);
+          const viewport = page.getViewport({scale: 2.0});
+          const canvas = document.createElement("canvas");
+          canvas.width = viewport.width; canvas.height = viewport.height;
+          await page.render({canvasContext: canvas.getContext("2d"), viewport}).promise;
+          base64img = canvas.toDataURL("image/jpeg", 0.85).split(",")[1];
+        } catch(e) {
+          console.warn("PDF.js falhou:", e.message);
+        }
+
+        // Extrair valor e competência via Claude (imagem ou texto do nome)
         let valor = 0, competencia = detectarCompetencia(file.name) || "";
         try {
           uploadBtn.textContent = "⏳ Extraindo dados com IA...";
+          const msgContent = base64img ? [
+            { type: "image", source: { type: "base64", media_type: "image/jpeg", data: base64img } },
+            { type: "text", text: `Extraia deste documento fiscal brasileiro:
+1. O valor total líquido em reais (número apenas, ex: 1234.56)
+2. A competência/referência no formato MM/AAAA (ex: 06/2026) — use a data de emissão se não houver competência explícita
+
+Responda APENAS em JSON sem texto extra:
+{"valor": 1234.56, "competencia": "06/2026"}` }
+          ] : [
+            { type: "text", text: `Arquivo: ${file.name}
+Extraia do nome do arquivo a competência no formato MM/AAAA. Responda APENAS em JSON: {"valor": 0, "competencia": "MM/AAAA"}` }
+          ];
+
           const iaResp = await fetch("https://api.anthropic.com/v1/messages", {
             method: "POST",
             headers: {"Content-Type":"application/json"},
-            body: JSON.stringify({
-              model: "claude-sonnet-4-6",
-              max_tokens: 200,
-              messages: [{
-                role: "user",
-                content: [
-                  {
-                    type: "document",
-                    source: { type: "base64", media_type: "application/pdf", data: base64pdf }
-                  },
-                  {
-                    type: "text",
-                    text: `Extraia do documento fiscal:
-1. O valor total em reais (número apenas, ex: 1234.56)
-2. A competência/referência no formato MM/AAAA (ex: 06/2026)
-
-Responda APENAS em JSON sem texto extra:
-{"valor": 1234.56, "competencia": "06/2026"}`
-                  }
-                ]
-              }]
-            })
+            body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 200, messages: [{ role: "user", content: msgContent }] })
           });
           const iaData = await iaResp.json();
           const texto = iaData.content?.[0]?.text || "{}";
@@ -5199,7 +5207,7 @@ Responda APENAS em JSON sem texto extra:
           if(extraido.valor > 0) valor = extraido.valor;
           if(extraido.competencia) competencia = extraido.competencia;
         } catch(e) {
-          console.warn("IA não conseguiu extrair, usando fallback:", e.message);
+          console.warn("IA não conseguiu extrair:", e.message);
         }
 
         // Se IA não conseguiu, mostra formulário inline
