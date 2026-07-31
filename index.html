@@ -4728,6 +4728,32 @@ if(urlParams.get("ml_error")){alert("Erro ao conectar ML: "+urlParams.get("ml_er
 setupIdentityScreen();
 setInterval(()=>{ try{ render(); }catch(e){} }, 5*60*1000); // mantém os badges de "atrasada" atualizados
 
+// ── Auto-refresh tokens ML ────────────────────────────────────────────────
+async function autoRefreshML(conta) {
+  const key = conta === "filial" ? "ml_token_filial" : "ml_token";
+  const t = state[key];
+  if(!t?.access_token || !t?.expires_at) return;
+  const minutosRestantes = (t.expires_at - Date.now()) / 60000;
+  if(minutosRestantes > 60) return; // ainda tem mais de 1h, não precisa
+  try {
+    const r = await fetch(`${VERCEL_BACKEND}/api/ml-auth?action=refresh&conta=${conta}`);
+    const d = await r.json();
+    if(d.ok) console.log(`[ML ${conta}] Token renovado automaticamente. Expira em: ${new Date(d.expires_at).toLocaleTimeString("pt-BR")}`);
+    else console.warn(`[ML ${conta}] Falha no auto-refresh:`, d.error);
+  } catch(e) {
+    console.warn(`[ML ${conta}] Erro no auto-refresh:`, e.message);
+  }
+}
+
+async function runAutoRefresh() {
+  await autoRefreshML("matriz");
+  await autoRefreshML("filial");
+}
+
+runAutoRefresh(); // roda imediatamente ao abrir o painel
+setInterval(runAutoRefresh, 15 * 60 * 1000); // e a cada 15 minutos
+// ── Fim auto-refresh ──────────────────────────────────────────────────────
+
 // ─── CONFERÊNCIA FINANCEIRA ────────────────────────────────────────────────
 let confState = {
   extrato: null,       // [{data, descricao, razaoSocial, cnpj, valor}]
