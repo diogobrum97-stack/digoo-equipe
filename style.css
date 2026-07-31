@@ -110,13 +110,15 @@ h1 { font-family: 'Digoo', 'Bebas Neue', sans-serif; font-size: 44px; letter-spa
 .btn-primary:disabled { background: var(--bg2) !important; color: var(--text3) !important; cursor: not-allowed; }
 .btn-cancel { background: none; border: 1px solid var(--border2); color: var(--text2); border-radius: 5px; padding: 8px 12px; font-size: 12px; cursor: pointer; font-family: inherit; }
 .add-dashed { width: 100%; background: none; border-radius: 5px; padding: 10px; font-size: 12px; cursor: pointer; letter-spacing: 1px; transition: all 0.15s; font-family: inherit; border-style: dashed; border-width: 1px; margin-top: 4px; color: #b0b0b0; border-color: #444; }
-.card-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--sep); margin-bottom: 14px; }
+.card-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--sep); margin-bottom: 14px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.card-tabs::-webkit-scrollbar { display: none; }
 .card-tab { padding: 8px 12px; background: none; border: none; font-family: inherit; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; color: #8e8e8e; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; font-weight: 500; }
 .card-tab.active { color: var(--text); border-bottom-color: var(--text); }
 .task-msg-form { margin-top: 8px; padding: 10px 12px; background: var(--bg3); border-radius: 6px; border: 1px solid var(--border); }
 .task-msg-form input { width: 100%; background: none; border: none; outline: none; color: var(--text); font-size: 13px; padding: 0; font-family: inherit; margin-bottom: 8px; }
 .task-msg-form input::placeholder { color: var(--text3); }
-.ml-subtabs { display: flex; gap: 0; border-bottom: 1px solid var(--sep); margin-bottom: 16px; }
+.ml-subtabs { display: flex; gap: 0; border-bottom: 1px solid var(--sep); margin-bottom: 16px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.ml-subtabs::-webkit-scrollbar { display: none; }
 .ml-subtab { padding: 8px 16px; background: none; border: none; font-family: inherit; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; color: #8e8e8e; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; font-weight: 500; }
 .ml-subtab.active { color: var(--text); border-bottom-color: var(--text); }
 .ml-subtab .badge { display: inline-block; background: #555; color: var(--bg); border-radius: 10px; padding: 1px 6px; font-size: 9px; margin-left: 4px; font-weight: 700; }
@@ -131,8 +133,9 @@ h1 { font-family: 'Digoo', 'Bebas Neue', sans-serif; font-size: 44px; letter-spa
 @keyframes spin { to { transform: rotate(360deg); } }
 .spinning { animation: spin 1s linear infinite; display: inline-block; }
 @keyframes borderPulse { 0%,100% { border-color: #2a2a2a; } 50% { border-color: #fff; } }
-.tabs { display: flex; gap: 0; margin-bottom: 14px; border-bottom: 1px solid var(--sep); }
-.tab-btn { padding: 8px 14px; background: none; border: none; font-family: inherit; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; color: #8e8e8e; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; font-weight: 500; }
+.tabs { display: flex; gap: 0; margin-bottom: 14px; border-bottom: 1px solid var(--sep); overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab-btn { padding: 8px 14px; background: none; border: none; font-family: inherit; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; color: #8e8e8e; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; font-weight: 500; white-space: nowrap; flex-shrink: 0; }
 .tab-btn.active { color: var(--text); border-bottom-color: var(--text); }
 .corner-btn { display: block; margin-top: 12px; margin-left: auto; background: none; border: 1px solid var(--border); border-radius: 50%; width: 22px; height: 22px; font-size: 14px; cursor: pointer; transition: all 0.15s; touch-action: manipulation; font-family: inherit; line-height: 20px; text-align: center; padding: 0; color: var(--text2); }
 .corner-btn:hover { border-color: var(--border2); color: var(--text2); }
