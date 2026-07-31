@@ -31,16 +31,29 @@ body {
   background: var(--bg); color: var(--text);
 }
 body.light {
-  --bg: #f2f2ee; --bg2: #e8e8e4; --bg3: #fff;
-  --border: #d0d0cc; --border2: #bbb;
-  --text: #111; --text2: #333; --text3: #666; --sub: #666;
-  --done: #888; --sep: rgba(0,0,0,0.07);
-  --c-d: #009688; --hbg-d: #d4f0ed;
-  --c-b: #5c35cc; --hbg-b: #e0d9f8;
-  --c-l: #cc0055; --hbg-l: #f8d9e8;
-  --pu: #cc0000; --pi: #cc8800; --pn: #007744;
+  --bg: #efefef; --bg2: #e4e4e4; --bg3: #ffffff;
+  --border: #d0d0cc; --border2: #c0c0c0;
+  --text: #111111; --text2: #333333; --text3: #777777; --sub: #666;
+  --done: #999; --sep: rgba(0,0,0,0.08);
+  --c-d: #cccccc; --hbg-d: linear-gradient(135deg,#cccccc55,#efefef);
+  --c-b: #6d28d9; --hbg-b: linear-gradient(135deg,#7c3aed44,#efefef);
+  --c-l: #be185d; --hbg-l: linear-gradient(135deg,#db277766,#efefef);
+  --pu: #dc2626; --pi: #d97706; --pn: #0284c7;
   background: var(--bg); color: var(--text);
 }
+
+/* Modo claro — cards de membro mais vivos */
+body.light .card-header { border-bottom: 1px solid #e0e0e0; }
+body.light .member-name { color: #111; }
+body.light [data-member="Diogo"] .member-name { color: #222; }
+body.light [data-member="Bruno"] .member-name { color: #6d28d9; }
+body.light [data-member="Larissa"] .member-name { color: #be185d; }
+
+/* Modo claro — cards de tarefa */
+body.light .card-bg { background: #f7f7f7; border-color: #e5e5e5; }
+
+/* Modo claro — inner panel branco */
+body.light .member-panel { background: #ffffff; border: 0.5px solid #dddddd; border-radius: 10px; }
 .toggle-wrap { display: flex; justify-content: flex-end; max-width: 1280px; margin: 0 auto 16px; }
 .toggle-track { width: 48px; height: 26px; border-radius: 13px; background: var(--border2); border: 1px solid var(--border2); cursor: pointer; position: relative; transition: background 0.3s, border-color 0.3s; flex-shrink: 0; }
 .toggle-thumb { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #777; transition: transform 0.25s cubic-bezier(.4,0,.2,1), background 0.25s; display: flex; align-items: center; justify-content: center; font-size: 11px; line-height: 1; }
