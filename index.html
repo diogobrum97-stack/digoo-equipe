@@ -2297,11 +2297,19 @@ function render(){
             } else if(tab==="conferencia") {
               btn.textContent="Conferência";
             } else if(tab==="config") {
-              btn.textContent="Config";
+              if(window._diogotab==="config"){
+                btn.innerHTML=`Config <span style="margin-left:3px;font-size:11px;opacity:0.6;">✕</span>`;
+              } else {
+                btn.textContent="Config";
+              }
             } else {
               btn.textContent="Conversas";
             }
-            btn.addEventListener("click",()=>{window._diogotab=tab;render();});
+            if(tab==="config" && window._diogotab==="config"){
+              btn.addEventListener("click",()=>{window._diogotab="tarefas";render();});
+            } else {
+              btn.addEventListener("click",()=>{window._diogotab=tab;render();});
+            }
             tabs.appendChild(btn);
           });
           panel.appendChild(tabs);
