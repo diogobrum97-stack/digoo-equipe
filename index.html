@@ -5154,14 +5154,69 @@ async function renderConferencia(panel, color) {
     fileInput.type = "file"; fileInput.accept = ".pdf"; fileInput.style.display = "none";
     fileInput.addEventListener("change", async () => {
       const file = fileInput.files[0]; if(!file) return;
-      uploadBtn.textContent = "⏳ Enviando..."; uploadBtn.disabled = true;
+      uploadBtn.textContent = "⏳ Lendo documento..."; uploadBtn.disabled = true;
       try {
-        // Detectar valor
-        const valorStr = prompt(`Valor do documento "${file.name}" (R$):`);
-        const valor = parseFloat((valorStr||"0").replace(",","."));
-        if(isNaN(valor) || valor <= 0) { uploadBtn.textContent = `+ Anexar ${categoria === "servicos" ? "nota de serviço" : "guia de imposto"}`; uploadBtn.disabled = false; return; }
-        const competencia = detectarCompetencia(file.name) || prompt("Competência (ex: 06/2026):") || "";
+        // Ler PDF como base64 pra mandar pra IA
+        const buf = await file.arrayBuffer();
+        const bytes = new Uint8Array(buf);
+        let binary = ""; bytes.forEach(b => binary += String.fromCharCode(b));
+        const base64pdf = btoa(binary);
+
+        // Extrair valor e competência via Claude
+        let valor = 0, competencia = detectarCompetencia(file.name) || "";
+        try {
+          uploadBtn.textContent = "⏳ Extraindo dados com IA...";
+          const iaResp = await fetch("https://api.anthropic.com/v1/messages", {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({
+              model: "claude-sonnet-4-6",
+              max_tokens: 200,
+              messages: [{
+                role: "user",
+                content: [
+                  {
+                    type: "document",
+                    source: { type: "base64", media_type: "application/pdf", data: base64pdf }
+                  },
+                  {
+                    type: "text",
+                    text: `Extraia do documento fiscal:
+1. O valor total em reais (número apenas, ex: 1234.56)
+2. A competência/referência no formato MM/AAAA (ex: 06/2026)
+
+Responda APENAS em JSON sem texto extra:
+{"valor": 1234.56, "competencia": "06/2026"}`
+                  }
+                ]
+              }]
+            })
+          });
+          const iaData = await iaResp.json();
+          const texto = iaData.content?.[0]?.text || "{}";
+          const clean = texto.replace(/```json|```/g,"").trim();
+          const extraido = JSON.parse(clean);
+          if(extraido.valor > 0) valor = extraido.valor;
+          if(extraido.competencia) competencia = extraido.competencia;
+        } catch(e) {
+          console.warn("IA não conseguiu extrair, usando fallback:", e.message);
+        }
+
+        // Se IA não conseguiu, pede manualmente
+        if(!valor || valor <= 0) {
+          const valorStr = prompt(`Não consegui extrair o valor de "${file.name}". Digite manualmente (R$):`);
+          valor = parseFloat((valorStr||"0").replace(",","."));
+          if(isNaN(valor) || valor <= 0) {
+            uploadBtn.textContent = `+ Anexar ${categoria === "servicos" ? "nota de serviço" : "guia de imposto"}`;
+            uploadBtn.disabled = false; return;
+          }
+        }
+        if(!competencia) {
+          competencia = prompt("Competência (ex: 06/2026):") || "";
+        }
+
         // Upload no Drive
+        uploadBtn.textContent = "⏳ Enviando para o Drive...";
         const driveResult = await uploadParaDrive(file, confMes, categoria);
         // Salvar no Firebase
         await salvarDocFirebase(confMes, categoria, {
