@@ -200,14 +200,14 @@ function overdueBadgeHtml(task){
 
 function themeColor(name) {
   const light = document.body.classList.contains("light");
-  return ({Diogo:light?"#cccccc":"#cccccc",Bruno:light?"#5c35cc":"#9d7fff",Larissa:light?"#cc0055":"#ff1f7a"})[name]||"#fff";
+  return ({Diogo:light?"#555555":"#cccccc",Bruno:light?"#6d28d9":"#9d7fff",Larissa:light?"#be185d":"#ff1f7a"})[name]||"#fff";
 }
 function themeHbg(name) {
   const light = document.body.classList.contains("light");
   return ({
-    Diogo:  light?"linear-gradient(135deg,#ffffff44,#e0e0e0)":"linear-gradient(135deg,#ffffff44,#000)",
-    Bruno:  light?"linear-gradient(135deg,#9d7fff44,#e8e4ff)":"linear-gradient(135deg,#9d7fff44,#000)",
-    Larissa:light?"linear-gradient(135deg,#f472b644,#ffe4f0)":"linear-gradient(135deg,#f472b644,#000)"
+    Diogo:  light?"linear-gradient(135deg,#cccccc55,#efefef)":"linear-gradient(135deg,#ffffff44,#000)",
+    Bruno:  light?"linear-gradient(135deg,#7c3aed44,#efefef)":"linear-gradient(135deg,#9d7fff44,#000)",
+    Larissa:light?"linear-gradient(135deg,#db277766,#efefef)":"linear-gradient(135deg,#f472b644,#000)"
   })[name]||"#111";
 }
 function themePrio(p) {
