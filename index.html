@@ -4382,7 +4382,7 @@ function renderConfig(panel, color) {
     const btn = document.createElement("button");
     btn.textContent = t === "geral" ? "Geral" : "APIs";
     btn.style.cssText = `flex:1;padding:6px;border:none;border-radius:5px;font-size:10px;letter-spacing:1px;cursor:pointer;font-family:inherit;transition:all .15s;background:${window._configTab===t?"var(--bg2)":"none"};color:${window._configTab===t?"var(--text)":"var(--text3)"};font-weight:${window._configTab===t?"600":"400"};`;
-    btn.addEventListener("click", () => { window._configTab = t; panel.innerHTML=""; renderConfig(panel, color); });
+    btn.addEventListener("click", () => { window._configTab = t; render(); });
     configTabs.appendChild(btn);
   });
   panel.appendChild(configTabs);
