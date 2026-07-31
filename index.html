@@ -4729,6 +4729,29 @@ setupIdentityScreen();
 setInterval(()=>{ try{ render(); }catch(e){} }, 5*60*1000); // mantém os badges de "atrasada" atualizados
 
 // ── Auto-refresh tokens ML ────────────────────────────────────────────────
+function notifRefreshFalhou(conta) {
+  const id = `notif-refresh-${conta}`;
+  if(document.getElementById(id)) return; // já está mostrando
+  const notif = document.createElement("div");
+  notif.id = id;
+  notif.style.cssText = "position:fixed;bottom:20px;right:20px;background:#1a1a1a;border:1px solid #ef444455;border-radius:10px;padding:14px 18px;z-index:9999;max-width:300px;box-shadow:0 4px 20px rgba(0,0,0,0.4);";
+  const label = conta === "filial" ? "Filial SP" : "Matriz RS";
+  notif.innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+      <span style="color:#ef4444;font-size:16px;">⚠</span>
+      <span style="font-size:12px;font-weight:600;color:#fff;">Token ML ${label} expirou</span>
+    </div>
+    <div style="font-size:11px;color:#aaa;margin-bottom:12px;line-height:1.5;">O refresh automático falhou. Reconecte manualmente abrindo o link no browser certo.</div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="window.open('${VERCEL_BACKEND}/api/ml-auth?conta=${conta}','_blank')" style="flex:1;background:#ef4444;border:none;border-radius:5px;color:#fff;font-size:10px;font-weight:700;letter-spacing:1px;padding:6px;cursor:pointer;font-family:inherit;">RECONECTAR</button>
+      <button onclick="document.getElementById('${id}').remove()" style="background:none;border:1px solid #333;border-radius:5px;color:#666;font-size:10px;padding:6px 10px;cursor:pointer;font-family:inherit;">✕</button>
+    </div>
+  `;
+  document.body.appendChild(notif);
+  // Remove automaticamente após 60 segundos
+  setTimeout(() => notif.remove(), 60000);
+}
+
 async function autoRefreshML(conta) {
   const key = conta === "filial" ? "ml_token_filial" : "ml_token";
   const t = state[key];
@@ -4738,10 +4761,17 @@ async function autoRefreshML(conta) {
   try {
     const r = await fetch(`${VERCEL_BACKEND}/api/ml-auth?action=refresh&conta=${conta}`);
     const d = await r.json();
-    if(d.ok) console.log(`[ML ${conta}] Token renovado automaticamente. Expira em: ${new Date(d.expires_at).toLocaleTimeString("pt-BR")}`);
-    else console.warn(`[ML ${conta}] Falha no auto-refresh:`, d.error);
+    if(d.ok) {
+      console.log(`[ML ${conta}] Token renovado. Expira em: ${new Date(d.expires_at).toLocaleTimeString("pt-BR")}`);
+      // Remove notificação de erro se existir
+      document.getElementById(`notif-refresh-${conta}`)?.remove();
+    } else {
+      console.warn(`[ML ${conta}] Falha no auto-refresh:`, d.error);
+      notifRefreshFalhou(conta);
+    }
   } catch(e) {
     console.warn(`[ML ${conta}] Erro no auto-refresh:`, e.message);
+    notifRefreshFalhou(conta);
   }
 }
 
