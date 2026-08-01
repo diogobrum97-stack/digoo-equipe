@@ -6,7 +6,6 @@
 <title>Digoo · Equipe</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=Bebas+Neue&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
 <body>
 
@@ -5163,47 +5162,18 @@ async function renderConferencia(panel, color) {
         let binary = ""; bytes.forEach(b => binary += String.fromCharCode(b));
         const base64pdf = btoa(binary);
 
-        // Extrair valor e competência via PDF.js + Claude
+        // Extrair valor e competência via backend
         let valor = 0, competencia = detectarCompetencia(file.name) || "";
         try {
-          uploadBtn.textContent = "⏳ Lendo PDF...";
-          // Renderizar PDF como imagem usando pdfjsLib global
-          const pdfjsLib = window["pdfjs-dist/build/pdf"];
-          pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-          const pdfDoc = await pdfjsLib.getDocument({data: bytes}).promise;
-          const page = await pdfDoc.getPage(1);
-          const viewport = page.getViewport({scale: 2.0});
-          const canvas = document.createElement("canvas");
-          canvas.width = viewport.width; canvas.height = viewport.height;
-          await page.render({canvasContext: canvas.getContext("2d"), viewport}).promise;
-          const base64img = canvas.toDataURL("image/jpeg", 0.85).split(",")[1];
-
           uploadBtn.textContent = "⏳ Extraindo dados com IA...";
-          const iaResp = await fetch("https://api.anthropic.com/v1/messages", {
+          const extractResp = await fetch(`${VERCEL_BACKEND}/api/google?action=extractPdf`, {
             method: "POST",
             headers: {"Content-Type":"application/json"},
-            body: JSON.stringify({
-              model: "claude-sonnet-4-6",
-              max_tokens: 200,
-              messages: [{
-                role: "user",
-                content: [
-                  { type: "image", source: { type: "base64", media_type: "image/jpeg", data: base64img } },
-                  { type: "text", text: `Extraia deste documento fiscal brasileiro:
-1. O valor total líquido em reais (número apenas, ex: 2225.00)
-2. A competência no formato MM/AAAA — use a data de emissão se não houver competência explícita
-
-Responda APENAS em JSON sem texto extra:
-{"valor": 2225.00, "competencia": "07/2026"}` }
-                ]
-              }]
-            })
+            body: JSON.stringify({ base64: base64pdf, nome: file.name })
           });
-          const iaData = await iaResp.json();
-          const texto = iaData.content?.[0]?.text || "{}";
-          const extraido = JSON.parse(texto.replace(/```json|```/g,"").trim());
-          if(extraido.valor > 0) valor = extraido.valor;
-          if(extraido.competencia) competencia = extraido.competencia;
+          const extracted = await extractResp.json();
+          if(extracted.valor > 0) valor = extracted.valor;
+          if(extracted.competencia) competencia = extracted.competencia;
         } catch(e) {
           console.warn("Extração falhou:", e.message);
         }
