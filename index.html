@@ -5108,15 +5108,22 @@ async function renderConferencia(panel, color) {
       const info = document.createElement("div");
       info.style.cssText = "flex:1;min-width:0;";
       const nome = document.createElement("div");
-      nome.style.cssText = "font-size:11px;color:var(--text2);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
-      nome.textContent = doc.nome;
+      nome.style.cssText = "font-size:12px;color:var(--text);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
+      nome.textContent = doc.prestador || doc.nome;
       nome.title = doc.nome;
       const sub = document.createElement("div");
-      sub.style.cssText = "font-size:9px;color:var(--text3);margin-top:2px;";
-      sub.textContent = [
-        categoria === "impostos" ? detectarTipoImposto(doc.nome) : "NFS-e",
-        doc.competencia ? `· ${doc.competencia}` : ""
-      ].join(" ");
+      sub.style.cssText = "display:flex;gap:10px;margin-top:3px;flex-wrap:wrap;";
+      const subItems = [];
+      if(categoria === "impostos") subItems.push({label: detectarTipoImposto(doc.nome), val: ""});
+      else if(doc.numeroNF) subItems.push({label:"NFS-e", val:`nº ${doc.numeroNF}`});
+      if(doc.competencia) subItems.push({label:"Competência", val:doc.competencia});
+      if(doc.cnpj) subItems.push({label:"CNPJ", val:doc.cnpj});
+      subItems.forEach(({label,val})=>{
+        const s = document.createElement("span");
+        s.style.cssText = "font-size:10px;color:var(--text3);";
+        s.innerHTML = `<span style="color:var(--text3);margin-right:2px;">${label}</span>${val}`;
+        sub.appendChild(s);
+      });
       info.appendChild(nome); info.appendChild(sub);
       const val = document.createElement("div");
       val.style.cssText = "font-size:12px;font-weight:600;color:var(--text3);white-space:nowrap;";
@@ -5174,6 +5181,9 @@ async function renderConferencia(panel, color) {
           const extracted = await extractResp.json();
           if(extracted.valor > 0) valor = extracted.valor;
           if(extracted.competencia) competencia = extracted.competencia;
+          if(extracted.prestador) file._prestador = extracted.prestador;
+          if(extracted.numeroNF) file._numeroNF = extracted.numeroNF;
+          if(extracted.cnpj) file._cnpj = extracted.cnpj;
         } catch(e) {
           console.warn("Extração falhou:", e.message);
         }
@@ -5238,6 +5248,9 @@ async function renderConferencia(panel, color) {
           nome: file.name,
           valor,
           competencia,
+          prestador: file._prestador || "",
+          numeroNF: file._numeroNF || "",
+          cnpj: file._cnpj || "",
           driveId: driveResult.driveId || "",
           driveUrl: driveResult.driveUrl || "",
           viewUrl: driveResult.viewUrl || driveResult.driveUrl || "",
