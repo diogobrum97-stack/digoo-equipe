@@ -38,7 +38,7 @@ body.light {
   --c-d: #cccccc; --hbg-d: linear-gradient(135deg,#cccccc55,#efefef);
   --c-b: #6d28d9; --hbg-b: linear-gradient(135deg,#7c3aed44,#efefef);
   --c-l: #be185d; --hbg-l: linear-gradient(135deg,#db277766,#efefef);
-  --pu: #dc2626; --pi: #d97706; --pn: #0284c7;
+  --pu: #dc2626; --pi: #d97706; --pn: #055ded;
   background: var(--bg); color: var(--text);
 }
 
