@@ -27,7 +27,7 @@ body {
   --c-d: #00ffe5; --hbg-d: #0a2820;
   --c-b: #9d7fff; --hbg-b: #12103a;
   --c-l: #ff1f7a; --hbg-l: #280818;
-  --pu: #ff0000; --pi: #f7b500; --pn: #00ff77;
+  --pu: #e8000d; --pi: #f7b500; --pn: #00ff77;
   background: var(--bg); color: var(--text);
 }
 body.light {
@@ -38,7 +38,7 @@ body.light {
   --c-d: #cccccc; --hbg-d: linear-gradient(135deg,#cccccc55,#efefef);
   --c-b: #6d28d9; --hbg-b: linear-gradient(135deg,#7c3aed44,#efefef);
   --c-l: #be185d; --hbg-l: linear-gradient(135deg,#db277766,#efefef);
-  --pu: #dc2626; --pi: #d97706; --pn: #055ded;
+  --pu: #e8000d; --pi: #d97706; --pn: #055ded;
   background: var(--bg); color: var(--text);
 }
 
