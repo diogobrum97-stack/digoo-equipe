@@ -3,6 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Digoo">
+  <meta name="theme-color" content="#000000">
+  <link rel="apple-touch-icon" href="icon-192.png">
 <title>Digoo · Equipe</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=Bebas+Neue&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
@@ -4715,7 +4721,20 @@ async function gerarCSVAtributos(custosMedios) {
   }
 }
 
-document.getElementById("user-label").addEventListener("click",()=>{localStorage.removeItem(STORAGE_KEY);currentUser=null;const s=document.getElementById("identity-screen");s.innerHTML="";s.style.display="flex";setupIdentityScreen();});
+document.getElementById("user-label").addEventListener("click",()=>{localStorage.removeItem(STORAGE_KEY);currentUser=null;const s=document.getElementById("identity-screen");s.innerHTML="";s.style.display="flex";// PWA — abre direto no Diogo sem PIN quando vem da tela inicial
+const isPWA = window.matchMedia("(display-mode: standalone)").matches || 
+              window.navigator.standalone === true ||
+              new URLSearchParams(window.location.search).get("pwa") === "1";
+
+if(isPWA && !currentUser) {
+  currentUser = "Diogo";
+  localStorage.setItem(STORAGE_KEY, "Diogo");
+  window._diogotab = "tarefas";
+  document.getElementById("identity-screen").style.display = "none";
+  render();
+} else {
+  setupIdentityScreen();
+}});
 
 const urlParams=new URLSearchParams(window.location.search);
 if(urlParams.get("ml_connected")==="1"){window.history.replaceState({},"",window.location.pathname);}
