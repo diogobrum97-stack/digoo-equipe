@@ -5142,6 +5142,7 @@ async function renderConferencia(panel, color) {
         if(!confirm(`Remover "${doc.nome}"?`)) return;
         await removerDocFirebase(confMes, categoria, doc.id);
         if(confVisualizando === doc.viewUrl) confVisualizando = null;
+        await carregarDocsDrive(confMes);
         renderConferencia(panel, color);
       });
       actions.appendChild(btnVer); actions.appendChild(btnDel);
