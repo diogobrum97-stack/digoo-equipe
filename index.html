@@ -4629,7 +4629,7 @@ async function processarPlanilhaKits(file, statusEl, color) {
 
     let msg = `<span style="color:#00dfc3;">✓ ${total} kits importados</span>`;
     if(novos.length) msg += ` <span style="color:#fbbf24;">· ${novos.length} novo(s): ${novos.join(", ")}</span>`;
-    if(alterados.length) msg += ` <span style="color:#60a5fa;">· ${alterados.length} alterado(s)</span>`;
+    if(alterados.length) msg += ` <span style="color:#3b82f6;">· ${alterados.length} alterado(s)</span>`;
     statusEl.innerHTML = msg;
 
     const p = document.querySelector("#diogo-panel");
@@ -4937,8 +4937,6 @@ async function uploadParaDrive(file, mes, categoria) {
 
 // Renderiza a aba conferência
 async function renderConferencia(panel, color) {
-  panel.innerHTML = "";
-
   if(!confMes) confMes = mesAtual();
 
   // Título
@@ -4977,6 +4975,8 @@ async function renderConferencia(panel, color) {
   // Carrega docs
   await carregarDocsDrive(confMes);
 
+  panel.innerHTML = "";
+
   // Filtra por tipo se necessário
   const servicosFiltrados = confFiltroTipo ? confDocs.servicos : confDocs.servicos;
   const impostosFiltrados = confFiltroTipo
@@ -5011,7 +5011,7 @@ async function renderConferencia(panel, color) {
   }
 
   summary.appendChild(sumCard("Total do mês", totalGeral, "#ffffff88", `${servicosFiltrados.length + impostosFiltrados.length} documentos`));
-  summary.appendChild(sumCard("Serviços", totalServicos, "#60a5fa", `${servicosFiltrados.length} notas`));
+  summary.appendChild(sumCard("Serviços", totalServicos, "#3b82f6", `${servicosFiltrados.length} notas`));
   summary.appendChild(sumCard("Impostos", totalImpostos, "#f87171", `${impostosFiltrados.length} guias`));
   panel.appendChild(summary);
 
@@ -5399,7 +5399,7 @@ Digoo Brasil`;
     panel._actBar = actBar;
   }
 
-  renderSecao("Notas de Serviço", servicosFiltrados, "#60a5fa", "Notas de Serviço", "servicos");
+  renderSecao("Notas de Serviço", servicosFiltrados, "#3b82f6", "Notas de Serviço", "servicos");
   renderSecao("Impostos", impostosFiltrados, "#f87171", "Impostos", "impostos");
 
   if(panel._actBar) panel.appendChild(panel._actBar);
