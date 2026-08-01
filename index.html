@@ -212,7 +212,7 @@ function themeHbg(name) {
 }
 function themePrio(p) {
   const light = document.body.classList.contains("light");
-  return ({superurgente:light?"#e6003c":"#ff0033",urgente:light?"#cc0000":"#ff0000",importante:light?"#f7b500":"#f7b500",normal:light?"#007744":"#00ff77"})[p]||"#aaa";
+  return ({superurgente:light?"#e8000d":"#e8000d",urgente:light?"#e8000d":"#e8000d",importante:light?"#f7b500":"#f7b500",normal:light?"#007744":"#00ff77"})[p]||"#aaa";
 }
 
 window.toggleTheme = function() {
@@ -302,7 +302,7 @@ onValue(ref(db,"/"),snap=>{
   });
   Object.keys(flashQueue).forEach(m=>{if(!d.flashes[m])delete flashQueue[m];});
   prevTasks={...d.tasks};state=d;if(!cmpSalvando)render();
-},()=>{syncDot.style.background="#f87171";});
+},()=>{syncDot.style.background="#e8000d";});
 
 function addTask(member,text,prio,sender){
   setSyncing(true);push(ref(db,"/tasks"),{member,text,prio,done:false,delegatedBy:sender||null,createdAt:Date.now()});
@@ -406,8 +406,8 @@ function returnStatusStyle(key){
     delivered:{bg:"#4ade8022",color:"#4ade80",border:"#4ade8044"},
     review:   {bg:"#f7b50022",color:"#f7b500",border:"#f7b50044"},
     waiting:  {bg:"#f7b50022",color:"#f7b500",border:"#f7b50044"},
-    dispute:  {bg:"#f8717122",color:"#f87171",border:"#f8717144"},
-    lost:     {bg:"#f8717122",color:"#f87171",border:"#f8717144"},
+    dispute:  {bg:"#e8000d22",color:"#e8000d",border:"#e8000d44"},
+    lost:     {bg:"#e8000d22",color:"#e8000d",border:"#e8000d44"},
     cancelled:{bg:"#88888822",color:"#888",border:"#88888844"},
     default:  {bg:"#88888822",color:"#888",border:"#88888844"},
   };
@@ -773,7 +773,7 @@ function renderCalcIpiPanel(container, task){
 
   if(calc.erro){
     const erroBox = document.createElement("div");
-    erroBox.style.cssText = "margin-bottom:12px;padding:8px 10px;background:#f8717110;border:1px solid #f8717133;border-radius:5px;font-size:11px;color:#f87171;";
+    erroBox.style.cssText = "margin-bottom:12px;padding:8px 10px;background:#e8000d10;border:1px solid #e8000d33;border-radius:5px;font-size:11px;color:#e8000d;";
     erroBox.textContent = calc.erro;
     wrap.appendChild(erroBox);
   }
@@ -864,7 +864,7 @@ function renderCalcIpiPanel(container, task){
 
       const tdSku = document.createElement("td"); tdSku.style.cssText="padding:6px 3px;";
       const aliqTextoHtml = (val) => val==null
-        ? `<span class="aliqBadge" style="color:#f87171;font-size:9px;">sem %</span>`
+        ? `<span class="aliqBadge" style="color:#e8000d;font-size:9px;">sem %</span>`
         : `<span class="aliqBadge" style="color:var(--text3);font-size:9px;">${(val*100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}%</span>`;
       const seta = calc.linhaExpandida===i ? "▾" : "▸";
       if(p.automatico){
@@ -892,7 +892,7 @@ function renderCalcIpiPanel(container, task){
       const tdPreco = document.createElement("td"); tdPreco.style.cssText="padding:6px 3px;text-align:right;";
       const inpPreco = document.createElement("input"); inpPreco.type="number"; inpPreco.placeholder="digitar";
       inpPreco.value = p.precoVenda!=null ? p.precoVenda.toFixed(2) : "";
-      inpPreco.style.cssText=`width:70px;background:var(--bg);border:1px solid ${p.precoVenda==null?"#f87171":"var(--border2)"};border-radius:4px;padding:3px 5px;color:#f7b500;font-family:inherit;font-size:11px;text-align:right;`;
+      inpPreco.style.cssText=`width:70px;background:var(--bg);border:1px solid ${p.precoVenda==null?"#e8000d":"var(--border2)"};border-radius:4px;padding:3px 5px;color:#f7b500;font-family:inherit;font-size:11px;text-align:right;`;
       inpPreco.addEventListener("click",e=>e.stopPropagation());
       // Só recalcula localmente enquanto digita (sem gravar no Firebase a cada
       // tecla — isso disparava um recarregamento da tela inteira e derrubava
@@ -943,7 +943,7 @@ function renderCalcIpiPanel(container, task){
           p.aliquotaValor=isNaN(v)?null:v/100;
           const badge = tr.querySelector(".aliqBadge");
           if(badge){
-            if(p.aliquotaValor==null){ badge.style.color="#f87171"; badge.textContent="sem %"; }
+            if(p.aliquotaValor==null){ badge.style.color="#e8000d"; badge.textContent="sem %"; }
             else{ badge.style.color="var(--text3)"; badge.textContent=`${(p.aliquotaValor*100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}%`; }
           }
           recalcular();
@@ -1190,7 +1190,7 @@ function renderCalcIpiPanel(container, task){
           iCusto.step = "0.01";
           iCusto.value = l.custoAtual != null ? parseFloat(String(l.custoAtual).replace(",",".")).toFixed(2) : "";
           iCusto.placeholder = semCusto ? "⚠ preencher" : "";
-          iCusto.style.cssText = `width:80px;background:none;border:none;border-bottom:1px solid ${semCusto?"#f8717166":"var(--border2)"};color:${semCusto?"#f87171":"#f7b500"};font-family:inherit;font-size:11px;text-align:right;outline:none;padding:2px 4px;`;
+          iCusto.style.cssText = `width:80px;background:none;border:none;border-bottom:1px solid ${semCusto?"#e8000d66":"var(--border2)"};color:${semCusto?"#e8000d":"#f7b500"};font-family:inherit;font-size:11px;text-align:right;outline:none;padding:2px 4px;`;
           iCusto.addEventListener("input", () => {
             l.custoAtual = iCusto.value;
             iCusto.style.borderBottomColor = "var(--border2)";
@@ -1317,7 +1317,7 @@ function renderVendasTab(panel, color) {
     l.innerHTML='<span class="spinning">↻</span> Carregando...';panel.appendChild(l);return;
   }
   if(!vendasData||vendasData.error){
-    const err=document.createElement("p");err.style.cssText="color:#f87171;font-size:12px;padding:14px 0;";
+    const err=document.createElement("p");err.style.cssText="color:#e8000d;font-size:12px;padding:14px 0;";
     err.textContent=vendasData?.error||"Erro ao carregar";panel.appendChild(err);return;
   }
 
@@ -1409,14 +1409,14 @@ function renderVendasTab(panel, color) {
     sec.appendChild(t);
     vendasData.stoppedItems.slice(0,5).forEach(p=>{
       const row=document.createElement("div");
-      row.style.cssText="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg2);border-radius:5px;margin-bottom:5px;border-left:2px solid #f87171;";
+      row.style.cssText="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg2);border-radius:5px;margin-bottom:5px;border-left:2px solid #e8000d;";
       row.innerHTML=`
         <div style="flex:1;min-width:0;">
           <div style="font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.title}</div>
           <div style="font-size:9px;color:var(--text3);margin-top:2px;">Estoque: ${p.available_quantity} · Total vendido: ${p.sold_quantity}</div>
         </div>
         <div style="text-align:right;flex-shrink:0;">
-          <div style="font-size:12px;color:#f87171;">R$ ${p.price?.toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
+          <div style="font-size:12px;color:#e8000d;">R$ ${p.price?.toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
         </div>`;
       sec.appendChild(row);
     });
@@ -1495,7 +1495,7 @@ function renderDiogoDevTab(panel, color) {
   }
   if(!diogoDevolucoes || diogoDevolucoes.error) {
     const err = document.createElement("p");
-    err.style.cssText = "color:#f87171;font-size:12px;padding:14px 0;";
+    err.style.cssText = "color:#e8000d;font-size:12px;padding:14px 0;";
     err.textContent = diogoDevolucoes?.error || "Erro ao carregar";
     panel.appendChild(err); return;
   }
@@ -1509,7 +1509,7 @@ function renderDiogoDevTab(panel, color) {
   // Total
   const totalDiv = document.createElement("div");
   totalDiv.style.cssText = "display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--bg2);border-radius:5px;margin-bottom:12px;";
-  totalDiv.innerHTML = `<span style="font-size:10px;color:var(--text3);letter-spacing:1px">${diogoDevolucoes.count} devoluções</span><span style="font-size:16px;font-family:'Bebas Neue',sans-serif;color:#f87171;letter-spacing:2px;">-R$ ${diogoDevolucoes.totalCost.toLocaleString("pt-BR",{minimumFractionDigits:2})}</span>`;
+  totalDiv.innerHTML = `<span style="font-size:10px;color:var(--text3);letter-spacing:1px">${diogoDevolucoes.count} devoluções</span><span style="font-size:16px;font-family:'Bebas Neue',sans-serif;color:#e8000d;letter-spacing:2px;">-R$ ${diogoDevolucoes.totalCost.toLocaleString("pt-BR",{minimumFractionDigits:2})}</span>`;
   panel.appendChild(totalDiv);
 
   // Lista
@@ -1517,7 +1517,7 @@ function renderDiogoDevTab(panel, color) {
   grid.style.cssText = "display:flex;flex-direction:column;gap:6px;";
   diogoDevolucoes.data.forEach(dev => {
     const card = document.createElement("div");
-    card.style.cssText = `display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--bg2);border-radius:4px;border-left:2px solid ${dev.refundedAmount>0?"#f87171":"#4ade80"};`;
+    card.style.cssText = `display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--bg2);border-radius:4px;border-left:2px solid ${dev.refundedAmount>0?"#e8000d":"#4ade80"};`;
     const date = dev.closedAt ? new Date(dev.closedAt).toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"}) : "—";
     card.innerHTML = `
       <div style="flex:1;min-width:0;">
@@ -1525,7 +1525,7 @@ function renderDiogoDevTab(panel, color) {
         <div style="font-size:9px;color:var(--text3);margin-top:2px;">${dev.buyer} · ${date}</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;margin-left:8px;flex-shrink:0;">
-        <span style="font-size:11px;color:${dev.refundedAmount>0?'#f87171':'#4ade80'};">${dev.refundedAmount>0?'-R$ '+dev.refundedAmount.toFixed(2).replace('.',','):'R$ 0,00'}</span>
+        <span style="font-size:11px;color:${dev.refundedAmount>0?'#e8000d':'#4ade80'};">${dev.refundedAmount>0?'-R$ '+dev.refundedAmount.toFixed(2).replace('.',','):'R$ 0,00'}</span>
         <a href="${dev.permalink}" target="_blank" style="color:#f7b500;font-size:10px;text-decoration:none;">→</a>
       </div>`;
     grid.appendChild(card);
@@ -1576,7 +1576,7 @@ function renderDiogoCustoTab(panel, color) {
       <div style="font-size:9px;color:var(--text3);letter-spacing:2px;margin-bottom:4px">CUSTO REAL DE DEVOLUÇÕES</div>
       <div style="font-size:9px;color:var(--text3);">${diogoCustoData.negCount} devoluções com frete negativo</div>
     </div>
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;color:#f87171;">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;color:#e8000d;">
       R$ ${Math.abs(diogoCustoData.totalNeg).toLocaleString("pt-BR",{minimumFractionDigits:2})}
     </div>`;
   panel.appendChild(totalCard);
@@ -1587,13 +1587,13 @@ function renderDiogoCustoTab(panel, color) {
     grid.style.cssText = "display:flex;flex-direction:column;gap:5px;";
     diogoCustoData.negItems.forEach(item => {
       const row = document.createElement("div");
-      row.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--bg2);border-radius:4px;border-left:2px solid #f87171;";
+      row.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--bg2);border-radius:4px;border-left:2px solid #e8000d;";
       row.innerHTML = `
         <div style="flex:1;min-width:0;">
           <div style="font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.titulo}</div>
           <div style="font-size:9px;color:var(--text3);margin-top:2px;">${item.status} · ${item.data}</div>
         </div>
-        <span style="font-size:12px;color:#f87171;margin-left:8px;flex-shrink:0;">R$ ${Math.abs(item.total).toLocaleString("pt-BR",{minimumFractionDigits:2})}</span>`;
+        <span style="font-size:12px;color:#e8000d;margin-left:8px;flex-shrink:0;">R$ ${Math.abs(item.total).toLocaleString("pt-BR",{minimumFractionDigits:2})}</span>`;
       grid.appendChild(row);
     });
     panel.appendChild(grid);
@@ -1699,7 +1699,7 @@ function renderFinanceiroTab(panel,color){
     if(!state.ml_token?.access_token||finData?.error==="token ausente"){
       const msg=document.createElement("p");msg.style.cssText="font-size:11px;color:var(--text3);margin-bottom:12px;";msg.textContent="Conecte o Mercado Livre no card da Larissa.";panel.appendChild(msg);
     }else{
-      const err=document.createElement("p");err.style.cssText="color:#f87171;font-size:12px;padding:20px 0;";err.textContent=finData?.error||"Erro ao carregar";panel.appendChild(err);
+      const err=document.createElement("p");err.style.cssText="color:#e8000d;font-size:12px;padding:20px 0;";err.textContent=finData?.error||"Erro ao carregar";panel.appendChild(err);
     }
     return;
   }
@@ -1710,7 +1710,7 @@ function renderFinanceiroTab(panel,color){
   const totalLabel=document.createElement("div");
   totalLabel.innerHTML=`<div style="font-size:9px;color:var(--text3);letter-spacing:2px;margin-bottom:4px">CUSTO DE DEVOLUÇÕES</div><div style="font-size:9px;color:var(--text3);letter-spacing:1px">${finData.count} devoluções concluídas</div>`;
   const totalValue=document.createElement("div");
-  totalValue.style.cssText=`font-size:22px;font-family:'Bebas Neue',sans-serif;letter-spacing:2px;color:${finData.totalCost>0?"#f87171":"#4ade80"};`;
+  totalValue.style.cssText=`font-size:22px;font-family:'Bebas Neue',sans-serif;letter-spacing:2px;color:${finData.totalCost>0?"#e8000d":"#4ade80"};`;
   totalValue.textContent=`-R$ ${finData.totalCost.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
   totalCard.appendChild(totalLabel);totalCard.appendChild(totalValue);
   panel.appendChild(totalCard);
@@ -1728,7 +1728,7 @@ function renderFinanceiroTab(panel,color){
     const card=document.createElement("div");
     card.className="ml-card";
     const hasCost=dev.refundedAmount>0;
-    card.style.borderLeftColor=hasCost?"#f87171":"#4ade80";
+    card.style.borderLeftColor=hasCost?"#e8000d":"#4ade80";
     card.style.borderLeftWidth="3px";
 
     const date=dev.closedAt?new Date(dev.closedAt).toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"}):"—";
@@ -1740,7 +1740,7 @@ function renderFinanceiroTab(panel,color){
           ${dev.buyer} · <span style="color:var(--text3)">${date}</span>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;">
-          <span class="ml-badge" style="background:${hasCost?"#f8717122":"#4ade8022"};color:${hasCost?"#f87171":"#4ade80"};border:1px solid ${hasCost?"#f8717144":"#4ade8044"}">
+          <span class="ml-badge" style="background:${hasCost?"#e8000d22":"#4ade8022"};color:${hasCost?"#e8000d":"#4ade80"};border:1px solid ${hasCost?"#e8000d44":"#4ade8044"}">
             ${hasCost?`-R$ ${dev.refundedAmount.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}`:"R$ 0,00"}
           </span>
           <a href="${dev.permalink}" target="_blank" class="ml-link" style="margin-top:0">Ver →</a>
@@ -1795,7 +1795,7 @@ function renderMLInPanel(panel,color){
       const msg=document.createElement("p");msg.style.cssText="font-size:11px;color:var(--text3);margin-bottom:12px;line-height:1.6;";msg.textContent="Conecte sua conta do Mercado Livre para ver os dados.";panel.appendChild(msg);
       const btn=document.createElement("button");btn.className="ml-connect-btn";btn.textContent="Conectar Mercado Livre";btn.addEventListener("click",()=>{window.open(`${VERCEL_BACKEND}/api/ml-auth`,"_blank");});panel.appendChild(btn);
     }else{
-      const err=document.createElement("p");err.style.cssText="color:#f87171;font-size:12px;padding:20px 0;";err.textContent=data.error;panel.appendChild(err);
+      const err=document.createElement("p");err.style.cssText="color:#e8000d;font-size:12px;padding:20px 0;";err.textContent=data.error;panel.appendChild(err);
     }
     return;
   }
@@ -1827,7 +1827,7 @@ function renderMLInPanel(panel,color){
   }
 
   displayData.forEach(dev=>{
-    const stageColors={"waiting_seller":"#f87171","seller":"#f87171","buyer":"#f7b500","dispute":"#ff2222","resolved":"#4ade80"};
+    const stageColors={"waiting_seller":"#e8000d","seller":"#e8000d","buyer":"#f7b500","dispute":"#e8000d","resolved":"#4ade80"};
     const stageLabels={"waiting_seller":"Aguarda você","seller":"Aguarda você","buyer":"Aguarda comprador","dispute":"Em disputa","resolved":"Resolvida"};
     const sc=stageColors[dev.stage]||"#888";
     const sl=stageLabels[dev.stage]||dev.stage||dev.status;
@@ -1837,7 +1837,7 @@ function renderMLInPanel(panel,color){
     // Cor da borda pelo status de revisão
     let borderColor = sc;
     if(dev.needsReview) borderColor = "#f7b500";
-    if(dev.returnStatusKey === "dispute") borderColor = "#f87171";
+    if(dev.returnStatusKey === "dispute") borderColor = "#e8000d";
     card.style.borderLeftColor=borderColor;card.style.borderLeftWidth="3px";
 
     // Badge de status
@@ -1885,7 +1885,7 @@ function renderMLInPanel(panel,color){
         </div>
         ${dev.needsReview ? `<div id="${actionBtnsId}" style="display:flex;gap:6px;flex-wrap:wrap;">
           <button onclick="window._reviewDev('${dev.id}','ok')" style="background:#4ade8022;border:1px solid #4ade8066;color:#4ade80;border-radius:4px;padding:5px 12px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:1px;">✓ Chegou ok</button>
-          <button onclick="window._reviewDev('${dev.id}','fail')" style="background:#f8717122;border:1px solid #f8717166;color:#f87171;border-radius:4px;padding:5px 12px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:1px;">✗ Reportar problema</button>
+          <button onclick="window._reviewDev('${dev.id}','fail')" style="background:#e8000d22;border:1px solid #e8000d66;color:#e8000d;border-radius:4px;padding:5px 12px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:1px;">✗ Reportar problema</button>
         </div>` : `<a href="${dev.permalink}" target="_blank" class="ml-link">Abrir no ML →</a>`}
       </div>`;
     cardsGrid.appendChild(card);
@@ -1909,10 +1909,10 @@ function renderMLInPanel(panel,color){
         // Atualiza a lista após 2s
         setTimeout(() => { mlDevolucoes = null; fetchMLData("devolucoes"); }, 2000);
       } else {
-        if (btn) btn.innerHTML = `<span style="font-size:11px;color:#f87171">Erro: ${data.error}</span>`;
+        if (btn) btn.innerHTML = `<span style="font-size:11px;color:#e8000d">Erro: ${data.error}</span>`;
       }
     } catch(e) {
-      if (btn) btn.innerHTML = `<span style="font-size:11px;color:#f87171">Erro: ${e.message}</span>`;
+      if (btn) btn.innerHTML = `<span style="font-size:11px;color:#e8000d">Erro: ${e.message}</span>`;
     }
   };
 
@@ -2270,7 +2270,7 @@ function render(){
       if(diogoCardFullscreen) { panel.style.flex="1"; panel.style.overflowY="auto"; panel.style.maxHeight="none"; }
 
       if(member.locked&&!diogoPinUnlocked){
-        panel.innerHTML=`<div class="pin-wrap"><div class="pin-icon">◈</div><p>Digite o PIN para acessar</p><input class="pin-input" type="password" inputmode="numeric" autocomplete="new-password" name="digoo-pin-${Date.now()}" data-lpignore="true" data-form-type="other" maxlength="10" placeholder="••••••" id="pin-field" readonly><div style="font-size:10px;color:#f87171;margin-top:8px;letter-spacing:1px;display:none" id="pin-err">PIN incorreto</div><button class="pin-btn" style="background:${color};color:#000" id="pin-btn">ENTRAR</button></div>`;
+        panel.innerHTML=`<div class="pin-wrap"><div class="pin-icon">◈</div><p>Digite o PIN para acessar</p><input class="pin-input" type="password" inputmode="numeric" autocomplete="new-password" name="digoo-pin-${Date.now()}" data-lpignore="true" data-form-type="other" maxlength="10" placeholder="••••••" id="pin-field" readonly><div style="font-size:10px;color:#e8000d;margin-top:8px;letter-spacing:1px;display:none" id="pin-err">PIN incorreto</div><button class="pin-btn" style="background:${color};color:#000" id="pin-btn">ENTRAR</button></div>`;
         setTimeout(()=>{
           const f=document.getElementById("pin-field"),e=document.getElementById("pin-err"),b=document.getElementById("pin-btn");
           if(f){f.value="";f.removeAttribute("readonly");f.focus();}
@@ -2968,7 +2968,7 @@ function renderCancelamentos(panel) {
 
   if (cancelamentosErro) {
     const err = document.createElement("div");
-    err.style.cssText = "padding:10px;background:#f8717110;border:1px solid #f8717133;border-radius:5px;font-size:11px;color:#f87171;margin-bottom:12px;";
+    err.style.cssText = "padding:10px;background:#e8000d10;border:1px solid #e8000d33;border-radius:5px;font-size:11px;color:#e8000d;margin-bottom:12px;";
     err.textContent = `Erro: ${cancelamentosErro}`;
     panel.appendChild(err);
     return;
@@ -2983,7 +2983,7 @@ function renderCancelamentos(panel) {
 
   // 4 status — definição de cor, ícone e texto do badge
   const statusDefs = {
-    nf_pendente:        { cor: "#f87171", texto: "Cancelar NF",          icone: "⚠" },
+    nf_pendente:        { cor: "#e8000d", texto: "Cancelar NF",          icone: "⚠" },
     devolucao_pendente: { cor: "#f7b500", texto: "Devolução — processar", icone: "↩" },
     nf_cancelada:       { cor: "#00dfc3", texto: "NF cancelada",          icone: "✓" },
   };
@@ -3184,7 +3184,7 @@ function renderCancelamentosBruno(panel) {
 
   pendentes.forEach(it => {
     const card = document.createElement("div");
-    card.style.cssText = "background:var(--bg3);border:1px solid #f8717133;border-left:3px solid #f87171;border-radius:6px;padding:10px 14px;margin-bottom:8px;";
+    card.style.cssText = "background:var(--bg3);border:1px solid #e8000d33;border-left:3px solid #e8000d;border-radius:6px;padding:10px 14px;margin-bottom:8px;";
 
     const badgeRow = document.createElement("div");
     badgeRow.style.cssText = "display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;";
@@ -3192,7 +3192,7 @@ function renderCancelamentosBruno(panel) {
     prodNome.style.cssText = "font-size:12px;font-weight:600;color:var(--text);flex:1;margin-right:8px;";
     prodNome.textContent = it.produto;
     const badge = document.createElement("span");
-    badge.style.cssText = "background:#f8717118;color:#f87171;border:1px solid #f8717155;border-radius:4px;padding:2px 8px;font-size:9px;white-space:nowrap;flex-shrink:0;font-weight:600;";
+    badge.style.cssText = "background:#e8000d18;color:#e8000d;border:1px solid #e8000d55;border-radius:4px;padding:2px 8px;font-size:9px;white-space:nowrap;flex-shrink:0;font-weight:600;";
     badge.textContent = "⚠ Necessário cancelar NF";
     badgeRow.appendChild(prodNome); badgeRow.appendChild(badge);
     card.appendChild(badgeRow);
@@ -3240,7 +3240,7 @@ function renderCancelamentosBruno(panel) {
       nfLabel.style.cssText = "font-size:9px;color:var(--text3);letter-spacing:1px;";
       nfLabel.textContent = "NF";
       const nfNum = document.createElement("span");
-      nfNum.style.cssText = "font-size:16px;font-weight:700;color:#f87171;font-family:'IBM Plex Mono',monospace;cursor:pointer;letter-spacing:1px;";
+      nfNum.style.cssText = "font-size:16px;font-weight:700;color:#e8000d;font-family:'IBM Plex Mono',monospace;cursor:pointer;letter-spacing:1px;";
       nfNum.textContent = it.nf.nfNumero;
       nfNum.title = "Clique pra copiar";
       nfNum.addEventListener("click", () => {
@@ -3436,7 +3436,7 @@ function renderFilialSP(panel, color) {
   if (estoqueBlingLoading) {
     blingStatus.innerHTML = `<span class="spinning" style="color:var(--text3)">↻</span><span style="color:var(--text3)">Carregando Bling...</span>`;
   } else if (estoqueBlingErro) {
-    blingStatus.innerHTML = `<span style="color:#f87171">⚠ Bling: ${estoqueBlingErro}</span>`;
+    blingStatus.innerHTML = `<span style="color:#e8000d">⚠ Bling: ${estoqueBlingErro}</span>`;
     const authBtn = document.createElement("button");
     authBtn.textContent = "Renovar token";
     authBtn.style.cssText = "background:none;border:1px solid #f7b50066;color:#f7b500;border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer;letter-spacing:1px;margin-left:4px;";
@@ -3575,7 +3575,7 @@ function renderFilialSP(panel, color) {
     const tbody = table.querySelector("#estoque-tbody");
     enriched.forEach(r => {
       const semCusto = !r.custo;
-      const custoStr = r.custo > 0 ? `R$ ${r.custo.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : `<span style="color:#f87171;font-size:9px;">sem custo</span>`;
+      const custoStr = r.custo > 0 ? `R$ ${r.custo.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : `<span style="color:#e8000d;font-size:9px;">sem custo</span>`;
       const valorStr = r.valor > 0 ? `R$ ${r.valor.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : "—";
       const tr = document.createElement("tr");
       tr.style.borderBottom = "1px solid var(--sep2)";
@@ -3585,14 +3585,14 @@ function renderFilialSP(panel, color) {
         <td style="padding:8px 8px;text-align:center;color:${r.aptas>0?"var(--text)":"var(--text3)"};font-weight:${r.aptas>0?"500":"400"};">${r.aptas||"—"}</td>
         <td style="padding:8px 8px;text-align:center;color:var(--text3);">${r.transf||"—"}</td>
         <td style="padding:8px 8px;text-align:center;color:${r.pendente>0?"#f7b500":"var(--text3)"};font-weight:${r.pendente>0?"500":"400"};">${r.pendente||"—"}</td>
-        <td style="padding:8px 8px;text-align:right;color:${semCusto?"#f87171":"var(--text2)"};">${custoStr}</td>
+        <td style="padding:8px 8px;text-align:right;color:${semCusto?"#e8000d":"var(--text2)"};">${custoStr}</td>
         <td style="padding:8px 8px;text-align:right;color:${semCusto?"var(--text3)":r.valor>5000?"#00dfc3":r.valor>1000?"#00dfc3":"var(--text2)"};font-weight:500;">${valorStr}</td>`;
       tbody.appendChild(tr);
     });
 
     if (skusSemCusto > 0 && estoqueBlingData) {
       const warn = document.createElement("div");
-      warn.style.cssText = "margin-top:12px;padding:8px 12px;background:#f8711408;border:1px solid #f8711422;border-radius:5px;font-size:10px;color:#f87171;";
+      warn.style.cssText = "margin-top:12px;padding:8px 12px;background:#f8711408;border:1px solid #f8711422;border-radius:5px;font-size:10px;color:#e8000d;";
       warn.textContent = `⚠ ${skusSemCusto} SKUs sem custo no Bling — verifique o campo "Preço de Custo" no cadastro do produto.`;
       panel.appendChild(warn);
     }
@@ -3752,7 +3752,7 @@ function renderSaudeChart(panel, enriched) {
   // Legenda
   const leg = document.createElement("div");
   leg.style.cssText = "display:flex;gap:14px;margin-bottom:14px;font-size:10px;flex-wrap:wrap;";
-  [{c:"#00ffb8",l:"<15d — subir"},{c:"#f7b500",l:"15–90d — acompanhar"},{c:"#ff3d3d",l:">90d — baixar"}].forEach(({c,l}) => {
+  [{c:"#00ffb8",l:"<15d — subir"},{c:"#f7b500",l:"15–90d — acompanhar"},{c:"#e8000d",l:">90d — baixar"}].forEach(({c,l}) => {
     const s = document.createElement("span");
     s.style.cssText = "display:flex;align-items:center;gap:4px;color:var(--text3);";
     s.innerHTML = '<span style="width:8px;height:8px;border-radius:2px;background:' + c + ';display:inline-block;flex-shrink:0;"></span>' + l;
@@ -3774,7 +3774,7 @@ function renderSaudeChart(panel, enriched) {
     return {...r, vendas30, aptas, dias};
   }).sort((a,b) => b.dias - a.dias);
 
-  const cor = d => d.dias <= 15 ? "#00ffb8" : d.dias <= 90 ? "#f7b500" : "#ff3d3d";
+  const cor = d => d.dias <= 15 ? "#00ffb8" : d.dias <= 90 ? "#f7b500" : "#e8000d";
   const categoriaKey = d => d.dias <= 15 ? "verde" : d.dias <= 90 ? "amarelo" : "vermelho";
   const badgeText = d => d.dias <= 15 ? "↑ SUBIR" : d.dias <= 90 ? "~ ACOMPANHAR" : "↓ BAIXAR";
   const diasLabel = d => d.dias >= 999 ? "sem vendas" : d.dias + "d";
@@ -3872,7 +3872,7 @@ function renderSaudeChart(panel, enriched) {
             const rdata = await r.json();
             ultimoRdata = rdata;
             if(!r.ok || rdata.error){
-              statsRow.innerHTML = `<span style="color:#f87171;font-size:11px;">Erro: ${rdata.error||"falha na consulta"}</span>`;
+              statsRow.innerHTML = `<span style="color:#e8000d;font-size:11px;">Erro: ${rdata.error||"falha na consulta"}</span>`;
               return;
             }
             const m = rdata.skuMatch;
@@ -3918,7 +3918,7 @@ function renderSaudeChart(panel, enriched) {
               actionsRow.appendChild(toggleBtn);
             }
           }catch(err){
-            statsRow.innerHTML = `<span style="color:#f87171;font-size:11px;">Erro de conexão: ${err.message}</span>`;
+            statsRow.innerHTML = `<span style="color:#e8000d;font-size:11px;">Erro de conexão: ${err.message}</span>`;
           }
         };
         buscar(); // busca automática ao abrir o card, sem precisar clicar
@@ -4114,7 +4114,7 @@ function renderFechamentoMensal(panel, color) {
     const vazio = !val || String(val).toUpperCase().includes("NÃO") || String(val) === "—";
     inp.value = vazio ? "" : (val || "");
     inp.placeholder = vazio ? "⚠ preencher" : (placeholder || "");
-    inp.style.cssText = `background:none;border:none;border-bottom:1px solid ${vazio?"#f8717144":"transparent"};color:${vazio?"#f87171":(cor||"var(--text)")};font-family:${mono?"var(--font-mono, monospace)":"inherit"};font-size:inherit;padding:0;outline:none;width:100%;`;
+    inp.style.cssText = `background:none;border:none;border-bottom:1px solid ${vazio?"#e8000d44":"transparent"};color:${vazio?"#e8000d":(cor||"var(--text)")};font-family:${mono?"var(--font-mono, monospace)":"inherit"};font-size:inherit;padding:0;outline:none;width:100%;`;
     inp.addEventListener("focus", () => inp.style.borderBottomColor = color);
     inp.addEventListener("blur",  () => { inp.style.borderBottomColor = "transparent"; if(inp.value) inp.style.color = cor||"var(--text)"; });
     return inp;
@@ -4427,7 +4427,7 @@ function renderConfig(panel, color) {
       left.style.cssText = "display:flex;align-items:center;gap:10px;";
 
       const dot = document.createElement("div");
-      const dotColor = api.ativo ? "#22c55e" : api.expirado ? "#f7b500" : "#ef4444";
+      const dotColor = api.ativo ? "#22c55e" : api.expirado ? "#f7b500" : "#e8000d";
       dot.style.cssText = `width:7px;height:7px;border-radius:50%;background:${dotColor};flex-shrink:0;${!api.ativo?"animation:siren 1s infinite;":""}`;
 
       const info = document.createElement("div");
@@ -4585,7 +4585,7 @@ async function processarPlanilhaAtributos(file, statusEl, color) {
     await set(ref(db, "/config_atributos"), { atributos, total, atualizadoEm: Date.now() });
     statusEl.innerHTML = `<span style="color:#00dfc3;">✓ ${total} SKUs importados com sucesso</span>`;
   } catch(e) {
-    statusEl.innerHTML = `<span style="color:#f87171;">Erro: ${e.message}</span>`;
+    statusEl.innerHTML = `<span style="color:#e8000d;">Erro: ${e.message}</span>`;
   }
 }
 
@@ -4637,7 +4637,7 @@ async function processarPlanilhaKits(file, statusEl, color) {
     const p = document.querySelector("#diogo-panel");
     if(p && window._diogotab === "config") { p.innerHTML=""; renderConfig(p, color); }
   } catch(e) {
-    statusEl.innerHTML = `<span style="color:#f87171;">Erro: ${e.message}</span>`;
+    statusEl.innerHTML = `<span style="color:#e8000d;">Erro: ${e.message}</span>`;
   }
 }
 
@@ -4784,16 +4784,16 @@ function notifRefreshFalhou(conta) {
   if(document.getElementById(id)) return; // já está mostrando
   const notif = document.createElement("div");
   notif.id = id;
-  notif.style.cssText = "position:fixed;bottom:20px;right:20px;background:#1a1a1a;border:1px solid #ef444455;border-radius:10px;padding:14px 18px;z-index:9999;max-width:300px;box-shadow:0 4px 20px rgba(0,0,0,0.4);";
+  notif.style.cssText = "position:fixed;bottom:20px;right:20px;background:#1a1a1a;border:1px solid #e8000d55;border-radius:10px;padding:14px 18px;z-index:9999;max-width:300px;box-shadow:0 4px 20px rgba(0,0,0,0.4);";
   const label = conta === "filial" ? "Filial SP" : "Matriz RS";
   notif.innerHTML = `
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-      <span style="color:#ef4444;font-size:16px;">⚠</span>
+      <span style="color:#e8000d;font-size:16px;">⚠</span>
       <span style="font-size:12px;font-weight:600;color:#fff;">Token ML ${label} expirou</span>
     </div>
     <div style="font-size:11px;color:#aaa;margin-bottom:12px;line-height:1.5;">O refresh automático falhou. Reconecte manualmente abrindo o link no browser certo.</div>
     <div style="display:flex;gap:8px;">
-      <button onclick="window.open('${VERCEL_BACKEND}/api/ml-auth?conta=${conta}','_blank')" style="flex:1;background:#ef4444;border:none;border-radius:5px;color:#fff;font-size:10px;font-weight:700;letter-spacing:1px;padding:6px;cursor:pointer;font-family:inherit;">RECONECTAR</button>
+      <button onclick="window.open('${VERCEL_BACKEND}/api/ml-auth?conta=${conta}','_blank')" style="flex:1;background:#e8000d;border:none;border-radius:5px;color:#fff;font-size:10px;font-weight:700;letter-spacing:1px;padding:6px;cursor:pointer;font-family:inherit;">RECONECTAR</button>
       <button onclick="document.getElementById('${id}').remove()" style="background:none;border:1px solid #333;border-radius:5px;color:#666;font-size:10px;padding:6px 10px;cursor:pointer;font-family:inherit;">✕</button>
     </div>
   `;
@@ -5014,7 +5014,7 @@ async function renderConferencia(panel, color) {
 
   summary.appendChild(sumCard("Total do mês", totalGeral, "#ffffff88", `${servicosFiltrados.length + impostosFiltrados.length} documentos`));
   summary.appendChild(sumCard("Serviços", totalServicos, "#055ded", `${servicosFiltrados.length} notas`));
-  summary.appendChild(sumCard("Impostos", totalImpostos, "#f87171", `${impostosFiltrados.length} guias`));
+  summary.appendChild(sumCard("Impostos", totalImpostos, "#e8000d", `${impostosFiltrados.length} guias`));
   panel.appendChild(summary);
 
   // Filtros dinâmicos de tipo de imposto
@@ -5031,7 +5031,7 @@ async function renderConferencia(panel, color) {
       const btn = document.createElement("button");
       btn.textContent = tipo;
       const ativo = confFiltroTipo === tipo;
-      btn.style.cssText = `background:${ativo?"#f87171":"none"};border:0.5px solid ${ativo?"#f87171":"#f8717144"};border-radius:99px;color:${ativo?"#000":"#f87171"};font-size:9px;font-weight:${ativo?"700":"400"};letter-spacing:1px;padding:4px 12px;cursor:pointer;font-family:inherit;`;
+      btn.style.cssText = `background:${ativo?"#e8000d":"none"};border:0.5px solid ${ativo?"#e8000d":"#e8000d44"};border-radius:99px;color:${ativo?"#000":"#e8000d"};font-size:9px;font-weight:${ativo?"700":"400"};letter-spacing:1px;padding:4px 12px;cursor:pointer;font-family:inherit;`;
       btn.addEventListener("click", () => { confFiltroTipo = tipo; renderConferencia(panel, color); });
       filtrosWrap.appendChild(btn);
     });
@@ -5145,7 +5145,7 @@ async function renderConferencia(panel, color) {
       }
       const btnDel = document.createElement("button");
       btnDel.textContent = "✕";
-      btnDel.style.cssText = "background:none;border:0.5px solid #f8717122;border-radius:4px;color:#f8717166;font-size:9px;padding:3px 7px;cursor:pointer;font-family:inherit;";
+      btnDel.style.cssText = "background:none;border:0.5px solid #e8000d22;border-radius:4px;color:#e8000d66;font-size:9px;padding:3px 7px;cursor:pointer;font-family:inherit;";
       btnDel.addEventListener("click", async () => {
         if(!confirm(`Remover "${doc.nome}"?`)) return;
         await removerDocFirebase(confMes, categoria, doc.id);
@@ -5229,7 +5229,7 @@ async function renderConferencia(panel, color) {
             const vStr = form.querySelector(".manual-valor").value;
             const v = parseFloat(vStr.replace(",","."));
             const c = form.querySelector(".manual-comp").value.trim();
-            if(!v || v <= 0) { form.querySelector(".manual-valor").style.borderColor="#ef4444"; return; }
+            if(!v || v <= 0) { form.querySelector(".manual-valor").style.borderColor="#e8000d"; return; }
             form.remove();
             uploadBtn.textContent = "⏳ Enviando para o Drive..."; uploadBtn.disabled = true;
             const driveResult = await uploadParaDrive(file, confMes, categoria);
@@ -5403,7 +5403,7 @@ Digoo Brasil`;
   }
 
   renderSecao("Notas de Serviço", servicosFiltrados, "#055ded", "Notas de Serviço", "servicos");
-  renderSecao("Impostos", impostosFiltrados, "#f87171", "Impostos", "impostos");
+  renderSecao("Impostos", impostosFiltrados, "#e8000d", "Impostos", "impostos");
 
   if(panel._actBar) panel.appendChild(panel._actBar);
 }
