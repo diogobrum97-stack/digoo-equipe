@@ -38,11 +38,11 @@
 <div id="ml-fullscreen">
   <div id="ml-fullscreen-header">
     <div style="display:flex;align-items:center;gap:10px;">
-      <span style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:4px;color:#fff155;">MERCADO LIVRE</span>
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:4px;color:#f7b500;">MERCADO LIVRE</span>
     </div>
     <div style="display:flex;gap:8px;align-items:center;">
       <div id="ml-fs-subtabs" style="display:flex;border-bottom:none;"></div>
-      <button onclick="toggleMLMax()" style="background:none;border:1px solid #fff15544;border-radius:4px;padding:4px 10px;color:#fff155;font-size:12px;cursor:pointer;" title="Minimizar">⤡</button>
+      <button onclick="toggleMLMax()" style="background:none;border:1px solid #f7b50044;border-radius:4px;padding:4px 10px;color:#f7b500;font-size:12px;cursor:pointer;" title="Minimizar">⤡</button>
     </div>
   </div>
   <div id="ml-fullscreen-body"></div>
@@ -53,13 +53,13 @@
   <div id="ml-modal-header">
     <div style="display:flex;align-items:center;gap:12px;">
       <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-        <rect width="32" height="32" rx="6" fill="#fff155" opacity="0.1"/>
-        <ellipse cx="16" cy="16" rx="12" ry="8" stroke="#fff155" stroke-width="1.5" fill="none"/>
-        <path d="M8 16 Q12 10 16 16 Q20 22 24 16" stroke="#fff155" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <rect width="32" height="32" rx="6" fill="#f7b500" opacity="0.1"/>
+        <ellipse cx="16" cy="16" rx="12" ry="8" stroke="#f7b500" stroke-width="1.5" fill="none"/>
+        <path d="M8 16 Q12 10 16 16 Q20 22 24 16" stroke="#f7b500" stroke-width="2" fill="none" stroke-linecap="round"/>
       </svg>
-      <span style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:4px;color:#fff155;">MERCADO LIVRE</span>
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:4px;color:#f7b500;">MERCADO LIVRE</span>
     </div>
-    <button onclick="fecharML()" style="background:none;border:1px solid #fff15544;border-radius:50%;width:30px;height:30px;color:#fff155;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+    <button onclick="fecharML()" style="background:none;border:1px solid #f7b50044;border-radius:50%;width:30px;height:30px;color:#f7b500;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
   </div>
   <div id="ml-modal-body"></div>
 </div>
@@ -212,7 +212,7 @@ function themeHbg(name) {
 }
 function themePrio(p) {
   const light = document.body.classList.contains("light");
-  return ({superurgente:light?"#e6003c":"#ff0033",urgente:light?"#cc0000":"#ff0000",importante:light?"#cc8800":"#ffe600",normal:light?"#007744":"#00ff77"})[p]||"#aaa";
+  return ({superurgente:light?"#e6003c":"#ff0033",urgente:light?"#cc0000":"#ff0000",importante:light?"#f7b500":"#f7b500",normal:light?"#007744":"#00ff77"})[p]||"#aaa";
 }
 
 window.toggleTheme = function() {
@@ -228,7 +228,7 @@ if (localStorage.getItem(THEME_KEY)==="light") {
   document.body.classList.add("light");
   const thumb=document.getElementById("toggle-thumb"),icon=document.getElementById("toggle-icon");
   if(thumb){thumb.style.transform="translateX(22px)";thumb.style.background="#fff";}
-  if(icon){icon.innerHTML='<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';icon.style.color='#cc8800';}
+  if(icon){icon.innerHTML='<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';icon.style.color='#f7b500';}
 }
 
 let currentUser = localStorage.getItem(STORAGE_KEY)||null;
@@ -404,8 +404,8 @@ function returnStatusStyle(key){
   const map={
     transit:  {bg:"#a78bfa22",color:"#a78bfa",border:"#a78bfa44"},
     delivered:{bg:"#4ade8022",color:"#4ade80",border:"#4ade8044"},
-    review:   {bg:"#fbbf2422",color:"#fbbf24",border:"#fbbf2444"},
-    waiting:  {bg:"#fbbf2422",color:"#fbbf24",border:"#fbbf2444"},
+    review:   {bg:"#f7b50022",color:"#f7b500",border:"#f7b50044"},
+    waiting:  {bg:"#f7b50022",color:"#f7b500",border:"#f7b50044"},
     dispute:  {bg:"#f8717122",color:"#f87171",border:"#f8717144"},
     lost:     {bg:"#f8717122",color:"#f87171",border:"#f8717144"},
     cancelled:{bg:"#88888822",color:"#888",border:"#88888844"},
@@ -432,7 +432,7 @@ function renderMLFullscreen() {
     fsSubtabs.innerHTML = "";
     ["devolucoes","custos"].forEach(tab => {
       const btn = document.createElement("button");
-      btn.style.cssText = `padding:6px 14px;background:none;border:none;font-family:inherit;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:${diogomltab===tab?"#fff155":"var(--text3)"};border-bottom:2px solid ${diogomltab===tab?"#fff155":"transparent"};transition:all 0.15s;`;
+      btn.style.cssText = `padding:6px 14px;background:none;border:none;font-family:inherit;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:${diogomltab===tab?"#f7b500":"var(--text3)"};border-bottom:2px solid ${diogomltab===tab?"#f7b500":"transparent"};transition:all 0.15s;`;
       btn.textContent = tab==="devolucoes"?"Devoluções":"Custo de Devoluções";
       btn.addEventListener("click",()=>{ diogomltab=tab; renderMLFullscreen(); });
       fsSubtabs.appendChild(btn);
@@ -441,8 +441,8 @@ function renderMLFullscreen() {
   const body = document.getElementById("ml-fullscreen-body");
   if(!body) return;
   body.innerHTML = "";
-  if(diogomltab==="devolucoes") renderDiogoDevTab(body,"#fff155");
-  else renderDiogoCustoTab(body,"#fff155");
+  if(diogomltab==="devolucoes") renderDiogoDevTab(body,"#f7b500");
+  else renderDiogoCustoTab(body,"#f7b500");
 }
 
 window.fecharML = function() {
@@ -474,8 +474,8 @@ function renderMLModal() {
   });
   body.appendChild(subTabs);
 
-  if(diogomltab==="devolucoes") renderDiogoDevTab(body, "#fff155");
-  else renderDiogoCustoTab(body, "#fff155");
+  if(diogomltab==="devolucoes") renderDiogoDevTab(body, "#f7b500");
+  else renderDiogoCustoTab(body, "#f7b500");
 }
 
 async function fetchDiogoDevolucoes(){
@@ -503,9 +503,9 @@ async function fetchFinanceiro(month){
 function renderDiogoML(container, color) {
   // Botão discreto com logo ML
   const mlBtn = document.createElement("button");
-  mlBtn.style.cssText = `display:flex;align-items:center;gap:6px;background:none;border:1px solid #fff15533;border-radius:5px;padding:5px 12px;cursor:pointer;font-family:inherit;font-size:10px;color:#fff155;letter-spacing:1px;margin-top:12px;transition:all 0.15s;`;
-  mlBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="4" fill="#fff155" opacity="0.15"/><text x="16" y="22" text-anchor="middle" font-size="14" font-weight="700" fill="#fff155">ML</text></svg> MERCADO LIVRE`;
-  mlBtn.addEventListener("mouseenter", () => { mlBtn.style.background="#fff15511"; });
+  mlBtn.style.cssText = `display:flex;align-items:center;gap:6px;background:none;border:1px solid #f7b50033;border-radius:5px;padding:5px 12px;cursor:pointer;font-family:inherit;font-size:10px;color:#f7b500;letter-spacing:1px;margin-top:12px;transition:all 0.15s;`;
+  mlBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="4" fill="#f7b500" opacity="0.15"/><text x="16" y="22" text-anchor="middle" font-size="14" font-weight="700" fill="#f7b500">ML</text></svg> MERCADO LIVRE`;
+  mlBtn.addEventListener("mouseenter", () => { mlBtn.style.background="#f7b50011"; });
   mlBtn.addEventListener("mouseleave", () => { mlBtn.style.background="none"; });
   mlBtn.addEventListener("click", () => {
     digoMLOpen = !digoMLOpen;
@@ -518,14 +518,14 @@ function renderDiogoML(container, color) {
 
   // Painel ML
   const mlPanel = document.createElement("div");
-  mlPanel.style.cssText = "background:var(--bg3);border:1px solid #fff15533;border-radius:6px;padding:14px;margin-top:8px;";
+  mlPanel.style.cssText = "background:var(--bg3);border:1px solid #f7b50033;border-radius:6px;padding:14px;margin-top:8px;";
 
   // Sub-abas
   const subTabs = document.createElement("div");
   subTabs.style.cssText = "display:flex;gap:0;border-bottom:1px solid var(--sep);margin-bottom:14px;";
   ["devolucoes","custos"].forEach(tab => {
     const btn = document.createElement("button");
-    btn.style.cssText = `padding:6px 14px;background:none;border:none;font-family:inherit;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:${diogomltab===tab?"#fff155":"var(--text3)"};border-bottom:2px solid ${diogomltab===tab?"#fff155":"transparent"};margin-bottom:-1px;transition:all 0.15s;`;
+    btn.style.cssText = `padding:6px 14px;background:none;border:none;font-family:inherit;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:${diogomltab===tab?"#f7b500":"var(--text3)"};border-bottom:2px solid ${diogomltab===tab?"#f7b500":"transparent"};margin-bottom:-1px;transition:all 0.15s;`;
     btn.textContent = tab === "devolucoes" ? "Devoluções" : "Custo de Devoluções";
     btn.addEventListener("click", () => { diogomltab = tab; render(); });
     subTabs.appendChild(btn);
@@ -801,7 +801,7 @@ function renderCalcIpiPanel(container, task){
     const box = document.createElement("div"); box.style.cssText="flex:1;min-width:120px;";
     const lbl = document.createElement("div"); lbl.style.cssText="font-size:9px;color:var(--text3);margin-bottom:4px;"; lbl.textContent=label;
     const inp = document.createElement("input"); inp.type="number"; inp.value=valor;
-    inp.style.cssText="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:5px 7px;color:#fbbf24;font-family:inherit;font-size:12px;";
+    inp.style.cssText="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:5px 7px;color:#f7b500;font-family:inherit;font-size:12px;";
     inp.addEventListener("input", ()=>{ onInput(parseFloat(inp.value)||0); recalcular(); });
     box.appendChild(lbl); box.appendChild(inp); return box;
   };
@@ -824,7 +824,7 @@ function renderCalcIpiPanel(container, task){
     <th style="text-align:left;padding:5px 3px;color:var(--text3);font-weight:400;">SKU / PRODUTO</th>
     <th style="text-align:center;padding:5px 3px;color:var(--text3);font-weight:400;">QTD</th>
     <th style="text-align:right;padding:5px 3px;color:var(--text3);font-weight:400;">VALOR NF</th>
-    <th style="text-align:right;padding:5px 3px;color:#fbbf24;font-weight:400;">PREÇO VENDA</th>
+    <th style="text-align:right;padding:5px 3px;color:#f7b500;font-weight:400;">PREÇO VENDA</th>
     <th style="text-align:right;padding:5px 3px;color:var(--text3);font-weight:400;">VALOR DO IPI</th>
     <th style="text-align:right;padding:5px 3px;color:var(--text3);font-weight:400;">CMV C/ IPI+FRETE</th>
     <th style="width:16px;"></th>
@@ -837,7 +837,7 @@ function renderCalcIpiPanel(container, task){
   if(!calc.linhaExpandida) calc.linhaExpandida = null; // índice do produto expandido pra editar NCM/alíquota, ou null
 
   const avisoBox = document.createElement("div");
-  avisoBox.style.cssText = "margin-top:8px;font-size:10px;color:#fbbf24;display:none;";
+  avisoBox.style.cssText = "margin-top:8px;font-size:10px;color:#f7b500;display:none;";
   wrap.appendChild(avisoBox);
 
   const addBtn = document.createElement("button");
@@ -892,7 +892,7 @@ function renderCalcIpiPanel(container, task){
       const tdPreco = document.createElement("td"); tdPreco.style.cssText="padding:6px 3px;text-align:right;";
       const inpPreco = document.createElement("input"); inpPreco.type="number"; inpPreco.placeholder="digitar";
       inpPreco.value = p.precoVenda!=null ? p.precoVenda.toFixed(2) : "";
-      inpPreco.style.cssText=`width:70px;background:var(--bg);border:1px solid ${p.precoVenda==null?"#f87171":"var(--border2)"};border-radius:4px;padding:3px 5px;color:#fbbf24;font-family:inherit;font-size:11px;text-align:right;`;
+      inpPreco.style.cssText=`width:70px;background:var(--bg);border:1px solid ${p.precoVenda==null?"#f87171":"var(--border2)"};border-radius:4px;padding:3px 5px;color:#f7b500;font-family:inherit;font-size:11px;text-align:right;`;
       inpPreco.addEventListener("click",e=>e.stopPropagation());
       // Só recalcula localmente enquanto digita (sem gravar no Firebase a cada
       // tecla — isso disparava um recarregamento da tela inteira e derrubava
@@ -936,7 +936,7 @@ function renderCalcIpiPanel(container, task){
         const lblAliq = document.createElement("div"); lblAliq.style.cssText="font-size:9px;color:var(--text3);margin-bottom:3px;"; lblAliq.textContent="ALÍQUOTA %";
         const inpAliqDet = document.createElement("input"); inpAliqDet.type="number"; inpAliqDet.step="0.01"; inpAliqDet.placeholder="digitar";
         inpAliqDet.value = p.aliquotaValor!=null ? (p.aliquotaValor*100) : "";
-        inpAliqDet.style.cssText = "width:80px;background:var(--bg3);border:1px solid #fbbf2466;border-radius:4px;padding:5px 8px;color:#fbbf24;font-family:inherit;font-size:12px;";
+        inpAliqDet.style.cssText = "width:80px;background:var(--bg3);border:1px solid #f7b50066;border-radius:4px;padding:5px 8px;color:#f7b500;font-family:inherit;font-size:12px;";
         inpAliqDet.addEventListener("click",e=>e.stopPropagation());
         inpAliqDet.addEventListener("input",()=>{
           const v=parseFloat(inpAliqDet.value);
@@ -1190,11 +1190,11 @@ function renderCalcIpiPanel(container, task){
           iCusto.step = "0.01";
           iCusto.value = l.custoAtual != null ? parseFloat(String(l.custoAtual).replace(",",".")).toFixed(2) : "";
           iCusto.placeholder = semCusto ? "⚠ preencher" : "";
-          iCusto.style.cssText = `width:80px;background:none;border:none;border-bottom:1px solid ${semCusto?"#f8717166":"var(--border2)"};color:${semCusto?"#f87171":"#fbbf24"};font-family:inherit;font-size:11px;text-align:right;outline:none;padding:2px 4px;`;
+          iCusto.style.cssText = `width:80px;background:none;border:none;border-bottom:1px solid ${semCusto?"#f8717166":"var(--border2)"};color:${semCusto?"#f87171":"#f7b500"};font-family:inherit;font-size:11px;text-align:right;outline:none;padding:2px 4px;`;
           iCusto.addEventListener("input", () => {
             l.custoAtual = iCusto.value;
             iCusto.style.borderBottomColor = "var(--border2)";
-            iCusto.style.color = "#fbbf24";
+            iCusto.style.color = "#f7b500";
             l.novoCmp = calcNovoCmp(l);
             tdNovoCmp.textContent = fmt(l.novoCmp);
             tdNovoCmp.style.color = l.novoCmp ? "#4ade80" : "var(--text3)";
@@ -1245,7 +1245,7 @@ function renderCalcIpiPanel(container, task){
         salvarCmpBtn.style.color = "#4ade80";
         salvarCmpBtn.style.borderColor = "#4ade8066";
         csvAtribBtn.disabled = false;
-        csvAtribBtn.style.cssText = "margin-top:0;margin-left:8px;background:none;border:1px solid #fbbf2466;color:#fbbf24;border-radius:4px;padding:6px 16px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:0.5px;opacity:1;";
+        csvAtribBtn.style.cssText = "margin-top:0;margin-left:8px;background:none;border:1px solid #f7b50066;color:#f7b500;border-radius:4px;padding:6px 16px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:0.5px;opacity:1;";
         csvAtribBtn._custosMerged = custosMerged;
         setTimeout(() => {
           salvarCmpBtn.textContent = "✓ Salvar CMP";
@@ -1261,7 +1261,7 @@ function renderCalcIpiPanel(container, task){
       const csvAtribBtn = document.createElement("button");
       csvAtribBtn.textContent = "↓ Gerar CSV de Atributos";
       csvAtribBtn.disabled = true;
-      csvAtribBtn.style.cssText = "margin-top:0;margin-left:8px;background:none;border:1px solid #fbbf2433;color:#fbbf2466;border-radius:4px;padding:6px 16px;font-size:10px;cursor:not-allowed;font-family:inherit;letter-spacing:0.5px;opacity:0.5;";
+      csvAtribBtn.style.cssText = "margin-top:0;margin-left:8px;background:none;border:1px solid #f7b50033;color:#f7b50066;border-radius:4px;padding:6px 16px;font-size:10px;cursor:not-allowed;font-family:inherit;letter-spacing:0.5px;opacity:0.5;";
       csvAtribBtn.addEventListener("click", async () => {
         const custos = csvAtribBtn._custosMerged || (await get(ref(db, "/custos_medios_filial"))).val() || {};
         gerarCSVAtributos(custos);
@@ -1301,7 +1301,7 @@ function renderVendasTab(panel, color) {
   [7,14,30].forEach(d=>{
     const btn=document.createElement("button");
     btn.textContent=d===7?"7 dias":d===14?"14 dias":"30 dias";
-    btn.style.cssText=`padding:4px 12px;background:${vendasDays===d?"#fff15522":"none"};border:1px solid ${vendasDays===d?"#fff155":"var(--border2)"};color:${vendasDays===d?"#fff155":"var(--text3)"};border-radius:4px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:1px;`;
+    btn.style.cssText=`padding:4px 12px;background:${vendasDays===d?"#f7b50022":"none"};border:1px solid ${vendasDays===d?"#f7b500":"var(--border2)"};color:${vendasDays===d?"#f7b500":"var(--text3)"};border-radius:4px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:1px;`;
     btn.addEventListener("click",()=>{vendasDays=d;vendasData=null;fetchVendas(d);});
     filterWrap.appendChild(btn);
   });
@@ -1354,19 +1354,19 @@ function renderVendasTab(panel, color) {
       barWrap.style.cssText="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;position:relative;";
       const pct=day.revenue/maxRev;
       const bar=document.createElement("div");
-      bar.style.cssText=`width:100%;background:linear-gradient(to top,#fff15544,#fff15522);border:1px solid #fff15566;border-radius:3px 3px 0 0;height:${Math.max(pct*100,2)}%;transition:height 0.3s;cursor:default;position:relative;`;
+      bar.style.cssText=`width:100%;background:linear-gradient(to top,#f7b50044,#f7b50022);border:1px solid #f7b50066;border-radius:3px 3px 0 0;height:${Math.max(pct*100,2)}%;transition:height 0.3s;cursor:default;position:relative;`;
       bar.title=`${day.label}: R$ ${day.revenue.toLocaleString("pt-BR",{minimumFractionDigits:2})}`;
       // Tooltip on hover
       bar.addEventListener("mouseenter",()=>{
-        bar.style.background="linear-gradient(to top,#fff15588,#fff15544)";
+        bar.style.background="linear-gradient(to top,#f7b50088,#f7b50044)";
         const tip=document.createElement("div");
         tip.id="chart-tip";
-        tip.style.cssText="position:absolute;bottom:105%;left:50%;transform:translateX(-50%);background:#0a0a0a;border:1px solid #fff15544;border-radius:4px;padding:4px 8px;font-size:9px;color:#fff155;white-space:nowrap;z-index:100;";
+        tip.style.cssText="position:absolute;bottom:105%;left:50%;transform:translateX(-50%);background:#0a0a0a;border:1px solid #f7b50044;border-radius:4px;padding:4px 8px;font-size:9px;color:#f7b500;white-space:nowrap;z-index:100;";
         tip.textContent=`R$ ${day.revenue.toLocaleString("pt-BR",{minimumFractionDigits:2})}`;
         bar.appendChild(tip);
       });
       bar.addEventListener("mouseleave",()=>{
-        bar.style.background="linear-gradient(to top,#fff15544,#fff15522)";
+        bar.style.background="linear-gradient(to top,#f7b50044,#f7b50022)";
         const tip=bar.querySelector("#chart-tip");if(tip)tip.remove();
       });
       const label=document.createElement("div");
@@ -1526,7 +1526,7 @@ function renderDiogoDevTab(panel, color) {
       </div>
       <div style="display:flex;align-items:center;gap:8px;margin-left:8px;flex-shrink:0;">
         <span style="font-size:11px;color:${dev.refundedAmount>0?'#f87171':'#4ade80'};">${dev.refundedAmount>0?'-R$ '+dev.refundedAmount.toFixed(2).replace('.',','):'R$ 0,00'}</span>
-        <a href="${dev.permalink}" target="_blank" style="color:#fff155;font-size:10px;text-decoration:none;">→</a>
+        <a href="${dev.permalink}" target="_blank" style="color:#f7b500;font-size:10px;text-decoration:none;">→</a>
       </div>`;
     grid.appendChild(card);
   });
@@ -1544,7 +1544,7 @@ function renderDiogoCustoTab(panel, color) {
   uploadSection.appendChild(uploadLabel);
 
   const uploadBtn = document.createElement("label");
-  uploadBtn.style.cssText = "display:inline-block;padding:7px 14px;background:none;border:1px dashed #fff15566;border-radius:5px;color:#fff155;font-size:10px;letter-spacing:1.5px;cursor:pointer;font-family:inherit;transition:all 0.15s;";
+  uploadBtn.style.cssText = "display:inline-block;padding:7px 14px;background:none;border:1px dashed #f7b50066;border-radius:5px;color:#f7b500;font-size:10px;letter-spacing:1.5px;cursor:pointer;font-family:inherit;transition:all 0.15s;";
   uploadBtn.textContent = diogoCustoData ? "↑ Trocar planilha" : "↑ Importar planilha";
   const fileInput = document.createElement("input");
   fileInput.type = "file";
@@ -1827,7 +1827,7 @@ function renderMLInPanel(panel,color){
   }
 
   displayData.forEach(dev=>{
-    const stageColors={"waiting_seller":"#f87171","seller":"#f87171","buyer":"#fbbf24","dispute":"#ff2222","resolved":"#4ade80"};
+    const stageColors={"waiting_seller":"#f87171","seller":"#f87171","buyer":"#f7b500","dispute":"#ff2222","resolved":"#4ade80"};
     const stageLabels={"waiting_seller":"Aguarda você","seller":"Aguarda você","buyer":"Aguarda comprador","dispute":"Em disputa","resolved":"Resolvida"};
     const sc=stageColors[dev.stage]||"#888";
     const sl=stageLabels[dev.stage]||dev.stage||dev.status;
@@ -1836,7 +1836,7 @@ function renderMLInPanel(panel,color){
 
     // Cor da borda pelo status de revisão
     let borderColor = sc;
-    if(dev.needsReview) borderColor = "#fbbf24";
+    if(dev.needsReview) borderColor = "#f7b500";
     if(dev.returnStatusKey === "dispute") borderColor = "#f87171";
     card.style.borderLeftColor=borderColor;card.style.borderLeftWidth="3px";
 
@@ -1877,7 +1877,7 @@ function renderMLInPanel(panel,color){
         <div style="font-size:10px;color:var(--text3);margin-bottom:6px">
           Comprador: <span style="color:var(--text2)">${dev.buyer}</span>
           ${dev.returnQty ? ` · <span style="color:var(--text2)">${Math.round(Number(dev.returnQty))} un.</span>` : ""}
-          ${dev.valor?` · <span style="color:#fbbf24">R$ ${Number(dev.valor).toFixed(2)}</span>`:""}
+          ${dev.valor?` · <span style="color:#f7b500">R$ ${Number(dev.valor).toFixed(2)}</span>`:""}
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px;">
           ${statusBadgeHtml}
@@ -2327,7 +2327,7 @@ function render(){
 
               const recarregarBtn = document.createElement("button");
               recarregarBtn.textContent = "↻ Recarregar NF do Bling";
-              recarregarBtn.style.cssText = "background:none;border:1px solid #fbbf2466;color:#fbbf24;border-radius:4px;padding:5px 12px;font-size:11px;cursor:pointer;font-family:inherit;";
+              recarregarBtn.style.cssText = "background:none;border:1px solid #f7b50066;color:#f7b500;border-radius:4px;padding:5px 12px;font-size:11px;cursor:pointer;font-family:inherit;";
               recarregarBtn.addEventListener("click", async () => {
                 const chave = extrairNumeroNFDaTarefa(taskFS) || calcIpiState[taskFS.id]?.nfUsada;
                 if (!chave) { alert("Número da NF não identificado."); return; }
@@ -2984,7 +2984,7 @@ function renderCancelamentos(panel) {
   // 4 status — definição de cor, ícone e texto do badge
   const statusDefs = {
     nf_pendente:        { cor: "#f87171", texto: "Cancelar NF",          icone: "⚠" },
-    devolucao_pendente: { cor: "#fbbf24", texto: "Devolução — processar", icone: "↩" },
+    devolucao_pendente: { cor: "#f7b500", texto: "Devolução — processar", icone: "↩" },
     nf_cancelada:       { cor: "#00dfc3", texto: "NF cancelada",          icone: "✓" },
   };
 
@@ -3007,7 +3007,7 @@ function renderCancelamentos(panel) {
     const s = String(situacao||"").toLowerCase();
     if(/cancelad/.test(s)) return { bg:"#33333380", cor:"#888", borda:"#44444480" };
     if(/autoriz/.test(s))  return { bg:"#00dfc318", cor:"#00dfc3", borda:"#00dfc333" };
-    return { bg:"#fbbf2418", cor:"#fbbf24", borda:"#fbbf2433" };
+    return { bg:"#f7b50018", cor:"#f7b500", borda:"#f7b50033" };
   }
 
   function copiavel(texto, exibir) {
@@ -3135,7 +3135,7 @@ function renderCancelamentosBruno(panel) {
   }
 
   const instrucao = document.createElement("div");
-  instrucao.style.cssText = "padding:10px 14px;background:#fbbf2410;border:1px solid #fbbf2433;border-radius:6px;font-size:11px;color:#fbbf24;line-height:1.7;margin-bottom:12px;";
+  instrucao.style.cssText = "padding:10px 14px;background:#f7b50010;border:1px solid #f7b50033;border-radius:6px;font-size:11px;color:#f7b500;line-height:1.7;margin-bottom:12px;";
   instrucao.innerHTML = "<strong>Como cancelar:</strong> copie o número da NF → acesse o Bling → Nota Fiscal → busca pelo número → abre a NF → clica em <em>Cancelar NF</em>.";
   panel.appendChild(instrucao);
 
@@ -3208,7 +3208,7 @@ function renderCancelamentosBruno(panel) {
       linha2.appendChild(dataEl);
     }
     const valorEl = document.createElement("span");
-    valorEl.style.color="#fbbf24";
+    valorEl.style.color="#f7b500";
     valorEl.textContent = `R$ ${Number(it.valor).toLocaleString("pt-BR",{minimumFractionDigits:2})}`;
     linha2.appendChild(valorEl);
     card.appendChild(linha2);
@@ -3439,7 +3439,7 @@ function renderFilialSP(panel, color) {
     blingStatus.innerHTML = `<span style="color:#f87171">⚠ Bling: ${estoqueBlingErro}</span>`;
     const authBtn = document.createElement("button");
     authBtn.textContent = "Renovar token";
-    authBtn.style.cssText = "background:none;border:1px solid #fbbf2466;color:#fbbf24;border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer;letter-spacing:1px;margin-left:4px;";
+    authBtn.style.cssText = "background:none;border:1px solid #f7b50066;color:#f7b500;border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer;letter-spacing:1px;margin-left:4px;";
     authBtn.addEventListener("click", () => window.open("https://digoo-backend.vercel.app/api/bling-auth", "_blank"));
     blingStatus.appendChild(authBtn);
   } else if (estoqueBlingData) {
@@ -3452,7 +3452,7 @@ function renderFilialSP(panel, color) {
     blingStatus.appendChild(refBtn);
     const renewBtn = document.createElement("button");
     renewBtn.textContent = "Renovar token";
-    renewBtn.style.cssText = "background:none;border:1px solid #fbbf2444;color:#fbbf2488;border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer;letter-spacing:1px;margin-left:4px;";
+    renewBtn.style.cssText = "background:none;border:1px solid #f7b50044;color:#f7b50088;border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer;letter-spacing:1px;margin-left:4px;";
     renewBtn.addEventListener("click", () => window.open("https://digoo-backend.vercel.app/api/bling-auth", "_blank"));
     blingStatus.appendChild(renewBtn);
   } else {
@@ -3464,7 +3464,7 @@ function renderFilialSP(panel, color) {
     blingStatus.appendChild(connectBtn);
     const authBtn = document.createElement("button");
     authBtn.textContent = "Autorizar Bling";
-    authBtn.style.cssText = "background:none;border:1px solid #fbbf2466;color:#fbbf24;border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer;letter-spacing:1px;margin-left:4px;";
+    authBtn.style.cssText = "background:none;border:1px solid #f7b50066;color:#f7b500;border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer;letter-spacing:1px;margin-left:4px;";
     authBtn.addEventListener("click", () => window.open("https://digoo-backend.vercel.app/api/bling-auth", "_blank"));
     blingStatus.appendChild(authBtn);
   }
@@ -3485,7 +3485,7 @@ function renderFilialSP(panel, color) {
     mlFilialWrap.innerHTML = `<span style="color:var(--text3)">ML Filial desconectado</span>`;
     const connBtn = document.createElement("button");
     connBtn.textContent = "Conectar ML Filial";
-    connBtn.style.cssText = "background:none;border:1px solid #fff15566;color:#fff155;border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer;letter-spacing:1px;margin-left:4px;";
+    connBtn.style.cssText = "background:none;border:1px solid #f7b50066;color:#f7b500;border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer;letter-spacing:1px;margin-left:4px;";
     connBtn.addEventListener("click", () => window.open(`${VERCEL_BACKEND}/api/ml-auth?conta=filial`, "_blank"));
     mlFilialWrap.appendChild(connBtn);
   }
@@ -3530,7 +3530,7 @@ function renderFilialSP(panel, color) {
   [
     { label:"VALOR EM ESTOQUE", value: estoqueBlingData ? `R$ ${totalValor.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : "—", color:"#00dfc3", sub: skusSemCusto > 0 ? `${skusSemCusto} SKUs sem custo` : "todos com custo" },
     { label:"UNIDADES APTAS", value: totalAptas.toLocaleString("pt-BR"), color:"#055ded", sub:`${rows.length} SKUs` },
-    { label:"EM TRANSFERÊNCIA", value: totalTransf.toLocaleString("pt-BR"), color:"#fbbf24", sub:"entre centros do Full" },
+    { label:"EM TRANSFERÊNCIA", value: totalTransf.toLocaleString("pt-BR"), color:"#f7b500", sub:"entre centros do Full" },
     { label:"TOTAL NO FULL", value: (totalAptas+totalTransf).toLocaleString("pt-BR"), color:"#7F77DD", sub:"aptas + transferência" },
   ].forEach(s => {
     const card = document.createElement("div");
@@ -3584,7 +3584,7 @@ function renderFilialSP(panel, color) {
         <td style="padding:8px 8px;color:var(--text2);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;">${r.produto}</td>
         <td style="padding:8px 8px;text-align:center;color:${r.aptas>0?"var(--text)":"var(--text3)"};font-weight:${r.aptas>0?"500":"400"};">${r.aptas||"—"}</td>
         <td style="padding:8px 8px;text-align:center;color:var(--text3);">${r.transf||"—"}</td>
-        <td style="padding:8px 8px;text-align:center;color:${r.pendente>0?"#fbbf24":"var(--text3)"};font-weight:${r.pendente>0?"500":"400"};">${r.pendente||"—"}</td>
+        <td style="padding:8px 8px;text-align:center;color:${r.pendente>0?"#f7b500":"var(--text3)"};font-weight:${r.pendente>0?"500":"400"};">${r.pendente||"—"}</td>
         <td style="padding:8px 8px;text-align:right;color:${semCusto?"#f87171":"var(--text2)"};">${custoStr}</td>
         <td style="padding:8px 8px;text-align:right;color:${semCusto?"var(--text3)":r.valor>5000?"#00dfc3":r.valor>1000?"#00dfc3":"var(--text2)"};font-weight:500;">${valorStr}</td>`;
       tbody.appendChild(tr);
@@ -3651,7 +3651,7 @@ function renderMatrizRS(panel, color) {
     mlMatrizWrap.innerHTML = `<span style="color:var(--text3)">ML Matriz desconectado</span>`;
     const connBtn = document.createElement("button");
     connBtn.textContent = "Conectar ML Matriz";
-    connBtn.style.cssText = "background:none;border:1px solid #fff15566;color:#fff155;border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer;letter-spacing:1px;margin-left:4px;";
+    connBtn.style.cssText = "background:none;border:1px solid #f7b50066;color:#f7b500;border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer;letter-spacing:1px;margin-left:4px;";
     connBtn.addEventListener("click", () => window.open(`${VERCEL_BACKEND}/api/ml-auth?conta=matriz`, "_blank"));
     mlMatrizWrap.appendChild(connBtn);
   }
@@ -3752,7 +3752,7 @@ function renderSaudeChart(panel, enriched) {
   // Legenda
   const leg = document.createElement("div");
   leg.style.cssText = "display:flex;gap:14px;margin-bottom:14px;font-size:10px;flex-wrap:wrap;";
-  [{c:"#00ffb8",l:"<15d — subir"},{c:"#ffcc00",l:"15–90d — acompanhar"},{c:"#ff3d3d",l:">90d — baixar"}].forEach(({c,l}) => {
+  [{c:"#00ffb8",l:"<15d — subir"},{c:"#f7b500",l:"15–90d — acompanhar"},{c:"#ff3d3d",l:">90d — baixar"}].forEach(({c,l}) => {
     const s = document.createElement("span");
     s.style.cssText = "display:flex;align-items:center;gap:4px;color:var(--text3);";
     s.innerHTML = '<span style="width:8px;height:8px;border-radius:2px;background:' + c + ';display:inline-block;flex-shrink:0;"></span>' + l;
@@ -3774,7 +3774,7 @@ function renderSaudeChart(panel, enriched) {
     return {...r, vendas30, aptas, dias};
   }).sort((a,b) => b.dias - a.dias);
 
-  const cor = d => d.dias <= 15 ? "#00ffb8" : d.dias <= 90 ? "#ffcc00" : "#ff3d3d";
+  const cor = d => d.dias <= 15 ? "#00ffb8" : d.dias <= 90 ? "#f7b500" : "#ff3d3d";
   const categoriaKey = d => d.dias <= 15 ? "verde" : d.dias <= 90 ? "amarelo" : "vermelho";
   const badgeText = d => d.dias <= 15 ? "↑ SUBIR" : d.dias <= 90 ? "~ ACOMPANHAR" : "↓ BAIXAR";
   const diasLabel = d => d.dias >= 999 ? "sem vendas" : d.dias + "d";
@@ -3883,13 +3883,13 @@ function renderSaudeChart(panel, enriched) {
               const parecidos = lista.filter(s => skuNorm.length>=6 && (norm(s).includes(skuNorm.slice(0,6)) || skuNorm.includes(norm(s).slice(0,6))));
               let extra = "";
               if(parecidos.length){
-                extra = ' <span style="color:#fbbf24;">⚠ achei SKU parecido nas vendas: ' + parecidos.join(", ") + '</span>';
+                extra = ' <span style="color:#f7b500;">⚠ achei SKU parecido nas vendas: ' + parecidos.join(", ") + '</span>';
               }
               statsRow.innerHTML = '<span style="color:var(--text3);font-size:11px;">Nenhuma venda registrada desde a mudança.' + extra + '</span>';
             }else{
               statsRow.innerHTML =
-                '<div><div style="font-size:9px;color:var(--text3);">UNIDADES</div><div style="font-size:15px;font-weight:600;color:#fff155;">' + m.qty + '</div></div>' +
-                '<div><div style="font-size:9px;color:var(--text3);">FATURAMENTO</div><div style="font-size:15px;font-weight:600;color:#fff155;">R$ ' + m.revenue.toLocaleString("pt-BR",{minimumFractionDigits:2}) + '</div></div>';
+                '<div><div style="font-size:9px;color:var(--text3);">UNIDADES</div><div style="font-size:15px;font-weight:600;color:#f7b500;">' + m.qty + '</div></div>' +
+                '<div><div style="font-size:9px;color:var(--text3);">FATURAMENTO</div><div style="font-size:15px;font-weight:600;color:#f7b500;">R$ ' + m.revenue.toLocaleString("pt-BR",{minimumFractionDigits:2}) + '</div></div>';
               const toggleBtn = document.createElement("button");
               toggleBtn.textContent = "Ver lista";
               toggleBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:3px 10px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:0.5px;";
@@ -4131,7 +4131,7 @@ function renderFechamentoMensal(panel, color) {
       total += valNum;
 
       const card = document.createElement("div");
-      card.style.cssText = `background:var(--bg3);border:1px solid ${semValor?"#fbbf2444":"var(--border)"};border-radius:10px;padding:14px 16px;`;
+      card.style.cssText = `background:var(--bg3);border:1px solid ${semValor?"#f7b50044":"var(--border)"};border-radius:10px;padding:14px 16px;`;
 
       // Linha topo: nome + valor
       const topo = document.createElement("div");
@@ -4157,8 +4157,8 @@ function renderFechamentoMensal(panel, color) {
       const rSign = document.createElement("span");
       rSign.style.cssText = "font-size:11px;color:var(--text3);";
       rSign.textContent = "R$";
-      const iVal = inpClean(fmtValor(nf.valor), "0,00", semValor?"#fbbf24":"#4ade80");
-      iVal.style.cssText += `font-size:15px;font-weight:600;text-align:right;width:90px;color:${semValor?"#fbbf24":"#4ade80"};`;
+      const iVal = inpClean(fmtValor(nf.valor), "0,00", semValor?"#f7b500":"#4ade80");
+      iVal.style.cssText += `font-size:15px;font-weight:600;text-align:right;width:90px;color:${semValor?"#f7b500":"#4ade80"};`;
       iVal.addEventListener("input", () => {
         nf.valor = iVal.value;
         iVal.style.color = "#4ade80";
@@ -4427,7 +4427,7 @@ function renderConfig(panel, color) {
       left.style.cssText = "display:flex;align-items:center;gap:10px;";
 
       const dot = document.createElement("div");
-      const dotColor = api.ativo ? "#22c55e" : api.expirado ? "#f59e0b" : "#ef4444";
+      const dotColor = api.ativo ? "#22c55e" : api.expirado ? "#f7b500" : "#ef4444";
       dot.style.cssText = `width:7px;height:7px;border-radius:50%;background:${dotColor};flex-shrink:0;${!api.ativo?"animation:siren 1s infinite;":""}`;
 
       const info = document.createElement("div");
@@ -4630,7 +4630,7 @@ async function processarPlanilhaKits(file, statusEl, color) {
     await set(ref(db, "/config_kits"), { composicoes, total, atualizadoEm: Date.now() });
 
     let msg = `<span style="color:#00dfc3;">✓ ${total} kits importados</span>`;
-    if(novos.length) msg += ` <span style="color:#fbbf24;">· ${novos.length} novo(s): ${novos.join(", ")}</span>`;
+    if(novos.length) msg += ` <span style="color:#f7b500;">· ${novos.length} novo(s): ${novos.join(", ")}</span>`;
     if(alterados.length) msg += ` <span style="color:#055ded;">· ${alterados.length} alterado(s)</span>`;
     statusEl.innerHTML = msg;
 
@@ -5205,9 +5205,9 @@ async function renderConferencia(panel, color) {
 
           const form = document.createElement("div");
           form.className = "manual-form";
-          form.style.cssText = "margin-top:10px;background:var(--bg2);border:0.5px solid #f59e0b55;border-radius:8px;padding:12px 14px;";
+          form.style.cssText = "margin-top:10px;background:var(--bg2);border:0.5px solid #f7b50055;border-radius:8px;padding:12px 14px;";
           form.innerHTML = `
-            <div style="font-size:10px;color:#f59e0b;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+            <div style="font-size:10px;color:#f7b500;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
               <span>⚠</span> Não consegui extrair os dados automaticamente de <strong style="color:var(--text2);">${file.name}</strong>
             </div>
             <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
