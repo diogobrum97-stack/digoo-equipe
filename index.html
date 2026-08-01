@@ -5109,20 +5109,20 @@ async function renderConferencia(panel, color) {
       nome.style.cssText = "font-size:12px;color:var(--text);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
       nome.textContent = doc.prestador || doc.nome;
       nome.title = doc.nome;
-      const sub = document.createElement("div");
-      sub.style.cssText = "display:flex;gap:10px;margin-top:3px;flex-wrap:wrap;";
-      const subItems = [];
-      if(categoria === "impostos") subItems.push({label: detectarTipoImposto(doc.nome), val: ""});
-      else if(doc.numeroNF) subItems.push({label:"NFS-e", val:`nº ${doc.numeroNF}`});
-      if(doc.competencia) subItems.push({label:"Competência", val:doc.competencia});
-      if(doc.cnpj) subItems.push({label:"CNPJ", val:doc.cnpj});
-      subItems.forEach(({label,val})=>{
-        const s = document.createElement("span");
-        s.style.cssText = "font-size:10px;color:var(--text3);";
-        s.innerHTML = `<span style="color:var(--text3);margin-right:2px;">${label}</span>${val}`;
-        sub.appendChild(s);
+      const badges = document.createElement("div");
+      badges.style.cssText = "display:flex;gap:5px;flex-wrap:wrap;margin-top:5px;";
+      const badgeItems = [];
+      if(categoria === "impostos") badgeItems.push(detectarTipoImposto(doc.nome));
+      if(doc.numeroNF) badgeItems.push(`nº ${doc.numeroNF}`);
+      if(doc.competencia) badgeItems.push(doc.competencia);
+      if(doc.cnpj) badgeItems.push(doc.cnpj);
+      badgeItems.forEach(txt => {
+        const b = document.createElement("span");
+        b.style.cssText = "font-size:9px;font-weight:500;padding:2px 8px;border-radius:4px;background:var(--bg2);border:0.5px solid var(--border2);color:var(--text3);white-space:nowrap;";
+        b.textContent = txt;
+        badges.appendChild(b);
       });
-      info.appendChild(nome); info.appendChild(sub);
+      info.appendChild(nome); info.appendChild(badges);
       const val = document.createElement("div");
       val.style.cssText = "font-size:12px;font-weight:600;color:var(--text3);white-space:nowrap;";
       val.textContent = "R$ "+(doc.valor||0).toLocaleString("pt-BR",{minimumFractionDigits:2});
