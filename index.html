@@ -5284,6 +5284,121 @@ async function renderConferencia(panel, color) {
     panel.appendChild(sec);
   }
 
+  // ── Barra de ações ──────────────────────────────────────────────────────
+  if(confDocs.servicos.length > 0 || confDocs.impostos.length > 0) {
+    const actBar = document.createElement("div");
+    actBar.style.cssText = "display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;";
+
+    // Botão CSV Bling
+    const btnCSV = document.createElement("button");
+    btnCSV.style.cssText = `background:none;border:0.5px solid var(--border2);border-radius:6px;color:var(--text2);font-size:10px;letter-spacing:1px;padding:7px 14px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;`;
+    btnCSV.innerHTML = `<span>↓</span> Gerar CSV Bling`;
+    btnCSV.addEventListener("click", async () => {
+      btnCSV.textContent = "⏳ Gerando..."; btnCSV.disabled = true;
+      try {
+        const nfses = [...confDocs.servicos, ...confDocs.impostos].map(d => ({
+          fornecedor: d.prestador || d.nome,
+          cnpj: d.cnpj || "",
+          valor: d.valor || 0,
+          emissao: d.competencia ? `01/${d.competencia.split("/").join("/")}` : "",
+          numero: d.numeroNF || ""
+        }));
+        const resp = await fetch(`${VERCEL_BACKEND}/api/google?action=csv&mes=${confMes}`, {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({nfses})
+        });
+        const blob = await resp.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = `contas_pagar_${confMes}.csv`; a.click();
+        URL.revokeObjectURL(url);
+      } catch(e) { alert("Erro ao gerar CSV: "+e.message); }
+      btnCSV.innerHTML = `<span>↓</span> Gerar CSV Bling`; btnCSV.disabled = false;
+    });
+
+    // Botão Rascunho contador
+    const btnEmail = document.createElement("button");
+    btnEmail.style.cssText = `background:none;border:0.5px solid var(--border2);border-radius:6px;color:var(--text2);font-size:10px;letter-spacing:1px;padding:7px 14px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;`;
+    btnEmail.innerHTML = `<span>✉</span> Rascunho pro contador`;
+    btnEmail.addEventListener("click", async () => {
+      btnEmail.textContent = "⏳ Criando rascunho..."; btnEmail.disabled = true;
+      try {
+        const [ano, mes] = confMes.split("-");
+        const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+        const nomeMes = `${MESES[parseInt(mes)-1]} ${ano}`;
+        const totalServicos = confDocs.servicos.reduce((s,d)=>s+(d.valor||0),0);
+        const totalImpostos = confDocs.impostos.reduce((s,d)=>s+(d.valor||0),0);
+        const totalGeral = totalServicos + totalImpostos;
+
+        let corpo = `Olá Leonardo,
+
+Segue o resumo das notas fiscais de ${nomeMes} para lançamento.
+
+`;
+
+        if(confDocs.servicos.length > 0) {
+          corpo += `NOTAS DE SERVIÇO
+${"─".repeat(40)}
+`;
+          confDocs.servicos.forEach(d => {
+            corpo += `• ${d.prestador || d.nome}`;
+            if(d.numeroNF) corpo += ` — NF nº ${d.numeroNF}`;
+            if(d.competencia) corpo += ` (${d.competencia})`;
+            corpo += ` — R$ ${(d.valor||0).toLocaleString("pt-BR",{minimumFractionDigits:2})}
+`;
+          });
+          corpo += `Total serviços: R$ ${totalServicos.toLocaleString("pt-BR",{minimumFractionDigits:2})}
+
+`;
+        }
+
+        if(confDocs.impostos.length > 0) {
+          corpo += `IMPOSTOS
+${"─".repeat(40)}
+`;
+          confDocs.impostos.forEach(d => {
+            corpo += `• ${d.nome}`;
+            if(d.competencia) corpo += ` (${d.competencia})`;
+            corpo += ` — R$ ${(d.valor||0).toLocaleString("pt-BR",{minimumFractionDigits:2})}
+`;
+          });
+          corpo += `Total impostos: R$ ${totalImpostos.toLocaleString("pt-BR",{minimumFractionDigits:2})}
+
+`;
+        }
+
+        corpo += `TOTAL GERAL: R$ ${totalGeral.toLocaleString("pt-BR",{minimumFractionDigits:2})}
+
+Atenciosamente,
+Digoo Brasil`;
+
+        const resp = await fetch(`${VERCEL_BACKEND}/api/google?action=rascunho`, {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({
+            para: "leonardo@resicontabilidade.com.br",
+            assunto: `NFs para lançamento — ${nomeMes}`,
+            corpo
+          })
+        });
+        const d = await resp.json();
+        if(d.ok) {
+          btnEmail.innerHTML = `✓ Rascunho criado no Gmail`;
+          setTimeout(()=>{ btnEmail.innerHTML = `<span>✉</span> Rascunho pro contador`; btnEmail.disabled = false; }, 3000);
+        } else throw new Error(d.error || "Erro desconhecido");
+      } catch(e) {
+        alert("Erro ao criar rascunho: "+e.message);
+        btnEmail.innerHTML = `<span>✉</span> Rascunho pro contador`;
+        btnEmail.disabled = false;
+      }
+    });
+
+    actBar.appendChild(btnCSV);
+    actBar.appendChild(btnEmail);
+    panel.appendChild(actBar);
+  }
+
   renderSecao("Notas de Serviço", servicosFiltrados, "#60a5fa", "Notas de Serviço", "servicos");
   renderSecao("Impostos", impostosFiltrados, "#f87171", "Impostos", "impostos");
 }
