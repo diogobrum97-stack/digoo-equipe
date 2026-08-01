@@ -4911,30 +4911,28 @@ async function removerDocFirebase(mes, categoria, id) {
 
 // Upload de arquivo pro Google Drive via MCP
 async function uploadParaDrive(file, mes, categoria) {
-  // Garante pasta raiz
   const pastaRaiz = "Digoo — Conferência Financeira";
   const pastaMes = `${pastaRaiz}/${formatarMes(mes)}/${categoria === "servicos" ? "Notas de Serviço" : "Impostos"}`;
 
-  // Converte arquivo pra base64
   const buf = await file.arrayBuffer();
   const bytes = new Uint8Array(buf);
   let binary = "";
   bytes.forEach(b => binary += String.fromCharCode(b));
   const base64 = btoa(binary);
 
-  // Chama o backend pra fazer o upload no Drive
-  const resp = await fetch(`${VERCEL_BACKEND}/api/google?action=uploadDrive`, {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({
-      nome: file.name,
-      base64,
-      mimeType: "application/pdf",
-      pastaPath: pastaMes
-    })
-  });
-  const data = await resp.json();
-  return data; // {driveId, driveUrl, viewUrl}
+  try {
+    const resp = await fetch(`${VERCEL_BACKEND}/api/google?action=uploadDrive`, {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ nome: file.name, base64, mimeType: "application/pdf", pastaPath: pastaMes })
+    });
+    if(!resp.ok) { console.warn("uploadDrive HTTP", resp.status); return {driveId:"", driveUrl:"", viewUrl:""}; }
+    const data = await resp.json();
+    return data;
+  } catch(e) {
+    console.warn("uploadDrive falhou:", e.message);
+    return {driveId:"", driveUrl:"", viewUrl:""};
+  }
 }
 
 // Renderiza a aba conferência
