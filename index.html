@@ -5240,9 +5240,17 @@ async function renderConferencia(panel, color) {
           return;
         }
 
-        // Upload no Drive
-        uploadBtn.textContent = "⏳ Enviando para o Drive...";
-        const driveResult = await uploadParaDrive(file, confMes, categoria);
+        // Upload no Drive (opcional — salva mesmo se falhar)
+        let driveId = "", driveUrl = "", viewUrl = "";
+        try {
+          uploadBtn.textContent = "⏳ Enviando para o Drive...";
+          const driveResult = await uploadParaDrive(file, confMes, categoria);
+          driveId = driveResult.driveId || "";
+          driveUrl = driveResult.driveUrl || "";
+          viewUrl = driveResult.viewUrl || driveResult.driveUrl || "";
+        } catch(e) {
+          console.warn("Upload Drive falhou, salvando sem link:", e.message);
+        }
         // Salvar no Firebase
         await salvarDocFirebase(confMes, categoria, {
           nome: file.name,
@@ -5251,9 +5259,9 @@ async function renderConferencia(panel, color) {
           prestador: file._prestador || "",
           numeroNF: file._numeroNF || "",
           cnpj: file._cnpj || "",
-          driveId: driveResult.driveId || "",
-          driveUrl: driveResult.driveUrl || "",
-          viewUrl: driveResult.viewUrl || driveResult.driveUrl || "",
+          driveId,
+          driveUrl,
+          viewUrl,
         });
         renderConferencia(panel, color);
       } catch(e) {
