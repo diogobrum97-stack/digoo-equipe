@@ -35,7 +35,7 @@
 <div class="grid" id="cards"></div>
 
 <!-- Painel flutuante do calendário fiscal -->
-<div id="cal-panel" style="display:none;position:fixed;bottom:70px;left:12px;right:12px;max-width:360px;background:#0f0f0f;border:0.5px solid #2a2a2a;border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.6);z-index:499;"></div>
+<div id="cal-panel" style="display:none;position:fixed;top:60px;left:12px;right:12px;max-width:360px;margin:0 auto;background:#0f0f0f;border:0.5px solid #2a2a2a;border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.6);z-index:9998;"></div>
 
 <footer>Digoo Brasil · Porto Alegre<br><span id="user-label"></span></footer>
 
@@ -2310,13 +2310,6 @@ function render(){
         calCircleBtn.addEventListener("click", (e) => {
           e.stopPropagation();
           calPanelOpen = !calPanelOpen;
-          const panel = document.getElementById("cal-panel");
-          if(calPanelOpen) {
-            const rect = calCircleBtn.getBoundingClientRect();
-            panel.style.top = (rect.bottom + 8) + "px";
-            panel.style.left = Math.max(12, rect.left - 280) + "px";
-            panel.style.right = "auto";
-          }
           renderCalFiscal();
         });
         header.appendChild(calCircleBtn);
