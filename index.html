@@ -2307,11 +2307,13 @@ function render(){
           calCircleBtn.appendChild(dot);
         }
         calCircleBtn.title = "Calendário Fiscal";
-        calCircleBtn.addEventListener("click", (e) => {
+        calCircleBtn.onclick = (e) => {
           e.stopPropagation();
+          e.preventDefault();
           calPanelOpen = !calPanelOpen;
           renderCalFiscal();
-        });
+          return false;
+        };
         header.appendChild(calCircleBtn);
       }
     }
