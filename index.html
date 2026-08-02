@@ -4968,9 +4968,14 @@ function initCalFiscal() {
 
 // Fechar ao clicar fora
 document.addEventListener("click", e => {
-  if(calPanelOpen && !document.getElementById("cal-panel").contains(e.target) && !document.getElementById("cal-fab").contains(e.target)) {
-    calPanelOpen = false;
-    document.getElementById("cal-panel").style.display = "none";
+  const calPanel = document.getElementById("cal-panel");
+  if(calPanelOpen && calPanel && !calPanel.contains(e.target)) {
+    // Checar se clicou no botão do calendário
+    const isCalBtn = e.target.closest && e.target.closest("[title='Calendário Fiscal']");
+    if(!isCalBtn) {
+      calPanelOpen = false;
+      calPanel.style.display = "none";
+    }
   }
 });
 
