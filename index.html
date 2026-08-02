@@ -2396,8 +2396,20 @@ function render(){
             const ownTasks=manualTasks;
             const teamTasks=active.filter(t=>t.delegatedBy&&t.delegatedBy!=="Diogo");
 
+            // Gerar alertas fiscais para vencimentos amanhã
+            const fiscalAlerts = (() => {
+              const hoje = new Date();
+              const amanha = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() + 1);
+              return FISCAL_EVENTS.filter(e => {
+                const venc = new Date(amanha.getFullYear(), amanha.getMonth(), e.dia);
+                return venc.getDate() === amanha.getDate() &&
+                       venc.getMonth() === amanha.getMonth() &&
+                       venc.getFullYear() === amanha.getFullYear();
+              });
+            })();
+
             // Seção recorrentes — cards menores azuis
-            if(recTasks.length>0){
+            if(recTasks.length>0 || fiscalAlerts.length>0){
               const recSec=document.createElement("div");
               recSec.style.cssText="margin-bottom:16px;";
               const recLabel=document.createElement("div");
@@ -2406,6 +2418,26 @@ function render(){
               recSec.appendChild(recLabel);
               const recGrid=document.createElement("div");
               recGrid.style.cssText="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;";
+              // Cards de alerta fiscal — piscam em azul
+              fiscalAlerts.forEach(e => {
+                const cor = "#1a6be0";
+                const card = document.createElement("div");
+                card.style.cssText = `background:var(--bg3);border:0.5px solid ${cor}33;border-top:2px solid ${cor};border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;box-sizing:border-box;--c:${cor};animation:cardFlash 1.2s ease-in-out infinite;`;
+                const title = document.createElement("div");
+                title.style.cssText = `font-size:11px;font-weight:600;color:${cor};line-height:1.4;`;
+                title.textContent = `⚠ ${e.nome}`;
+                const sub = document.createElement("div");
+                sub.style.cssText = "font-size:9px;color:var(--text3);";
+                sub.textContent = "Vence amanhã";
+                const badge = document.createElement("span");
+                badge.style.cssText = `font-size:9px;font-weight:700;letter-spacing:.8px;padding:2px 6px;border-radius:4px;background:${cor}22;color:${cor};border:0.5px solid ${cor}44;width:fit-content;`;
+                badge.textContent = "FISCAL";
+                card.appendChild(title);
+                card.appendChild(sub);
+                card.appendChild(badge);
+                recGrid.appendChild(card);
+              });
+
               recTasks.forEach(task=>{
                 const card=document.createElement("div");
                 card.style.cssText=`background:var(--bg3);border:0.5px solid #1a6be033;border-top:2px solid #1a6be0;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;box-sizing:border-box;`;
