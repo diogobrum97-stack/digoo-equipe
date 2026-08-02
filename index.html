@@ -2289,6 +2289,38 @@ function render(){
       chatBtn.title="Assistente Claude";
       chatBtn.addEventListener("click",(e)=>{e.stopPropagation();chatState[member.name].open=!chatState[member.name].open;renderChatModal(member.name,color);});
       header.appendChild(chatBtn);
+
+      // Botão calendário fiscal — só para Diogo
+      if(member.name === "Diogo") {
+        const proxCal = FISCAL_EVENTS.filter(e => {
+          const hoje = new Date();
+          const venc = new Date(hoje.getFullYear(), hoje.getMonth(), e.dia);
+          const diff = Math.ceil((venc - hoje) / (1000*60*60*24));
+          return diff >= 0 && diff <= 7;
+        });
+        const calCircleBtn = document.createElement("button");
+        calCircleBtn.style.cssText = "background:none;border:0.5px solid rgba(255,255,255,0.25);border-radius:50%;width:26px;height:26px;color:rgba(255,255,255,0.4);font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-right:6px;flex-shrink:0;position:relative;transition:all 0.15s;";
+        calCircleBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`;
+        if(proxCal.length > 0) {
+          const dot = document.createElement("div");
+          dot.style.cssText = "position:absolute;top:-1px;right:-1px;width:8px;height:8px;border-radius:50%;background:#d4000c;border:1.5px solid #000;";
+          calCircleBtn.appendChild(dot);
+        }
+        calCircleBtn.title = "Calendário Fiscal";
+        calCircleBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          calPanelOpen = !calPanelOpen;
+          const panel = document.getElementById("cal-panel");
+          if(calPanelOpen) {
+            const rect = calCircleBtn.getBoundingClientRect();
+            panel.style.top = (rect.bottom + 8) + "px";
+            panel.style.left = Math.max(12, rect.left - 280) + "px";
+            panel.style.right = "auto";
+          }
+          renderCalFiscal();
+        });
+        header.appendChild(calCircleBtn);
+      }
     }
     // Botão diminuir/expandir a tela cheia automática (disponível sempre que o PIN estiver desbloqueado)
     if(member.locked&&isOpen&&diogoPinOk){
@@ -2710,32 +2742,7 @@ function render(){
             btnWrapper.appendChild(delSec);
             panel.appendChild(btnWrapper);
 
-            // Botão calendário fiscal no rodapé
-            const calBtnWrap = document.createElement("div");
-            calBtnWrap.style.cssText = "margin-top:8px;";
-            const calBtn = document.createElement("button");
-            calBtn.className = "add-dashed";
-            const proxCal = FISCAL_EVENTS.filter(e => {
-              const hoje = new Date();
-              const venc = new Date(hoje.getFullYear(), hoje.getMonth(), e.dia);
-              const diff = Math.ceil((venc - hoje) / (1000*60*60*24));
-              return diff >= 0 && diff <= 7;
-            });
-            calBtn.innerHTML = proxCal.length > 0
-              ? `📅 Calendário Fiscal <span style="background:#d4000c;color:#fff;font-size:9px;font-weight:700;border-radius:99px;padding:1px 6px;margin-left:4px;">${proxCal.length}</span>`
-              : "📅 Calendário Fiscal";
-            calBtn.style.cssText = `border-color:${color};color:${color};opacity:0.85;width:100%;text-align:center;`;
-            calBtn.addEventListener("click", () => {
-              const panel = document.getElementById("cal-panel");
-              calPanelOpen = !calPanelOpen;
-              renderCalFiscal();
-              if(calPanelOpen) {
-                const rect = calBtn.getBoundingClientRect();
-                panel.style.bottom = (window.innerHeight - rect.top + 8) + "px";
-              }
-            });
-            calBtnWrap.appendChild(calBtn);
-            panel.appendChild(calBtnWrap);
+
 
             // Processar uma NF de transferência específica agora (sem esperar a detecção automática)
 
