@@ -316,6 +316,42 @@ function addTask(member,text,prio,sender){
   if(member!=="Diogo"){const from=sender||"Diogo";set(ref(db,`/flashes/${member}`),{ts:Date.now(),msg:`Nova tarefa de ${from}!`});startTabFlash(`Tarefa delegada para ${member}!`,themeColor(member));}
   else if(member==="Diogo"&&sender)set(ref(db,`/flashes/Diogo`),{ts:Date.now(),msg:`Nova tarefa de ${sender}!`});
 }
+const FISCAL_EVENTS = [
+  // DIFAL dia 9 — PA, PE, PI, CE, MA, RN, PB, AL, SE, RO, AC, RR, AP, TO, AM
+  { nome: "DIFAL — PA", tipo: "difal", dia: 9 },
+  { nome: "DIFAL — PE", tipo: "difal", dia: 9 },
+  { nome: "DIFAL — PI", tipo: "difal", dia: 9 },
+  { nome: "DIFAL — CE", tipo: "difal", dia: 9 },
+  { nome: "DIFAL — MA", tipo: "difal", dia: 9 },
+  { nome: "DIFAL — RN", tipo: "difal", dia: 9 },
+  { nome: "DIFAL — PB", tipo: "difal", dia: 9 },
+  { nome: "DIFAL — AL", tipo: "difal", dia: 9 },
+  { nome: "DIFAL — SE", tipo: "difal", dia: 9 },
+  { nome: "DIFAL — RO", tipo: "difal", dia: 9 },
+  { nome: "DIFAL — AC", tipo: "difal", dia: 9 },
+  { nome: "DIFAL — RR", tipo: "difal", dia: 9 },
+  { nome: "DIFAL — AP", tipo: "difal", dia: 9 },
+  { nome: "DIFAL — TO", tipo: "difal", dia: 9 },
+  { nome: "DIFAL — AM", tipo: "difal", dia: 9 },
+  // DIFAL dia 10 — GO, MT, MS, DF
+  { nome: "DIFAL — GO", tipo: "difal", dia: 10 },
+  { nome: "DIFAL — MT", tipo: "difal", dia: 10 },
+  { nome: "DIFAL — MS", tipo: "difal", dia: 10 },
+  { nome: "DIFAL — DF", tipo: "difal", dia: 10 },
+  // DIFAL dia 15 — MG, RJ, RS, SC, PR, BA, ES
+  { nome: "DIFAL — MG", tipo: "difal", dia: 15 },
+  { nome: "DIFAL — RJ", tipo: "difal", dia: 15 },
+  { nome: "DIFAL — RS", tipo: "difal", dia: 15 },
+  { nome: "DIFAL — SC", tipo: "difal", dia: 15 },
+  { nome: "DIFAL — PR", tipo: "difal", dia: 15 },
+  { nome: "DIFAL — BA", tipo: "difal", dia: 15 },
+  { nome: "DIFAL — ES", tipo: "difal", dia: 15 },
+  // DARE SP — dia 20
+  { nome: "DARE — ICMS SP", tipo: "dare", dia: 20 },
+  // IPI, PIS, COFINS — dia 25
+  { nome: "IPI · PIS · COFINS", tipo: "ipi", dia: 25 },
+];
+
 function toggleTask(id,done,progress,isRecorrente){
   setSyncing(true);
   if(done){
@@ -4769,41 +4805,7 @@ if(isPWA && !currentUser) {
   
 // ─── CALENDÁRIO FISCAL ────────────────────────────────────────────────────────
 
-const FISCAL_EVENTS = [
-  // DIFAL dia 9 — PA, PE, PI, CE, MA, RN, PB, AL, SE, RO, AC, RR, AP, TO, AM
-  { nome: "DIFAL — PA", tipo: "difal", dia: 9 },
-  { nome: "DIFAL — PE", tipo: "difal", dia: 9 },
-  { nome: "DIFAL — PI", tipo: "difal", dia: 9 },
-  { nome: "DIFAL — CE", tipo: "difal", dia: 9 },
-  { nome: "DIFAL — MA", tipo: "difal", dia: 9 },
-  { nome: "DIFAL — RN", tipo: "difal", dia: 9 },
-  { nome: "DIFAL — PB", tipo: "difal", dia: 9 },
-  { nome: "DIFAL — AL", tipo: "difal", dia: 9 },
-  { nome: "DIFAL — SE", tipo: "difal", dia: 9 },
-  { nome: "DIFAL — RO", tipo: "difal", dia: 9 },
-  { nome: "DIFAL — AC", tipo: "difal", dia: 9 },
-  { nome: "DIFAL — RR", tipo: "difal", dia: 9 },
-  { nome: "DIFAL — AP", tipo: "difal", dia: 9 },
-  { nome: "DIFAL — TO", tipo: "difal", dia: 9 },
-  { nome: "DIFAL — AM", tipo: "difal", dia: 9 },
-  // DIFAL dia 10 — GO, MT, MS, DF
-  { nome: "DIFAL — GO", tipo: "difal", dia: 10 },
-  { nome: "DIFAL — MT", tipo: "difal", dia: 10 },
-  { nome: "DIFAL — MS", tipo: "difal", dia: 10 },
-  { nome: "DIFAL — DF", tipo: "difal", dia: 10 },
-  // DIFAL dia 15 — MG, RJ, RS, SC, PR, BA, ES
-  { nome: "DIFAL — MG", tipo: "difal", dia: 15 },
-  { nome: "DIFAL — RJ", tipo: "difal", dia: 15 },
-  { nome: "DIFAL — RS", tipo: "difal", dia: 15 },
-  { nome: "DIFAL — SC", tipo: "difal", dia: 15 },
-  { nome: "DIFAL — PR", tipo: "difal", dia: 15 },
-  { nome: "DIFAL — BA", tipo: "difal", dia: 15 },
-  { nome: "DIFAL — ES", tipo: "difal", dia: 15 },
-  // DARE SP — dia 20
-  { nome: "DARE — ICMS SP", tipo: "dare", dia: 20 },
-  // IPI, PIS, COFINS — dia 25
-  { nome: "IPI · PIS · COFINS", tipo: "ipi", dia: 25 },
-];
+
 
 const CAL_CORES = {
   difal: "#e8aa00",
