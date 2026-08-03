@@ -3140,7 +3140,6 @@ function render(){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
             let confContainer = panel.querySelector(".conf-container");
             if(!confContainer){ confContainer = document.createElement("div"); confContainer.className="conf-container"; panel.appendChild(confContainer); }
-            renderAlertasTab(confContainer, "conferencia");
             renderConferencia(confContainer, color);
           }else if(window._diogotab==="config"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
