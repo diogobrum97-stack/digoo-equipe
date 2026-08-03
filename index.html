@@ -311,7 +311,16 @@ onValue(ref(db,"/"),snap=>{
     }
   });
   Object.keys(flashQueue).forEach(m=>{if(!d.flashes[m])delete flashQueue[m];});
-  prevTasks={...d.tasks};state=d;if(!cmpSalvando)render();
+  const prevBlingToken = state?.bling_token?.access_token;
+  prevTasks={...d.tasks};state=d;
+  // Se o token Bling mudou e tinha erro, limpar e tentar buscar de novo
+  if(d.bling_token?.access_token && d.bling_token.access_token !== prevBlingToken && estoqueBlingErro) {
+    estoqueBlingErro = null;
+    estoqueBlingData = null;
+    estoqueBlingLoading = false;
+    fetchBlingProdutos();
+  }
+  if(!cmpSalvando)render();
 },()=>{syncDot.style.background="#d4000c";});
 
 function addTask(member,text,prio,sender){
