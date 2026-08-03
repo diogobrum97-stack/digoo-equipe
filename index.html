@@ -2474,29 +2474,63 @@ function render(){
         if(member.locked){
           if(!window._diogotab)window._diogotab="tarefas";
           const tabs=document.createElement("div");tabs.className="tabs";
-          ["tarefas","concluidas","conversas","estoque","cancelamentos","fechamento","conferencia","config"].forEach(tab=>{
-            const btn=document.createElement("button");
-            btn.className="tab-btn"+(window._diogotab===tab?" active":"");
-            if(tab==="concluidas"){
-              btn.innerHTML='<span style="line-height:1.3;display:inline-block;text-align:center;">Concluidas<br>Equipe</span>';
-            } else if(tab==="tarefas"){
-              btn.textContent="Minhas Tarefas";
-            } else if(tab==="estoque") {
-              btn.textContent="Estoque";
-            } else if(tab==="cancelamentos") {
-              btn.textContent="Cancelamentos";
-            } else if(tab==="fechamento") {
-              btn.textContent="Fechamento";
-            } else if(tab==="conferencia") {
-              btn.textContent="Conferência";
-            } else if(tab==="config") {
-              btn.textContent="Config";
-            } else {
-              btn.textContent="Conversas";
+
+          // Grupos de abas
+          const tabGroups = [
+            { label: null, tabs: ["tarefas"] },
+            { label: "Equipe", tabs: ["concluidas","conversas"] },
+            { label: "Mercado Livre", tabs: ["estoque","cancelamentos"] },
+            { label: "Gestão", tabs: ["conferencia","config"] },
+          ];
+
+          const tabLabels = {
+            tarefas: "Minhas Tarefas",
+            concluidas: "Concluídas",
+            conversas: "Conversas",
+            estoque: "Estoque",
+            cancelamentos: "Cancelamentos",
+            conferencia: "Conferência",
+            config: "Config",
+          };
+
+          tabGroups.forEach((group, gi) => {
+            // Separador entre grupos
+            if(gi > 0) {
+              const sep = document.createElement("div");
+              sep.style.cssText = "width:1px;background:var(--border2);margin:6px 4px;flex-shrink:0;opacity:0.4;";
+              tabs.appendChild(sep);
             }
-            btn.addEventListener("click",()=>{window._diogotab=tab;render();});
-            tabs.appendChild(btn);
+
+            // Label do grupo
+            if(group.label) {
+              const wrap = document.createElement("div");
+              wrap.style.cssText = "display:flex;flex-direction:column;gap:0;";
+              const lbl = document.createElement("div");
+              lbl.style.cssText = "font-size:7px;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;padding:4px 10px 0;opacity:0.6;white-space:nowrap;";
+              lbl.textContent = group.label;
+              wrap.appendChild(lbl);
+              const btnRow = document.createElement("div");
+              btnRow.style.cssText = "display:flex;";
+              group.tabs.forEach(tab => {
+                const btn = document.createElement("button");
+                btn.className = "tab-btn"+(window._diogotab===tab?" active":"");
+                btn.textContent = tabLabels[tab] || tab;
+                btn.addEventListener("click",()=>{window._diogotab=tab;render();});
+                btnRow.appendChild(btn);
+              });
+              wrap.appendChild(btnRow);
+              tabs.appendChild(wrap);
+            } else {
+              group.tabs.forEach(tab => {
+                const btn = document.createElement("button");
+                btn.className = "tab-btn"+(window._diogotab===tab?" active":"");
+                btn.textContent = tabLabels[tab] || tab;
+                btn.addEventListener("click",()=>{window._diogotab=tab;render();});
+                tabs.appendChild(btn);
+              });
+            }
           });
+
           panel.appendChild(tabs);
           const todayStart=new Date();todayStart.setHours(0,0,0,0);
 
@@ -2880,20 +2914,7 @@ function render(){
               }
             }
             renderCancelamentos(cancelPanel);
-          }else if(window._diogotab==="fechamento"){
-            panel.style.maxHeight="none"; panel.style.overflowY="auto";
-            const fechPanel = document.createElement("div");
-            fechPanel.id = "fechamento-panel";
-            panel.appendChild(fechPanel);
-            // Só renderiza se não tem dados em andamento (evita resetar durante loading/resultado)
-            if(!fechamentoLoading) {
-              renderFechamentoMensal(fechPanel, color);
-            } else {
-              const l = document.createElement("div");
-              l.style.cssText = "text-align:center;padding:40px 0;color:var(--text3);font-size:12px;";
-              l.innerHTML = '<span class="spinning">↻</span> Buscando NFS-e no Gmail e Drive...';
-              fechPanel.appendChild(l);
-            }
+
           }else if(window._diogotab==="conferencia"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
             let confContainer = panel.querySelector(".conf-container");
