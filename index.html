@@ -392,15 +392,7 @@ function renderCalFiscal() {
     return {...e, venc, diff};
   }).sort((a,b) => a.dia - b.dia);
 
-  // Badge no botão
-  const proximos = eventosComDias.filter(e => e.diff >= 0 && e.diff <= 7);
-  const badge = document.getElementById("cal-fab-badge");
-  if(proximos.length > 0) {
-    badge.style.display = "flex";
-    badge.textContent = proximos.length;
-  } else {
-    badge.style.display = "none";
-  }
+  // (badge removido — botão agora está no header do card)
 
   // Montar painel
   const primeiroDia = new Date(ano, mes, 1).getDay();
