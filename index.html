@@ -484,8 +484,7 @@ document.addEventListener("click", e => {
 
 // ─── FIM CALENDÁRIO FISCAL ────────────────────────────────────────────────────
 
-
-nction toggleTask(id,done,progress,isRecorrente){
+function toggleTask(id,done,progress,isRecorrente){
   setSyncing(true);
   if(done){
     // concluído -> pendente (só via botão reabrir para recorrentes)
@@ -2504,7 +2503,6 @@ function render(){
             { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"}] },
           ];
 
-          atualizarAlertas();
           const currentTab = window._diogotab;
 
           navGroups.forEach(group => {
@@ -2514,20 +2512,11 @@ function render(){
             const isActive = group.tab === currentTab || group.subs.some(s => s.tab === currentTab);
 
             const btn = document.createElement("button");
-            btn.style.cssText = `background:none;border:none;border-bottom:2px solid ${isActive?"var(--accent)":"transparent"};color:${isActive?"var(--text)":"var(--text3)"};font-size:10px;font-weight:${isActive?"600":"400"};letter-spacing:1px;text-transform:uppercase;padding:12px 14px;cursor:pointer;font-family:inherit;transition:color .15s;white-space:nowrap;position:relative;`;
+            btn.style.cssText = `background:none;border:none;border-bottom:2px solid ${isActive?"var(--accent)":"transparent"};color:${isActive?"var(--text)":"var(--text3)"};font-size:10px;font-weight:${isActive?"600":"400"};letter-spacing:1px;text-transform:uppercase;padding:12px 14px;cursor:pointer;font-family:inherit;transition:color .15s;white-space:nowrap;`;
             btn.textContent = group.label;
 
-            // Badge de alertas
-            const tabsDoGrupo = group.tab ? [group.tab] : group.subs.map(s => s.tab);
-            const totalAlertas = tabsDoGrupo.reduce((sum, t) => sum + contarAlertas(t), 0);
-            if(totalAlertas > 0) {
-              const dot = document.createElement("span");
-              dot.style.cssText = "position:absolute;top:8px;right:4px;width:7px;height:7px;border-radius:50%;background:#d4000c;border:1.5px solid var(--bg2);";
-              btn.appendChild(dot);
-            }
-
             if(group.tab) {
-              btn.addEventListener("click", () => { window._diogotab = group.tab; marcarVisto(group.tab); render(); });
+              btn.addEventListener("click", () => { window._diogotab = group.tab; render(); });
             }
 
             item.appendChild(btn);
@@ -2543,7 +2532,7 @@ function render(){
                 dropItem.textContent = sub.label;
                 dropItem.addEventListener("mouseenter", () => dropItem.style.background = "var(--bg3)");
                 dropItem.addEventListener("mouseleave", () => dropItem.style.background = "none");
-                dropItem.addEventListener("click", () => { window._diogotab = sub.tab; marcarVisto(sub.tab); _alertas[sub.tab]?.forEach(a => a.visto = true); render(); });
+                dropItem.addEventListener("click", () => { window._diogotab = sub.tab; render(); });
                 drop.appendChild(dropItem);
               });
 
@@ -2962,7 +2951,7 @@ function render(){
           }else if(window._diogotab==="config"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
             renderConfig(panel, color);
-          }else if(window._diogotab==="concluidas"){renderAlertasTab(panel,"concluidas");
+          }else if(window._diogotab==="concluidas"){
             if(Object.keys(completionAlerts).length>0){
               const sec=document.createElement("div");sec.style.marginBottom="12px";sec.innerHTML=`<div class="section-label" style="color:#00e676;margin-bottom:8px">Novas conclusões</div>`;
               Object.entries(completionAlerts).forEach(([id,a])=>{const row=document.createElement("div");row.className="alert-row";row.innerHTML=`<span style="font-size:10px;color:${themeColor(a.member)};letter-spacing:1px">${a.member}</span><span style="flex:1;font-size:12px;color:var(--text2);text-decoration:line-through;margin:0 8px">${a.text}</span>`;const ok=document.createElement("button");ok.textContent="OK";ok.style.cssText="background:#00e676;color:#000;border:none;border-radius:3px;padding:3px 10px;font-size:9px;letter-spacing:1.5px;cursor:pointer;font-family:inherit;font-weight:700;";ok.addEventListener("click",()=>{delete completionAlerts[id];render();});row.appendChild(ok);sec.appendChild(row);});panel.appendChild(sec);
@@ -3664,7 +3653,6 @@ async function fetchBlingProdutos() {
 
 // ── RENDER CARD ESTOQUE ──────────────────────────────────────
 function renderEstoqueTab(panel, color) {
-  renderAlertasTab(panel, "estoque");
   checkPriceChangesAuto();
   fetchEstoqueAutomatico();
 
