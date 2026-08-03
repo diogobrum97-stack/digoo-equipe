@@ -2473,65 +2473,84 @@ function render(){
       }else{
         if(member.locked){
           if(!window._diogotab)window._diogotab="tarefas";
-          const tabs=document.createElement("div");tabs.className="tabs";
 
-          // Grupos de abas
-          const tabGroups = [
-            { label: null, tabs: ["tarefas"] },
-            { label: "Equipe", tabs: ["concluidas","conversas"] },
-            { label: "Mercado Livre", tabs: ["estoque","cancelamentos"] },
-            { label: "Gestão", tabs: ["conferencia","config"] },
+          // Barra de navegação com dropdown
+          const navBar = document.createElement("div");
+          navBar.style.cssText = "display:flex;align-items:center;border-bottom:0.5px solid var(--sep);position:relative;padding:0 4px;";
+
+          // Spacer esquerdo
+          const spacerL = document.createElement("div");
+          spacerL.style.cssText = "flex:1;";
+          navBar.appendChild(spacerL);
+
+          // Nav central
+          const navCenter = document.createElement("div");
+          navCenter.style.cssText = "display:flex;align-items:center;";
+
+          const navGroups = [
+            { label: "Tarefas", tab: "tarefas", subs: [] },
+            { label: "Equipe", tab: null, subs: [{label:"Concluídas",tab:"concluidas"},{label:"Conversas",tab:"conversas"}] },
+            { label: "Mercado Livre", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"}] },
+            { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"}] },
           ];
 
-          const tabLabels = {
-            tarefas: "Minhas Tarefas",
-            concluidas: "Concluídas",
-            conversas: "Conversas",
-            estoque: "Estoque",
-            cancelamentos: "Cancelamentos",
-            conferencia: "Conferência",
-            config: "Config",
-          };
+          const currentTab = window._diogotab;
 
-          tabGroups.forEach((group, gi) => {
-            // Separador entre grupos
-            if(gi > 0) {
-              const sep = document.createElement("div");
-              sep.style.cssText = "width:1px;background:var(--border2);margin:6px 4px;flex-shrink:0;opacity:0.4;";
-              tabs.appendChild(sep);
+          navGroups.forEach(group => {
+            const item = document.createElement("div");
+            item.style.cssText = "position:relative;";
+
+            const isActive = group.tab === currentTab || group.subs.some(s => s.tab === currentTab);
+
+            const btn = document.createElement("button");
+            btn.style.cssText = `background:none;border:none;border-bottom:2px solid ${isActive?"var(--accent)":"transparent"};color:${isActive?"var(--text)":"var(--text3)"};font-size:10px;font-weight:${isActive?"600":"400"};letter-spacing:1px;text-transform:uppercase;padding:12px 14px;cursor:pointer;font-family:inherit;transition:color .15s;white-space:nowrap;`;
+            btn.textContent = group.label;
+
+            if(group.tab) {
+              btn.addEventListener("click", () => { window._diogotab = group.tab; render(); });
             }
 
-            // Label do grupo
-            if(group.label) {
-              const wrap = document.createElement("div");
-              wrap.style.cssText = "display:flex;flex-direction:column;gap:0;";
-              const lbl = document.createElement("div");
-              lbl.style.cssText = "font-size:7px;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;padding:4px 10px 0;opacity:0.6;white-space:nowrap;";
-              lbl.textContent = group.label;
-              wrap.appendChild(lbl);
-              const btnRow = document.createElement("div");
-              btnRow.style.cssText = "display:flex;";
-              group.tabs.forEach(tab => {
-                const btn = document.createElement("button");
-                btn.className = "tab-btn"+(window._diogotab===tab?" active":"");
-                btn.textContent = tabLabels[tab] || tab;
-                btn.addEventListener("click",()=>{window._diogotab=tab;render();});
-                btnRow.appendChild(btn);
+            item.appendChild(btn);
+
+            // Dropdown para sub-abas
+            if(group.subs.length > 0) {
+              const drop = document.createElement("div");
+              drop.style.cssText = "display:none;position:absolute;top:100%;left:50%;transform:translateX(-50%);background:var(--bg2);border:0.5px solid var(--border2);border-radius:8px;padding:6px;min-width:140px;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,0.5);";
+
+              group.subs.forEach(sub => {
+                const dropItem = document.createElement("div");
+                dropItem.style.cssText = `display:block;padding:7px 12px;font-size:10px;color:${sub.tab===currentTab?"var(--accent)":"var(--text3)"};letter-spacing:1px;text-transform:uppercase;cursor:pointer;border-radius:5px;font-family:inherit;transition:all .15s;`;
+                dropItem.textContent = sub.label;
+                dropItem.addEventListener("mouseenter", () => dropItem.style.background = "var(--bg3)");
+                dropItem.addEventListener("mouseleave", () => dropItem.style.background = "none");
+                dropItem.addEventListener("click", () => { window._diogotab = sub.tab; render(); });
+                drop.appendChild(dropItem);
               });
-              wrap.appendChild(btnRow);
-              tabs.appendChild(wrap);
-            } else {
-              group.tabs.forEach(tab => {
-                const btn = document.createElement("button");
-                btn.className = "tab-btn"+(window._diogotab===tab?" active":"");
-                btn.textContent = tabLabels[tab] || tab;
-                btn.addEventListener("click",()=>{window._diogotab=tab;render();});
-                tabs.appendChild(btn);
-              });
+
+              item.addEventListener("mouseenter", () => { drop.style.display = "block"; });
+              item.addEventListener("mouseleave", () => { drop.style.display = "none"; });
+              item.appendChild(drop);
             }
+
+            navCenter.appendChild(item);
           });
 
-          panel.appendChild(tabs);
+          navBar.appendChild(navCenter);
+
+          // Spacer direito
+          const spacerR = document.createElement("div");
+          spacerR.style.cssText = "flex:1;display:flex;justify-content:flex-end;";
+
+          // Botão engrenagem
+          const gearBtn = document.createElement("button");
+          gearBtn.style.cssText = `background:none;border:none;color:${currentTab==="config"?"var(--accent)":"var(--text3)"};cursor:pointer;padding:8px 10px;border-radius:6px;display:flex;align-items:center;transition:color .15s;`;
+          gearBtn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`;
+          gearBtn.title = "Configurações";
+          gearBtn.addEventListener("click", () => { window._diogotab = "config"; render(); });
+          spacerR.appendChild(gearBtn);
+          navBar.appendChild(spacerR);
+
+          panel.appendChild(navBar);
           const todayStart=new Date();todayStart.setHours(0,0,0,0);
 
           if(window._diogotab==="mercadolivre" || diogIsFullAuto){
