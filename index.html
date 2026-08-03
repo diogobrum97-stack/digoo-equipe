@@ -3719,72 +3719,7 @@ function renderFilialSP(panel, color) {
   }
   topRow.appendChild(uploadWrap);
 
-  const conexoesWrap = document.createElement("div");
-  conexoesWrap.style.cssText = "display:flex;flex-direction:column;gap:6px;align-items:flex-end;";
-
-  // Status Bling
-  const blingStatus = document.createElement("div");
-  blingStatus.style.cssText = "display:flex;align-items:center;gap:6px;font-size:9px;";
-
-  if (estoqueBlingLoading) {
-    blingStatus.innerHTML = `<span class="spinning" style="color:var(--text3)">↻</span><span style="color:var(--text3)">Carregando Bling...</span>`;
-  } else if (estoqueBlingErro) {
-    blingStatus.innerHTML = `<span style="color:#d4000c">⚠ Bling: ${estoqueBlingErro}</span>`;
-    const authBtn = document.createElement("button");
-    authBtn.textContent = "Renovar token";
-    authBtn.style.cssText = "background:none;border:1px solid #e8aa0066;color:#e8aa00;border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer;letter-spacing:1px;margin-left:4px;";
-    authBtn.addEventListener("click", () => window.open("https://digoo-backend.vercel.app/api/bling-auth", "_blank"));
-    blingStatus.appendChild(authBtn);
-  } else if (estoqueBlingData) {
-    const count = Object.keys(estoqueBlingData).length;
-    blingStatus.innerHTML = `<span style="color:#00dfc3">●</span><span style="color:var(--text3)">${count} SKUs Bling</span>`;
-    const refBtn = document.createElement("button");
-    refBtn.textContent = "↻";
-    refBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:3px;padding:2px 7px;font-size:10px;cursor:pointer;";
-    refBtn.addEventListener("click", () => { estoqueBlingData = null; fetchBlingProdutos(); });
-    blingStatus.appendChild(refBtn);
-    const renewBtn = document.createElement("button");
-    renewBtn.textContent = "Renovar token";
-    renewBtn.style.cssText = "background:none;border:1px solid #e8aa0044;color:#e8aa0088;border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer;letter-spacing:1px;margin-left:4px;";
-    renewBtn.addEventListener("click", () => window.open("https://digoo-backend.vercel.app/api/bling-auth", "_blank"));
-    blingStatus.appendChild(renewBtn);
-  } else {
-    blingStatus.innerHTML = `<span style="color:var(--text3)">Bling desconectado</span>`;
-    const connectBtn = document.createElement("button");
-    connectBtn.textContent = "Conectar";
-    connectBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer;letter-spacing:1px;";
-    connectBtn.addEventListener("click", () => fetchBlingProdutos());
-    blingStatus.appendChild(connectBtn);
-    const authBtn = document.createElement("button");
-    authBtn.textContent = "Autorizar Bling";
-    authBtn.style.cssText = "background:none;border:1px solid #e8aa0066;color:#e8aa00;border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer;letter-spacing:1px;margin-left:4px;";
-    authBtn.addEventListener("click", () => window.open("https://digoo-backend.vercel.app/api/bling-auth", "_blank"));
-    blingStatus.appendChild(authBtn);
-  }
-  conexoesWrap.appendChild(blingStatus);
-
-  // Status ML Filial (necessário pro acompanhamento de vendas reais após mudança de preço)
-  const mlFilialWrap = document.createElement("div");
-  mlFilialWrap.style.cssText = "display:flex;align-items:center;gap:6px;font-size:9px;";
-  if(state.ml_token_filial?.access_token){
-    const nick = state.ml_token_filial.nickname ? ` · ${state.ml_token_filial.nickname}` : "";
-    mlFilialWrap.innerHTML = `<span style="color:#00dfc3">●</span><span style="color:var(--text3)">ML Filial${nick}</span>`;
-    const reconBtn = document.createElement("button");
-    reconBtn.textContent = "Reconectar";
-    reconBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer;letter-spacing:1px;margin-left:4px;";
-    reconBtn.addEventListener("click", () => window.open(`${VERCEL_BACKEND}/api/ml-auth?conta=filial`, "_blank"));
-    mlFilialWrap.appendChild(reconBtn);
-  }else{
-    mlFilialWrap.innerHTML = `<span style="color:var(--text3)">ML Filial desconectado</span>`;
-    const connBtn = document.createElement("button");
-    connBtn.textContent = "Conectar ML Filial";
-    connBtn.style.cssText = "background:none;border:1px solid #e8aa0066;color:#e8aa00;border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer;letter-spacing:1px;margin-left:4px;";
-    connBtn.addEventListener("click", () => window.open(`${VERCEL_BACKEND}/api/ml-auth?conta=filial`, "_blank"));
-    mlFilialWrap.appendChild(connBtn);
-  }
-  conexoesWrap.appendChild(mlFilialWrap);
-
-  topRow.appendChild(conexoesWrap);
+  topRow.appendChild(uploadWrap);
   panel.appendChild(topRow);
 
   if (!estoqueExcelData || !estoqueExcelData.rows || estoqueExcelData.rows.length === 0) {
