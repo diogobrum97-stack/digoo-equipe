@@ -407,17 +407,17 @@ function renderCalFiscal() {
 
   panel.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:0.5px solid #1a1a1a;">
-      <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#aaa;text-transform:uppercase;">Calendário Fiscal</div>
+      <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#ccc;text-transform:uppercase;">Calendário Fiscal</div>
       <div style="display:flex;align-items:center;gap:8px;">
-        <button onclick="calMesOffset--;renderCalFiscal()" style="background:none;border:none;color:#666;font-size:13px;cursor:pointer;padding:2px 5px;">‹</button>
-        <div style="font-size:11px;color:#bbb;">${MESES[mes].slice(0,3)} ${ano}</div>
-        <button onclick="calMesOffset++;renderCalFiscal()" style="background:none;border:none;color:#666;font-size:13px;cursor:pointer;padding:2px 5px;">›</button>
+        <button onclick="calMesOffset--;renderCalFiscal()" style="background:none;border:none;color:#999;font-size:13px;cursor:pointer;padding:2px 5px;">‹</button>
+        <div style="font-size:11px;color:#ccc;">${MESES[mes].slice(0,3)} ${ano}</div>
+        <button onclick="calMesOffset++;renderCalFiscal()" style="background:none;border:none;color:#999;font-size:13px;cursor:pointer;padding:2px 5px;">›</button>
       </div>
     </div>
 
     <div style="padding:10px 14px;border-bottom:0.5px solid #1a1a1a;">
       <div style="display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px;">
-        ${["D","S","T","Q","Q","S","S"].map(d => `<div style="font-size:8px;color:#777;text-align:center;letter-spacing:0.5px;">${d}</div>`).join("")}
+        ${["D","S","T","Q","Q","S","S"].map(d => `<div style="font-size:8px;color:#888;text-align:center;letter-spacing:0.5px;">${d}</div>`).join("")}
       </div>
       <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px;">
         ${Array(primeiroDia).fill('<div style="height:26px;"></div>').join("")}
@@ -426,7 +426,7 @@ function renderCalFiscal() {
           const isHoje = d===hoje.getDate() && mes===hoje.getMonth() && ano===hoje.getFullYear();
           const evs = eventosPorDia[d] || [];
           const cor = evs.length > 0 ? CAL_CORES[evs[0].tipo] : null;
-          return `<div style="height:26px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:4px;font-size:10px;cursor:pointer;position:relative;${isHoje?"background:#1a6be0;color:#fff;font-weight:700;":"color:"+(evs.length?"#ccc":"#666")+";"}">
+          return `<div style="height:26px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:4px;font-size:10px;cursor:pointer;position:relative;${isHoje?"background:#1a6be0;color:#fff;font-weight:700;":"color:"+(evs.length?"#ddd":"#888")+";"}">
             ${d}
             ${cor && !isHoje ? `<div style="width:3px;height:3px;border-radius:50%;background:${cor};position:absolute;bottom:2px;"></div>` : ""}
           </div>`;
@@ -435,17 +435,17 @@ function renderCalFiscal() {
     </div>
 
     <div style="max-height:200px;overflow-y:auto;">
-      <div style="font-size:8px;letter-spacing:1.5px;color:#777;text-transform:uppercase;padding:8px 14px 4px;">Próximos vencimentos</div>
+      <div style="font-size:8px;letter-spacing:1.5px;color:#999;text-transform:uppercase;padding:8px 14px 4px;">Próximos vencimentos</div>
       ${eventosComDias.filter(e => e.diff >= -1).map(e => {
         const cor = CAL_CORES[e.tipo] || "#555";
-        const diasCor = e.diff < 0 ? "#d4000c" : e.diff <= 7 ? "#d4000c" : e.diff <= 14 ? "#e8aa00" : "#444";
+        const diasCor = e.diff < 0 ? "#d4000c" : e.diff <= 7 ? "#d4000c" : e.diff <= 14 ? "#e8aa00" : "#888";
         const diasTxt = e.diff < 0 ? `${Math.abs(e.diff)}d atrás` : e.diff === 0 ? "hoje" : `em ${e.diff}d`;
         return `<div style="display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:0.5px solid #111;">
-          <div style="font-size:10px;font-weight:700;color:#777;width:18px;text-align:center;flex-shrink:0;">${e.dia}</div>
+          <div style="font-size:10px;font-weight:700;color:#aaa;width:18px;text-align:center;flex-shrink:0;">${e.dia}</div>
           <div style="width:6px;height:6px;border-radius:50%;background:${cor};flex-shrink:0;"></div>
           <div style="flex:1;">
             <div style="font-size:11px;font-weight:500;color:#ddd;">${e.nome}</div>
-            <div style="font-size:9px;color:#777;margin-top:1px;">Ref. ${String(mes).padStart(2,"0")}/${ano}</div>
+            <div style="font-size:9px;color:#888;margin-top:1px;">Ref. ${String(mes).padStart(2,"0")}/${ano}</div>
           </div>
           <div style="font-size:9px;font-weight:600;color:${diasCor};white-space:nowrap;">${diasTxt}</div>
         </div>`;
