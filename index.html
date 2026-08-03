@@ -3656,6 +3656,13 @@ function renderEstoqueTab(panel, color) {
   checkPriceChangesAuto();
   fetchEstoqueAutomatico();
 
+  // Se token Bling válido mas sem dados ou com erro, buscar automaticamente
+  const blingValido = tokenValido(state.bling_token);
+  if(blingValido && !estoqueBlingData && !estoqueBlingLoading) {
+    estoqueBlingErro = null;
+    fetchBlingProdutos();
+  }
+
   // ── Abas de localização: Filial SP / Matriz RS ──────────────
   const locWrap = document.createElement("div");
   locWrap.style.cssText = "display:flex;border-bottom:1px solid var(--sep);margin-bottom:14px;";
