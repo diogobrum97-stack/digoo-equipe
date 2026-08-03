@@ -462,23 +462,9 @@ function renderCalFiscal() {
   `;
 }
 
-// Atualizar badge do botão ao carregar
+// initCalFiscal — sem fab fixo, badge gerenciado pelo render()
 function initCalFiscal() {
-  const fab = document.getElementById("cal-fab");
-  fab.style.display = "flex";
-  
-  const hoje = new Date();
-  const proximos = FISCAL_EVENTS.filter(e => {
-    const venc = new Date(hoje.getFullYear(), hoje.getMonth(), e.dia);
-    const diff = Math.ceil((venc - hoje) / (1000*60*60*24));
-    return diff >= 0 && diff <= 7;
-  });
-  
-  const badge = document.getElementById("cal-fab-badge");
-  if(proximos.length > 0) {
-    badge.style.display = "flex";
-    badge.textContent = proximos.length;
-  }
+  // noop — botão está no header do card, gerenciado pelo render()
 }
 
 // Fechar ao clicar fora
