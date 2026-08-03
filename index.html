@@ -3613,7 +3613,17 @@ async function fetchBlingProdutos() {
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const data = await r.json();
 
-    if (data.erro) throw new Error(data.erro);
+    if (data.erro) {
+      // Se expirou, mostrar botão de reconectar
+      if(data.erro.includes("expirado")) {
+        estoqueBlingErro = "Token expirado";
+      } else {
+        throw new Error(data.erro);
+      }
+      estoqueBlingLoading = false;
+      render();
+      return;
+    }
 
     // Monta mapa SKU → precoCusto
     const mapa = {};
