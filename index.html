@@ -402,8 +402,8 @@ async function fetchDashboard() {
       pedidosMes: resMes.summary?.totalOrders || 0,
       percDia: Math.round(percDia * 100),
       hora: hoje.toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"}),
-      top5hoje: (resHoje.topSellers || []).slice(0,5),
-      top10mes: (resMes.topSellers || []).slice(0,10),
+      top5hoje: [...(resHoje.topSellers || [])].sort((a,b)=>(b.revenue||0)-(a.revenue||0)).slice(0,5),
+      top10mes: [...(resMes.topSellers || [])].sort((a,b)=>(b.revenue||0)-(a.revenue||0)).slice(0,10),
       _fetchedAt: Date.now(),
     };
   } catch(e) {
