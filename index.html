@@ -414,7 +414,7 @@ async function fetchDashboard() {
 function renderDashboard(panel, color) {
   // Rebuscar se dados têm mais de 5 minutos
   const agora = Date.now();
-  if(!dashLoading && (!dashData || dashData.erro || (agora - (dashData._fetchedAt||0)) > 60*1000)) {
+  if(!dashLoading && (!dashData || dashData.erro || (agora - (dashData._fetchedAt||0)) > 150*1000)) {
     fetchDashboard();
   }
 
