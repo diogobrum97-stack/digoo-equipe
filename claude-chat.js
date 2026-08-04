@@ -160,14 +160,22 @@
     document.getElementById('cc-send').addEventListener('click', handleSend);
     document.getElementById('cc-input').addEventListener('keydown', e => { if(e.key === 'Enter') handleSend(); });
 
-    // Análise automática
+    // Análise automática — aguardar dados se necessário
     if(!analysed) {
       analysed = true;
       addTyping();
-      sendToClaud('Analise os dados do dashboard e me dê os 3 pontos mais importantes que preciso saber agora. Seja direto.').then(reply => {
-        removeTyping();
-        addMsg(reply, 'claude');
-      }).catch(() => { removeTyping(); });
+      const tryAnalyse = (attempts) => {
+        const hasData = window._dashData && !window._dashData.erro;
+        if(hasData || attempts <= 0) {
+          sendToClaud('Analise os dados do dashboard e me dê os 3 pontos mais importantes que preciso saber agora. Seja direto e objetivo.').then(reply => {
+            removeTyping();
+            addMsg(reply, 'claude');
+          }).catch(() => { removeTyping(); addMsg('Não consegui conectar. Tente perguntar algo.', 'claude'); });
+        } else {
+          setTimeout(() => tryAnalyse(attempts - 1), 1500);
+        }
+      };
+      tryAnalyse(10); // Tenta por até 15 segundos
     }
   }
 
