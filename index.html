@@ -791,10 +791,15 @@ function renderClaudeChat() {
 // Mostrar botão Claude quando no dashboard
 function initClaudeChat() {
   if(window._diogotab === "dashboard") {
-    renderClaudeChat();
+    // Só criar o fab se não existe
+    if(!document.getElementById("claude-fab")) {
+      renderClaudeChat();
+    }
   } else {
+    // Fora do dashboard — remover tudo
+    claudeChatOpen = false;
     document.getElementById("claude-fab")?.remove();
-    if(!claudeChatOpen) document.getElementById("claude-chat-panel")?.remove();
+    document.getElementById("claude-chat-panel")?.remove();
   }
 }
 // ─── FIM CLAUDE CHAT FLUTUANTE ────────────────────────────────────────────────
