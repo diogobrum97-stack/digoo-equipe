@@ -2492,7 +2492,7 @@ function render(){
 
           // Barra de navegação com dropdown
           const navBar = document.createElement("div");
-          navBar.style.cssText = "display:flex;align-items:center;border-bottom:0.5px solid var(--sep);position:relative;padding:0 4px;";
+          navBar.style.cssText = "display:flex;align-items:center;border-bottom:0.5px solid var(--sep);position:relative;padding:0 4px;overflow:hidden;";
 
           // Spacer esquerdo
           const spacerL = document.createElement("div");
@@ -2501,7 +2501,7 @@ function render(){
 
           // Nav central
           const navCenter = document.createElement("div");
-          navCenter.style.cssText = "display:flex;align-items:center;";
+          navCenter.style.cssText = "display:flex;align-items:center;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex:1;";
 
           const navGroups = [
             { label: "Tarefas", tab: "tarefas", subs: [] },
