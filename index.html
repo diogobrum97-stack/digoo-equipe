@@ -3818,9 +3818,12 @@ function renderFilialSP(panel, color) {
       <button onclick="document.getElementById('saude-help-tooltip').remove()" style="background:var(--accent);border:none;border-radius:6px;color:#000;font-size:10px;font-weight:700;letter-spacing:1px;padding:7px 16px;cursor:pointer;font-family:inherit;width:100%;">Entendido</button>
     `;
     document.body.appendChild(tooltip);
-    document.addEventListener("click", e => {
-      if(!tooltip.contains(e.target) && e.target !== helpBtn) tooltip.remove();
-    }, { once: true });
+    // Fechar ao clicar fora — com delay pra não fechar imediatamente
+    setTimeout(() => {
+      document.addEventListener("click", e => {
+        if(!tooltip.contains(e.target) && e.target !== helpBtn) tooltip.remove();
+      }, { once: true });
+    }, 100);
   });
   subTabWrap.appendChild(helpBtn);
   panel.appendChild(subTabWrap);
