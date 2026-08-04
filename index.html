@@ -383,32 +383,25 @@ async function fetchDashboard() {
   try {
     const token = state.ml_token_filial?.access_token;
     if(!token) throw new Error("Token ML Filial não conectado");
-
-    // Mês atual — do dia 1 até hoje
     const hoje = new Date();
     const diaAtualMes = hoje.getDate();
-
     const [resHoje, resMes] = await Promise.all([
       fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${token}&today=1`).then(r=>r.json()),
       fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${token}&days=${diaAtualMes}`).then(r=>r.json()),
     ]);
-
-    // Calcular projeção do dia baseado nas horas passadas
-    const agora = new Date();
     const minutosDia = 24 * 60;
-    const minutosPassados = agora.getHours() * 60 + agora.getMinutes();
+    const minutosPassados = hoje.getHours() * 60 + hoje.getMinutes();
     const percDia = minutosPassados / minutosDia;
     const fatHoje = resHoje.summary?.totalRevenue || 0;
     const projecaoDia = percDia > 0 ? fatHoje / percDia : 0;
-
     dashData = {
-      fatHoje,
-      projecaoDia,
+      fatHoje, projecaoDia,
       fatMes: resMes.summary?.totalRevenue || 0,
       pedidosMes: resMes.summary?.totalOrders || 0,
       percDia: Math.round(percDia * 100),
-      hora: agora.toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"}),
-      top5: (resMes.topSellers || []).slice(0,5),
+      hora: hoje.toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"}),
+      top5hoje: (resHoje.topSellers || []).slice(0,5),
+      top10mes: (resMes.topSellers || []).slice(0,10),
     };
   } catch(e) {
     dashData = { erro: e.message };
@@ -420,8 +413,9 @@ async function fetchDashboard() {
 function renderDashboard(panel, color) {
   if(!dashData && !dashLoading) fetchDashboard();
 
-  const fmt = v => v >= 1000 ? `R$ ${(v/1000).toFixed(0)}k` : `R$ ${v.toFixed(0)}`;
+  const fmt = v => v >= 1000 ? `R$ ${(v/1000).toFixed(0)}k` : `R$ ${Number(v).toFixed(0)}`;
   const fmtFull = v => `R$ ${Number(v).toLocaleString("pt-BR", {minimumFractionDigits:0,maximumFractionDigits:0})}`;
+  const GREEN = "#22c55e";
 
   if(dashLoading) {
     const loading = document.createElement("div");
@@ -445,151 +439,132 @@ function renderDashboard(panel, color) {
   }
 
   const wrap = document.createElement("div");
-  wrap.style.cssText = "display:flex;flex-direction:column;gap:10px;padding:14px;max-width:100%;";
-  
-  // Grid de 2 colunas no desktop
-  const isWide = window.innerWidth >= 768;
+  wrap.style.cssText = "display:flex;flex-direction:column;gap:10px;padding:14px;";
 
-  // Header
-  const header = document.createElement("div");
-  header.style.cssText = "display:flex;align-items:center;justify-content:space-between;";
   const now = new Date();
   const dias = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
   const meses = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
-  header.innerHTML = `
-    <div style="font-size:8px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;">Dashboard ML · Filial SP</div>
-    <div style="font-size:9px;color:var(--text3);">${dias[now.getDay()]}, ${now.getDate()} ${meses[now.getMonth()]}</div>
-  `;
+  const hora = now.getHours();
+  const saudacao = hora < 12 ? "Bom dia" : hora < 18 ? "Boa tarde" : "Boa noite";
+
+  const header = document.createElement("div");
+  header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;";
+  header.innerHTML = `<div><div style="font-size:15px;font-weight:600;color:#fff;">${saudacao}, Diogo 👋</div><div style="font-size:9px;letter-spacing:1.5px;color:#999;text-transform:uppercase;margin-top:3px;">${dias[now.getDay()]} · ${now.getDate()} ${meses[now.getMonth()]} ${now.getFullYear()}</div></div><div style="font-size:10px;font-weight:600;color:#1a6be0;">${dashData.hora}</div>`;
   wrap.appendChild(header);
 
-  // 3 cards faturamento
-  const fatGrid = document.createElement("div");
-  fatGrid.style.cssText = "display:grid;grid-template-columns:repeat(3,1fr);gap:8px;";
-  // No desktop, colocar progresso e meta ao lado dos fat cards
-  const fatCards = [
-    { label: "Hoje", value: fmtFull(dashData.fatHoje), sub: "até agora", color: "#1a6be0" },
-    { label: "Projeção hoje", value: fmt(dashData.projecaoDia), sub: "no ritmo atual", color: "#4a9eff" },
-    { label: "Mês atual", value: fmt(dashData.fatMes), sub: `${dashData.pedidosMes} pedidos`, color: "#e8aa00" },
-  ];
-  fatCards.forEach(fc => {
-    const c = document.createElement("div");
-    c.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:12px;padding:12px;";
-    c.innerHTML = `
-      <div style="font-size:7px;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;margin-bottom:6px;">${fc.label}</div>
-      <div style="font-size:17px;font-weight:700;color:${fc.color};line-height:1;margin-bottom:3px;">${fc.value}</div>
-      <div style="font-size:8px;color:var(--text3);">${fc.sub}</div>
-    `;
-    fatGrid.appendChild(c);
+  const grid = document.createElement("div");
+  grid.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:10px;";
+
+  // Vendas ML
+  const vendasCard = document.createElement("div");
+  vendasCard.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:14px;padding:16px;grid-column:1/-1;";
+  vendasCard.innerHTML = `
+    <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#bbb;text-transform:uppercase;margin-bottom:14px;">Vendas ML · Filial SP</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">
+      <div><div style="font-size:9px;color:#bbb;margin-bottom:4px;">Hoje</div><div style="font-size:22px;font-weight:700;color:#fff;margin-bottom:3px;">${fmtFull(dashData.fatHoje)}</div><div style="font-size:9px;font-weight:600;color:${GREEN};">↑ em tempo real</div></div>
+      <div><div style="font-size:9px;color:#bbb;margin-bottom:4px;">Projeção do dia</div><div style="font-size:22px;font-weight:700;color:#ccc;margin-bottom:3px;">${fmt(dashData.projecaoDia)}</div><div style="font-size:9px;color:#bbb;">${dashData.percDia}% percorrido</div></div>
+      <div><div style="font-size:9px;color:#bbb;margin-bottom:4px;">Mês atual</div><div style="font-size:22px;font-weight:700;color:#fff;margin-bottom:3px;">${fmt(dashData.fatMes)}</div><div style="font-size:9px;font-weight:600;color:${GREEN};">${dashData.pedidosMes} pedidos</div></div>
+    </div>
+    <div style="background:#1e1e1e;border-radius:99px;height:3px;margin-bottom:12px;"><div style="height:3px;border-radius:99px;background:linear-gradient(90deg,#1a6be0,#4a9eff);width:${dashData.percDia}%;"></div></div>
+    <div style="font-size:9px;font-weight:600;letter-spacing:1.5px;color:#bbb;text-transform:uppercase;margin-bottom:8px;">Mais vendidos hoje</div>
+    ${dashData.top5hoje.map((p,i) => `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:#141414;border-radius:8px;margin-bottom:4px;"><div style="font-size:10px;font-weight:700;color:${i===0?"#e8aa00":"#888"};width:14px;text-align:center;flex-shrink:0;">${i+1}</div><div style="font-size:10px;font-weight:600;color:#fff;flex:1;">${p.sku||"—"}</div><div style="font-size:9px;color:#bbb;margin-right:4px;">${p.qty} un</div><div style="font-size:10px;font-weight:600;color:#ccc;">${fmt(p.revenue||0)}</div></div>`).join("")}
+  `;
+  grid.appendChild(vendasCard);
+
+  // Tarefas
+  const tasks = Object.values(state.tasks || {}).filter(t => t && !t.done && t.member === "Diogo" && !t.delegatedBy);
+  const urgentes = tasks.filter(t => t.prioridade === "urgente" || t.prioridade === "superurgente").length;
+  const importantes = tasks.filter(t => t.prioridade === "importante").length;
+  const normais = tasks.filter(t => t.prioridade === "normal" || !t.prioridade).length;
+  const concluidas = Object.values(state.tasks || {}).filter(t => t && t.done && t.member === "Diogo").length;
+  const taskCard = document.createElement("div");
+  taskCard.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:14px;padding:16px;";
+  taskCard.innerHTML = `
+    <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#bbb;text-transform:uppercase;margin-bottom:14px;">Minhas tarefas</div>
+    ${[
+      {label:"Urgente", count:urgentes, color:"#d4000c"},
+      {label:"Importante", count:importantes, color:"#e8aa00"},
+      {label:"Normal", count:normais, color:GREEN},
+      {label:"Concluídas", count:concluidas, color:GREEN, opacity:"0.5"},
+    ].map(t => `<div onclick="window._diogotab='tarefas';render();" style="display:flex;align-items:center;gap:12px;padding:11px 12px;background:#141414;border-radius:8px;margin-bottom:6px;cursor:pointer;opacity:${t.opacity||1};"><div style="width:8px;height:8px;border-radius:50%;background:${t.color};flex-shrink:0;"></div><div style="font-size:12px;font-weight:500;color:#fff;flex:1;">${t.label}</div><div style="font-size:20px;font-weight:700;color:${t.color};">${t.count}</div><div style="font-size:14px;color:#444;">›</div></div>`).join("")}
+  `;
+  grid.appendChild(taskCard);
+
+  // Estoque
+  const estoqueCard = document.createElement("div");
+  estoqueCard.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:14px;padding:16px;";
+  const estoqueRows = estoqueExcelData?.rows || [];
+  const valorTotal = estoqueRows.reduce((s,r) => s + (Number(r.aptas||0) * (estoqueBlingData?.[r.sku]||0)), 0);
+  const criticos = estoqueRows.filter(r => {
+    const v30 = r.vendas30||0;
+    const dias = v30>0 ? Math.round(r.aptas/(v30/30)) : 999;
+    return dias < 15 && r.aptas > 0;
+  }).slice(0,3);
+  const unidades = estoqueRows.reduce((s,r)=>s+Number(r.aptas||0),0);
+  estoqueCard.innerHTML = `
+    <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#bbb;text-transform:uppercase;margin-bottom:14px;">Estoque Full · Filial SP</div>
+    <div style="font-size:30px;font-weight:700;color:${GREEN};margin-bottom:3px;">${fmtFull(valorTotal)}</div>
+    <div style="font-size:10px;color:#bbb;margin-bottom:14px;">${unidades} unidades · ${estoqueRows.length} SKUs</div>
+    ${criticos.length > 0 ? criticos.map(r => {
+      const v30 = r.vendas30||0;
+      const dias = v30>0 ? Math.round(r.aptas/(v30/30)) : 999;
+      const cor = dias <= 7 ? "#d4000c" : "#e8aa00";
+      return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:#141414;border-radius:8px;margin-bottom:5px;"><div style="width:7px;height:7px;border-radius:50%;background:${cor};flex-shrink:0;"></div><div style="font-size:11px;font-weight:600;color:#fff;flex:1;">${r.sku}</div><div style="font-size:12px;font-weight:700;color:${cor};">${dias}d</div></div>`;
+    }).join("") : `<div style="font-size:10px;color:#bbb;padding:10px 0;">Nenhum produto crítico ✓</div>`}
+  `;
+  grid.appendChild(estoqueCard);
+
+  // Calendário Fiscal
+  const fiscalCard = document.createElement("div");
+  fiscalCard.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:14px;padding:16px;grid-column:1/-1;";
+  const hoje2 = new Date();
+  const mes2 = hoje2.getMonth();
+  const ano2 = hoje2.getFullYear();
+  const coresFiscal = {difal:"#e8aa00", dare:"#a855f7", ipi:"#1a6be0"};
+  const visto = new Set();
+  const fiscal_agrupado = [];
+  FISCAL_EVENTS.map(e => {
+    const venc = new Date(ano2, mes2, e.dia);
+    const diff = Math.ceil((venc - hoje2) / (1000*60*60*24));
+    return {...e, diff};
+  }).filter(e => e.diff >= 0 && e.diff <= 30).sort((a,b) => a.diff - b.diff).forEach(e => {
+    const key = `${e.tipo}_${e.dia}`;
+    if(e.tipo === "difal" && !visto.has(key)) { visto.add(key); fiscal_agrupado.push({...e, nome:`DIFAL — múltiplos estados`}); }
+    else if(e.tipo !== "difal") fiscal_agrupado.push(e);
   });
-  // Layout desktop — fat cards + progresso/meta em duas colunas
-  if(isWide) {
-    const mainGrid = document.createElement("div");
-    mainGrid.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:10px;";
-    
-    const leftCol = document.createElement("div");
-    leftCol.style.cssText = "display:flex;flex-direction:column;gap:10px;";
-    leftCol.appendChild(fatGrid);
-    
-    const rightCol = document.createElement("div");
-    rightCol.style.cssText = "display:flex;flex-direction:column;gap:10px;";
-
-    mainGrid.appendChild(leftCol);
-    mainGrid.appendChild(rightCol);
-    wrap.appendChild(mainGrid);
-
-    // Progresso e meta vão pra coluna direita
-    wrap._leftCol = leftCol;
-    wrap._rightCol = rightCol;
-    wrap._isWide = true;
-  } else {
-    wrap.appendChild(fatGrid);
-  }
-
-  // Progresso do dia
-  const progWrap = document.createElement("div");
-  progWrap.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:12px;padding:12px 14px;";
-  progWrap.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-      <div style="font-size:7px;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;">Progresso do dia</div>
-      <div style="display:flex;align-items:center;gap:8px;">
-        <div style="font-size:9px;color:var(--text3);">${dashData.hora}</div>
-        <div style="font-size:10px;font-weight:600;color:#1a6be0;">${dashData.percDia}%</div>
-      </div>
-    </div>
-    <div style="background:var(--bg3);border-radius:99px;height:4px;">
-      <div style="height:4px;border-radius:99px;background:linear-gradient(90deg,#1a6be0,#4a9eff);width:${dashData.percDia}%;"></div>
+  fiscalCard.innerHTML = `
+    <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#bbb;text-transform:uppercase;margin-bottom:14px;">Calendário fiscal</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+      ${fiscal_agrupado.slice(0,6).map(e => {
+        const cor = e.diff <= 5 ? "#d4000c" : e.diff <= 14 ? "#e8aa00" : "#bbb";
+        const dotCor = coresFiscal[e.tipo] || "#bbb";
+        return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#141414;border-radius:8px;"><div style="width:7px;height:7px;border-radius:50%;background:${dotCor};flex-shrink:0;"></div><div style="flex:1;"><div style="font-size:11px;font-weight:600;color:#fff;">${e.nome}</div><div style="font-size:9px;color:#888;margin-top:2px;">Ref. ${String(mes2).padStart(2,"0")}/${ano2}</div></div><div style="font-size:12px;font-weight:700;color:${cor};">em ${e.diff}d</div></div>`;
+      }).join("")}
     </div>
   `;
-  if(wrap._isWide) wrap._rightCol.appendChild(progWrap);
-  else wrap.appendChild(progWrap);
+  grid.appendChild(fiscalCard);
 
-  // Meta mensal
-  const metaVal = state.meta_mensal || 300000;
-  const metaPct = Math.min(100, Math.round((dashData.fatMes / metaVal) * 100));
-  const faltam = Math.max(0, metaVal - dashData.fatMes);
-  const metaWrap = document.createElement("div");
-  metaWrap.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:12px;padding:12px 14px;";
-  metaWrap.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-      <div style="font-size:7px;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;">Meta mensal — ${fmt(metaVal)}</div>
-      <div style="font-size:10px;font-weight:600;color:#e8aa00;">${metaPct}% atingido</div>
-    </div>
-    <div style="background:var(--bg3);border-radius:99px;height:4px;margin-bottom:5px;">
-      <div style="height:4px;border-radius:99px;background:linear-gradient(90deg,#e8aa00,#ffcc44);width:${metaPct}%;"></div>
-    </div>
-    <div style="display:flex;justify-content:space-between;">
-      <div style="font-size:8px;color:var(--text3);">${fmtFull(dashData.fatMes)} faturado</div>
-      <div style="font-size:8px;color:#e8aa00;">faltam ${fmt(faltam)}</div>
+  // Top 10 mês
+  const topCard = document.createElement("div");
+  topCard.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:14px;padding:16px;grid-column:1/-1;";
+  const maxQty = dashData.top10mes[0]?.qty || 1;
+  topCard.innerHTML = `
+    <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#bbb;text-transform:uppercase;margin-bottom:14px;">Top 10 produtos · mês atual</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
+      ${dashData.top10mes.map((p,i) => `<div style="display:flex;align-items:center;gap:10px;padding:9px 10px;background:#141414;border-radius:8px;"><div style="font-size:10px;font-weight:700;color:${i===0?"#e8aa00":"#ccc"};width:14px;text-align:center;flex-shrink:0;">${i+1}</div><div style="flex:1;min-width:0;"><div style="font-size:10px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.sku||"—"}</div><div style="background:#2a2a2a;border-radius:99px;height:2px;margin-top:4px;"><div style="height:2px;border-radius:99px;background:${i===0?"#e8aa00":"#1a6be0"};width:${Math.round((p.qty/maxQty)*100)}%;"></div></div></div><div style="text-align:right;flex-shrink:0;min-width:52px;"><div style="font-size:9px;color:#bbb;">${p.qty} un</div><div style="font-size:10px;font-weight:600;color:#ccc;">${fmt(p.revenue||0)}</div></div></div>`).join("")}
     </div>
   `;
-  if(wrap._isWide) wrap._rightCol.appendChild(metaWrap);
-  else wrap.appendChild(metaWrap);
+  grid.appendChild(topCard);
 
-  // Top 5
-  const topSection = document.createElement("div");
-  topSection.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:12px;overflow:hidden;";
-  const topHeader = document.createElement("div");
-  topHeader.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:0.5px solid var(--sep);";
-  topHeader.innerHTML = `
-    <div style="font-size:7px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;">Top 5 mais vendidos</div>
-    <div style="font-size:8px;color:var(--text3);">últimos 30 dias</div>
-  `;
-  topSection.appendChild(topHeader);
-
-  const maxQty = dashData.top5[0]?.qty || 1;
-  dashData.top5.forEach((item, i) => {
-    const row = document.createElement("div");
-    row.style.cssText = "display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:0.5px solid var(--bg3);";
-    if(i === dashData.top5.length - 1) row.style.borderBottom = "none";
-    const pct = Math.round((item.qty / maxQty) * 100);
-    const rankColor = i === 0 ? "#e8aa00" : "var(--text3)";
-    row.innerHTML = `
-      <div style="font-size:10px;font-weight:700;color:${rankColor};width:14px;text-align:center;flex-shrink:0;">${i+1}</div>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:10px;font-weight:600;color:var(--text);">${item.sku || "—"}</div>
-        <div style="font-size:8px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;">${item.title?.slice(0,35) || ""}</div>
-      </div>
-      <div style="width:60px;flex-shrink:0;">
-        <div style="background:var(--bg3);border-radius:99px;height:3px;margin-bottom:2px;">
-          <div style="height:3px;border-radius:99px;background:${i===0?"#e8aa00":"#1a6be0"};width:${pct}%;"></div>
-        </div>
-        <div style="font-size:8px;color:var(--text3);text-align:right;">${item.qty} un</div>
-      </div>
-      <div style="font-size:10px;font-weight:600;color:var(--text2);white-space:nowrap;min-width:48px;text-align:right;">${fmt(item.revenue||0)}</div>
-    `;
-    topSection.appendChild(row);
-  });
-
-  // Botão atualizar
   const refRow = document.createElement("div");
-  refRow.style.cssText = "display:flex;justify-content:center;";
+  refRow.style.cssText = "display:flex;justify-content:center;margin-top:4px;";
   const refBtn = document.createElement("button");
-  refBtn.textContent = "↻ Atualizar";
-  refBtn.style.cssText = "background:none;border:0.5px solid var(--border2);color:var(--text3);border-radius:6px;padding:6px 14px;font-size:9px;cursor:pointer;font-family:inherit;letter-spacing:1px;";
+  refBtn.textContent = "↻ Atualizar dashboard";
+  refBtn.style.cssText = "background:none;border:0.5px solid var(--border2);color:var(--text3);border-radius:6px;padding:7px 16px;font-size:9px;cursor:pointer;font-family:inherit;letter-spacing:1px;";
   refBtn.addEventListener("click", () => { dashData = null; fetchDashboard(); });
   refRow.appendChild(refBtn);
 
-  wrap.appendChild(topSection);
+  wrap.appendChild(grid);
   wrap.appendChild(refRow);
   panel.appendChild(wrap);
 }
