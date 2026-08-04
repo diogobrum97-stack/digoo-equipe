@@ -4114,7 +4114,7 @@ function renderSaudeChart(panel, enriched) {
       const projSection = document.createElement("div");
       projSection.style.cssText = "margin-top:14px;padding-top:12px;border-top:1px solid var(--sep);";
       if(d.vendas30 > 0) {
-        const precoVenda = state.precos_venda_manual?.[d.sku] || 0;
+        const precoVenda = state.last_known_prices?.[d.sku] || state.precos_venda_manual?.[d.sku] || 0;
         const receitaProj = d.vendas30 * precoVenda;
         const ritmo = (d.vendas30 / 30).toFixed(1);
         const diaAtual = new Date().getDate();
