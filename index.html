@@ -2492,12 +2492,7 @@ function render(){
 
           // Barra de navegação com dropdown
           const navBar = document.createElement("div");
-          navBar.style.cssText = "display:flex;align-items:center;border-bottom:0.5px solid var(--sep);position:relative;padding:0 4px;overflow:hidden;";
-
-          // Spacer esquerdo
-          const spacerL = document.createElement("div");
-          spacerL.style.cssText = "flex:1;";
-          navBar.appendChild(spacerL);
+          navBar.style.cssText = "display:flex;align-items:center;border-bottom:0.5px solid var(--sep);padding:0 4px;gap:0;";
 
           // Nav central
           const navCenter = document.createElement("div");
