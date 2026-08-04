@@ -480,11 +480,13 @@ function renderDashboard(panel, color) {
   grid.appendChild(vendasCard);
 
   // Tarefas
-  const tasks = Object.values(state.tasks || {}).filter(t => t && !t.done && t.member === "Diogo" && !t.delegatedBy);
-  const urgentes = tasks.filter(t => t.prioridade === "urgente" || t.prioridade === "superurgente").length;
-  const importantes = tasks.filter(t => t.prioridade === "importante").length;
-  const normais = tasks.filter(t => t.prioridade === "normal" || !t.prioridade).length;
-  const concluidas = Object.values(state.tasks || {}).filter(t => t && t.done && t.member === "Diogo").length;
+  // Usar tasksFor igual ao resto do sistema
+  const allDiogoActive = tasksFor("Diogo").filter(t => !t.done);
+  const ownTasks = allDiogoActive.filter(t => !t.delegatedBy || t.delegatedBy === "Diogo");
+  const urgentes = ownTasks.filter(t => t.prio === "urgente" || t.prio === "superurgente").length;
+  const importantes = ownTasks.filter(t => t.prio === "importante").length;
+  const normais = ownTasks.filter(t => t.prio === "normal" || !t.prio).length;
+  const concluidas = tasksFor("Diogo").filter(t => t.done).length;
   const taskCard = document.createElement("div");
   taskCard.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:14px;padding:16px;";
   taskCard.innerHTML = `
