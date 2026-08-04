@@ -2514,7 +2514,7 @@ function render(){
             const isActive = group.tab === currentTab || group.subs.some(s => s.tab === currentTab);
 
             const btn = document.createElement("button");
-            btn.style.cssText = `background:none;border:none;border-bottom:2px solid ${isActive?"var(--accent)":"transparent"};color:${isActive?"var(--text)":"var(--text3)"};font-size:10px;font-weight:${isActive?"600":"400"};letter-spacing:1px;text-transform:uppercase;padding:12px 14px;cursor:pointer;font-family:inherit;transition:color .15s;white-space:nowrap;`;
+            btn.style.cssText = `background:none;border:none;border-bottom:2px solid ${isActive?"var(--accent)":"transparent"};color:${isActive?"var(--text)":"var(--text3)"};font-size:10px;font-weight:${isActive?"600":"400"};letter-spacing:0.5px;text-transform:uppercase;padding:10px 10px;cursor:pointer;font-family:inherit;transition:color .15s;white-space:nowrap;flex-shrink:0;`;
             btn.textContent = group.label;
 
             if(group.tab) {
@@ -2550,7 +2550,7 @@ function render(){
 
           // Spacer direito
           const spacerR = document.createElement("div");
-          spacerR.style.cssText = "flex:1;display:flex;justify-content:flex-end;";
+          spacerR.style.cssText = "display:flex;justify-content:flex-end;flex-shrink:0;";
 
           // Botão engrenagem
           const gearBtn = document.createElement("button");
