@@ -2727,12 +2727,12 @@ function render(){
         setTimeout(()=>{
           const f=document.getElementById("pin-field"),e=document.getElementById("pin-err"),b=document.getElementById("pin-btn");
           if(f){f.value="";f.removeAttribute("readonly");f.focus();f.click();}
-          const try_=()=>{if(f.value===PIN){diogoPinUnlocked=true;diogoAutoFullscreen=true;render();}else{f.classList.add("shake");f.value="";e.style.display="block";setTimeout(()=>f.classList.remove("shake"),400);}};
+          const try_=()=>{if(f.value===PIN){diogoPinUnlocked=true;diogoAutoFullscreen=true;diogoCardFullscreen=true;window._diogotab="dashboard";render();}else{f.classList.add("shake");f.value="";e.style.display="block";setTimeout(()=>f.classList.remove("shake"),400);}};
           if(b)b.addEventListener("click",try_);if(f)f.addEventListener("keydown",e2=>{if(e2.key==="Enter")try_();});
         },50);
       }else{
         if(member.locked){
-          if(!window._diogotab)window._diogotab="tarefas";
+          if(!window._diogotab)window._diogotab="dashboard";
 
           const isMobileNav = window.innerWidth < 768;
 
