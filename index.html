@@ -560,11 +560,11 @@ function renderDashboard(panel, color) {
   // Top 10 mês
   const topCard = document.createElement("div");
   topCard.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:14px;padding:16px;grid-column:1/-1;";
-  const maxQty = dashData.top10mes[0]?.qty || 1;
+  const maxRevenue = dashData.top10mes[0]?.revenue || 1;
   topCard.innerHTML = `
     <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#bbb;text-transform:uppercase;margin-bottom:14px;">Top 10 produtos · mês atual</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
-      ${dashData.top10mes.map((p,i) => `<div style="display:flex;align-items:center;gap:10px;padding:9px 10px;background:#141414;border-radius:8px;"><div style="font-size:10px;font-weight:700;color:${i===0?"#e8aa00":"#ccc"};width:14px;text-align:center;flex-shrink:0;">${i+1}</div><div style="flex:1;min-width:0;"><div style="font-size:10px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.sku||"—"}</div><div style="background:#2a2a2a;border-radius:99px;height:2px;margin-top:4px;"><div style="height:2px;border-radius:99px;background:${i===0?"#e8aa00":"#1a6be0"};width:${Math.round((p.qty/maxQty)*100)}%;"></div></div></div><div style="text-align:right;flex-shrink:0;min-width:52px;"><div style="font-size:9px;color:#bbb;">${p.qty} un</div><div style="font-size:10px;font-weight:600;color:#ccc;">${fmt(p.revenue||0)}</div></div></div>`).join("")}
+      ${dashData.top10mes.map((p,i) => `<div style="display:flex;align-items:center;gap:10px;padding:9px 10px;background:#141414;border-radius:8px;"><div style="font-size:10px;font-weight:700;color:${i===0?"#e8aa00":"#ccc"};width:14px;text-align:center;flex-shrink:0;">${i+1}</div><div style="flex:1;min-width:0;"><div style="font-size:10px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.sku||"—"}</div><div style="background:#2a2a2a;border-radius:99px;height:2px;margin-top:4px;"><div style="height:2px;border-radius:99px;background:${i===0?"#e8aa00":"#1a6be0"};width:${Math.round((p.revenue/maxRevenue)*100)}%;"></div></div></div><div style="text-align:right;flex-shrink:0;min-width:52px;"><div style="font-size:9px;color:#bbb;">${p.qty} un</div><div style="font-size:10px;font-weight:600;color:#ccc;">${fmt(p.revenue||0)}</div></div></div>`).join("")}
     </div>
   `;
   grid.appendChild(topCard);
