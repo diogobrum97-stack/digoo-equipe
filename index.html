@@ -3568,10 +3568,18 @@ async function fetchEstoqueAutomatico(forcar) {
       if (p.sku) vendasPorSku[String(p.sku).trim().toLowerCase().replace(/\s+/g,"")] = p.qty || 0;
     });
 
+    // Debug — remover depois
+    const tamKey = "tam-par-3510";
+    console.log("[Estoque Debug] allProducts count:", dVendas.allProducts?.length);
+    console.log("[Estoque Debug] TAM-PAR-3510 no vendasPorSku:", vendasPorSku[tamKey]);
+    console.log("[Estoque Debug] TAM-PAR-3510 no estoque:", dEstoque.rows?.find(r => r.sku?.toLowerCase() === tamKey));
+
     const rows = dEstoque.rows.map(r => ({
       ...r,
       vendas30: vendasPorSku[String(r.sku).trim().toLowerCase().replace(/\s+/g,"")] || 0,
     }));
+    
+    console.log("[Estoque Debug] TAM-PAR-3510 após cruzamento:", rows.find(r => r.sku?.toLowerCase() === tamKey));
 
     estoqueExcelData = { fileName: "(automático via Mercado Livre Full)", rows, automatico: true };
   } catch (e) {
