@@ -3925,7 +3925,7 @@ async function fetchEstoqueAutomatico(forcar) {
   }
   estoqueAutoLoading = false;
   estoqueAutoCheckDone = true;
-  if (window._diogotab === "estoque") render();
+  render();
 }
 
 async function checkPriceChangesAuto() {
@@ -4004,7 +4004,9 @@ async function fetchBlingProdutos() {
   }
 
   estoqueBlingLoading = false;
-  render();
+  // Se dashboard está aberto, atualizar
+  if(window._diogotab === "dashboard") render();
+  else render();
 }
 
 // ── RENDER CARD ESTOQUE ──────────────────────────────────────
