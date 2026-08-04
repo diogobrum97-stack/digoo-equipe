@@ -2486,7 +2486,7 @@ function render(){
         panel.innerHTML=`<div class="pin-wrap"><div class="pin-icon">◈</div><p>Digite o PIN para acessar</p><input class="pin-input" type="password" inputmode="numeric" autocomplete="new-password" name="digoo-pin-${Date.now()}" data-lpignore="true" data-form-type="other" maxlength="10" placeholder="••••••" id="pin-field" readonly><div style="font-size:10px;color:#d4000c;margin-top:8px;letter-spacing:1px;display:none" id="pin-err">PIN incorreto</div><button class="pin-btn" style="background:${color};color:#000" id="pin-btn">ENTRAR</button></div>`;
         setTimeout(()=>{
           const f=document.getElementById("pin-field"),e=document.getElementById("pin-err"),b=document.getElementById("pin-btn");
-          if(f){f.value="";f.removeAttribute("readonly");f.focus();}
+          if(f){f.value="";f.removeAttribute("readonly");f.focus();f.click();}
           const try_=()=>{if(f.value===PIN){diogoPinUnlocked=true;diogoAutoFullscreen=true;render();}else{f.classList.add("shake");f.value="";e.style.display="block";setTimeout(()=>f.classList.remove("shake"),400);}};
           if(b)b.addEventListener("click",try_);if(f)f.addEventListener("keydown",e2=>{if(e2.key==="Enter")try_();});
         },50);
