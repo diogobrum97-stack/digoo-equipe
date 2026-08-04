@@ -9,6 +9,7 @@
   function getDashContext() {
     try {
       const lines = [];
+      console.log("[Claude Chat] _dashData:", !!window._dashData, "_dashTarefas:", !!window._dashTarefas, "_dashEstoque:", !!window._dashEstoque);
       // Acessar variáveis globais do módulo via window se disponíveis
       if(window._dashData && !window._dashData.erro) {
         const d = window._dashData;
