@@ -371,6 +371,198 @@ const FISCAL_EVENTS = [
   { nome: "IPI · PIS · COFINS", tipo: "ipi", dia: 25 },
 ];
 
+
+// ─── DASHBOARD ML ─────────────────────────────────────────────────────────────
+let dashData = null;
+let dashLoading = false;
+
+async function fetchDashboard() {
+  if(dashLoading) return;
+  dashLoading = true;
+  render();
+  try {
+    const token = state.ml_token_filial?.access_token;
+    if(!token) throw new Error("Token ML Filial não conectado");
+
+    const [resHoje, resMes] = await Promise.all([
+      fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${token}&days=1`).then(r=>r.json()),
+      fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${token}&days=30`).then(r=>r.json()),
+    ]);
+
+    // Calcular projeção do dia baseado nas horas passadas
+    const agora = new Date();
+    const minutosDia = 24 * 60;
+    const minutosPassados = agora.getHours() * 60 + agora.getMinutes();
+    const percDia = minutosPassados / minutosDia;
+    const fatHoje = resHoje.summary?.totalRevenue || 0;
+    const projecaoDia = percDia > 0 ? fatHoje / percDia : 0;
+
+    dashData = {
+      fatHoje,
+      projecaoDia,
+      fatMes: resMes.summary?.totalRevenue || 0,
+      pedidosMes: resMes.summary?.totalOrders || 0,
+      percDia: Math.round(percDia * 100),
+      hora: agora.toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"}),
+      top5: (resMes.topSellers || []).slice(0,5),
+    };
+  } catch(e) {
+    dashData = { erro: e.message };
+  }
+  dashLoading = false;
+  render();
+}
+
+function renderDashboard(panel, color) {
+  if(!dashData && !dashLoading) fetchDashboard();
+
+  const fmt = v => v >= 1000 ? `R$ ${(v/1000).toFixed(0)}k` : `R$ ${v.toFixed(0)}`;
+  const fmtFull = v => `R$ ${Number(v).toLocaleString("pt-BR", {minimumFractionDigits:0,maximumFractionDigits:0})}`;
+
+  if(dashLoading) {
+    const loading = document.createElement("div");
+    loading.style.cssText = "text-align:center;padding:40px;color:var(--text3);font-size:12px;";
+    loading.innerHTML = '<span class="spinning">↻</span> Carregando dashboard...';
+    panel.appendChild(loading);
+    return;
+  }
+
+  if(!dashData || dashData.erro) {
+    const err = document.createElement("div");
+    err.style.cssText = "text-align:center;padding:40px;color:var(--text3);font-size:12px;";
+    err.textContent = dashData?.erro || "Erro ao carregar";
+    const retryBtn = document.createElement("button");
+    retryBtn.textContent = "↻ Tentar novamente";
+    retryBtn.style.cssText = "display:block;margin:12px auto;background:none;border:0.5px solid var(--border2);color:var(--text3);border-radius:6px;padding:6px 14px;font-size:10px;cursor:pointer;font-family:inherit;";
+    retryBtn.addEventListener("click", () => { dashData = null; fetchDashboard(); });
+    err.appendChild(retryBtn);
+    panel.appendChild(err);
+    return;
+  }
+
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "display:flex;flex-direction:column;gap:10px;padding:14px;";
+
+  // Header
+  const header = document.createElement("div");
+  header.style.cssText = "display:flex;align-items:center;justify-content:space-between;";
+  const now = new Date();
+  const dias = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
+  const meses = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+  header.innerHTML = `
+    <div style="font-size:8px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;">Dashboard ML · Filial SP</div>
+    <div style="font-size:9px;color:var(--text3);">${dias[now.getDay()]}, ${now.getDate()} ${meses[now.getMonth()]}</div>
+  `;
+  wrap.appendChild(header);
+
+  // 3 cards faturamento
+  const fatGrid = document.createElement("div");
+  fatGrid.style.cssText = "display:grid;grid-template-columns:repeat(3,1fr);gap:8px;";
+  const fatCards = [
+    { label: "Hoje", value: fmtFull(dashData.fatHoje), sub: "até agora", color: "#1a6be0" },
+    { label: "Projeção hoje", value: fmt(dashData.projecaoDia), sub: "no ritmo atual", color: "#4a9eff" },
+    { label: "Mês atual", value: fmt(dashData.fatMes), sub: `${dashData.pedidosMes} pedidos`, color: "#e8aa00" },
+  ];
+  fatCards.forEach(fc => {
+    const c = document.createElement("div");
+    c.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:12px;padding:12px;";
+    c.innerHTML = `
+      <div style="font-size:7px;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;margin-bottom:6px;">${fc.label}</div>
+      <div style="font-size:17px;font-weight:700;color:${fc.color};line-height:1;margin-bottom:3px;">${fc.value}</div>
+      <div style="font-size:8px;color:var(--text3);">${fc.sub}</div>
+    `;
+    fatGrid.appendChild(c);
+  });
+  wrap.appendChild(fatGrid);
+
+  // Progresso do dia
+  const progWrap = document.createElement("div");
+  progWrap.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:12px;padding:12px 14px;";
+  progWrap.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <div style="font-size:7px;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;">Progresso do dia</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="font-size:9px;color:var(--text3);">${dashData.hora}</div>
+        <div style="font-size:10px;font-weight:600;color:#1a6be0;">${dashData.percDia}%</div>
+      </div>
+    </div>
+    <div style="background:var(--bg3);border-radius:99px;height:4px;">
+      <div style="height:4px;border-radius:99px;background:linear-gradient(90deg,#1a6be0,#4a9eff);width:${dashData.percDia}%;"></div>
+    </div>
+  `;
+  wrap.appendChild(progWrap);
+
+  // Meta mensal
+  const metaVal = state.meta_mensal || 300000;
+  const metaPct = Math.min(100, Math.round((dashData.fatMes / metaVal) * 100));
+  const faltam = Math.max(0, metaVal - dashData.fatMes);
+  const metaWrap = document.createElement("div");
+  metaWrap.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:12px;padding:12px 14px;";
+  metaWrap.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <div style="font-size:7px;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;">Meta mensal — ${fmt(metaVal)}</div>
+      <div style="font-size:10px;font-weight:600;color:#e8aa00;">${metaPct}% atingido</div>
+    </div>
+    <div style="background:var(--bg3);border-radius:99px;height:4px;margin-bottom:5px;">
+      <div style="height:4px;border-radius:99px;background:linear-gradient(90deg,#e8aa00,#ffcc44);width:${metaPct}%;"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;">
+      <div style="font-size:8px;color:var(--text3);">${fmtFull(dashData.fatMes)} faturado</div>
+      <div style="font-size:8px;color:#e8aa00;">faltam ${fmt(faltam)}</div>
+    </div>
+  `;
+  wrap.appendChild(metaWrap);
+
+  // Top 5
+  const topSection = document.createElement("div");
+  topSection.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:12px;overflow:hidden;";
+  const topHeader = document.createElement("div");
+  topHeader.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:0.5px solid var(--sep);";
+  topHeader.innerHTML = `
+    <div style="font-size:7px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;">Top 5 mais vendidos</div>
+    <div style="font-size:8px;color:var(--text3);">últimos 30 dias</div>
+  `;
+  topSection.appendChild(topHeader);
+
+  const maxQty = dashData.top5[0]?.qty || 1;
+  dashData.top5.forEach((item, i) => {
+    const row = document.createElement("div");
+    row.style.cssText = "display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:0.5px solid var(--bg3);";
+    if(i === dashData.top5.length - 1) row.style.borderBottom = "none";
+    const pct = Math.round((item.qty / maxQty) * 100);
+    const rankColor = i === 0 ? "#e8aa00" : "var(--text3)";
+    row.innerHTML = `
+      <div style="font-size:10px;font-weight:700;color:${rankColor};width:14px;text-align:center;flex-shrink:0;">${i+1}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:10px;font-weight:600;color:var(--text);">${item.sku || "—"}</div>
+        <div style="font-size:8px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;">${item.title?.slice(0,35) || ""}</div>
+      </div>
+      <div style="width:60px;flex-shrink:0;">
+        <div style="background:var(--bg3);border-radius:99px;height:3px;margin-bottom:2px;">
+          <div style="height:3px;border-radius:99px;background:${i===0?"#e8aa00":"#1a6be0"};width:${pct}%;"></div>
+        </div>
+        <div style="font-size:8px;color:var(--text3);text-align:right;">${item.qty} un</div>
+      </div>
+      <div style="font-size:10px;font-weight:600;color:var(--text2);white-space:nowrap;min-width:48px;text-align:right;">${fmt(item.revenue||0)}</div>
+    `;
+    topSection.appendChild(row);
+  });
+
+  // Botão atualizar
+  const refRow = document.createElement("div");
+  refRow.style.cssText = "display:flex;justify-content:center;";
+  const refBtn = document.createElement("button");
+  refBtn.textContent = "↻ Atualizar";
+  refBtn.style.cssText = "background:none;border:0.5px solid var(--border2);color:var(--text3);border-radius:6px;padding:6px 14px;font-size:9px;cursor:pointer;font-family:inherit;letter-spacing:1px;";
+  refBtn.addEventListener("click", () => { dashData = null; fetchDashboard(); });
+  refRow.appendChild(refBtn);
+
+  wrap.appendChild(topSection);
+  wrap.appendChild(refRow);
+  panel.appendChild(wrap);
+}
+// ─── FIM DASHBOARD ML ─────────────────────────────────────────────────────────
+
 // ─── CALENDÁRIO FISCAL ────────────────────────────────────────────────────────
 
 
@@ -2523,7 +2715,7 @@ function render(){
           const navGroups = [
             { label: "Tarefas", tab: "tarefas", subs: [] },
             { label: "Equipe", tab: null, subs: [{label:"Concluídas",tab:"concluidas"},{label:"Conversas",tab:"conversas"}] },
-            { label: "Mercado Livre", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"}] },
+            { label: "Mercado Livre", tab: null, subs: [{label:"Dashboard",tab:"dashboard"},{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"}] },
             { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"}] },
           ];
 
@@ -2603,7 +2795,7 @@ function render(){
             const tabToGroup = {
               tarefas: "Tarefas",
               concluidas: "Equipe", conversas: "Equipe",
-              estoque: "Mercado Livre", cancelamentos: "Mercado Livre",
+              dashboard: "Mercado Livre", estoque: "Mercado Livre", cancelamentos: "Mercado Livre",
               conferencia: "Gestão", config: "Gestão",
             };
             const activeGroupLabel = tabToGroup[currentTab] || "Tarefas";
@@ -2616,7 +2808,7 @@ function render(){
             const mainGroups = [
               { label: "Tarefas", tab: "tarefas", subs: [] },
               { label: "Equipe", tab: null, subs: [{label:"Concluídas",tab:"concluidas"},{label:"Conversas",tab:"conversas"}] },
-              { label: "Mercado Livre", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"}] },
+              { label: "Mercado Livre", tab: null, subs: [{label:"Dashboard",tab:"dashboard"},{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"}] },
               { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"}] },
               { label: "⚙", tab: "config", subs: [] },
             ];
@@ -3022,6 +3214,9 @@ function render(){
 
             active.length=0;
            }
+          }else if(window._diogotab==="dashboard"){
+            panel.style.maxHeight="none"; panel.style.overflowY="auto";
+            renderDashboard(panel, color);
           }else if(window._diogotab==="estoque"){
             if(diogoCardFullscreen || diogIsFullAuto){panel.style.maxHeight="none";panel.style.overflowY="auto";}else{panel.style.maxHeight="";panel.style.overflowY="";}
             panel.id = "estoque-panel-inner";
