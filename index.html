@@ -2613,7 +2613,7 @@ function render(){
               chip.addEventListener("click", () => {
                 window._activeNavGroup = group.label;
                 if(group.tab) { window._diogotab = group.tab; }
-                else if(group.subs.length > 0) { window._diogotab = group.subs[0].tab; }
+                // Se tem sub-abas, só mostra os sub-chips sem navegar
                 render();
               });
               chipsRow.appendChild(chip);
