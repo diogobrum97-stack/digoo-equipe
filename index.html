@@ -384,9 +384,13 @@ async function fetchDashboard() {
     const token = state.ml_token_filial?.access_token;
     if(!token) throw new Error("Token ML Filial não conectado");
 
+    // Mês atual — do dia 1 até hoje
+    const hoje = new Date();
+    const diaAtualMes = hoje.getDate();
+
     const [resHoje, resMes] = await Promise.all([
-      fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${token}&days=1`).then(r=>r.json()),
-      fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${token}&days=30`).then(r=>r.json()),
+      fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${token}&today=1`).then(r=>r.json()),
+      fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${token}&days=${diaAtualMes}`).then(r=>r.json()),
     ]);
 
     // Calcular projeção do dia baseado nas horas passadas
