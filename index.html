@@ -312,6 +312,7 @@ onValue(ref(db,"/"),snap=>{
   });
   Object.keys(flashQueue).forEach(m=>{if(!d.flashes[m])delete flashQueue[m];});
   const prevBlingToken = state?.bling_token?.access_token;
+  const prevFilialToken = state?.ml_token_filial?.access_token;
   prevTasks={...d.tasks};state=d;
   // Se o token Bling mudou e tinha erro, limpar e tentar buscar de novo
   if(d.bling_token?.access_token && d.bling_token.access_token !== prevBlingToken && estoqueBlingErro) {
@@ -319,6 +320,12 @@ onValue(ref(db,"/"),snap=>{
     estoqueBlingData = null;
     estoqueBlingLoading = false;
     fetchBlingProdutos();
+  }
+  // Se o token ML Filial mudou, resetar estoque automático pra rebuscar com vendas
+  if(d.ml_token_filial?.access_token && d.ml_token_filial.access_token !== prevFilialToken) {
+    estoqueAutoCheckDone = false;
+    estoqueExcelData = null;
+    fetchEstoqueAutomatico();
   }
   if(!cmpSalvando)render();
 },()=>{syncDot.style.background="#d4000c";});
@@ -3543,7 +3550,11 @@ async function fetchEstoqueAutomatico(forcar) {
   if (estoqueAutoLoading) return;
   if (estoqueAutoCheckDone && !forcar) return;
   const token = state.ml_token_filial?.access_token;
-  if (!token) return;
+  if (!token) { 
+    // Sem token ainda — tenta de novo em 5s
+    setTimeout(() => { estoqueAutoCheckDone = false; fetchEstoqueAutomatico(); }, 5000);
+    return;
+  }
   estoqueAutoLoading = true; estoqueAutoErro = null;
   try {
     const rEstoque = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${token}&estoque=1`);
