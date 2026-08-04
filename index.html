@@ -2532,7 +2532,7 @@ function render(){
               const isTouchDevice = window.matchMedia("(hover: none)").matches;
               const drop = document.createElement("div");
               drop.className = "nav-drop";
-              drop.style.cssText = "display:none;position:absolute;top:100%;left:50%;transform:translateX(-50%);background:var(--bg2);border:0.5px solid var(--border2);border-radius:8px;padding:6px;min-width:140px;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,0.5);";
+              drop.style.cssText = "display:none;position:fixed;background:var(--bg2);border:0.5px solid var(--border2);border-radius:8px;padding:6px;min-width:140px;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,0.8);";
 
               group.subs.forEach(sub => {
                 const dropItem = document.createElement("div");
@@ -2549,7 +2549,12 @@ function render(){
                   e.stopPropagation();
                   const isOpen = drop.style.display === "block";
                   document.querySelectorAll(".nav-drop").forEach(d => d.style.display = "none");
-                  drop.style.display = isOpen ? "none" : "block";
+                  if(!isOpen) {
+                    const rect = btn.getBoundingClientRect();
+                    drop.style.top = (rect.bottom + 4) + "px";
+                    drop.style.left = Math.max(8, rect.left - 20) + "px";
+                    drop.style.display = "block";
+                  }
                 });
                 setTimeout(() => {
                   document.addEventListener("click", () => {
