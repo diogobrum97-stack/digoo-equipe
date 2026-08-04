@@ -406,6 +406,8 @@ async function fetchDashboard() {
       top10mes: [...(resMes.topSellers || [])].sort((a,b)=>(b.revenue||0)-(a.revenue||0)).slice(0,10),
       _fetchedAt: Date.now(),
     };
+    // Expor dados para o claude-chat.js (escopo externo)
+    window._dashData = dashData;
   } catch(e) {
     dashData = { erro: e.message };
   }
@@ -508,6 +510,9 @@ function renderDashboard(panel, color) {
   estoqueCard.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:14px;padding:16px;";
   const estoqueRows = estoqueExcelData?.rows || [];
   const valorTotal = estoqueRows.reduce((s,r) => s + (Number(r.aptas||0) * (estoqueBlingData?.[normSku(r.sku)]||estoqueBlingData?.[r.sku]||0)), 0);
+  const unidadesTotal = estoqueRows.reduce((s,r)=>s+Number(r.aptas||0),0);
+  // Expor para claude-chat.js
+  window._dashEstoque = { valor: valorTotal.toFixed(0), unidades: unidadesTotal, criticos: estoqueRows.filter(r=>{ const v30=r.vendas30||0; const dias=v30>0?Math.round(r.aptas/(v30/30)):999; return dias<15&&r.aptas>0; }).map(r=>{ const v30=r.vendas30||0; const dias=v30>0?Math.round(r.aptas/(v30/30)):999; return `${r.sku}(${dias}d)`; }) };
   const criticos = estoqueRows.filter(r => {
     const v30 = r.vendas30||0;
     const dias = v30>0 ? Math.round(r.aptas/(v30/30)) : 999;
@@ -6104,5 +6109,6 @@ Digoo Brasil`;
 // ─── FIM CONFERÊNCIA FINANCEIRA ────────────────────────────────────────────
 
 </script>
+  <script src="claude-chat.js"></script>
 </body>
 </html>
