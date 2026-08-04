@@ -2390,13 +2390,13 @@ function render(){
 
     // Esconde Bruno e Larissa quando Diogo está na aba ML
     if(diogIsML && member.name !== "Diogo") return;
+    // Esconde outros membros quando logado como Diogo (a menos que tenha expandido)
+    if(currentUser === "Diogo" && member.name !== "Diogo" && !window._showEquipe) return;
     if(diogIsFullAuto && member.name !== "Diogo") return;
     const brunoEmCancelamentos = openCard==="Bruno" && window._brunotab==="cancelamentos";
     if(brunoEmCancelamentos && member.name !== "Bruno") return;
 
-    // No mobile, mostrar apenas o card do usuário logado
-    const isMobile = window.innerWidth < 768;
-    if(isMobile && member.name !== currentUser) return;
+
 
     const card=document.createElement("div");card.className="card"+(hasPending||isFlashing?" flashing":"");
     card.style.setProperty("--c",color);
@@ -4309,6 +4309,25 @@ function renderSaudeChart(panel, enriched) {
 
     grade.appendChild(chip);
   });
+
+  // Botão "Ver equipe" — só aparece quando logado como Diogo
+  if(currentUser === "Diogo") {
+    const equipeToggle = document.createElement("div");
+    equipeToggle.style.cssText = "margin-top:8px;cursor:pointer;";
+    const toggleBar = document.createElement("div");
+    const isExpanded = !!window._showEquipe;
+    toggleBar.style.cssText = "display:flex;align-items:center;gap:8px;padding:8px 14px;background:var(--bg2);border:0.5px solid var(--border2);border-radius:8px;transition:all .15s;";
+    toggleBar.innerHTML = `
+      <span style="font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;flex:1;">${isExpanded ? "Esconder equipe" : "Ver equipe"}</span>
+      <span style="font-size:10px;color:var(--text3);transform:rotate(${isExpanded ? "180" : "0"}deg);transition:transform .2s;">▾</span>
+    `;
+    toggleBar.addEventListener("click", () => {
+      window._showEquipe = !window._showEquipe;
+      render();
+    });
+    equipeToggle.appendChild(toggleBar);
+    grade.appendChild(equipeToggle);
+  }
 
   saudeWrap.appendChild(grade);
   saudeWrap.appendChild(detWrap);
