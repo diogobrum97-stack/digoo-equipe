@@ -2529,21 +2529,38 @@ function render(){
 
             // Dropdown para sub-abas
             if(group.subs.length > 0) {
+              const isTouchDevice = window.matchMedia("(hover: none)").matches;
               const drop = document.createElement("div");
+              drop.className = "nav-drop";
               drop.style.cssText = "display:none;position:absolute;top:100%;left:50%;transform:translateX(-50%);background:var(--bg2);border:0.5px solid var(--border2);border-radius:8px;padding:6px;min-width:140px;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,0.5);";
 
               group.subs.forEach(sub => {
                 const dropItem = document.createElement("div");
-                dropItem.style.cssText = `display:block;padding:7px 12px;font-size:10px;color:${sub.tab===currentTab?"var(--accent)":"var(--text3)"};letter-spacing:1px;text-transform:uppercase;cursor:pointer;border-radius:5px;font-family:inherit;transition:all .15s;`;
+                dropItem.style.cssText = `display:block;padding:10px 14px;font-size:10px;color:${sub.tab===currentTab?"var(--accent)":"var(--text3)"};letter-spacing:1px;text-transform:uppercase;cursor:pointer;border-radius:5px;font-family:inherit;transition:all .15s;`;
                 dropItem.textContent = sub.label;
                 dropItem.addEventListener("mouseenter", () => dropItem.style.background = "var(--bg3)");
                 dropItem.addEventListener("mouseleave", () => dropItem.style.background = "none");
-                dropItem.addEventListener("click", () => { window._diogotab = sub.tab; render(); });
+                dropItem.addEventListener("click", (e) => { e.stopPropagation(); window._diogotab = sub.tab; drop.style.display = "none"; render(); });
                 drop.appendChild(dropItem);
               });
 
-              item.addEventListener("mouseenter", () => { drop.style.display = "block"; });
-              item.addEventListener("mouseleave", () => { drop.style.display = "none"; });
+              if(isTouchDevice) {
+                btn.addEventListener("click", (e) => {
+                  e.stopPropagation();
+                  const isOpen = drop.style.display === "block";
+                  document.querySelectorAll(".nav-drop").forEach(d => d.style.display = "none");
+                  drop.style.display = isOpen ? "none" : "block";
+                });
+                setTimeout(() => {
+                  document.addEventListener("click", () => {
+                    document.querySelectorAll(".nav-drop").forEach(d => d.style.display = "none");
+                  });
+                }, 100);
+              } else {
+                item.addEventListener("mouseenter", () => { drop.style.display = "block"; });
+                item.addEventListener("mouseleave", () => { drop.style.display = "none"; });
+              }
+
               item.appendChild(drop);
             }
 
