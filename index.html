@@ -3073,19 +3073,38 @@ function render(){
     container.appendChild(card);
   });
 
-  // Botão "Ver equipe" — só quando logado como Diogo
+  // Botão "Ver equipe" — pill centralizado com avatares
   if(currentUser === "Diogo") {
     const isExpanded = !!window._showEquipe;
     const toggleEl = document.createElement("div");
-    toggleEl.style.cssText = "margin-top:8px;cursor:pointer;";
-    const toggleBar = document.createElement("div");
-    toggleBar.style.cssText = "display:flex;align-items:center;gap:8px;padding:8px 14px;background:var(--bg2);border:0.5px solid var(--border2);border-radius:8px;";
-    toggleBar.innerHTML = `
-      <span style="font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;flex:1;">${isExpanded ? "Esconder equipe" : "Ver equipe"}</span>
-      <span style="font-size:10px;color:var(--text3);display:inline-block;transform:rotate(${isExpanded?"180":"0"}deg);transition:transform .2s;">▾</span>
-    `;
-    toggleBar.addEventListener("click", () => { window._showEquipe = !window._showEquipe; render(); });
-    toggleEl.appendChild(toggleBar);
+    toggleEl.style.cssText = "margin-top:10px;display:flex;justify-content:center;";
+
+    const pill = document.createElement("div");
+    pill.style.cssText = "display:inline-flex;align-items:center;gap:8px;padding:8px 16px;background:var(--bg2);border:0.5px solid var(--border2);border-radius:99px;cursor:pointer;transition:all .15s;";
+    pill.addEventListener("mouseenter", () => pill.style.borderColor = "#333");
+    pill.addEventListener("mouseleave", () => pill.style.borderColor = "");
+
+    // Avatares Bruno e Larissa
+    const avWrap = document.createElement("div");
+    avWrap.style.cssText = "display:flex;";
+    const avBruno = document.createElement("div");
+    avBruno.style.cssText = "width:22px;height:22px;border-radius:50%;background:#6d28d922;color:#6d28d9;border:1.5px solid #6d28d944;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;flex-shrink:0;";
+    avBruno.textContent = "BR";
+    const avLarissa = document.createElement("div");
+    avLarissa.style.cssText = "width:22px;height:22px;border-radius:50%;background:#be185d22;color:#be185d;border:1.5px solid #be185d44;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;flex-shrink:0;margin-left:-6px;";
+    avLarissa.textContent = "LA";
+    avWrap.appendChild(avBruno);
+    avWrap.appendChild(avLarissa);
+
+    const lbl = document.createElement("span");
+    lbl.style.cssText = "font-size:9px;color:#666;letter-spacing:1px;text-transform:uppercase;";
+    lbl.textContent = isExpanded ? "Esconder equipe" : "Ver equipe";
+
+    pill.appendChild(avWrap);
+    pill.appendChild(lbl);
+    pill.addEventListener("click", () => { window._showEquipe = !window._showEquipe; render(); });
+
+    toggleEl.appendChild(pill);
     container.appendChild(toggleEl);
   }
 
