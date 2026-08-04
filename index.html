@@ -2545,28 +2545,18 @@ function render(){
               });
 
               if(isTouchDevice) {
+                // Mobile — sub-abas inline abaixo do nav
                 btn.addEventListener("click", (e) => {
                   e.stopPropagation();
-                  const isOpen = drop.style.display === "block";
-                  document.querySelectorAll(".nav-drop").forEach(d => d.style.display = "none");
-                  if(!isOpen) {
-                    const rect = btn.getBoundingClientRect();
-                    drop.style.top = (rect.bottom + 4) + "px";
-                    drop.style.left = Math.max(8, rect.left - 20) + "px";
-                    drop.style.display = "block";
-                  }
+                  const isOpen = window._activeNavGroup === group.label;
+                  window._activeNavGroup = isOpen ? null : group.label;
+                  render();
                 });
-                setTimeout(() => {
-                  document.addEventListener("click", () => {
-                    document.querySelectorAll(".nav-drop").forEach(d => d.style.display = "none");
-                  });
-                }, 100);
               } else {
                 item.addEventListener("mouseenter", () => { drop.style.display = "block"; });
                 item.addEventListener("mouseleave", () => { drop.style.display = "none"; });
+                item.appendChild(drop);
               }
-
-              item.appendChild(drop);
             }
 
             navCenter.appendChild(item);
@@ -2586,8 +2576,25 @@ function render(){
           gearBtn.addEventListener("click", () => { window._diogotab = "config"; render(); });
           spacerR.appendChild(gearBtn);
           navBar.appendChild(spacerR);
-
           panel.appendChild(navBar);
+
+          // Sub-nav mobile — linha com sub-abas do grupo selecionado
+          if(window._activeNavGroup) {
+            const activeGroup = navGroups.find(g => g.label === window._activeNavGroup);
+            if(activeGroup && activeGroup.subs.length > 0) {
+              const subNav = document.createElement("div");
+              subNav.style.cssText = "display:flex;border-bottom:0.5px solid var(--sep);background:var(--bg2);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;";
+              activeGroup.subs.forEach(sub => {
+                const subBtn = document.createElement("button");
+                const isSubActive = currentTab === sub.tab;
+                subBtn.style.cssText = `background:none;border:none;border-bottom:2px solid ${isSubActive?"var(--accent)":"transparent"};color:${isSubActive?"var(--text)":"var(--text3)"};font-size:10px;letter-spacing:0.5px;text-transform:uppercase;padding:10px 16px;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0;`;
+                subBtn.textContent = sub.label;
+                subBtn.addEventListener("click", () => { window._diogotab = sub.tab; window._activeNavGroup = null; render(); });
+                subNav.appendChild(subBtn);
+              });
+              panel.appendChild(subNav);
+            }
+          }
           const todayStart=new Date();todayStart.setHours(0,0,0,0);
 
           if(window._diogotab==="mercadolivre" || diogIsFullAuto){
