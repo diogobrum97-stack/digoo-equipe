@@ -445,7 +445,10 @@ function renderDashboard(panel, color) {
   }
 
   const wrap = document.createElement("div");
-  wrap.style.cssText = "display:flex;flex-direction:column;gap:10px;padding:14px;";
+  wrap.style.cssText = "display:flex;flex-direction:column;gap:10px;padding:14px;max-width:100%;";
+  
+  // Grid de 2 colunas no desktop
+  const isWide = window.innerWidth >= 768;
 
   // Header
   const header = document.createElement("div");
@@ -462,6 +465,7 @@ function renderDashboard(panel, color) {
   // 3 cards faturamento
   const fatGrid = document.createElement("div");
   fatGrid.style.cssText = "display:grid;grid-template-columns:repeat(3,1fr);gap:8px;";
+  // No desktop, colocar progresso e meta ao lado dos fat cards
   const fatCards = [
     { label: "Hoje", value: fmtFull(dashData.fatHoje), sub: "até agora", color: "#1a6be0" },
     { label: "Projeção hoje", value: fmt(dashData.projecaoDia), sub: "no ritmo atual", color: "#4a9eff" },
@@ -477,7 +481,29 @@ function renderDashboard(panel, color) {
     `;
     fatGrid.appendChild(c);
   });
-  wrap.appendChild(fatGrid);
+  // Layout desktop — fat cards + progresso/meta em duas colunas
+  if(isWide) {
+    const mainGrid = document.createElement("div");
+    mainGrid.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:10px;";
+    
+    const leftCol = document.createElement("div");
+    leftCol.style.cssText = "display:flex;flex-direction:column;gap:10px;";
+    leftCol.appendChild(fatGrid);
+    
+    const rightCol = document.createElement("div");
+    rightCol.style.cssText = "display:flex;flex-direction:column;gap:10px;";
+
+    mainGrid.appendChild(leftCol);
+    mainGrid.appendChild(rightCol);
+    wrap.appendChild(mainGrid);
+
+    // Progresso e meta vão pra coluna direita
+    wrap._leftCol = leftCol;
+    wrap._rightCol = rightCol;
+    wrap._isWide = true;
+  } else {
+    wrap.appendChild(fatGrid);
+  }
 
   // Progresso do dia
   const progWrap = document.createElement("div");
@@ -494,7 +520,8 @@ function renderDashboard(panel, color) {
       <div style="height:4px;border-radius:99px;background:linear-gradient(90deg,#1a6be0,#4a9eff);width:${dashData.percDia}%;"></div>
     </div>
   `;
-  wrap.appendChild(progWrap);
+  if(wrap._isWide) wrap._rightCol.appendChild(progWrap);
+  else wrap.appendChild(progWrap);
 
   // Meta mensal
   const metaVal = state.meta_mensal || 300000;
@@ -515,7 +542,8 @@ function renderDashboard(panel, color) {
       <div style="font-size:8px;color:#e8aa00;">faltam ${fmt(faltam)}</div>
     </div>
   `;
-  wrap.appendChild(metaWrap);
+  if(wrap._isWide) wrap._rightCol.appendChild(metaWrap);
+  else wrap.appendChild(metaWrap);
 
   // Top 5
   const topSection = document.createElement("div");
