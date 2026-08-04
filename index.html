@@ -2372,6 +2372,22 @@ function render(){
   try{
   setSyncing(false);
   const container=document.getElementById("cards");container.innerHTML="";
+  // Centralizar card do Diogo quando sozinho
+  if(currentUser === "Diogo" && !window._showEquipe) {
+    container.style.display = "flex";
+    container.style.flexDirection = "column";
+    container.style.alignItems = "center";
+    container.style.maxWidth = "520px";
+    container.style.margin = "0 auto";
+    container.style.width = "100%";
+  } else {
+    container.style.display = "";
+    container.style.flexDirection = "";
+    container.style.alignItems = "";
+    container.style.maxWidth = "";
+    container.style.margin = "";
+    container.style.width = "";
+  }
   const pendingMembers=MEMBERS.filter(m=>!m.locked&&Object.values(state.tasks||{}).some(t=>t!=null&&t.member===m.name&&!t.done));
   if(pendingMembers.length>0)startFaviconCycle(pendingMembers.map(m=>themeColor(m.name)));else stopFaviconFlash();
   const lbl=document.getElementById("user-label");if(lbl)lbl.textContent=currentUser?`logado como ${currentUser} · trocar`:"";
