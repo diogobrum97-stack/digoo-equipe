@@ -3794,6 +3794,35 @@ function renderFilialSP(panel, color) {
     btn.addEventListener("click", () => { window._estoqueSubTab = st; render(); });
     subTabWrap.appendChild(btn);
   });
+
+  // Botão ? explicando a aba Saúde
+  const helpBtn = document.createElement("button");
+  helpBtn.textContent = "?";
+  helpBtn.title = "O que é a aba Saúde?";
+  helpBtn.style.cssText = "margin-left:auto;background:none;border:0.5px solid var(--border2);border-radius:50%;width:20px;height:20px;color:var(--text3);font-size:10px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;flex-shrink:0;";
+  helpBtn.addEventListener("click", () => {
+    const existing = document.getElementById("saude-help-tooltip");
+    if(existing) { existing.remove(); return; }
+    const tooltip = document.createElement("div");
+    tooltip.id = "saude-help-tooltip";
+    tooltip.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--bg2);border:0.5px solid var(--border2);border-radius:12px;padding:20px 24px;max-width:340px;z-index:999;box-shadow:0 20px 60px rgba(0,0,0,0.5);";
+    tooltip.innerHTML = `
+      <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:12px;">O que é a aba Saúde?</div>
+      <div style="font-size:11px;color:var(--text3);line-height:1.7;margin-bottom:14px;">
+        Mostra quanto tempo o estoque de cada produto vai durar no ritmo de vendas atual dos últimos 30 dias.<br><br>
+        <span style="color:#22c55e;font-weight:600;">🟢 Verde (&lt;15d)</span> — Acabando. Risco de ruptura.<br>
+        <span style="color:#e8aa00;font-weight:600;">🟡 Amarelo (15–90d)</span> — Saudável. Acompanhar.<br>
+        <span style="color:#d4000c;font-weight:600;">🔴 Vermelho (&gt;90d)</span> — Encalhado. Precisa de ação.<br><br>
+        Clique num card pra ver projeção de receita e histórico de preço.
+      </div>
+      <button onclick="document.getElementById('saude-help-tooltip').remove()" style="background:var(--accent);border:none;border-radius:6px;color:#000;font-size:10px;font-weight:700;letter-spacing:1px;padding:7px 16px;cursor:pointer;font-family:inherit;width:100%;">Entendido</button>
+    `;
+    document.body.appendChild(tooltip);
+    document.addEventListener("click", e => {
+      if(!tooltip.contains(e.target) && e.target !== helpBtn) tooltip.remove();
+    }, { once: true });
+  });
+  subTabWrap.appendChild(helpBtn);
   panel.appendChild(subTabWrap);
 
   if (window._estoqueSubTab !== "saude") {
@@ -4081,6 +4110,44 @@ function renderSaudeChart(panel, enriched) {
         '</div>' +
         '<div style="font-size:12px;color:var(--text3);line-height:1.6;font-family:system-ui,sans-serif;">' + msg + '</div>';
 
+      // ── Projeção do mês ─────────────────────────────────────────────────────
+      const projSection = document.createElement("div");
+      projSection.style.cssText = "margin-top:14px;padding-top:12px;border-top:1px solid var(--sep);";
+      if(d.vendas30 > 0) {
+        const precoVenda = state.precos_venda_manual?.[d.sku] || 0;
+        const receitaProj = d.vendas30 * precoVenda;
+        const ritmo = (d.vendas30 / 30).toFixed(1);
+        const diaAtual = new Date().getDate();
+        const diasMes = new Date(new Date().getFullYear(), new Date().getMonth()+1, 0).getDate();
+        const percMes = Math.round((diaAtual / diasMes) * 100);
+        const ruptura = d.dias < 999 ? `em ~${d.dias} dias` : "sem previsão";
+        const rupturaColor = d.dias <= 15 ? "#d4000c" : d.dias <= 60 ? "#e8aa00" : "#22c55e";
+
+        projSection.innerHTML = `
+          <div style="font-size:8px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;">Projeção do mês</div>
+          <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:10px;">
+            ${precoVenda > 0 ? `<div>
+              <div style="font-size:9px;color:var(--text3);margin-bottom:2px;">Receita projetada</div>
+              <div style="font-size:15px;font-weight:600;color:${c};">R$ ${receitaProj.toLocaleString("pt-BR",{minimumFractionDigits:0})}</div>
+              <div style="font-size:9px;color:var(--text3);margin-top:2px;">${d.vendas30} un × R$ ${precoVenda.toFixed(0)}</div>
+            </div>` : ""}
+            <div>
+              <div style="font-size:9px;color:var(--text3);margin-bottom:2px;">Ritmo atual</div>
+              <div style="font-size:15px;font-weight:600;color:var(--text);">${ritmo} un/dia</div>
+            </div>
+            <div>
+              <div style="font-size:9px;color:var(--text3);margin-bottom:2px;">Ruptura prevista</div>
+              <div style="font-size:15px;font-weight:600;color:${rupturaColor};">${ruptura}</div>
+            </div>
+          </div>
+          <div style="background:var(--bg2);border-radius:99px;height:4px;margin-bottom:4px;">
+            <div style="height:4px;border-radius:99px;background:${c};width:${percMes}%;"></div>
+          </div>
+          <div style="font-size:9px;color:var(--text3);">${percMes}% do mês percorrido</div>
+        `;
+      }
+      det.appendChild(projSection);
+
       const priceSection = document.createElement("div");
       priceSection.style.cssText = "margin-top:14px;padding-top:12px;border-top:1px solid var(--sep);";
       const pc = state.price_changes && state.price_changes[d.sku];
@@ -4173,10 +4240,36 @@ function renderSaudeChart(panel, enriched) {
         info.style.cssText = "margin-bottom:10px;";
         if(pc.priceBefore!=null && pc.priceAfter!=null){
           const subiu = Number(pc.priceAfter) > Number(pc.priceBefore);
-          const precoColor = subiu ? "#00dfc3" : "#00606c";
+          const precoColor = subiu ? "#22c55e" : "#1a6be0";
+          const diff = Number(pc.priceAfter) - Number(pc.priceBefore);
+          const diffPct = ((diff / Number(pc.priceBefore)) * 100).toFixed(1);
+          const vendasAntes = pc.vendas30AtChange || 0;
+          const vendasDepois = d.vendas30 || 0;
+          const varVendas = vendasAntes > 0 ? (((vendasDepois - vendasAntes) / vendasAntes) * 100).toFixed(0) : null;
+
           info.innerHTML =
-            '<div style="font-size:9px;color:var(--text3);letter-spacing:1px;margin-bottom:6px;">MUDANÇA DE PREÇO · há ' + diasDesde + 'd</div>' +
-            '<div style="font-size:15px;">R$ ' + Number(pc.priceBefore).toFixed(2) + ' <span style="color:var(--text3);">→</span> <span style="color:' + precoColor + ';font-weight:600;">R$ ' + Number(pc.priceAfter).toFixed(2) + '</span></div>';
+            '<div style="font-size:9px;color:var(--text3);letter-spacing:1px;margin-bottom:8px;">MUDANÇA DE PREÇO · há ' + diasDesde + 'd</div>' +
+            '<div style="background:var(--bg2);border-radius:8px;padding:10px 12px;margin-bottom:10px;display:flex;align-items:center;gap:10px;">' +
+              '<div style="font-size:13px;color:#888;text-decoration:line-through;">R$ ' + Number(pc.priceBefore).toFixed(2) + '</div>' +
+              '<div style="color:var(--text3);">→</div>' +
+              '<div style="font-size:13px;font-weight:700;color:' + precoColor + ';">R$ ' + Number(pc.priceAfter).toFixed(2) + '</div>' +
+              '<div style="font-size:10px;color:' + precoColor + ';margin-left:4px;">' + (subiu ? "+" : "") + diffPct + '%</div>' +
+              '<div style="margin-left:auto;font-size:9px;color:var(--text3);">' + (pc.changedBy || "automático") + '</div>' +
+            '</div>' +
+            (vendasAntes > 0 ? 
+              '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">' +
+                '<div style="background:var(--bg2);border-radius:7px;padding:10px;">' +
+                  '<div style="font-size:8px;color:var(--text3);letter-spacing:1px;margin-bottom:4px;">ANTES (R$ ' + Number(pc.priceBefore).toFixed(0) + ')</div>' +
+                  '<div style="font-size:18px;font-weight:700;color:#888;">' + vendasAntes + ' un</div>' +
+                  '<div style="font-size:9px;color:var(--text3);margin-top:2px;">em 30 dias</div>' +
+                '</div>' +
+                '<div style="background:var(--bg2);border-radius:7px;padding:10px;">' +
+                  '<div style="font-size:8px;color:var(--text3);letter-spacing:1px;margin-bottom:4px;">DEPOIS (R$ ' + Number(pc.priceAfter).toFixed(0) + ')</div>' +
+                  '<div style="font-size:18px;font-weight:700;color:' + (varVendas > 0 ? "#22c55e" : "#d4000c") + ';">' + (varVendas > 0 ? "+" : "") + varVendas + '%</div>' +
+                  '<div style="font-size:9px;color:var(--text3);margin-top:2px;">' + vendasDepois + ' un em ' + diasDesde + 'd ↑</div>' +
+                '</div>' +
+              '</div>'
+            : "");
         }else{
           info.innerHTML = '<div style="font-size:9px;color:var(--text3);letter-spacing:1px;">MUDANÇA DE PREÇO · há ' + diasDesde + 'd</div>';
         }
