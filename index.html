@@ -2720,9 +2720,10 @@ function render(){
           navCenter.style.cssText = "display:flex;align-items:center;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex:1;";
 
           const navGroups = [
+            { label: "Dashboard", tab: "dashboard", subs: [] },
             { label: "Tarefas", tab: "tarefas", subs: [] },
             { label: "Equipe", tab: null, subs: [{label:"Concluídas",tab:"concluidas"},{label:"Conversas",tab:"conversas"}] },
-            { label: "Mercado Livre", tab: null, subs: [{label:"Dashboard",tab:"dashboard"},{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"}] },
+            { label: "Mercado Livre", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"}] },
             { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"}] },
           ];
 
@@ -2800,9 +2801,10 @@ function render(){
 
             // Determinar grupo ativo
             const tabToGroup = {
+              dashboard: "Dashboard",
               tarefas: "Tarefas",
               concluidas: "Equipe", conversas: "Equipe",
-              dashboard: "Mercado Livre", estoque: "Mercado Livre", cancelamentos: "Mercado Livre",
+              estoque: "ML", cancelamentos: "ML",
               conferencia: "Gestão", config: "Gestão",
             };
             const activeGroupLabel = tabToGroup[currentTab] || "Tarefas";
@@ -2813,9 +2815,10 @@ function render(){
             chipsRow.style.cssText = "display:flex;gap:6px;padding:10px 14px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;border-bottom:0.5px solid var(--sep);";
 
             const mainGroups = [
+              { label: "Dashboard", tab: "dashboard", subs: [] },
               { label: "Tarefas", tab: "tarefas", subs: [] },
               { label: "Equipe", tab: null, subs: [{label:"Concluídas",tab:"concluidas"},{label:"Conversas",tab:"conversas"}] },
-              { label: "Mercado Livre", tab: null, subs: [{label:"Dashboard",tab:"dashboard"},{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"}] },
+              { label: "ML", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"}] },
               { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"}] },
               { label: "⚙", tab: "config", subs: [] },
             ];
