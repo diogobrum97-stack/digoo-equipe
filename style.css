@@ -240,3 +240,23 @@ footer { margin-top: 40px; text-align: center; font-size: 10px; color: #787878; 
 .ipi-table td, .ipi-table th { text-align: center !important; }
 .ipi-table td:first-child, .ipi-table th:first-child { text-align: left !important; }
 .card-dragover { border-color: var(--accent) !important; opacity: 0.7; }
+
+/* ── Mobile — card principal mais generoso ───────────────────────────── */
+@media(max-width:768px) {
+  .card-header {
+    padding: 24px 20px;
+    gap: 14px;
+  }
+  .member-name {
+    font-size: 32px;
+    letter-spacing: 4px;
+  }
+  .card-header .avatar, .card-header [class*="avatar"] {
+    width: 48px;
+    height: 48px;
+    font-size: 16px;
+  }
+  .grid {
+    padding: 0 4px;
+  }
+}
