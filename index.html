@@ -2583,11 +2583,11 @@ function render(){
             const activeGroup = navGroups.find(g => g.label === window._activeNavGroup);
             if(activeGroup && activeGroup.subs.length > 0) {
               const subNav = document.createElement("div");
-              subNav.style.cssText = "display:flex;border-bottom:0.5px solid var(--sep);background:var(--bg2);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;";
+              subNav.style.cssText = "display:flex;justify-content:center;border-bottom:0.5px solid var(--sep);background:var(--bg2);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;";
               activeGroup.subs.forEach(sub => {
                 const subBtn = document.createElement("button");
                 const isSubActive = currentTab === sub.tab;
-                subBtn.style.cssText = `background:none;border:none;border-bottom:2px solid ${isSubActive?"var(--accent)":"transparent"};color:${isSubActive?"var(--text)":"var(--text3)"};font-size:10px;letter-spacing:0.5px;text-transform:uppercase;padding:10px 16px;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0;`;
+                subBtn.style.cssText = `background:none;border:none;border-bottom:2px solid ${isSubActive?"var(--accent)":"transparent"};color:${isSubActive?"var(--text)":"var(--text3)"};font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:10px 20px;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0;`;
                 subBtn.textContent = sub.label;
                 subBtn.addEventListener("click", () => { window._diogotab = sub.tab; window._activeNavGroup = null; render(); });
                 subNav.appendChild(subBtn);
