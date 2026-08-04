@@ -2494,6 +2494,8 @@ function render(){
         if(member.locked){
           if(!window._diogotab)window._diogotab="tarefas";
 
+          const isMobileNav = window.innerWidth < 768;
+
           // Barra de navegação com dropdown
           const navBar = document.createElement("div");
           navBar.style.cssText = "display:flex;align-items:center;border-bottom:0.5px solid var(--sep);padding:0 4px;gap:0;";
@@ -2576,24 +2578,67 @@ function render(){
           gearBtn.addEventListener("click", () => { window._diogotab = "config"; render(); });
           spacerR.appendChild(gearBtn);
           navBar.appendChild(spacerR);
-          panel.appendChild(navBar);
 
-          // Sub-nav mobile — linha com sub-abas do grupo selecionado
-          if(window._activeNavGroup) {
-            const activeGroup = navGroups.find(g => g.label === window._activeNavGroup);
-            if(activeGroup && activeGroup.subs.length > 0) {
-              const subNav = document.createElement("div");
-              subNav.style.cssText = "display:flex;justify-content:center;border-bottom:0.5px solid var(--sep);background:var(--bg2);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;";
-              activeGroup.subs.forEach(sub => {
-                const subBtn = document.createElement("button");
-                const isSubActive = currentTab === sub.tab;
-                subBtn.style.cssText = `background:none;border:none;border-bottom:2px solid ${isSubActive?"var(--accent)":"transparent"};color:${isSubActive?"var(--text)":"var(--text3)"};font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:10px 20px;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0;`;
-                subBtn.textContent = sub.label;
-                subBtn.addEventListener("click", () => { window._diogotab = sub.tab; window._activeNavGroup = null; render(); });
-                subNav.appendChild(subBtn);
+          if(isMobileNav) {
+            // Mobile — esconder nav desktop, mostrar chips
+            navBar.style.display = "none";
+
+            // Determinar grupo ativo
+            const tabToGroup = {
+              tarefas: "Tarefas",
+              concluidas: "Equipe", conversas: "Equipe",
+              estoque: "Mercado Livre", cancelamentos: "Mercado Livre",
+              conferencia: "Gestão", config: "Gestão",
+            };
+            const activeGroupLabel = tabToGroup[currentTab] || "Tarefas";
+            if(!window._activeNavGroup) window._activeNavGroup = activeGroupLabel;
+
+            // Linha 1 — chips principais
+            const chipsRow = document.createElement("div");
+            chipsRow.style.cssText = "display:flex;gap:6px;padding:10px 14px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;border-bottom:0.5px solid var(--sep);";
+
+            const mainGroups = [
+              { label: "Tarefas", tab: "tarefas", subs: [] },
+              { label: "Equipe", tab: null, subs: [{label:"Concluídas",tab:"concluidas"},{label:"Conversas",tab:"conversas"}] },
+              { label: "Mercado Livre", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"}] },
+              { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"}] },
+              { label: "⚙", tab: "config", subs: [] },
+            ];
+
+            mainGroups.forEach(group => {
+              const isActive = window._activeNavGroup === group.label || (group.tab && group.tab === currentTab);
+              const chip = document.createElement("div");
+              chip.style.cssText = `padding:6px 14px;border-radius:99px;font-size:10px;font-weight:600;letter-spacing:0.5px;white-space:nowrap;cursor:pointer;flex-shrink:0;transition:all .15s;background:${isActive?"#1a6be0":"#1a1a1a"};color:${isActive?"#fff":"#666"};border:0.5px solid ${isActive?"transparent":"#222"};font-family:inherit;`;
+              chip.textContent = group.label;
+              chip.addEventListener("click", () => {
+                window._activeNavGroup = group.label;
+                if(group.tab) { window._diogotab = group.tab; }
+                else if(group.subs.length > 0) { window._diogotab = group.subs[0].tab; }
+                render();
               });
-              panel.appendChild(subNav);
+              chipsRow.appendChild(chip);
+            });
+            panel.appendChild(chipsRow);
+
+            // Linha 2 — sub-chips se grupo tem subs
+            const activeGroup = mainGroups.find(g => g.label === window._activeNavGroup);
+            if(activeGroup && activeGroup.subs.length > 0) {
+              const subRow = document.createElement("div");
+              subRow.style.cssText = "display:flex;gap:5px;padding:8px 14px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;border-bottom:0.5px solid var(--sep);background:#0a0a0a;";
+              activeGroup.subs.forEach(sub => {
+                const isSubActive = currentTab === sub.tab;
+                const subChip = document.createElement("div");
+                subChip.style.cssText = `padding:5px 12px;border-radius:99px;font-size:9px;font-weight:600;letter-spacing:0.5px;white-space:nowrap;cursor:pointer;flex-shrink:0;font-family:inherit;background:${isSubActive?"#1a6be022":"#141414"};color:${isSubActive?"#1a6be0":"#555"};border:0.5px solid ${isSubActive?"#1a6be044":"#1e1e1e"};`;
+                subChip.textContent = sub.label;
+                subChip.addEventListener("click", () => { window._diogotab = sub.tab; render(); });
+                subRow.appendChild(subChip);
+              });
+              panel.appendChild(subRow);
             }
+
+          } else {
+            // Desktop — nav normal
+            panel.appendChild(navBar);
           }
           const todayStart=new Date();todayStart.setHours(0,0,0,0);
 
