@@ -402,6 +402,7 @@ async function fetchDashboard() {
       hora: hoje.toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"}),
       top5hoje: (resHoje.topSellers || []).slice(0,5),
       top10mes: (resMes.topSellers || []).slice(0,10),
+      _fetchedAt: Date.now(),
     };
   } catch(e) {
     dashData = { erro: e.message };
@@ -411,7 +412,11 @@ async function fetchDashboard() {
 }
 
 function renderDashboard(panel, color) {
-  if(!dashData && !dashLoading) fetchDashboard();
+  // Rebuscar se dados têm mais de 5 minutos
+  const agora = Date.now();
+  if(!dashLoading && (!dashData || dashData.erro || (agora - (dashData._fetchedAt||0)) > 5*60*1000)) {
+    fetchDashboard();
+  }
 
   const fmt = v => v >= 1000 ? `R$ ${(v/1000).toFixed(0)}k` : `R$ ${Number(v).toFixed(0)}`;
   const fmtFull = v => `R$ ${Number(v).toLocaleString("pt-BR", {minimumFractionDigits:0,maximumFractionDigits:0})}`;
