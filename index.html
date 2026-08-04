@@ -2394,6 +2394,10 @@ function render(){
     const brunoEmCancelamentos = openCard==="Bruno" && window._brunotab==="cancelamentos";
     if(brunoEmCancelamentos && member.name !== "Bruno") return;
 
+    // No mobile, mostrar apenas o card do usuário logado
+    const isMobile = window.innerWidth < 768;
+    if(isMobile && member.name !== currentUser) return;
+
     const card=document.createElement("div");card.className="card"+(hasPending||isFlashing?" flashing":"");
     card.style.setProperty("--c",color);
     card.style.borderColor=isOpen?color+"88":(hasPending||isFlashing)?color:"var(--border)";
