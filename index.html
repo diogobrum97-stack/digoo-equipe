@@ -379,6 +379,8 @@ let dashLoading = false;
 async function fetchDashboard() {
   if(dashLoading) return;
   dashLoading = true;
+  // Timeout de segurança — reseta se travar por mais de 30s
+  const loadingTimeout = setTimeout(() => { dashLoading = false; }, 30000);
   render();
   try {
     const token = state.ml_token_filial?.access_token;
@@ -407,6 +409,7 @@ async function fetchDashboard() {
   } catch(e) {
     dashData = { erro: e.message };
   }
+  clearTimeout(loadingTimeout);
   dashLoading = false;
   render();
 }
