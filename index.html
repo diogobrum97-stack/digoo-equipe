@@ -498,11 +498,14 @@ function renderDashboard(panel, color) {
   `;
   grid.appendChild(taskCard);
 
-  // Estoque
+  // Estoque — buscar se não carregado
+  if(!estoqueExcelData && !estoqueAutoLoading) fetchEstoqueAutomatico();
+  if(!estoqueBlingData && !estoqueBlingLoading && tokenValido(state.bling_token)) fetchBlingProdutos();
+
   const estoqueCard = document.createElement("div");
   estoqueCard.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:14px;padding:16px;";
   const estoqueRows = estoqueExcelData?.rows || [];
-  const valorTotal = estoqueRows.reduce((s,r) => s + (Number(r.aptas||0) * (estoqueBlingData?.[r.sku]||0)), 0);
+  const valorTotal = estoqueRows.reduce((s,r) => s + (Number(r.aptas||0) * (estoqueBlingData?.[normSku(r.sku)]||estoqueBlingData?.[r.sku]||0)), 0);
   const criticos = estoqueRows.filter(r => {
     const v30 = r.vendas30||0;
     const dias = v30>0 ? Math.round(r.aptas/(v30/30)) : 999;
