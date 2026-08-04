@@ -46,19 +46,19 @@
 
     history.push({ role: 'user', content: userMsg });
 
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('https://digoo-backend.vercel.app/api/claude-chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 500,
-        system,
-        messages: history,
+        member: 'Diogo',
+        message: userMsg,
+        history: history.slice(0, -1),
+        context: ctx,
       })
     });
 
     const data = await res.json();
-    const reply = data.content?.[0]?.text || 'Erro ao obter resposta.';
+    const reply = data.reply || 'Erro ao obter resposta.';
     history.push({ role: 'assistant', content: reply });
     return reply;
   }
@@ -166,7 +166,7 @@
       analysed = true;
       addTyping();
       const tryAnalyse = (attempts) => {
-        const hasData = window._dashData && !window._dashData.erro;
+        const hasData = window._dashData && !window._dashData.erro && window._dashTarefas;
         if(hasData || attempts <= 0) {
           sendToClaud('Analise os dados do dashboard e me dê os 3 pontos mais importantes que preciso saber agora. Seja direto e objetivo.').then(reply => {
             removeTyping();
