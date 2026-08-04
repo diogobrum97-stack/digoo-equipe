@@ -3565,7 +3565,10 @@ async function fetchEstoqueAutomatico(forcar) {
     const dVendas = await rVendas.json();
     const vendasPorSku = {};
     (dVendas.allProducts || []).forEach(p => {
-      if (p.sku) vendasPorSku[String(p.sku).trim().toLowerCase().replace(/\s+/g,"")] = p.qty || 0;
+      if (p.sku) {
+        const key = String(p.sku).trim().toLowerCase().replace(/\s+/g,"");
+        vendasPorSku[key] = (vendasPorSku[key] || 0) + (p.qty || 0);
+      }
     });
 
     // Debug — remover depois
