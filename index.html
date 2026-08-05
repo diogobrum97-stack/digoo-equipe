@@ -2930,6 +2930,7 @@ function renderChatModal(memberName, color) {
 }
 
 function render(){
+  if(!currentUser) return;
   try{
   setSyncing(false);
   const container=document.getElementById("cards");container.innerHTML="";
