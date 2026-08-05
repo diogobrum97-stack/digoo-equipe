@@ -493,7 +493,7 @@ function renderDashboard(panel, color) {
 
   const header = document.createElement("div");
   header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;";
-  header.innerHTML = `<div><div style="font-size:15px;font-weight:600;color:#fff;">${saudacao}, Diogo 👋</div><div style="font-size:9px;letter-spacing:1.5px;color:#999;text-transform:uppercase;margin-top:3px;">${dias[now.getDay()]} · ${now.getDate()} ${meses[now.getMonth()]} ${now.getFullYear()}</div></div><div style="display:flex;align-items:center;gap:10px;"><div style="font-size:10px;font-weight:600;color:#5e72e4;">${dashData.hora}</div><button onclick="dashData=null;fetchDashboard();" style="background:none;border:none;color:#444;font-size:16px;cursor:pointer;padding:4px;line-height:1;transition:color .15s;" onmouseover="this.style.color='#aaa'" onmouseout="this.style.color='#444'" title="Atualizar">↻</button></div>`;
+  header.innerHTML = `<div><div style="font-size:20px;font-weight:700;color:#fff;letter-spacing:-0.3px;">${saudacao}, Diogo 👋</div><div style="font-size:9px;letter-spacing:1.5px;color:#999;text-transform:uppercase;margin-top:3px;">${dias[now.getDay()]} · ${now.getDate()} ${meses[now.getMonth()]} ${now.getFullYear()}</div></div><div style="display:flex;align-items:center;gap:10px;"><div style="font-size:10px;font-weight:600;color:#5e72e4;">${dashData.hora}</div><button onclick="dashData=null;fetchDashboard();" style="background:none;border:none;color:#444;font-size:16px;cursor:pointer;padding:4px;line-height:1;transition:color .15s;" onmouseover="this.style.color='#aaa'" onmouseout="this.style.color='#444'" title="Atualizar">↻</button></div>`;
   wrap.appendChild(header);
 
   const grid = document.createElement("div");
@@ -501,18 +501,18 @@ function renderDashboard(panel, color) {
 
   // Vendas ML com abas Filial/Matriz
   const vendasCard = document.createElement("div");
-  vendasCard.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:16px;overflow:hidden;grid-column:1/-1;";
+  vendasCard.style.cssText = "background:linear-gradient(180deg,#252525 0%,#101010 100%);border:1px solid #303030;border-radius:16px;overflow:hidden;grid-column:1/-1;";
   function vendasTabContent(d, percDia) {
     if(!d) return `<div style="text-align:center;padding:20px;color:var(--text3);font-size:11px;">Token não conectado</div>`;
     return `
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;">
-        <div style="background:var(--bg2);border-radius:10px;padding:12px;"><div style="font-size:8px;color:#777;margin-bottom:5px;letter-spacing:.5px;text-transform:uppercase;">Hoje</div><div style="font-size:20px;font-weight:700;color:#fff;margin-bottom:4px;">${fmtFull(d.fatHoje)}</div><div style="font-size:9px;font-weight:600;color:${GREEN};">↑ em tempo real</div></div>
-        <div style="background:var(--bg2);border-radius:10px;padding:12px;"><div style="font-size:8px;color:#777;margin-bottom:5px;letter-spacing:.5px;text-transform:uppercase;">Projeção</div><div style="font-size:20px;font-weight:700;color:#ccc;margin-bottom:4px;">${fmt(d.projecaoDia)}</div><div style="font-size:9px;color:#666;">${percDia}% do dia</div></div>
-        <div style="background:var(--bg2);border-radius:10px;padding:12px;"><div style="font-size:8px;color:#777;margin-bottom:5px;letter-spacing:.5px;text-transform:uppercase;">Mês atual</div><div style="font-size:20px;font-weight:700;color:#fff;margin-bottom:4px;">${fmt(d.fatMes)}</div><div style="font-size:9px;font-weight:600;color:${GREEN};">${d.pedidosMes} pedidos</div></div>
+        <div style="background:var(--bg2);border-radius:10px;padding:12px;"><div style="font-size:8px;color:#777;margin-bottom:5px;letter-spacing:.5px;text-transform:uppercase;">Hoje</div><div style="font-size:30px;font-weight:700;color:#fff;margin-bottom:6px;letter-spacing:-1px;font-family:'IBM Plex Mono',monospace;">${fmtFull(d.fatHoje)}</div><div style="font-size:9px;font-weight:600;color:${GREEN};">↑ em tempo real</div></div>
+        <div style="background:var(--bg2);border-radius:10px;padding:12px;"><div style="font-size:8px;color:#777;margin-bottom:5px;letter-spacing:.5px;text-transform:uppercase;">Projeção</div><div style="font-size:30px;font-weight:700;color:#fff;margin-bottom:6px;letter-spacing:-1px;font-family:'IBM Plex Mono',monospace;">${fmt(d.projecaoDia)}</div><div style="font-size:9px;color:#666;">${percDia}% do dia</div></div>
+        <div style="background:var(--bg2);border-radius:10px;padding:12px;"><div style="font-size:8px;color:#777;margin-bottom:5px;letter-spacing:.5px;text-transform:uppercase;">Mês atual</div><div style="font-size:30px;font-weight:700;color:#fff;margin-bottom:6px;letter-spacing:-1px;font-family:'IBM Plex Mono',monospace;">${fmt(d.fatMes)}</div><div style="font-size:9px;font-weight:600;color:${GREEN};">${d.pedidosMes} pedidos</div></div>
       </div>
-      <div style="background:var(--bg3);border-radius:99px;height:3px;margin-bottom:16px;"><div style="height:3px;border-radius:99px;background:linear-gradient(90deg,#5e72e4,#11cdef);width:${percDia}%;"></div></div>
-      <div style="font-size:8px;font-weight:600;letter-spacing:2px;color:#555;text-transform:uppercase;margin-bottom:10px;">Mais vendidos hoje</div>
-      ${(d.top5hoje||[]).map((p,i) => `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg2);border-radius:10px;margin-bottom:5px;"><div style="font-size:10px;font-weight:700;color:${i===0?"#f0b400":"#bbb"};width:16px;text-align:center;flex-shrink:0;">${i+1}</div><div style="font-size:10px;font-weight:600;color:#fff;flex:1;">${p.sku||"—"}</div><div style="font-size:9px;color:#777;">${p.qty} un</div><div style="font-size:9px;color:#444;margin:0 4px;">·</div><div style="font-size:10px;font-weight:600;color:#ccc;">${fmt(p.revenue||0)}</div></div>`).join("")}
+      <div style="background:#1a1a1a;border-radius:99px;height:6px;margin-bottom:20px;"><div style="height:6px;border-radius:99px;background:linear-gradient(90deg,#5e72e4,#11cdef);width:${percDia}%;box-shadow:0 0 10px rgba(17,205,239,0.35);"></div></div>
+      <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#888;text-transform:uppercase;margin-bottom:12px;padding-top:14px;border-top:1px solid #222;">Mais vendidos hoje</div>
+      ${(d.top5hoje||[]).map((p,i) => `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg2);border-radius:10px;margin-bottom:5px;"><div style="font-size:10px;font-weight:700;color:${i===0?"#f0b400":"#bbb"};width:16px;text-align:center;flex-shrink:0;">${i+1}</div><div style="font-size:10px;font-weight:600;color:#fff;flex:1;">${p.sku||"—"}</div><div style="font-size:9px;color:#777;">${p.qty} un</div><div style="font-size:9px;color:#444;margin:0 4px;">·</div><div style="font-size:11px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">${fmt(p.revenue||0)}</div></div>`).join("")}
     `;
   }
 
@@ -566,15 +566,15 @@ function renderDashboard(panel, color) {
   const normais = ownTasks.filter(t => t.prio === "normal" || !t.prio).length;
   const concluidas = tasksFor("Diogo").filter(t => t.done).length;
   const taskCard = document.createElement("div");
-  taskCard.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:14px;padding:16px;";
+  taskCard.style.cssText = "background:linear-gradient(180deg,#252525 0%,#101010 100%);border:1px solid #303030;border-radius:14px;padding:16px;";
   taskCard.innerHTML = `
-    <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#bbb;text-transform:uppercase;margin-bottom:14px;">Minhas tarefas</div>
+    <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#777;text-transform:uppercase;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;">Minhas tarefas</div>
     ${[
       {label:"Urgente", count:urgentes, color:"#e91e8c"},
       {label:"Importante", count:importantes, color:"#f0b400"},
       {label:"Normal", count:normais, color:GREEN},
       {label:"Concluídas", count:concluidas, color:GREEN, opacity:"0.5"},
-    ].map(t => `<div onclick="window._diogotab='tarefas';render();" style="display:flex;align-items:center;gap:12px;padding:11px 12px;background:var(--bg2);border-radius:8px;margin-bottom:6px;cursor:pointer;opacity:${t.opacity||1};"><div style="width:8px;height:8px;border-radius:50%;background:${t.color};flex-shrink:0;"></div><div style="font-size:12px;font-weight:500;color:#fff;flex:1;">${t.label}</div><div style="font-size:20px;font-weight:700;color:${t.color};">${t.count}</div><div style="font-size:14px;color:#444;">›</div></div>`).join("")}
+    ].map(t => `<div onclick="window._diogotab='tarefas';render();" style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:linear-gradient(90deg,${t.color}0a 0%,transparent 50%);border:1px solid ${t.color}22;border-radius:10px;margin-bottom:6px;cursor:pointer;opacity:${t.opacity||1};transition:filter .15s;"><div style="width:8px;height:8px;border-radius:50%;background:${t.color};flex-shrink:0;"></div><div style="font-size:12px;font-weight:500;color:#fff;flex:1;">${t.label}</div><div style="font-size:26px;font-weight:700;color:${t.color};font-family:'IBM Plex Mono',monospace;letter-spacing:-1px;">${t.count}</div><div style="font-size:14px;color:#444;">›</div></div>`).join("")}
   `;
   grid.appendChild(taskCard);
 
@@ -583,7 +583,7 @@ function renderDashboard(panel, color) {
   if(!estoqueBlingData && !estoqueBlingLoading && tokenValido(state.bling_token)) fetchBlingProdutos();
 
   const estoqueCard = document.createElement("div");
-  estoqueCard.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:14px;padding:16px;";
+  estoqueCard.style.cssText = "background:linear-gradient(180deg,#252525 0%,#101010 100%);border:1px solid #303030;border-radius:14px;padding:16px;";
   const estoqueRows = estoqueExcelData?.rows || [];
   const valorTotal = estoqueRows.reduce((s,r) => s + (Number(r.aptas||0) * (estoqueBlingData?.[normSku(r.sku)]||estoqueBlingData?.[r.sku]||0)), 0);
   const unidadesTotal = estoqueRows.reduce((s,r)=>s+Number(r.aptas||0),0);
@@ -596,8 +596,8 @@ function renderDashboard(panel, color) {
   }).slice(0,3);
   const unidades = estoqueRows.reduce((s,r)=>s+Number(r.aptas||0),0);
   estoqueCard.innerHTML = `
-    <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#bbb;text-transform:uppercase;margin-bottom:14px;">Estoque Full · Filial SP</div>
-    <div style="font-size:30px;font-weight:700;color:${GREEN};margin-bottom:3px;">${fmtFull(valorTotal)}</div>
+    <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#777;text-transform:uppercase;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;">Estoque Full · Filial SP</div>
+    <div style="font-size:38px;font-weight:700;color:#2dce89;margin-bottom:4px;letter-spacing:-2px;font-family:'IBM Plex Mono',monospace;">${fmtFull(valorTotal)}</div>
     <div style="font-size:10px;color:#bbb;margin-bottom:14px;">${unidades} unidades · ${estoqueRows.length} SKUs</div>
     ${criticos.length > 0 ? criticos.map(r => {
       const v30 = r.vendas30||0;
@@ -610,7 +610,7 @@ function renderDashboard(panel, color) {
 
   // Calendário Fiscal
   const fiscalCard = document.createElement("div");
-  fiscalCard.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:14px;padding:16px;grid-column:1/-1;";
+  fiscalCard.style.cssText = "background:linear-gradient(180deg,#252525 0%,#101010 100%);border:1px solid #303030;border-radius:14px;padding:16px;grid-column:1/-1;";
   const hoje2 = new Date();
   const mes2 = hoje2.getMonth();
   const ano2 = hoje2.getFullYear();
@@ -627,12 +627,12 @@ function renderDashboard(panel, color) {
     else if(e.tipo !== "difal") fiscal_agrupado.push(e);
   });
   fiscalCard.innerHTML = `
-    <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#bbb;text-transform:uppercase;margin-bottom:14px;">Calendário fiscal</div>
+    <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#777;text-transform:uppercase;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;">Calendário fiscal</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
       ${fiscal_agrupado.slice(0,6).map(e => {
         const cor = e.diff <= 5 ? "#e91e8c" : e.diff <= 14 ? "#f0b400" : "#bbb";
         const dotCor = coresFiscal[e.tipo] || "#bbb";
-        return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg2);border-radius:8px;"><div style="width:7px;height:7px;border-radius:50%;background:${dotCor};flex-shrink:0;"></div><div style="flex:1;"><div style="font-size:11px;font-weight:600;color:#fff;">${e.nome}</div><div style="font-size:9px;color:#888;margin-top:2px;">Ref. ${String(mes2).padStart(2,"0")}/${ano2}</div></div><div style="font-size:12px;font-weight:700;color:${cor};">em ${e.diff}d</div></div>`;
+        return `<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#181818;border:1px solid #242424;border-radius:10px;"><div style="width:7px;height:7px;border-radius:50%;background:${dotCor};flex-shrink:0;"></div><div style="flex:1;"><div style="font-size:11px;font-weight:600;color:#fff;">${e.nome}</div><div style="font-size:9px;color:#888;margin-top:2px;">Ref. ${String(mes2).padStart(2,"0")}/${ano2}</div></div><div style="font-size:14px;font-weight:700;color:${cor};font-family:'IBM Plex Mono',monospace;">em ${e.diff}d</div></div>`;
       }).join("")}
     </div>
   `;
