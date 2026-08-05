@@ -547,7 +547,8 @@ function renderDashboard(panel, color) {
   // Tarefas
   // Usar tasksFor igual ao resto do sistema
   const allDiogoActive = tasksFor("Diogo").filter(t => !t.done);
-  const ownTasks = allDiogoActive.filter(t => !t.delegatedBy || t.delegatedBy === "Diogo");
+  // Incluir recorrentes (isRecorrente=true não tem delegatedBy mas é tarefa do Diogo)
+  const ownTasks = allDiogoActive.filter(t => !t.delegatedBy || t.delegatedBy === "Diogo" || t.isRecorrente);
   const urgentes = ownTasks.filter(t => t.prio === "urgente" || t.prio === "superurgente").length;
   const importantes = ownTasks.filter(t => t.prio === "importante").length;
   const normais = ownTasks.filter(t => t.prio === "normal" || !t.prio).length;
