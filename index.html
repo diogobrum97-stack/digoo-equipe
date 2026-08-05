@@ -262,7 +262,7 @@ function setupIdentityScreen() {
   // Criar overlay por cima de tudo
   const ov = document.createElement("div");
   ov.id = "digoo-overlay";
-  ov.style.cssText = "position:fixed;inset:0;background:#000;display:flex;z-index:99999;font-family:Inter,sans-serif;";
+  ov.style.cssText = "position:fixed;inset:0;background:#000;display:flex;align-items:center;justify-content:center;z-index:99999;font-family:Inter,sans-serif;";
   document.body.appendChild(ov);
 
   function closeOverlay(name) {
@@ -274,10 +274,10 @@ function setupIdentityScreen() {
   }
 
   function renderLeft() {
-    return '<div style="width:220px;flex-shrink:0;padding:32px 28px;display:flex;flex-direction:column;justify-content:flex-end;border-right:1px solid #111;">' +
-      '<div style="font-size:10px;color:#1e1e1e;margin-bottom:4px;">DIGOO BRASIL</div>' +
-      '<div style="font-size:26px;font-weight:800;color:#fff;letter-spacing:-1px;line-height:1;">EQUIPE</div>' +
-      '<div style="font-size:10px;color:#1a1a1a;margin-top:4px;">Porto Alegre · RS</div>' +
+    return '<div style="position:fixed;bottom:32px;left:32px;">' +
+      '<div style="font-size:10px;color:#1e1e1e;margin-bottom:4px;font-family:Inter,sans-serif;">DIGOO BRASIL</div>' +
+      '<div style="font-size:28px;font-weight:800;color:#fff;letter-spacing:-1px;line-height:1;font-family:Inter,sans-serif;">EQUIPE</div>' +
+      '<div style="font-size:10px;color:#1a1a1a;margin-top:4px;font-family:Inter,sans-serif;">Porto Alegre · RS</div>' +
     '</div>';
   }
 
@@ -285,7 +285,7 @@ function setupIdentityScreen() {
     // AUTO-LOGIN
     const initials = MEMBERS.find(m=>m.name===savedUser)?.initials || savedUser[0];
     ov.innerHTML = renderLeft() +
-      '<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;">' +
+      '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;">' +
         '<div style="width:52px;height:52px;border-radius:50%;background:#111;border:1px solid #222;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;">' + initials + '</div>' +
         '<div style="text-align:center;">' +
           '<div style="font-size:16px;font-weight:700;color:#fff;">Bem-vindo, ' + savedUser + '</div>' +
@@ -310,8 +310,8 @@ function setupIdentityScreen() {
   // SELEÇÃO
   function renderSelecao() {
     ov.innerHTML = renderLeft() +
-      '<div style="flex:1;padding:24px 28px;display:flex;flex-direction:column;justify-content:center;gap:6px;">' +
-        '<div style="font-size:11px;color:#2a2a2a;margin-bottom:8px;">Quem está acessando?</div>' +
+      '<div style="width:100%;max-width:420px;display:flex;flex-direction:column;gap:6px;">' +
+        '<div style="font-size:11px;color:#444;margin-bottom:10px;font-family:Inter,sans-serif;">Quem está acessando?</div>' +
         '<div id="ov-admin" style="border-left:2px solid #fff;padding:12px 16px;background:#0f0f0f;border-radius:0 9px 9px 0;display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:2px;">' +
           '<div>' +
             '<div style="font-size:13px;font-weight:700;color:#fff;">Diogo</div>' +
@@ -355,7 +355,7 @@ function setupIdentityScreen() {
 
   function renderPin() {
     ov.innerHTML = renderLeft() +
-      '<div style="flex:1;padding:24px 28px;display:flex;flex-direction:column;justify-content:center;gap:0;">' +
+      '<div style="width:100%;max-width:420px;display:flex;flex-direction:column;justify-content:center;gap:0;">' +
         '<div id="ov-back" style="font-size:11px;color:#333;cursor:pointer;margin-bottom:20px;">← voltar</div>' +
         '<div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">' +
           '<div style="width:36px;height:36px;border-radius:50%;background:#1a1a1a;border:1px solid #333;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;">DG</div>' +
