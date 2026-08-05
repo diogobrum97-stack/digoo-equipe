@@ -306,6 +306,11 @@ function setupIdentityScreen() {
     currentUser = name;
     localStorage.setItem(STORAGE_KEY, name);
     screen.style.cssText = "display:none;";
+    if(name === "Diogo") {
+      openCard = "Diogo";
+      diogoPinUnlocked = true;
+      window._diogotab = "dashboard";
+    }
     requestNotif();
     render();
   }
