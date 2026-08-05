@@ -288,7 +288,7 @@ function setupIdentityScreen() {
     // AUTO-LOGIN
     const initials = MEMBERS.find(m=>m.name===savedUser)?.initials || savedUser[0];
     ov.innerHTML = renderLeft() +
-      '<div style="width:420px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 52px;min-height:100vh;gap:16px;">' +
+      '<div style="flex:0 0 40%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 40px;min-height:100vh;gap:16px;">' +
         '<div style="width:52px;height:52px;border-radius:50%;background:#111;border:1px solid #222;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;">' + initials + '</div>' +
         '<div style="text-align:center;">' +
           '<div style="font-size:16px;font-weight:700;color:#fff;">Bem-vindo, ' + savedUser + '</div>' +
@@ -313,7 +313,7 @@ function setupIdentityScreen() {
   // SELEÇÃO
   function renderSelecao() {
     ov.innerHTML = renderLeft() +
-      '<div style="width:420px;flex-shrink:0;display:flex;flex-direction:column;justify-content:center;padding:48px 52px;min-height:100vh;">' +
+      '<div style="flex:0 0 40%;display:flex;flex-direction:column;justify-content:center;padding:32px 40px;min-height:100vh;">' +
         '<div style="font-size:11px;color:#444;margin-bottom:16px;font-family:Inter,sans-serif;">Quem está acessando?</div>' +
         '<div id="ov-admin" style="border-left:2px solid #fff;padding:12px 16px;background:#0f0f0f;border-radius:0 9px 9px 0;display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:2px;">' +
           '<div>' +
@@ -358,7 +358,7 @@ function setupIdentityScreen() {
 
   function renderPin() {
     ov.innerHTML = renderLeft() +
-      '<div style="width:420px;flex-shrink:0;display:flex;flex-direction:column;justify-content:center;padding:48px 52px;min-height:100vh;">' +
+      '<div style="flex:0 0 40%;display:flex;flex-direction:column;justify-content:center;padding:32px 40px;min-height:100vh;">' +
         '<div id="ov-back" style="font-size:11px;color:#333;cursor:pointer;margin-bottom:20px;">← voltar</div>' +
         '<div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">' +
           '<div style="width:36px;height:36px;border-radius:50%;background:#1a1a1a;border:1px solid #333;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;">DG</div>' +
