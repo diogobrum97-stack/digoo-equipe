@@ -279,7 +279,7 @@ function setupIdentityScreen() {
     setTimeout(() => {
       currentUser = savedUser;
       localStorage.setItem(STORAGE_KEY, savedUser);
-      screen.style.display = "none";
+      screen.style.cssText = "display:none;";
       requestNotif(); render();
     }, 1200);
     return;
@@ -329,7 +329,7 @@ function setupIdentityScreen() {
       localStorage.setItem(STORAGE_KEY, m.name);
       localStorage.setItem(DEVICE_KEY, m.name);
       localStorage.setItem('digoo_pin_verified_' + m.name, '1');
-      screen.style.display = "none";
+      screen.style.cssText = "display:none;";
       requestNotif(); render();
     };
     right.appendChild(el);
