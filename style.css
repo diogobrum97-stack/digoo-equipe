@@ -20,7 +20,7 @@ body {
   transition: background 0.3s, color 0.3s;
 }
 body {
-  --bg: #080808; --bg2: #0f0f0f; --bg3: #222222;
+  --bg: #080808; --bg2: #080808; --bg3: #2a2a2a;
   --border: #202020; --border2: #282828;
   --text: #ffffff; --text2: #cccccc; --text3: #888888; --sub: #555555;
   --done: #888; --sep: rgba(255,255,255,0.08);
@@ -31,7 +31,7 @@ body {
   background: var(--bg); color: var(--text);
 }
 body.light {
-  --bg: #f0f0f0; --bg2: #e8e8e8; --bg3: #ffffff;
+  --bg: #ebebeb; --bg2: #dcdcdc; --bg3: #ffffff;
   --border: #e0e0e0; --border2: #d0d0d0;
   --text: #111111; --text2: #444444; --text3: #aaaaaa; --sub: #555555;
   --done: #999; --sep: rgba(0,0,0,0.08);
@@ -54,6 +54,9 @@ body.light .card-bg { background: #f7f7f7; border-color: #e5e5e5; }
 
 /* Modo claro — inner panel branco */
 body.light .member-panel { background: #ffffff; border: 0.5px solid #dddddd; border-radius: 10px; }
+body.light .card { background: linear-gradient(180deg, #ffffff 0%, #f0f0f0 100%); border-color: #e0e0e0; }
+body.light .card::before { background: linear-gradient(90deg, transparent, rgba(0,0,0,0.07) 30%, rgba(0,0,0,0.07) 70%, transparent); }
+
 .toggle-wrap { display: flex; justify-content: flex-end; max-width: 1280px; margin: 0 auto 16px; }
 .toggle-track { width: 48px; height: 26px; border-radius: 13px; background: var(--border2); border: 1px solid var(--border2); cursor: pointer; position: relative; transition: background 0.3s, border-color 0.3s; flex-shrink: 0; }
 .toggle-thumb { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #777; transition: transform 0.25s cubic-bezier(.4,0,.2,1), background 0.25s; display: flex; align-items: center; justify-content: center; font-size: 11px; line-height: 1; }
@@ -69,8 +72,8 @@ h1 { font-family: 'Digoo', 'Bebas Neue', sans-serif; font-size: 44px; letter-spa
 @keyframes atrasoBlink { 0%,100%{opacity:1} 50%{opacity:0.25} }
 .task-row.dragover-hint { background:rgba(17,205,239,0.08);border-radius:6px;outline:1px dashed rgba(17,205,239,0.3); }
 .grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; max-width: 1280px; margin: 0 auto; align-items: start; }
-.card { border-radius: 10px; border: 1px solid var(--border); overflow: hidden; transition: border-color 0.3s, box-shadow 0.3s; background: linear-gradient(180deg, var(--bg3) 0%, var(--bg2) 100%); position: relative; }
-.card::before { content: ''; position: absolute; top: 0; left: 15%; right: 15%; height: 1px; background: linear-gradient(90deg, transparent, var(--sep), transparent); pointer-events: none; z-index: 1; }
+.card { border-radius: 10px; border: 1px solid #282828; overflow: hidden; transition: border-color 0.3s, box-shadow 0.3s; background: linear-gradient(180deg, #252525 0%, #101010 100%); position: relative; }
+.card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18) 30%, rgba(255,255,255,0.18) 70%, transparent); pointer-events: none; z-index: 1; }
 .card.card-fullscreen { position: fixed; inset: 0; z-index: 1000; border-radius: 0; overflow: hidden; margin: 0; height: 100vh; width: 100vw; box-sizing: border-box; display: flex; flex-direction: column; background: var(--bg); }
 .card.card-fullscreen .panel.open { flex: 1; overflow-y: auto; max-height: none; display: block; }
 @keyframes cardFlash { 0%,100% { box-shadow: none; } 50% { box-shadow: 0 0 40px var(--c), 0 0 80px var(--c); border-color: var(--c) !important; } }
