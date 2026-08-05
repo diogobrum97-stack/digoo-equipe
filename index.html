@@ -378,13 +378,13 @@ function setupIdentityScreen() {
     const r = document.createElement("div");
     r.style.cssText = _isMobile
       ? "flex:1;width:100%;display:flex;flex-direction:column;justify-content:center;padding:24px 20px;overflow-y:auto;box-sizing:border-box;"
-      : "flex:0 0 30%;display:flex;flex-direction:column;justify-content:center;padding:32px 40px;height:100vh;overflow-y:auto;";
+      : "flex:0 0 30%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 40px;height:100vh;overflow-y:auto;";
     const W = _isMobile ? "min(260px,80vw)" : "220px";
     const keys = [1,2,3,4,5,6,7,8,9,"\u232b",0,"\u2192"].map(k=>
       '<div class="pk" data-k="'+k+'" style="background:#0f0f0f;border:1px solid #1a1a1a;border-radius:7px;height:44px;display:flex;align-items:center;justify-content:center;font-size:'+(k==="⌫"||k==="→"?"12":"15")+'px;color:'+(k==="→"?"#2dce89":k==="⌫"?"#555":"#888")+';cursor:pointer;font-weight:500;font-family:Inter,sans-serif;">'+k+'</div>'
     ).join("");
     r.innerHTML =
-      '<div style="display:flex;flex-direction:column;align-items:flex-start;width:'+W+';margin:0 auto;">'
+      '<div style="display:flex;flex-direction:column;align-items:flex-start;width:'+W+';">'
         +'<div id="pk-back" style="font-size:11px;color:#333;cursor:pointer;margin-bottom:20px;font-family:Inter,sans-serif;">← voltar</div>'
         +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">'
           +'<div style="width:36px;height:36px;border-radius:50%;background:#1a1a1a;border:1px solid #333;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;">DG</div>'
