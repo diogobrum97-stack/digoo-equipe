@@ -536,8 +536,8 @@ function renderDashboard(panel, color) {
 
   vendasCard.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 16px 0;">
-      <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#bbb;text-transform:uppercase;">Vendas Mercado Livre</div>
-      <div style="font-size:8px;color:#444;">${dashData.hora}</div>
+      <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#bbb;text-transform:uppercase;font-family:'Inter',sans-serif;>Vendas Mercado Livre</div>
+      <div style="font-size:8px;color:#444;font-family:'Inter',sans-serif;">${dashData.hora}</div>
     </div>
     <div style="padding:12px 16px 14px;">
       <div style="display:inline-flex;background:var(--bg3);border-radius:10px;padding:3px;gap:2px;">
@@ -568,7 +568,7 @@ function renderDashboard(panel, color) {
   const taskCard = document.createElement("div");
   taskCard.style.cssText = "background:linear-gradient(180deg,#252525 0%,#101010 100%);border:1px solid #303030;border-radius:14px;padding:16px;";
   taskCard.innerHTML = `
-    <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#777;text-transform:uppercase;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;">Minhas tarefas</div>
+    <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#777;text-transform:uppercase;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;;font-family:'Inter',sans-serif;">Minhas tarefas</div>
     ${[
       {label:"Urgente", count:urgentes, color:"#e91e8c"},
       {label:"Importante", count:importantes, color:"#f0b400"},
@@ -596,7 +596,7 @@ function renderDashboard(panel, color) {
   }).slice(0,3);
   const unidades = estoqueRows.reduce((s,r)=>s+Number(r.aptas||0),0);
   estoqueCard.innerHTML = `
-    <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#777;text-transform:uppercase;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;">Estoque Full · Filial SP</div>
+    <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#777;text-transform:uppercase;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;;font-family:'Inter',sans-serif;">Estoque Full · Filial SP</div>
     <div style="font-size:38px;font-weight:700;color:#2dce89;margin-bottom:4px;letter-spacing:-2px;font-family:'IBM Plex Mono',monospace;">${fmtFull(valorTotal)}</div>
     <div style="display:flex;gap:6px;margin-bottom:14px;"><span style="padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:.5px;display:inline-block;font-family:'Inter',sans-serif;background:rgba(255,255,255,.05);color:#888;border:1px solid rgba(255,255,255,.1);">${unidades} UN</span><span style="padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:.5px;display:inline-block;font-family:'Inter',sans-serif;background:rgba(255,255,255,.05);color:#888;border:1px solid rgba(255,255,255,.1);">${estoqueRows.length} SKUs</span></div>
     ${criticos.length > 0 ? criticos.map(r => {
@@ -627,7 +627,7 @@ function renderDashboard(panel, color) {
     else if(e.tipo !== "difal") fiscal_agrupado.push(e);
   });
   fiscalCard.innerHTML = `
-    <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#777;text-transform:uppercase;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;">Calendário fiscal</div>
+    <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#777;text-transform:uppercase;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;;font-family:'Inter',sans-serif;">Calendário fiscal</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
       ${fiscal_agrupado.slice(0,6).map(e => {
         const cor = e.diff <= 5 ? "#e91e8c" : e.diff <= 14 ? "#f0b400" : "#bbb";
@@ -644,7 +644,7 @@ function renderDashboard(panel, color) {
     const expCard = document.createElement("div");
     expCard.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:14px;padding:16px;grid-column:1/-1;";
     expCard.innerHTML = `
-      <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#bbb;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#bbb;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;font-family:'Inter',sans-serif;>
         <span>Experiência de compra · Filial SP</span>
         <span style="font-size:9px;color:#e91e8c;font-weight:700;">${dashExperiencia.problemas.length} com problema</span>
       </div>
