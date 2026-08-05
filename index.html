@@ -447,13 +447,15 @@ function renderDashboard(panel, color) {
   const fmtFull = v => `R$ ${Number(v).toLocaleString("pt-BR", {minimumFractionDigits:0,maximumFractionDigits:0})}`;
   const GREEN = "#22c55e";
 
-  if(dashLoading) {
+  // Só mostra loading se não tem nenhum dado ainda
+  if(dashLoading && !dashData) {
     const loading = document.createElement("div");
     loading.style.cssText = "text-align:center;padding:40px;color:var(--text3);font-size:12px;";
     loading.innerHTML = '<span class="spinning">↻</span> Carregando dashboard...';
     panel.appendChild(loading);
     return;
   }
+  // Se atualizando com dados antigos, continua renderizando normalmente
 
   if(!dashData || dashData.erro) {
     const err = document.createElement("div");
