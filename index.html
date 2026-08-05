@@ -639,6 +639,33 @@ function renderDashboard(panel, color) {
   grid.appendChild(fiscalCard);
 
   // Top 10 mês
+  // ── Experiência de compra ──
+  if(dashExperiencia?.problemas?.length > 0) {
+    const expCard = document.createElement("div");
+    expCard.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:14px;padding:16px;grid-column:1/-1;";
+    expCard.innerHTML = `
+      <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#bbb;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;">
+        <span>Experiência de compra · Filial SP</span>
+        <span style="font-size:9px;color:#d4000c;font-weight:700;">${dashExperiencia.problemas.length} com problema</span>
+      </div>
+      ${dashExperiencia.problemas.map(p => {
+        const cor = p.color === "red" ? "#d4000c" : "#e8aa00";
+        return `<div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:#141414;border-radius:10px;margin-bottom:6px;">
+          <div style="width:8px;height:8px;border-radius:50%;background:${cor};flex-shrink:0;"></div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:10px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.title}</div>
+            <div style="font-size:9px;color:#bbb;margin-top:2px;">${p.actions.join(" · ")}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+            <div style="font-size:10px;font-weight:700;color:${cor};">${p.level}</div>
+            <a href="${p.link}" target="_blank" style="font-size:9px;color:#1a6be0;text-decoration:none;padding:4px 8px;border:0.5px solid #1a6be044;border-radius:5px;">Abrir ↗</a>
+          </div>
+        </div>`;
+      }).join("")}
+    `;
+    grid.appendChild(expCard);
+  }
+
   const topCard = document.createElement("div");
   topCard.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:14px;padding:16px;grid-column:1/-1;";
   const maxRevenue = dashData.top10mes[0]?.revenue || 1;
