@@ -376,10 +376,20 @@ const FISCAL_EVENTS = [
 let dashData = null;
 let dashLoading = false;
 
+let dashExperiencia = null;
+async function fetchExperiencia() {
+  try {
+    const token = state.ml_token_filial?.access_token;
+    if(!token) return;
+    const res = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${token}&action=experiencia`);
+    const data = await res.json();
+    if(data.ok) { dashExperiencia = data; render(); }
+  } catch(e) { console.warn("Experiência de compra:", e.message); }
+}
+
 async function fetchDashboard() {
   if(dashLoading) return;
   dashLoading = true;
-  // Timeout de segurança — reseta se travar por mais de 30s
   const loadingTimeout = setTimeout(() => { dashLoading = false; }, 30000);
   render();
   try {
@@ -428,6 +438,8 @@ async function fetchDashboard() {
     };
     // Expor dados para o claude-chat.js (escopo externo)
     window._dashData = dashData;
+    // Buscar experiência em background (mais lento — não bloqueia)
+    if(!dashExperiencia) fetchExperiencia();
   } catch(e) {
     dashData = { erro: e.message };
   }
