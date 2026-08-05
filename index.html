@@ -263,16 +263,16 @@ function setupIdentityScreen() {
   const ov = document.createElement("div");
   ov.id = "digoo-overlay";
   ov.style.cssText = "position:fixed;inset:0;background:#000;display:flex;z-index:99999;font-family:Inter,sans-serif;";
-  document.querySelector('header') && (document.querySelector('header').style.display = 'none');
-  document.querySelector('footer') && (document.querySelector('footer').style.display = 'none');
+  const _hdr = document.querySelector('header'); if(_hdr) _hdr.style.visibility='hidden';
+  const _ftr = document.querySelector('footer'); if(_ftr) _ftr.style.visibility='hidden';
   document.body.appendChild(ov);
 
   function closeOverlay(name) {
     currentUser = name;
     localStorage.setItem(STORAGE_KEY, name);
     ov.remove();
-    document.querySelector('header') && (document.querySelector('header').style.display = '');
-    document.querySelector('footer') && (document.querySelector('footer').style.display = '');
+    const _hdr2 = document.querySelector('header'); if(_hdr2) _hdr2.style.visibility='';
+    const _ftr2 = document.querySelector('footer'); if(_ftr2) _ftr2.style.visibility='';
     requestNotif();
     render();
   }
@@ -319,7 +319,7 @@ function setupIdentityScreen() {
   // SELEÇÃO
   function renderSelecao() {
     ov.innerHTML = renderLeft() +
-      '<div style="flex:0 0 30%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 40px;min-height:100vh;">' +
+      '<div style="flex:0 0 30%;display:flex;flex-direction:column;justify-content:center;padding:32px 40px;min-height:100vh;">' +
         '<div style="font-size:11px;color:#444;margin-bottom:16px;font-family:Inter,sans-serif;">Quem está acessando?</div>' +
         '<div id="ov-admin" style="border-left:2px solid #fff;padding:12px 16px;background:#0f0f0f;border-radius:0 9px 9px 0;display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:2px;">' +
           '<div>' +
@@ -364,20 +364,20 @@ function setupIdentityScreen() {
 
   function renderPin() {
     ov.innerHTML = renderLeft() +
-      '<div style="flex:0 0 30%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 40px;min-height:100vh;">' +
+      '<div style="flex:0 0 30%;display:flex;flex-direction:column;justify-content:center;padding:32px 40px;min-height:100vh;">' +
         '<div id="ov-back" style="font-size:11px;color:#333;cursor:pointer;margin-bottom:20px;">← voltar</div>' +
-        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;width:200px;">' +
+        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">' +
           '<div style="width:36px;height:36px;border-radius:50%;background:#1a1a1a;border:1px solid #333;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;">DG</div>' +
           '<div>' +
             '<div style="font-size:14px;font-weight:700;color:#fff;">Diogo</div>' +
             '<div style="font-size:11px;color:#444;">Digite seu PIN</div>' +
           '</div>' +
         '</div>' +
-        '<div id="ov-dots" style="display:flex;gap:10px;margin-bottom:20px;width:200px;">' +
+        '<div id="ov-dots" style="display:flex;gap:10px;margin-bottom:20px;justify-content:center;">' +
           [0,1,2,3,4,5].map(()=>'<div class="ovdot" style="width:10px;height:10px;border-radius:50%;background:#1e1e1e;border:1px solid #333;transition:all .1s;"></div>').join('') +
         '</div>' +
         '<div id="ov-err" style="font-size:11px;color:#e91e8c;min-height:16px;margin-bottom:10px;"></div>' +
-        '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-width:200px;">' +
+        '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;width:200px;margin:0 auto;">' +
           [1,2,3,4,5,6,7,8,9,"⌫",0,"→"].map(k =>
             '<div class="ov-key" data-k="' + k + '" style="background:#0f0f0f;border:1px solid #1a1a1a;border-radius:7px;height:44px;display:flex;align-items:center;justify-content:center;font-size:' + (k==="⌫"||k==="→"?"12":"15") + 'px;color:' + (k==="→"?"#2dce89":k==="⌫"?"#555":"#888") + ';cursor:pointer;font-weight:500;user-select:none;">' + k + '</div>'
           ).join('') +
@@ -408,21 +408,6 @@ function setupIdentityScreen() {
       }
     }
 
-    document.addEventListener('keydown', function _pinKbd(e) {
-      if(!document.getElementById('ov-dots')) { document.removeEventListener('keydown', _pinKbd); return; }
-      document.getElementById("ov-err").textContent = "";
-      if(e.key >= '0' && e.key <= '9' && entered.length < 6) {
-        entered += e.key;
-        updateDots();
-        if(entered.length === 6) checkPin();
-      } else if(e.key === 'Backspace') {
-        entered = entered.slice(0,-1);
-        updateDots();
-      } else if(e.key === 'Enter') {
-        checkPin();
-      }
-    });
-
     document.querySelectorAll(".ov-key").forEach(el => {
       el.onclick = () => {
         const k = el.dataset.k;
@@ -439,6 +424,21 @@ function setupIdentityScreen() {
         updateDots();
       };
     });
+
+    // Teclado físico
+    function _pinKbd(e) {
+      if(!document.getElementById('ov-dots')) { document.removeEventListener('keydown', _pinKbd); return; }
+      document.getElementById("ov-err").textContent = "";
+      if(e.key >= '0' && e.key <= '9' && entered.length < 6) {
+        entered += e.key; updateDots();
+        if(entered.length === 6) checkPin();
+      } else if(e.key === 'Backspace') {
+        entered = entered.slice(0,-1); updateDots();
+      } else if(e.key === 'Enter') {
+        checkPin();
+      }
+    }
+    document.addEventListener('keydown', _pinKbd);
   }
 
   renderSelecao();
