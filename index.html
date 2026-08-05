@@ -301,7 +301,7 @@ function setupIdentityScreen() {
 
   const screen = document.getElementById("identity-screen");
   screen.innerHTML = "";
-  screen.style.cssText = "position:fixed;inset:0;background:#000;display:flex;flex-direction:"+(_isMobile?"column":"row")+";height:100%;width:100%;z-index:99999;font-family:Inter,sans-serif;overflow:hidden;";
+  screen.style.cssText = "position:fixed;inset:0;background:#000;z-index:99999;font-family:Inter,sans-serif;overflow:hidden;";
 
   function loginAs(name) {
     currentUser = name;
@@ -323,7 +323,7 @@ function setupIdentityScreen() {
     if(_isMobile) {
       d.style.cssText = "width:100%;height:180px;position:relative;overflow:hidden;border-bottom:1px solid #141414;flex-shrink:0;";
     } else {
-      d.style.cssText = "flex:0 0 70%;position:relative;overflow:hidden;border-right:1px solid #141414;height:100vh;";
+      d.style.cssText = "position:absolute;inset:0;right:320px;overflow:hidden;border-right:1px solid #141414;";
     }
     const brandSize = _isMobile ? "52px" : "clamp(72px,8vw,120px)";
     const brandBottom = _isMobile ? "16px" : "36px";
@@ -377,16 +377,16 @@ function setupIdentityScreen() {
     screen.appendChild(buildLeft());
     const r = document.createElement("div");
     r.style.cssText = _isMobile
-      ? "flex:1;width:100%;display:flex;flex-direction:column;justify-content:center;overflow-y:auto;box-sizing:border-box;"
-      : "flex:0 0 30%;display:flex;flex-direction:column;justify-content:center;height:100vh;overflow-y:auto;";
+      ? "position:absolute;inset:0;top:40vh;display:flex;flex-direction:column;justify-content:center;overflow-y:auto;box-sizing:border-box;padding:20px;"
+      : "position:absolute;right:0;top:0;width:320px;height:100vh;display:flex;flex-direction:column;justify-content:center;overflow-y:auto;background:#000;border-left:1px solid #141414;";
 
-    const W = _isMobile ? "min(260px,80vw)" : "220px";
+    const W = "260px";
     const keys = [1,2,3,4,5,6,7,8,9,"\u232b",0,"\u2192"].map(k=>
       '<div class="pk" data-k="'+k+'" style="background:#0f0f0f;border:1px solid #1a1a1a;border-radius:7px;height:44px;display:flex;align-items:center;justify-content:center;font-size:'+(k==="⌫"||k==="→"?"12":"15")+'px;color:'+(k==="→"?"#2dce89":k==="⌫"?"#555":"#888")+';cursor:pointer;font-weight:500;font-family:Inter,sans-serif;">'+k+'</div>'
     ).join("");
 
     const inner = document.createElement("div");
-    inner.style.cssText = "display:flex;flex-direction:column;width:"+W+";margin:0 auto;padding:32px 20px;box-sizing:border-box;";
+    inner.style.cssText = "display:flex;flex-direction:column;width:260px;margin:0 auto;";
     inner.innerHTML =
       '<div id="pk-back" style="font-size:11px;color:#333;cursor:pointer;margin-bottom:16px;font-family:Inter,sans-serif;">← voltar</div>'
       +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">'
