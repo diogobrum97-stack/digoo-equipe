@@ -205,7 +205,7 @@ function overdueBadgeHtml(task){
   const label = taskOverdueLabel(task);
   if(!label) return "";
   const pc = themePrio(task.prio);
-  return `<span style="background:${pc}18;color:${pc};border:1px solid ${pc}77;border-radius:4px;padding:4px 10px;font-size:9px;letter-spacing:0.5px;font-weight:600;box-shadow:0 0 4px ${pc}55;flex-shrink:0;">${label}</span>`;
+  return `<span style="background:${pc}18;color:${pc};border:1px solid ${pc}77;border-radius:4px;padding:4px 10px;font-size:11px;letter-spacing:0.5px;font-weight:600;box-shadow:0 0 4px ${pc}55;flex-shrink:0;">${label}</span>`;
 }
 
 function themeColor(name) {
@@ -475,7 +475,7 @@ function renderDashboard(panel, color) {
     err.textContent = dashData?.erro || "Erro ao carregar";
     const retryBtn = document.createElement("button");
     retryBtn.textContent = "↻ Tentar novamente";
-    retryBtn.style.cssText = "display:block;margin:12px auto;background:none;border:0.5px solid var(--border2);color:var(--text3);border-radius:6px;padding:6px 14px;font-size:10px;cursor:pointer;font-family:inherit;";
+    retryBtn.style.cssText = "display:block;margin:12px auto;background:none;border:0.5px solid var(--border2);color:var(--text3);border-radius:6px;padding:6px 14px;font-size:11px;cursor:pointer;font-family:inherit;";
     retryBtn.addEventListener("click", () => { dashData = null; fetchDashboard(); });
     err.appendChild(retryBtn);
     panel.appendChild(err);
@@ -493,7 +493,7 @@ function renderDashboard(panel, color) {
 
   const header = document.createElement("div");
   header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;";
-  header.innerHTML = `<div><div style="font-size:20px;font-weight:700;color:#fff;letter-spacing:-0.3px;">${saudacao}, Diogo 👋</div><div style="font-size:9px;letter-spacing:1.5px;color:#999;text-transform:uppercase;margin-top:3px;">${dias[now.getDay()]} · ${now.getDate()} ${meses[now.getMonth()]} ${now.getFullYear()}</div></div><div style="display:flex;align-items:center;gap:10px;"><div style="font-size:10px;font-weight:600;color:#5e72e4;">${dashData.hora}</div><button onclick="dashData=null;fetchDashboard();" style="background:none;border:none;color:#444;font-size:16px;cursor:pointer;padding:4px;line-height:1;transition:color .15s;" onmouseover="this.style.color='#aaa'" onmouseout="this.style.color='#444'" title="Atualizar">↻</button></div>`;
+  header.innerHTML = `<div><div style="font-size:20px;font-weight:700;color:#fff;letter-spacing:-0.3px;">${saudacao}, Diogo 👋</div><div style="font-size:11px;color:#666;margin-top:3px;font-family:'Inter',sans-serif;">${dias[now.getDay()]} · ${now.getDate()} ${meses[now.getMonth()]} ${now.getFullYear()}</div></div><div style="display:flex;align-items:center;gap:10px;"><div style="font-size:11px;font-weight:600;color:#5e72e4;">${dashData.hora}</div><button onclick="dashData=null;fetchDashboard();" style="background:none;border:none;color:#444;font-size:16px;cursor:pointer;padding:4px;line-height:1;transition:color .15s;" onmouseover="this.style.color='#aaa'" onmouseout="this.style.color='#444'" title="Atualizar">↻</button></div>`;
   wrap.appendChild(header);
 
   const grid = document.createElement("div");
@@ -506,13 +506,13 @@ function renderDashboard(panel, color) {
     if(!d) return `<div style="text-align:center;padding:20px;color:var(--text3);font-size:11px;">Token não conectado</div>`;
     return `
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;">
-        <div style="background:var(--bg2);border-radius:10px;padding:12px;"><div style="font-size:10px;color:#666;margin-bottom:5px;font-family:'Inter',sans-serif;font-weight:500;">Hoje</div><div style="font-size:30px;font-weight:700;color:#fff;margin-bottom:6px;letter-spacing:-1px;font-family:'IBM Plex Mono',monospace;">${fmtFull(d.fatHoje)}</div><div style="padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;font-family:'Inter',sans-serif;display:inline-block;background:rgba(45,206,137,.13);color:#2dce89;border:1px solid rgba(45,206,137,.3);">↑ EM TEMPO REAL</div></div>
-        <div style="background:var(--bg2);border-radius:10px;padding:12px;"><div style="font-size:10px;color:#666;margin-bottom:5px;font-family:'Inter',sans-serif;font-weight:500;">Projeção</div><div style="font-size:30px;font-weight:700;color:#fff;margin-bottom:6px;letter-spacing:-1px;font-family:'IBM Plex Mono',monospace;">${fmt(d.projecaoDia)}</div><div style="padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;font-family:'Inter',sans-serif;display:inline-block;background:rgba(255,255,255,.08);color:#aaa;border:1px solid rgba(255,255,255,.18);">${percDia}% DO DIA</div></div>
-        <div style="background:var(--bg2);border-radius:10px;padding:12px;"><div style="font-size:10px;color:#666;margin-bottom:5px;font-family:'Inter',sans-serif;font-weight:500;">Mês atual</div><div style="font-size:30px;font-weight:700;color:#fff;margin-bottom:6px;letter-spacing:-1px;font-family:'IBM Plex Mono',monospace;">${fmt(d.fatMes)}</div><div style="padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;font-family:'Inter',sans-serif;display:inline-block;background:rgba(45,206,137,.13);color:#2dce89;border:1px solid rgba(45,206,137,.3);">${d.pedidosMes} PEDIDOS</div></div>
+        <div style="background:var(--bg2);border-radius:10px;padding:12px;"><div style="font-size:11px;color:#666;margin-bottom:5px;font-family:'Inter',sans-serif;font-weight:500;">Hoje</div><div style="font-size:30px;font-weight:700;color:#fff;margin-bottom:6px;letter-spacing:-1px;font-family:'IBM Plex Mono',monospace;">${fmtFull(d.fatHoje)}</div><div style="padding:2px 9px;border-radius:4px;font-size:11px;font-weight:600;font-family:'Inter',sans-serif;display:inline-block;background:rgba(45,206,137,.13);color:#2dce89;border:1px solid rgba(45,206,137,.3);">↑ EM TEMPO REAL</div></div>
+        <div style="background:var(--bg2);border-radius:10px;padding:12px;"><div style="font-size:11px;color:#666;margin-bottom:5px;font-family:'Inter',sans-serif;font-weight:500;">Projeção</div><div style="font-size:30px;font-weight:700;color:#fff;margin-bottom:6px;letter-spacing:-1px;font-family:'IBM Plex Mono',monospace;">${fmt(d.projecaoDia)}</div><div style="padding:2px 9px;border-radius:4px;font-size:11px;font-weight:600;font-family:'Inter',sans-serif;display:inline-block;background:rgba(255,255,255,.08);color:#aaa;border:1px solid rgba(255,255,255,.18);">${percDia}% DO DIA</div></div>
+        <div style="background:var(--bg2);border-radius:10px;padding:12px;"><div style="font-size:11px;color:#666;margin-bottom:5px;font-family:'Inter',sans-serif;font-weight:500;">Mês atual</div><div style="font-size:30px;font-weight:700;color:#fff;margin-bottom:6px;letter-spacing:-1px;font-family:'IBM Plex Mono',monospace;">${fmt(d.fatMes)}</div><div style="padding:2px 9px;border-radius:4px;font-size:11px;font-weight:600;font-family:'Inter',sans-serif;display:inline-block;background:rgba(45,206,137,.13);color:#2dce89;border:1px solid rgba(45,206,137,.3);">${d.pedidosMes} PEDIDOS</div></div>
       </div>
       <div style="background:#1a1a1a;border-radius:99px;height:6px;margin-bottom:20px;"><div style="height:6px;border-radius:99px;background:linear-gradient(90deg,#5e72e4,#11cdef);width:${percDia}%;box-shadow:0 0 10px rgba(17,205,239,0.35);"></div></div>
-      <div style="font-size:9px;font-weight:600;color:#888;font-size:10px;font-weight:500;margin-bottom:12px;padding-top:14px;border-top:1px solid #222;">Mais vendidos hoje</div>
-      ${(d.top5hoje||[]).map((p,i) => `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg2);border-radius:10px;margin-bottom:5px;"><div style="font-size:10px;font-weight:700;color:${i===0?"#f0b400":"#bbb"};width:16px;text-align:center;flex-shrink:0;">${i+1}</div><div style="font-size:10px;font-weight:600;color:#fff;flex:1;">${p.sku||"—"}</div><div style="font-size:9px;color:#777;">${p.qty} un</div><div style="font-size:9px;color:#444;margin:0 4px;">·</div><div style="font-size:11px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">${fmt(p.revenue||0)}</div></div>`).join("")}
+      <div style="font-size:11px;font-weight:500;color:#888;font-family:'Inter',sans-serif;margin-bottom:12px;padding-top:14px;border-top:1px solid #222;">Mais vendidos hoje</div>
+      ${(d.top5hoje||[]).map((p,i) => `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg2);border-radius:10px;margin-bottom:5px;"><div style="font-size:11px;font-weight:700;color:${i===0?"#f0b400":"#bbb"};width:16px;text-align:center;flex-shrink:0;">${i+1}</div><div style="font-size:11px;font-weight:600;color:#fff;flex:1;">${p.sku||"—"}</div><div style="font-size:11px;color:#777;">${p.qty} un</div><div style="font-size:11px;color:#444;margin:0 4px;">·</div><div style="font-size:11px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">${fmt(p.revenue||0)}</div></div>`).join("")}
     `;
   }
 
@@ -524,25 +524,25 @@ function renderDashboard(panel, color) {
     if(!tabFilial || !tabMatriz || !body) return;
     const _vendasAba = window._vendasAba || 'filial';
     if(_vendasAba === 'filial') {
-      tabFilial.style.cssText = "padding:6px 16px;font-size:10px;font-weight:600;cursor:pointer;border-radius:6px;color:#ffffff;background:var(--bg2);border:1px solid #333;transition:all .2s;white-space:nowrap;font-family:'Inter',sans-serif;";
-      tabMatriz.style.cssText = "padding:6px 16px;font-size:10px;font-weight:600;cursor:pointer;border-radius:6px;color:#444;background:transparent;transition:all .2s;white-space:nowrap;font-family:'Inter',sans-serif;";
+      tabFilial.style.cssText = "padding:6px 16px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;color:#ffffff;background:var(--bg2);border:1px solid #333;transition:all .2s;white-space:nowrap;font-family:'Inter',sans-serif;";
+      tabMatriz.style.cssText = "padding:6px 16px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;color:#444;background:transparent;transition:all .2s;white-space:nowrap;font-family:'Inter',sans-serif;";
       body.innerHTML = vendasTabContent({fatHoje:dashData.fatHoje, projecaoDia:dashData.projecaoDia, fatMes:dashData.fatMes, pedidosMes:dashData.pedidosMes, top5hoje:dashData.top5hoje}, dashData.percDia);
     } else {
-      tabFilial.style.cssText = "padding:6px 16px;font-size:10px;font-weight:600;cursor:pointer;border-radius:6px;color:#444;background:transparent;transition:all .2s;white-space:nowrap;font-family:'Inter',sans-serif;";
-      tabMatriz.style.cssText = "padding:6px 16px;font-size:10px;font-weight:600;cursor:pointer;border-radius:6px;color:#ffffff;background:var(--bg2);border:1px solid #333;transition:all .2s;white-space:nowrap;font-family:'Inter',sans-serif;";
+      tabFilial.style.cssText = "padding:6px 16px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;color:#444;background:transparent;transition:all .2s;white-space:nowrap;font-family:'Inter',sans-serif;";
+      tabMatriz.style.cssText = "padding:6px 16px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;color:#ffffff;background:var(--bg2);border:1px solid #333;transition:all .2s;white-space:nowrap;font-family:'Inter',sans-serif;";
       body.innerHTML = vendasTabContent(dashData.matriz, dashData.percDia);
     }
   }
 
   vendasCard.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 16px 0;">
-      <div style="font-size:9px;font-weight:600;color:#888;font-size:10px;font-weight:500;">Vendas Mercado Livre</div>
-      <div style="font-size:8px;color:#444;">${dashData.hora}</div>
+      <div style="font-size:11px;font-weight:500;color:#888;font-family:'Inter',sans-serif;">Vendas Mercado Livre</div>
+      <div style="font-size:11px;color:#444;font-family:'Inter',sans-serif;">${dashData.hora}</div>
     </div>
     <div style="padding:12px 16px 14px;">
       <div style="display:inline-flex;background:#1a1a1a;border-radius:8px;padding:3px;gap:2px;">
-        <div id="dash-aba-filial" onclick="window._vendasAba='filial';window.renderVendasAba();" style="padding:7px 18px;font-size:10px;font-weight:600;letter-spacing:.5px;cursor:pointer;border-radius:8px;color:#ffffff;background:var(--bg2);box-shadow:0 1px 4px rgba(0,0,0,.4);white-space:nowrap;">Filial SP</div>
-        <div id="dash-aba-matriz" onclick="window._vendasAba='matriz';window.renderVendasAba();" style="padding:7px 18px;font-size:10px;font-weight:600;letter-spacing:.5px;cursor:pointer;border-radius:8px;color:#ffffff;white-space:nowrap;">${dashData.matriz ? "Matriz RS" : "Matriz (desconectado)"}</div>
+        <div id="dash-aba-filial" onclick="window._vendasAba='filial';window.renderVendasAba();" style="padding:7px 18px;font-size:11px;font-weight:600;cursor:pointer;border-radius:8px;font-family:'Inter',sans-serif;color:#ffffff;background:var(--bg2);box-shadow:0 1px 4px rgba(0,0,0,.4);white-space:nowrap;">Filial SP</div>
+        <div id="dash-aba-matriz" onclick="window._vendasAba='matriz';window.renderVendasAba();" style="padding:7px 18px;font-size:11px;font-weight:600;cursor:pointer;border-radius:8px;font-family:'Inter',sans-serif;color:#ffffff;white-space:nowrap;">${dashData.matriz ? "Matriz RS" : "Matriz (desconectado)"}</div>
       </div>
     </div>
     <div id="dash-vendas-body" style="padding:0 16px 16px;"></div>
@@ -568,7 +568,7 @@ function renderDashboard(panel, color) {
   const taskCard = document.createElement("div");
   taskCard.style.cssText = "background:linear-gradient(180deg,#252525 0%,#101010 100%);border:1px solid #303030;border-radius:14px;padding:16px;";
   taskCard.innerHTML = `
-    <div style="font-size:9px;font-weight:600;color:#888;font-size:10px;font-weight:500;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;">Minhas tarefas</div>
+    <div style="font-size:11px;font-weight:500;color:#888;font-family:'Inter',sans-serif;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;">Minhas tarefas</div>
     ${[
       {label:"Urgente", count:urgentes, color:"#e91e8c"},
       {label:"Importante", count:importantes, color:"#f0b400"},
@@ -596,15 +596,15 @@ function renderDashboard(panel, color) {
   }).slice(0,3);
   const unidades = estoqueRows.reduce((s,r)=>s+Number(r.aptas||0),0);
   estoqueCard.innerHTML = `
-    <div style="font-size:9px;font-weight:600;color:#888;font-size:10px;font-weight:500;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;">Estoque Full · Filial SP</div>
+    <div style="font-size:11px;font-weight:500;color:#888;font-family:'Inter',sans-serif;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;">Estoque Full · Filial SP</div>
     <div style="font-size:38px;font-weight:700;color:#2dce89;margin-bottom:4px;letter-spacing:-2px;font-family:'IBM Plex Mono',monospace;">${fmtFull(valorTotal)}</div>
-    <div style="font-size:10px;color:#bbb;margin-bottom:14px;">${unidades} unidades · ${estoqueRows.length} SKUs</div>
+    <div style="font-size:11px;color:#bbb;margin-bottom:14px;">${unidades} unidades · ${estoqueRows.length} SKUs</div>
     ${criticos.length > 0 ? criticos.map(r => {
       const v30 = r.vendas30||0;
       const dias = v30>0 ? Math.round(r.aptas/(v30/30)) : 999;
       const cor = dias <= 7 ? "#e91e8c" : "#f0b400";
       return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg2);border-radius:8px;margin-bottom:5px;"><div style="width:7px;height:7px;border-radius:50%;background:${cor};flex-shrink:0;"></div><div style="font-size:11px;font-weight:600;color:#fff;flex:1;">${r.sku}</div><div style="font-size:12px;font-weight:700;color:${cor};">${dias}d</div></div>`;
-    }).join("") : `<div style="font-size:10px;color:#bbb;padding:10px 0;">Nenhum produto crítico ✓</div>`}
+    }).join("") : `<div style="font-size:11px;color:#bbb;padding:10px 0;">Nenhum produto crítico ✓</div>`}
   `;
   grid.appendChild(estoqueCard);
 
@@ -627,12 +627,12 @@ function renderDashboard(panel, color) {
     else if(e.tipo !== "difal") fiscal_agrupado.push(e);
   });
   fiscalCard.innerHTML = `
-    <div style="font-size:9px;font-weight:600;color:#888;font-size:10px;font-weight:500;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;">Calendário fiscal</div>
+    <div style="font-size:11px;font-weight:500;color:#888;font-family:'Inter',sans-serif;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;">Calendário fiscal</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
       ${fiscal_agrupado.slice(0,6).map(e => {
         const cor = e.diff <= 5 ? "#e91e8c" : e.diff <= 14 ? "#f0b400" : "#bbb";
         const dotCor = coresFiscal[e.tipo] || "#bbb";
-        return `<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#181818;border:1px solid #242424;border-radius:10px;"><div style="width:7px;height:7px;border-radius:50%;background:${dotCor};flex-shrink:0;"></div><div style="flex:1;"><div style="font-size:11px;font-weight:600;color:#fff;">${e.nome}</div><div style="font-size:9px;color:#888;margin-top:2px;">Ref. ${String(mes2).padStart(2,"0")}/${ano2}</div></div><div style="font-size:14px;font-weight:700;color:${cor};font-family:'IBM Plex Mono',monospace;">em ${e.diff}d</div></div>`;
+        return `<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#181818;border:1px solid #242424;border-radius:10px;"><div style="width:7px;height:7px;border-radius:50%;background:${dotCor};flex-shrink:0;"></div><div style="flex:1;"><div style="font-size:11px;font-weight:600;color:#fff;">${e.nome}</div><div style="font-size:11px;color:#888;margin-top:2px;">Ref. ${String(mes2).padStart(2,"0")}/${ano2}</div></div><div style="font-size:14px;font-weight:700;color:${cor};font-family:'IBM Plex Mono',monospace;">em ${e.diff}d</div></div>`;
       }).join("")}
     </div>
   `;
@@ -644,21 +644,21 @@ function renderDashboard(panel, color) {
     const expCard = document.createElement("div");
     expCard.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:14px;padding:16px;grid-column:1/-1;";
     expCard.innerHTML = `
-      <div style="font-size:9px;font-weight:600;color:#888;font-size:10px;font-weight:500;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-size:11px;font-weight:500;color:#888;font-family:'Inter',sans-serif;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;">
         <span>Experiência de compra · Filial SP</span>
-        <span style="font-size:9px;color:#e91e8c;font-weight:700;">${dashExperiencia.problemas.length} com problema</span>
+        <span style="font-size:11px;color:#e91e8c;font-weight:700;">${dashExperiencia.problemas.length} com problema</span>
       </div>
       ${dashExperiencia.problemas.map(p => {
         const cor = p.color === "red" ? "#e91e8c" : "#f0b400";
         return `<div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--bg2);border-radius:10px;margin-bottom:6px;">
           <div style="width:8px;height:8px;border-radius:50%;background:${cor};flex-shrink:0;"></div>
           <div style="flex:1;min-width:0;">
-            <div style="font-size:10px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.title}</div>
-            <div style="font-size:9px;color:#bbb;margin-top:2px;">${p.actions.join(" · ")}</div>
+            <div style="font-size:11px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.title}</div>
+            <div style="font-size:11px;color:#bbb;margin-top:2px;">${p.actions.join(" · ")}</div>
           </div>
           <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
-            <div style="font-size:10px;font-weight:700;color:${cor};">${p.level}</div>
-            <a href="${p.link}" target="_blank" style="font-size:9px;color:#5e72e4;text-decoration:none;padding:4px 8px;border:0.5px solid #5e72e444;border-radius:5px;">Abrir ↗</a>
+            <div style="font-size:11px;font-weight:700;color:${cor};">${p.level}</div>
+            <a href="${p.link}" target="_blank" style="font-size:11px;color:#5e72e4;text-decoration:none;padding:4px 8px;border:0.5px solid #5e72e444;border-radius:5px;">Abrir ↗</a>
           </div>
         </div>`;
       }).join("")}
@@ -670,9 +670,9 @@ function renderDashboard(panel, color) {
   topCard.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:14px;padding:16px;grid-column:1/-1;";
   const maxRevenue = dashData.top10mes[0]?.revenue || 1;
   topCard.innerHTML = `
-    <div style="font-size:9px;font-weight:600;color:#888;font-size:10px;font-weight:500;margin-bottom:14px;">Top 10 produtos · mês atual</div>
+    <div style="font-size:11px;font-weight:500;color:#888;font-family:'Inter',sans-serif;margin-bottom:14px;">Top 10 produtos · mês atual</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
-      ${dashData.top10mes.map((p,i) => `<div style="display:flex;align-items:center;gap:10px;padding:9px 10px;background:var(--bg2);border-radius:8px;"><div style="font-size:10px;font-weight:700;color:${i===0?"#f0b400":"#ccc"};width:14px;text-align:center;flex-shrink:0;">${i+1}</div><div style="flex:1;min-width:0;"><div style="font-size:10px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.sku||"—"}</div><div style="background:var(--bg3);border-radius:99px;height:2px;margin-top:4px;"><div style="height:2px;border-radius:99px;background:${i===0?"#f0b400":"#5e72e4"};width:${Math.round((p.revenue/maxRevenue)*100)}%;"></div></div></div><div style="text-align:right;flex-shrink:0;min-width:52px;"><div style="font-size:9px;color:#bbb;">${p.qty} un</div><div style="font-size:10px;font-weight:600;color:#ccc;">${fmt(p.revenue||0)}</div></div></div>`).join("")}
+      ${dashData.top10mes.map((p,i) => `<div style="display:flex;align-items:center;gap:10px;padding:9px 10px;background:var(--bg2);border-radius:8px;"><div style="font-size:11px;font-weight:700;color:${i===0?"#f0b400":"#ccc"};width:14px;text-align:center;flex-shrink:0;">${i+1}</div><div style="flex:1;min-width:0;"><div style="font-size:11px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.sku||"—"}</div><div style="background:var(--bg3);border-radius:99px;height:2px;margin-top:4px;"><div style="height:2px;border-radius:99px;background:${i===0?"#f0b400":"#5e72e4"};width:${Math.round((p.revenue/maxRevenue)*100)}%;"></div></div></div><div style="text-align:right;flex-shrink:0;min-width:52px;"><div style="font-size:11px;color:#bbb;">${p.qty} un</div><div style="font-size:11px;font-weight:600;color:#ccc;">${fmt(p.revenue||0)}</div></div></div>`).join("")}
     </div>
   `;
   grid.appendChild(topCard);
@@ -738,7 +738,7 @@ function renderCalFiscal() {
   panel.style.fontFamily = "'Inter', sans-serif";
   panel.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:0.5px solid #1a1a1a;">
-      <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#ccc;text-transform:uppercase;">Calendário Fiscal</div>
+      <div style="font-size:11px;font-weight:600;letter-spacing:2px;color:#ccc;text-transform:uppercase;">Calendário Fiscal</div>
       <div style="display:flex;align-items:center;gap:8px;">
         <button onclick="calMesOffset--;renderCalFiscal()" style="background:none;border:none;color:#999;font-size:13px;cursor:pointer;padding:2px 5px;">‹</button>
         <div style="font-size:11px;color:#ccc;">${MESES[mes].slice(0,3)} ${ano}</div>
@@ -757,7 +757,7 @@ function renderCalFiscal() {
           const isHoje = d===hoje.getDate() && mes===hoje.getMonth() && ano===hoje.getFullYear();
           const evs = eventosPorDia[d] || [];
           const cor = evs.length > 0 ? CAL_CORES[evs[0].tipo] : null;
-          return `<div style="height:26px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:4px;font-size:10px;cursor:pointer;position:relative;${isHoje?"background:#5e72e4;color:#fff;font-weight:700;":"color:"+(evs.length?"#ddd":"#888")+";"}">
+          return `<div style="height:26px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:4px;font-size:11px;cursor:pointer;position:relative;${isHoje?"background:#5e72e4;color:#fff;font-weight:700;":"color:"+(evs.length?"#ddd":"#888")+";"}">
             ${d}
             ${cor && !isHoje ? `<div style="width:3px;height:3px;border-radius:50%;background:${cor};position:absolute;bottom:2px;"></div>` : ""}
           </div>`;
@@ -772,13 +772,13 @@ function renderCalFiscal() {
         const diasCor = e.diff < 0 ? "#e91e8c" : e.diff <= 7 ? "#e91e8c" : e.diff <= 14 ? "#f0b400" : "#888";
         const diasTxt = e.diff < 0 ? `${Math.abs(e.diff)}d atrás` : e.diff === 0 ? "hoje" : `em ${e.diff}d`;
         return `<div style="display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:0.5px solid #111;">
-          <div style="font-size:10px;font-weight:700;color:#aaa;width:18px;text-align:center;flex-shrink:0;">${e.dia}</div>
+          <div style="font-size:11px;font-weight:700;color:#aaa;width:18px;text-align:center;flex-shrink:0;">${e.dia}</div>
           <div style="width:6px;height:6px;border-radius:50%;background:${cor};flex-shrink:0;"></div>
           <div style="flex:1;">
             <div style="font-size:11px;font-weight:500;color:#ddd;">${e.nome}</div>
-            <div style="font-size:9px;color:#888;margin-top:1px;">Ref. ${String(mes).padStart(2,"0")}/${ano}</div>
+            <div style="font-size:11px;color:#888;margin-top:1px;">Ref. ${String(mes).padStart(2,"0")}/${ano}</div>
           </div>
-          <div style="font-size:9px;font-weight:600;color:${diasCor};white-space:nowrap;">${diasTxt}</div>
+          <div style="font-size:11px;font-weight:600;color:${diasCor};white-space:nowrap;">${diasTxt}</div>
         </div>`;
       }).join("")}
     </div>
@@ -928,7 +928,7 @@ function renderMLFullscreen() {
     fsSubtabs.innerHTML = "";
     ["devolucoes","custos"].forEach(tab => {
       const btn = document.createElement("button");
-      btn.style.cssText = `padding:6px 14px;background:none;border:none;font-family:inherit;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:${diogomltab===tab?"#f0b400":"var(--text3)"};border-bottom:2px solid ${diogomltab===tab?"#f0b400":"transparent"};transition:all 0.15s;`;
+      btn.style.cssText = `padding:6px 14px;background:none;border:none;font-family:inherit;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:${diogomltab===tab?"#f0b400":"var(--text3)"};border-bottom:2px solid ${diogomltab===tab?"#f0b400":"transparent"};transition:all 0.15s;`;
       btn.textContent = tab==="devolucoes"?"Devoluções":"Custo de Devoluções";
       btn.addEventListener("click",()=>{ diogomltab=tab; renderMLFullscreen(); });
       fsSubtabs.appendChild(btn);
@@ -999,7 +999,7 @@ async function fetchFinanceiro(month){
 function renderDiogoML(container, color) {
   // Botão discreto com logo ML
   const mlBtn = document.createElement("button");
-  mlBtn.style.cssText = `display:flex;align-items:center;gap:6px;background:none;border:1px solid #f0b40033;border-radius:5px;padding:5px 12px;cursor:pointer;font-family:inherit;font-size:10px;color:#f0b400;letter-spacing:1px;margin-top:12px;transition:all 0.15s;`;
+  mlBtn.style.cssText = `display:flex;align-items:center;gap:6px;background:none;border:1px solid #f0b40033;border-radius:5px;padding:5px 12px;cursor:pointer;font-family:inherit;font-size:11px;color:#f0b400;letter-spacing:1px;margin-top:12px;transition:all 0.15s;`;
   mlBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="4" fill="#f0b400" opacity="0.15"/><text x="16" y="22" text-anchor="middle" font-size="14" font-weight="700" fill="#f0b400">ML</text></svg> MERCADO LIVRE`;
   mlBtn.addEventListener("mouseenter", () => { mlBtn.style.background="#f0b40011"; });
   mlBtn.addEventListener("mouseleave", () => { mlBtn.style.background="none"; });
@@ -1021,7 +1021,7 @@ function renderDiogoML(container, color) {
   subTabs.style.cssText = "display:flex;gap:0;border-bottom:1px solid var(--sep);margin-bottom:14px;";
   ["devolucoes","custos"].forEach(tab => {
     const btn = document.createElement("button");
-    btn.style.cssText = `padding:6px 14px;background:none;border:none;font-family:inherit;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:${diogomltab===tab?"#f0b400":"var(--text3)"};border-bottom:2px solid ${diogomltab===tab?"#f0b400":"transparent"};margin-bottom:-1px;transition:all 0.15s;`;
+    btn.style.cssText = `padding:6px 14px;background:none;border:none;font-family:inherit;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:${diogomltab===tab?"#f0b400":"var(--text3)"};border-bottom:2px solid ${diogomltab===tab?"#f0b400":"transparent"};margin-bottom:-1px;transition:all 0.15s;`;
     btn.textContent = tab === "devolucoes" ? "Devoluções" : "Custo de Devoluções";
     btn.addEventListener("click", () => { diogomltab = tab; render(); });
     subTabs.appendChild(btn);
@@ -1278,7 +1278,7 @@ function renderCalcIpiPanel(container, task){
     const manualBox = document.createElement("div");
     manualBox.style.cssText = "display:flex;gap:6px;margin-bottom:12px;align-items:flex-end;";
     const campo = document.createElement("div"); campo.style.flex="1";
-    campo.innerHTML = '<div style="font-size:9px;color:var(--text3);margin-bottom:4px;">Número da NF (digite se não achou automático)</div>';
+    campo.innerHTML = '<div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Número da NF (digite se não achou automático)</div>';
     const inpNumero = document.createElement("input");
     inpNumero.placeholder = "ex: 020061"; inpNumero.value = calc.nfUsada || "";
     inpNumero.style.cssText = "width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:6px 8px;color:var(--text);font-family:inherit;font-size:12px;";
@@ -1295,7 +1295,7 @@ function renderCalcIpiPanel(container, task){
   inputsRow.style.cssText = "display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;";
   const campoInput = (label, valor, onInput) => {
     const box = document.createElement("div"); box.style.cssText="flex:1;min-width:120px;";
-    const lbl = document.createElement("div"); lbl.style.cssText="font-size:9px;color:var(--text3);margin-bottom:4px;"; lbl.textContent=label;
+    const lbl = document.createElement("div"); lbl.style.cssText="font-size:11px;color:var(--text3);margin-bottom:4px;"; lbl.textContent=label;
     const inp = document.createElement("input"); inp.type="number"; inp.value=valor;
     inp.style.cssText="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:5px 7px;color:#f0b400;font-family:inherit;font-size:12px;";
     inp.addEventListener("input", ()=>{ onInput(parseFloat(inp.value)||0); recalcular(); });
@@ -1333,12 +1333,12 @@ function renderCalcIpiPanel(container, task){
   if(!calc.linhaExpandida) calc.linhaExpandida = null; // índice do produto expandido pra editar NCM/alíquota, ou null
 
   const avisoBox = document.createElement("div");
-  avisoBox.style.cssText = "margin-top:8px;font-size:10px;color:#f0b400;display:none;";
+  avisoBox.style.cssText = "margin-top:8px;font-size:11px;color:#f0b400;display:none;";
   wrap.appendChild(avisoBox);
 
   const addBtn = document.createElement("button");
   addBtn.textContent = "+ adicionar produto";
-  addBtn.style.cssText = "margin-top:8px;width:100%;background:none;border:1px dashed #00dfc366;color:#00dfc3;border-radius:5px;padding:6px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:0.5px;";
+  addBtn.style.cssText = "margin-top:8px;width:100%;background:none;border:1px dashed #00dfc366;color:#00dfc3;border-radius:5px;padding:6px;font-size:11px;cursor:pointer;font-family:inherit;letter-spacing:0.5px;";
   addBtn.addEventListener("click", ()=>{ calc.produtos.push({sku:"",produto:"",qtd:0,valorNf:0,ncm:"",precoVenda:null,aliquotaValor:null,automatico:false}); render(); });
   wrap.appendChild(addBtn);
 
@@ -1347,7 +1347,7 @@ function renderCalcIpiPanel(container, task){
   const totalSpan = document.createElement("span");
   totalSpan.style.cssText = "font-size:18px;font-weight:600;color:#00dfc3;";
   totalSpan.textContent = "R$ 0,00";
-  totalRow.innerHTML = `<span style="font-size:9px;color:var(--text3);letter-spacing:1px;">TOTAL IPI E NOTA</span>`;
+  totalRow.innerHTML = `<span style="font-size:11px;color:var(--text3);letter-spacing:1px;">TOTAL IPI E NOTA</span>`;
   totalRow.appendChild(totalSpan);
   wrap.appendChild(totalRow);
 
@@ -1360,13 +1360,13 @@ function renderCalcIpiPanel(container, task){
 
       const tdSku = document.createElement("td"); tdSku.style.cssText="padding:6px 3px;";
       const aliqTextoHtml = (val) => val==null
-        ? `<span class="aliqBadge" style="color:#e91e8c;font-size:9px;">sem %</span>`
-        : `<span class="aliqBadge" style="color:var(--text3);font-size:9px;">${(val*100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}%</span>`;
+        ? `<span class="aliqBadge" style="color:#e91e8c;font-size:11px;">sem %</span>`
+        : `<span class="aliqBadge" style="color:var(--text3);font-size:11px;">${(val*100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}%</span>`;
       const seta = calc.linhaExpandida===i ? "▾" : "▸";
       if(p.automatico){
-        tdSku.innerHTML = `<div style="color:#00dfc3;font-weight:600;">${p.sku} <span style="color:var(--border2);">·</span> ${aliqTextoHtml(p.aliquotaValor)} <span style="color:var(--text3);font-size:9px;">${seta}</span></div><div style="color:var(--text3);font-size:9.5px;margin-top:2px;">${p.produto||""}</div>`;
+        tdSku.innerHTML = `<div style="color:#00dfc3;font-weight:600;">${p.sku} <span style="color:var(--border2);">·</span> ${aliqTextoHtml(p.aliquotaValor)} <span style="color:var(--text3);font-size:11px;">${seta}</span></div><div style="color:var(--text3);font-size:9.5px;margin-top:2px;">${p.produto||""}</div>`;
       }else{
-        tdSku.innerHTML = `<div style="color:#00dfc3;font-weight:600;">· ${aliqTextoHtml(p.aliquotaValor)} <span style="color:var(--text3);font-size:9px;">${seta}</span></div>`;
+        tdSku.innerHTML = `<div style="color:#00dfc3;font-weight:600;">· ${aliqTextoHtml(p.aliquotaValor)} <span style="color:var(--text3);font-size:11px;">${seta}</span></div>`;
         const inpSku=document.createElement("input"); inpSku.value=p.sku; inpSku.placeholder="SKU";
         inpSku.style.cssText="width:100px;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:3px 5px;color:#00dfc3;font-family:inherit;font-size:11px;margin-top:2px;";
         inpSku.addEventListener("click",e=>e.stopPropagation());
@@ -1426,10 +1426,10 @@ function renderCalcIpiPanel(container, task){
         tdDet.colSpan = 7;
         tdDet.style.cssText = "padding:10px 12px;";
         tdDet.innerHTML = `<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
-          <div><div style="font-size:9px;color:var(--text3);margin-bottom:3px;">NCM</div><div style="font-size:11px;color:var(--text2);">${p.ncm||"—"}</div></div>
+          <div><div style="font-size:11px;color:var(--text3);margin-bottom:3px;">NCM</div><div style="font-size:11px;color:var(--text2);">${p.ncm||"—"}</div></div>
         </div>`;
         const campoAliq = document.createElement("div");
-        const lblAliq = document.createElement("div"); lblAliq.style.cssText="font-size:9px;color:var(--text3);margin-bottom:3px;"; lblAliq.textContent="ALÍQUOTA %";
+        const lblAliq = document.createElement("div"); lblAliq.style.cssText="font-size:11px;color:var(--text3);margin-bottom:3px;"; lblAliq.textContent="ALÍQUOTA %";
         const inpAliqDet = document.createElement("input"); inpAliqDet.type="number"; inpAliqDet.step="0.01"; inpAliqDet.placeholder="digitar";
         inpAliqDet.value = p.aliquotaValor!=null ? (p.aliquotaValor*100) : "";
         inpAliqDet.style.cssText = "width:80px;background:var(--bg3);border:1px solid #f0b40066;border-radius:4px;padding:5px 8px;color:#f0b400;font-family:inherit;font-size:12px;";
@@ -1455,8 +1455,8 @@ function renderCalcIpiPanel(container, task){
     // Rodapé: total de SKUs e total de unidades
     const totalUnidades = calc.produtos.reduce((s,p)=>s+(p.qtd||0),0);
     tfoot.innerHTML = `<tr style="border-top:1px solid var(--border2);position:sticky;bottom:0;background:var(--bg3);">
-      <td style="padding:8px 3px;color:var(--text2);font-size:10px;font-weight:600;">${calc.produtos.length} SKUs</td>
-      <td style="padding:8px 3px;text-align:center;color:var(--text);font-size:10px;font-weight:600;">${totalUnidades.toLocaleString("pt-BR")} un.</td>
+      <td style="padding:8px 3px;color:var(--text2);font-size:11px;font-weight:600;">${calc.produtos.length} SKUs</td>
+      <td style="padding:8px 3px;text-align:center;color:var(--text);font-size:11px;font-weight:600;">${totalUnidades.toLocaleString("pt-BR")} un.</td>
       <td colspan="5"></td>
     </tr>`;
   }
@@ -1502,13 +1502,13 @@ function renderCalcIpiPanel(container, task){
       const card = document.createElement("div");
       card.style.cssText = "flex:1;min-width:130px;background:var(--bg);border-radius:8px;overflow:hidden;";
       card.innerHTML = `
-        <div style="background:#000;padding:6px;text-align:center;font-size:10px;font-weight:600;color:#fff;">${(aliq*100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}%</div>
+        <div style="background:#000;padding:6px;text-align:center;font-size:11px;font-weight:600;color:#fff;">${(aliq*100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}%</div>
         <div style="padding:7px;text-align:center;border-top:1px solid var(--sep);">
-          <div style="font-size:9px;color:var(--text3);">BASE</div>
+          <div style="font-size:11px;color:var(--text3);">BASE</div>
           <div style="font-size:12px;color:var(--text);">R$ ${d.base.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
         </div>
         <div style="padding:7px;text-align:center;border-top:1px solid var(--sep);">
-          <div style="font-size:9px;color:var(--text3);">VALOR</div>
+          <div style="font-size:11px;color:var(--text3);">VALOR</div>
           <div style="font-size:12px;color:#00dfc3;">R$ ${d.valor.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
         </div>`;
       cardsWrap.appendChild(card);
@@ -1540,7 +1540,7 @@ function renderCalcIpiPanel(container, task){
   const cmpHeader = document.createElement("div");
   cmpHeader.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;";
   const cmpTitle = document.createElement("div");
-  cmpTitle.style.cssText = "font-size:10px;color:var(--text3);letter-spacing:1.5px;";
+  cmpTitle.style.cssText = "font-size:11px;color:var(--text3);letter-spacing:1.5px;";
   cmpTitle.textContent = "CUSTO MÉDIO PONDERADO — FILIAL SP";
 
   const cmpRightBtns = document.createElement("div");
@@ -1548,7 +1548,7 @@ function renderCalcIpiPanel(container, task){
 
   const cmpBuscarBtn = document.createElement("button");
   cmpBuscarBtn.textContent = "↻ Calcular CMP";
-  cmpBuscarBtn.style.cssText = "background:none;border:1px solid #00dfc366;color:#00dfc3;border-radius:4px;padding:4px 12px;font-size:10px;cursor:pointer;font-family:inherit;";
+  cmpBuscarBtn.style.cssText = "background:none;border:1px solid #00dfc366;color:#00dfc3;border-radius:4px;padding:4px 12px;font-size:11px;cursor:pointer;font-family:inherit;";
 
   cmpRightBtns.appendChild(cmpBuscarBtn);
   cmpHeader.appendChild(cmpTitle); cmpHeader.appendChild(cmpRightBtns);
@@ -1625,12 +1625,12 @@ function renderCalcIpiPanel(container, task){
       tbl.style.cssText = "width:100%;border-collapse:collapse;font-size:11px;";
       tbl.className = "cmp-table";
       tbl.innerHTML = `<thead><tr style="border-bottom:1px solid var(--sep);">
-        <th style="text-align:left;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">SKU</th>
-        <th style="text-align:right;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">QTD NF</th>
-        <th style="text-align:right;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">CMV NF</th>
-        <th style="text-align:right;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">ESTOQUE FILIAL</th>
-        <th style="text-align:right;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">CUSTO ATUAL</th>
-        <th style="text-align:right;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1px;">NOVO CMP</th>
+        <th style="text-align:left;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1px;">SKU</th>
+        <th style="text-align:right;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1px;">QTD NF</th>
+        <th style="text-align:right;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1px;">CMV NF</th>
+        <th style="text-align:right;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1px;">ESTOQUE FILIAL</th>
+        <th style="text-align:right;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1px;">CUSTO ATUAL</th>
+        <th style="text-align:right;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1px;">NOVO CMP</th>
       </tr></thead><tbody></tbody>`;
       const tbody2 = tbl.querySelector("tbody");
 
@@ -1714,7 +1714,7 @@ function renderCalcIpiPanel(container, task){
       // Botão salvar CMP
       const salvarCmpBtn = document.createElement("button");
       salvarCmpBtn.textContent = "✓ Salvar CMP";
-      salvarCmpBtn.style.cssText = "margin-top:12px;background:none;border:1px solid #00dfc366;color:#00dfc3;border-radius:4px;padding:6px 16px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:0.5px;";
+      salvarCmpBtn.style.cssText = "margin-top:12px;background:none;border:1px solid #00dfc366;color:#00dfc3;border-radius:4px;padding:6px 16px;font-size:11px;cursor:pointer;font-family:inherit;letter-spacing:0.5px;";
       salvarCmpBtn.addEventListener("click", async () => {
         const updates = {};
         let algumVazio = false;
@@ -1741,7 +1741,7 @@ function renderCalcIpiPanel(container, task){
         salvarCmpBtn.style.color = "#4ade80";
         salvarCmpBtn.style.borderColor = "#4ade8066";
         csvAtribBtn.disabled = false;
-        csvAtribBtn.style.cssText = "margin-top:0;margin-left:8px;background:none;border:1px solid #f0b40066;color:#f0b400;border-radius:4px;padding:6px 16px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:0.5px;opacity:1;";
+        csvAtribBtn.style.cssText = "margin-top:0;margin-left:8px;background:none;border:1px solid #f0b40066;color:#f0b400;border-radius:4px;padding:6px 16px;font-size:11px;cursor:pointer;font-family:inherit;letter-spacing:0.5px;opacity:1;";
         csvAtribBtn._custosMerged = custosMerged;
         setTimeout(() => {
           salvarCmpBtn.textContent = "✓ Salvar CMP";
@@ -1757,7 +1757,7 @@ function renderCalcIpiPanel(container, task){
       const csvAtribBtn = document.createElement("button");
       csvAtribBtn.textContent = "↓ Gerar CSV de Atributos";
       csvAtribBtn.disabled = true;
-      csvAtribBtn.style.cssText = "margin-top:0;margin-left:8px;background:none;border:1px solid #f0b40033;color:#f0b40066;border-radius:4px;padding:6px 16px;font-size:10px;cursor:not-allowed;font-family:inherit;letter-spacing:0.5px;opacity:0.5;";
+      csvAtribBtn.style.cssText = "margin-top:0;margin-left:8px;background:none;border:1px solid #f0b40033;color:#f0b40066;border-radius:4px;padding:6px 16px;font-size:11px;cursor:not-allowed;font-family:inherit;letter-spacing:0.5px;opacity:0.5;";
       csvAtribBtn.addEventListener("click", async () => {
         const custos = csvAtribBtn._custosMerged || (await get(ref(db, "/custos_medios_filial"))).val() || {};
         gerarCSVAtributos(custos);
@@ -1797,12 +1797,12 @@ function renderVendasTab(panel, color) {
   [7,14,30].forEach(d=>{
     const btn=document.createElement("button");
     btn.textContent=d===7?"7 dias":d===14?"14 dias":"30 dias";
-    btn.style.cssText=`padding:4px 12px;background:${vendasDays===d?"#f0b40022":"none"};border:1px solid ${vendasDays===d?"#f0b400":"var(--border2)"};color:${vendasDays===d?"#f0b400":"var(--text3)"};border-radius:4px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:1px;`;
+    btn.style.cssText=`padding:4px 12px;background:${vendasDays===d?"#f0b40022":"none"};border:1px solid ${vendasDays===d?"#f0b400":"var(--border2)"};color:${vendasDays===d?"#f0b400":"var(--text3)"};border-radius:4px;font-size:11px;cursor:pointer;font-family:inherit;letter-spacing:1px;`;
     btn.addEventListener("click",()=>{vendasDays=d;vendasData=null;fetchVendas(d);});
     filterWrap.appendChild(btn);
   });
   const refBtn=document.createElement("button");
-  refBtn.style.cssText="background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:4px 10px;font-size:10px;cursor:pointer;font-family:inherit;";
+  refBtn.style.cssText="background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:inherit;";
   refBtn.textContent="↻";
   refBtn.addEventListener("click",()=>{vendasData=null;fetchVendas(vendasDays);});
   header.appendChild(filterWrap);header.appendChild(refBtn);
@@ -1837,7 +1837,7 @@ function renderVendasTab(panel, color) {
     const chartWrap=document.createElement("div");
     chartWrap.style.cssText="margin-bottom:20px;";
     const chartTitle=document.createElement("div");
-    chartTitle.style.cssText="font-size:9px;color:var(--text3);letter-spacing:2px;margin-bottom:10px;";
+    chartTitle.style.cssText="font-size:11px;color:var(--text3);letter-spacing:2px;margin-bottom:10px;";
     chartTitle.textContent="FATURAMENTO POR DIA";
     chartWrap.appendChild(chartTitle);
 
@@ -1857,7 +1857,7 @@ function renderVendasTab(panel, color) {
         bar.style.background="linear-gradient(to top,#f0b40088,#f0b40044)";
         const tip=document.createElement("div");
         tip.id="chart-tip";
-        tip.style.cssText="position:absolute;bottom:105%;left:50%;transform:translateX(-50%);background:var(--bg);border:1px solid #f0b40044;border-radius:4px;padding:4px 8px;font-size:9px;color:#f0b400;white-space:nowrap;z-index:100;";
+        tip.style.cssText="position:absolute;bottom:105%;left:50%;transform:translateX(-50%);background:var(--bg);border:1px solid #f0b40044;border-radius:4px;padding:4px 8px;font-size:11px;color:#f0b400;white-space:nowrap;z-index:100;";
         tip.textContent=`R$ ${day.revenue.toLocaleString("pt-BR",{minimumFractionDigits:2})}`;
         bar.appendChild(tip);
       });
@@ -1878,7 +1878,7 @@ function renderVendasTab(panel, color) {
   // Top Sellers
   if(vendasData.topSellers?.length){
     const sec=document.createElement("div");sec.style.cssText="margin-bottom:20px;";
-    const t=document.createElement("div");t.style.cssText="font-size:9px;color:var(--text3);letter-spacing:2px;margin-bottom:10px;";t.textContent="🏆 CAMPEÕES DE VENDAS";
+    const t=document.createElement("div");t.style.cssText="font-size:11px;color:var(--text3);letter-spacing:2px;margin-bottom:10px;";t.textContent="🏆 CAMPEÕES DE VENDAS";
     sec.appendChild(t);
     vendasData.topSellers.slice(0,5).forEach((p,i)=>{
       const row=document.createElement("div");
@@ -1887,11 +1887,11 @@ function renderVendasTab(panel, color) {
         <span style="font-size:11px;color:#4ade8066;width:16px;text-align:center;">${i+1}</span>
         <div style="flex:1;min-width:0;">
           <div style="font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.title}</div>
-          <div style="font-size:9px;color:var(--text3);margin-top:2px;">${p.sku!=="—"?p.sku:""}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px;">${p.sku!=="—"?p.sku:""}</div>
         </div>
         <div style="text-align:right;flex-shrink:0;">
           <div style="font-size:12px;color:#4ade80;font-weight:500;">${p.qty} un.</div>
-          <div style="font-size:9px;color:var(--text3);">R$ ${p.revenue.toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
+          <div style="font-size:11px;color:var(--text3);">R$ ${p.revenue.toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
         </div>`;
       sec.appendChild(row);
     });
@@ -1901,7 +1901,7 @@ function renderVendasTab(panel, color) {
   // Produtos parados
   if(vendasData.stoppedItems?.length){
     const sec=document.createElement("div");sec.style.cssText="margin-bottom:20px;";
-    const t=document.createElement("div");t.style.cssText="font-size:9px;color:var(--text3);letter-spacing:2px;margin-bottom:10px;";t.textContent="⚠ ANÚNCIOS SEM VENDA NO PERÍODO";
+    const t=document.createElement("div");t.style.cssText="font-size:11px;color:var(--text3);letter-spacing:2px;margin-bottom:10px;";t.textContent="⚠ ANÚNCIOS SEM VENDA NO PERÍODO";
     sec.appendChild(t);
     vendasData.stoppedItems.slice(0,5).forEach(p=>{
       const row=document.createElement("div");
@@ -1909,7 +1909,7 @@ function renderVendasTab(panel, color) {
       row.innerHTML=`
         <div style="flex:1;min-width:0;">
           <div style="font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.title}</div>
-          <div style="font-size:9px;color:var(--text3);margin-top:2px;">Estoque: ${p.available_quantity} · Total vendido: ${p.sold_quantity}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px;">Estoque: ${p.available_quantity} · Total vendido: ${p.sold_quantity}</div>
         </div>
         <div style="text-align:right;flex-shrink:0;">
           <div style="font-size:12px;color:#e91e8c;">R$ ${p.price?.toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
@@ -1922,7 +1922,7 @@ function renderVendasTab(panel, color) {
   // Botão analisar com Claude
   if(vendasData.summary){
     const claudeBtn=document.createElement("button");
-    claudeBtn.style.cssText="width:100%;padding:10px;background:#da775611;border:1px solid #da7756;border-radius:6px;color:#da7756;font-family:inherit;font-size:10px;letter-spacing:2px;cursor:pointer;margin-top:8px;transition:all 0.15s;";
+    claudeBtn.style.cssText="width:100%;padding:10px;background:#da775611;border:1px solid #da7756;border-radius:6px;color:#da7756;font-family:inherit;font-size:11px;letter-spacing:2px;cursor:pointer;margin-top:8px;transition:all 0.15s;";
     claudeBtn.textContent="✦ ANALISAR COM CLAUDE";
     claudeBtn.addEventListener("click",()=>{
       const resumo=`Analise os dados de vendas dos últimos ${vendasDays} dias:
@@ -1976,7 +1976,7 @@ function renderDiogoDevTab(panel, color) {
     finMonth = d.toISOString().slice(0,7); diogoDevolucoes=null; fetchDiogoDevolucoes();
   });
   const refBtn = document.createElement("button");
-  refBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:4px 10px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:1px;";
+  refBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:inherit;letter-spacing:1px;";
   refBtn.textContent = "↻";
   refBtn.addEventListener("click", () => { diogoDevolucoes=null; fetchDiogoDevolucoes(); });
   monthWrap.appendChild(prevBtn); monthWrap.appendChild(monthLabel); monthWrap.appendChild(nextBtn);
@@ -2005,7 +2005,7 @@ function renderDiogoDevTab(panel, color) {
   // Total
   const totalDiv = document.createElement("div");
   totalDiv.style.cssText = "display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--bg2);border-radius:5px;margin-bottom:12px;";
-  totalDiv.innerHTML = `<span style="font-size:10px;color:var(--text3);letter-spacing:1px">${diogoDevolucoes.count} devoluções</span><span style="font-size:16px;font-family:'Bebas Neue',sans-serif;color:#e91e8c;letter-spacing:2px;">-R$ ${diogoDevolucoes.totalCost.toLocaleString("pt-BR",{minimumFractionDigits:2})}</span>`;
+  totalDiv.innerHTML = `<span style="font-size:11px;color:var(--text3);letter-spacing:1px">${diogoDevolucoes.count} devoluções</span><span style="font-size:16px;font-family:'Bebas Neue',sans-serif;color:#e91e8c;letter-spacing:2px;">-R$ ${diogoDevolucoes.totalCost.toLocaleString("pt-BR",{minimumFractionDigits:2})}</span>`;
   panel.appendChild(totalDiv);
 
   // Lista
@@ -2018,11 +2018,11 @@ function renderDiogoDevTab(panel, color) {
     card.innerHTML = `
       <div style="flex:1;min-width:0;">
         <div style="font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${dev.product}</div>
-        <div style="font-size:9px;color:var(--text3);margin-top:2px;">${dev.buyer} · ${date}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px;">${dev.buyer} · ${date}</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;margin-left:8px;flex-shrink:0;">
         <span style="font-size:11px;color:${dev.refundedAmount>0?'#e91e8c':'#4ade80'};">${dev.refundedAmount>0?'-R$ '+dev.refundedAmount.toFixed(2).replace('.',','):'R$ 0,00'}</span>
-        <a href="${dev.permalink}" target="_blank" style="color:#f0b400;font-size:10px;text-decoration:none;">→</a>
+        <a href="${dev.permalink}" target="_blank" style="color:#f0b400;font-size:11px;text-decoration:none;">→</a>
       </div>`;
     grid.appendChild(card);
   });
@@ -2035,12 +2035,12 @@ function renderDiogoCustoTab(panel, color) {
   uploadSection.style.cssText = "margin-bottom:14px;";
 
   const uploadLabel = document.createElement("p");
-  uploadLabel.style.cssText = "font-size:10px;color:var(--text3);letter-spacing:1px;margin-bottom:8px;";
+  uploadLabel.style.cssText = "font-size:11px;color:var(--text3);letter-spacing:1px;margin-bottom:8px;";
   uploadLabel.textContent = "Faça upload do Excel de vendas do ML (filtrado por Devoluções)";
   uploadSection.appendChild(uploadLabel);
 
   const uploadBtn = document.createElement("label");
-  uploadBtn.style.cssText = "display:inline-block;padding:7px 14px;background:none;border:1px dashed #f0b40066;border-radius:5px;color:#f0b400;font-size:10px;letter-spacing:1.5px;cursor:pointer;font-family:inherit;transition:all 0.15s;";
+  uploadBtn.style.cssText = "display:inline-block;padding:7px 14px;background:none;border:1px dashed #f0b40066;border-radius:5px;color:#f0b400;font-size:11px;letter-spacing:1.5px;cursor:pointer;font-family:inherit;transition:all 0.15s;";
   uploadBtn.textContent = diogoCustoData ? "↑ Trocar planilha" : "↑ Importar planilha";
   const fileInput = document.createElement("input");
   fileInput.type = "file";
@@ -2056,7 +2056,7 @@ function renderDiogoCustoTab(panel, color) {
 
   if(diogoCustoData?.fileName) {
     const fname = document.createElement("span");
-    fname.style.cssText = "font-size:9px;color:var(--text3);margin-left:10px;";
+    fname.style.cssText = "font-size:11px;color:var(--text3);margin-left:10px;";
     fname.textContent = diogoCustoData.fileName;
     uploadSection.appendChild(fname);
   }
@@ -2069,8 +2069,8 @@ function renderDiogoCustoTab(panel, color) {
   totalCard.style.cssText = "display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--bg2);border-radius:6px;margin-bottom:12px;";
   totalCard.innerHTML = `
     <div>
-      <div style="font-size:9px;color:var(--text3);letter-spacing:2px;margin-bottom:4px">CUSTO REAL DE DEVOLUÇÕES</div>
-      <div style="font-size:9px;color:var(--text3);">${diogoCustoData.negCount} devoluções com frete negativo</div>
+      <div style="font-size:11px;color:var(--text3);letter-spacing:2px;margin-bottom:4px">CUSTO REAL DE DEVOLUÇÕES</div>
+      <div style="font-size:11px;color:var(--text3);">${diogoCustoData.negCount} devoluções com frete negativo</div>
     </div>
     <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;color:#e91e8c;">
       R$ ${Math.abs(diogoCustoData.totalNeg).toLocaleString("pt-BR",{minimumFractionDigits:2})}
@@ -2087,7 +2087,7 @@ function renderDiogoCustoTab(panel, color) {
       row.innerHTML = `
         <div style="flex:1;min-width:0;">
           <div style="font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.titulo}</div>
-          <div style="font-size:9px;color:var(--text3);margin-top:2px;">${item.status} · ${item.data}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px;">${item.status} · ${item.data}</div>
         </div>
         <span style="font-size:12px;color:#e91e8c;margin-left:8px;flex-shrink:0;">R$ ${Math.abs(item.total).toLocaleString("pt-BR",{minimumFractionDigits:2})}</span>`;
       grid.appendChild(row);
@@ -2177,7 +2177,7 @@ function renderFinanceiroTab(panel,color){
   monthWrap.appendChild(prevBtn);monthWrap.appendChild(monthLabel);monthWrap.appendChild(nextBtn);
 
   const refBtn=document.createElement("button");
-  refBtn.style.cssText=`background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:4px 10px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:1px;`;
+  refBtn.style.cssText=`background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:inherit;letter-spacing:1px;`;
   refBtn.textContent="↻ Atualizar";
   refBtn.addEventListener("click",()=>{finData=null;fetchFinanceiro(finMonth);});
 
@@ -2204,7 +2204,7 @@ function renderFinanceiroTab(panel,color){
   const totalCard=document.createElement("div");
   totalCard.style.cssText=`background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;`;
   const totalLabel=document.createElement("div");
-  totalLabel.innerHTML=`<div style="font-size:9px;color:var(--text3);letter-spacing:2px;margin-bottom:4px">CUSTO DE DEVOLUÇÕES</div><div style="font-size:9px;color:var(--text3);letter-spacing:1px">${finData.count} devoluções concluídas</div>`;
+  totalLabel.innerHTML=`<div style="font-size:11px;color:var(--text3);letter-spacing:2px;margin-bottom:4px">CUSTO DE DEVOLUÇÕES</div><div style="font-size:11px;color:var(--text3);letter-spacing:1px">${finData.count} devoluções concluídas</div>`;
   const totalValue=document.createElement("div");
   totalValue.style.cssText=`font-size:22px;font-family:'Bebas Neue',sans-serif;letter-spacing:2px;color:${finData.totalCost>0?"#e91e8c":"#4ade80"};`;
   totalValue.textContent=`-R$ ${finData.totalCost.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
@@ -2232,7 +2232,7 @@ function renderFinanceiroTab(panel,color){
     card.innerHTML=`
       <div style="flex:1">
         <div style="font-size:12px;color:var(--text);margin-bottom:4px;line-height:1.4">${dev.product}</div>
-        <div style="font-size:10px;color:var(--text3);margin-bottom:6px">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:6px">
           ${dev.buyer} · <span style="color:var(--text3)">${date}</span>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;">
@@ -2302,7 +2302,7 @@ function renderMLInPanel(panel,color){
   }
 
   if(data.updated_at){
-    const upd=document.createElement("div");upd.style.cssText="font-size:9px;color:var(--text3);margin-bottom:12px;";
+    const upd=document.createElement("div");upd.style.cssText="font-size:11px;color:var(--text3);margin-bottom:12px;";
     const displayCount = mlSubTab === "devolucoes" ? data.data.filter(d=>d.needsReview).length : data.data.length;
   upd.textContent=`${displayCount} itens · Atualizado: ${new Date(data.updated_at).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}`;
     panel.appendChild(upd);
@@ -2319,7 +2319,7 @@ function renderMLInPanel(panel,color){
 
   if(mlSubTab === "devolucoes" && displayData.length === 0){
     const empty=document.createElement("p");empty.style.cssText="color:#4ade80;text-align:center;padding:30px 0;font-size:13px;";empty.textContent="✓ Nenhuma devolução pendente de revisão";panel.appendChild(empty);
-    const refBtn2=document.createElement("button");refBtn2.style.cssText="margin-top:8px;background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:6px 14px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:1px;width:100%;";refBtn2.textContent="↻ Atualizar";refBtn2.addEventListener("click",()=>fetchMLData(mlSubTab));panel.appendChild(refBtn2);return;
+    const refBtn2=document.createElement("button");refBtn2.style.cssText="margin-top:8px;background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:6px 14px;font-size:11px;cursor:pointer;font-family:inherit;letter-spacing:1px;width:100%;";refBtn2.textContent="↻ Atualizar";refBtn2.addEventListener("click",()=>fetchMLData(mlSubTab));panel.appendChild(refBtn2);return;
   }
 
   displayData.forEach(dev=>{
@@ -2370,7 +2370,7 @@ function renderMLInPanel(panel,color){
     card.innerHTML=`
       <div style="flex:1">
         <div style="font-size:13px;color:var(--text);margin-bottom:4px;line-height:1.4">${dev.product}</div>
-        <div style="font-size:10px;color:var(--text3);margin-bottom:6px">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:6px">
           Comprador: <span style="color:var(--text2)">${dev.buyer}</span>
           ${dev.returnQty ? ` · <span style="color:var(--text2)">${Math.round(Number(dev.returnQty))} un.</span>` : ""}
           ${dev.valor?` · <span style="color:#f0b400">R$ ${Number(dev.valor).toFixed(2)}</span>`:""}
@@ -2380,8 +2380,8 @@ function renderMLInPanel(panel,color){
           ${dueBadgeHtml}
         </div>
         ${dev.needsReview ? `<div id="${actionBtnsId}" style="display:flex;gap:6px;flex-wrap:wrap;">
-          <button onclick="window._reviewDev('${dev.id}','ok')" style="background:#4ade8022;border:1px solid #4ade8066;color:#4ade80;border-radius:4px;padding:5px 12px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:1px;">✓ Chegou ok</button>
-          <button onclick="window._reviewDev('${dev.id}','fail')" style="background:#e91e8c22;border:1px solid #e91e8c66;color:#e91e8c;border-radius:4px;padding:5px 12px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:1px;">✗ Reportar problema</button>
+          <button onclick="window._reviewDev('${dev.id}','ok')" style="background:#4ade8022;border:1px solid #4ade8066;color:#4ade80;border-radius:4px;padding:5px 12px;font-size:11px;cursor:pointer;font-family:inherit;letter-spacing:1px;">✓ Chegou ok</button>
+          <button onclick="window._reviewDev('${dev.id}','fail')" style="background:#e91e8c22;border:1px solid #e91e8c66;color:#e91e8c;border-radius:4px;padding:5px 12px;font-size:11px;cursor:pointer;font-family:inherit;letter-spacing:1px;">✗ Reportar problema</button>
         </div>` : `<a href="${dev.permalink}" target="_blank" class="ml-link">Abrir no ML →</a>`}
       </div>`;
     cardsGrid.appendChild(card);
@@ -2413,7 +2413,7 @@ function renderMLInPanel(panel,color){
   };
 
   const refBtn=document.createElement("button");
-  refBtn.style.cssText="margin-top:16px;background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:6px 14px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:1px;width:100%;";
+  refBtn.style.cssText="margin-top:16px;background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:6px 14px;font-size:11px;cursor:pointer;font-family:inherit;letter-spacing:1px;width:100%;";
   refBtn.textContent="↻ Atualizar";
   refBtn.addEventListener("click",()=>fetchMLData(mlSubTab));
   panel.appendChild(refBtn);
@@ -2743,7 +2743,7 @@ function render(){
     const dotsEl=document.createElement("div");dotsEl.className="dots";
     if(active.length>0||done.length>0){
       ["superurgente","urgente","importante","normal"].forEach(p=>{active.filter(t=>t.prio===p).slice(0,5).forEach(()=>{const d=document.createElement("span");d.className="dot";const pc=themePrio(p);d.style.cssText=`background:${pc};box-shadow:0 0 8px ${pc};${p==="superurgente"?"animation:siren 0.6s infinite;":""}`;dotsEl.appendChild(d);});});
-      if(done.length>0&&active.length===0){const s=document.createElement("span");s.style.cssText=`font-size:10px;color:${color}88;`;s.textContent="✓";dotsEl.appendChild(s);}
+      if(done.length>0&&active.length===0){const s=document.createElement("span");s.style.cssText=`font-size:11px;color:${color}88;`;s.textContent="✓";dotsEl.appendChild(s);}
     }
     nameWrap.appendChild(nameEl);nameWrap.appendChild(dotsEl);header.appendChild(avatar);header.appendChild(nameWrap);
     if(unreadMsgs.length>0&&!isOpen){const ud=document.createElement("span");ud.className="unread-dot";ud.style.cssText=`background:${color};box-shadow:0 0 8px ${color};`;header.appendChild(ud);}
@@ -2813,7 +2813,7 @@ function render(){
       if(diogoCardFullscreen) { panel.style.flex="1"; panel.style.overflowY="auto"; panel.style.maxHeight="none"; }
 
       if(member.locked&&!diogoPinUnlocked){
-        panel.innerHTML=`<div class="pin-wrap"><div class="pin-icon">◈</div><p>Digite o PIN para acessar</p><input class="pin-input" type="password" inputmode="numeric" autocomplete="new-password" name="digoo-pin-${Date.now()}" data-lpignore="true" data-form-type="other" maxlength="10" placeholder="••••••" id="pin-field" readonly><div style="font-size:10px;color:#e91e8c;margin-top:8px;letter-spacing:1px;display:none" id="pin-err">PIN incorreto</div><button class="pin-btn" style="background:${color};color:#000" id="pin-btn">ENTRAR</button></div>`;
+        panel.innerHTML=`<div class="pin-wrap"><div class="pin-icon">◈</div><p>Digite o PIN para acessar</p><input class="pin-input" type="password" inputmode="numeric" autocomplete="new-password" name="digoo-pin-${Date.now()}" data-lpignore="true" data-form-type="other" maxlength="10" placeholder="••••••" id="pin-field" readonly><div style="font-size:11px;color:#e91e8c;margin-top:8px;letter-spacing:1px;display:none" id="pin-err">PIN incorreto</div><button class="pin-btn" style="background:${color};color:#000" id="pin-btn">ENTRAR</button></div>`;
         setTimeout(()=>{
           const f=document.getElementById("pin-field"),e=document.getElementById("pin-err"),b=document.getElementById("pin-btn");
           if(f){f.value="";f.removeAttribute("readonly");f.focus();f.click();}
@@ -2851,7 +2851,7 @@ function render(){
             const isActive = group.tab === currentTab || group.subs.some(s => s.tab === currentTab);
 
             const btn = document.createElement("button");
-            btn.style.cssText = `background:none;border:none;border-bottom:2px solid ${isActive?"var(--accent)":"transparent"};color:${isActive?"var(--text)":"var(--text3)"};font-size:10px;font-weight:${isActive?"600":"400"};letter-spacing:0.5px;text-transform:uppercase;padding:10px 10px;cursor:pointer;font-family:inherit;transition:color .15s;white-space:nowrap;flex-shrink:0;`;
+            btn.style.cssText = `background:none;border:none;border-bottom:2px solid ${isActive?"var(--accent)":"transparent"};color:${isActive?"var(--text)":"var(--text3)"};font-size:11px;font-weight:${isActive?"600":"400"};letter-spacing:0.5px;text-transform:uppercase;padding:10px 10px;cursor:pointer;font-family:inherit;transition:color .15s;white-space:nowrap;flex-shrink:0;`;
             btn.textContent = group.label;
 
             if(group.tab) {
@@ -2869,7 +2869,7 @@ function render(){
 
               group.subs.forEach(sub => {
                 const dropItem = document.createElement("div");
-                dropItem.style.cssText = `display:block;padding:10px 14px;font-size:10px;color:${sub.tab===currentTab?"var(--accent)":"var(--text3)"};letter-spacing:1px;text-transform:uppercase;cursor:pointer;border-radius:5px;font-family:inherit;transition:all .15s;`;
+                dropItem.style.cssText = `display:block;padding:10px 14px;font-size:11px;color:${sub.tab===currentTab?"var(--accent)":"var(--text3)"};letter-spacing:1px;text-transform:uppercase;cursor:pointer;border-radius:5px;font-family:inherit;transition:all .15s;`;
                 dropItem.textContent = sub.label;
                 dropItem.addEventListener("mouseenter", () => dropItem.style.background = "var(--bg3)");
                 dropItem.addEventListener("mouseleave", () => dropItem.style.background = "none");
@@ -2941,7 +2941,7 @@ function render(){
             mainGroups.forEach(group => {
               const isActive = window._activeNavGroup === group.label || (group.tab && group.tab === currentTab);
               const chip = document.createElement("div");
-              chip.style.cssText = `padding:6px 14px;border-radius:99px;font-size:10px;font-weight:600;letter-spacing:0.5px;white-space:nowrap;cursor:pointer;flex-shrink:0;transition:all .15s;background:${isActive?"#5e72e4":"#1a1a1a"};color:${isActive?"#fff":"#666"};border:0.5px solid ${isActive?"transparent":"#222"};font-family:inherit;`;
+              chip.style.cssText = `padding:6px 14px;border-radius:99px;font-size:11px;font-weight:600;letter-spacing:0.5px;white-space:nowrap;cursor:pointer;flex-shrink:0;transition:all .15s;background:${isActive?"#5e72e4":"#1a1a1a"};color:${isActive?"#fff":"#666"};border:0.5px solid ${isActive?"transparent":"#222"};font-family:inherit;`;
               chip.textContent = group.label;
               chip.addEventListener("click", () => {
                 window._activeNavGroup = group.label;
@@ -2961,7 +2961,7 @@ function render(){
               activeGroup.subs.forEach(sub => {
                 const isSubActive = currentTab === sub.tab;
                 const subChip = document.createElement("div");
-                subChip.style.cssText = `padding:5px 12px;border-radius:99px;font-size:9px;font-weight:600;letter-spacing:0.5px;white-space:nowrap;cursor:pointer;flex-shrink:0;font-family:inherit;background:${isSubActive?"#5e72e422":"#141414"};color:${isSubActive?"#5e72e4":"#555"};border:0.5px solid ${isSubActive?"#5e72e444":"#1e1e1e"};`;
+                subChip.style.cssText = `padding:5px 12px;border-radius:99px;font-size:11px;font-weight:600;letter-spacing:0.5px;white-space:nowrap;cursor:pointer;flex-shrink:0;font-family:inherit;background:${isSubActive?"#5e72e422":"#141414"};color:${isSubActive?"#5e72e4":"#555"};border:0.5px solid ${isSubActive?"#5e72e444":"#1e1e1e"};`;
                 subChip.textContent = sub.label;
                 subChip.addEventListener("click", () => { window._diogotab = sub.tab; render(); });
                 subRow.appendChild(subChip);
@@ -3088,10 +3088,10 @@ function render(){
                 title.style.cssText = `font-size:11px;font-weight:600;color:${cor};line-height:1.4;`;
                 title.textContent = `⚠ ${e.nome}`;
                 const sub = document.createElement("div");
-                sub.style.cssText = "font-size:9px;color:var(--text3);";
+                sub.style.cssText = "font-size:11px;color:var(--text3);";
                 sub.textContent = "Vence amanhã";
                 const badge = document.createElement("span");
-                badge.style.cssText = `font-size:9px;font-weight:700;letter-spacing:.8px;padding:2px 6px;border-radius:4px;background:${cor}22;color:${cor};border:0.5px solid ${cor}44;width:fit-content;`;
+                badge.style.cssText = `font-size:11px;font-weight:700;letter-spacing:.8px;padding:2px 6px;border-radius:4px;background:${cor}22;color:${cor};border:0.5px solid ${cor}44;width:fit-content;`;
                 badge.textContent = "FISCAL";
                 card.appendChild(title);
                 card.appendChild(sub);
@@ -3103,14 +3103,14 @@ function render(){
                 const card=document.createElement("div");
                 card.style.cssText=`background:var(--bg3);border:0.5px solid #5e72e433;border-top:2px solid #5e72e4;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;box-sizing:border-box;`;
                 const chk=document.createElement("button");
-                chk.style.cssText=`width:15px;height:15px;border-radius:3px;border:1.5px solid #5e72e4;background:${task.done?"#5e72e4":"none"};flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#000;font-size:9px;font-weight:700;`;
+                chk.style.cssText=`width:15px;height:15px;border-radius:3px;border:1.5px solid #5e72e4;background:${task.done?"#5e72e4":"none"};flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#000;font-size:11px;font-weight:700;`;
                 chk.textContent=task.done?"✓":"";
                 chk.addEventListener("click",()=>toggleTask(task.id,task.done,task.progress,true));
                 const tt=document.createElement("div");
                 tt.style.cssText=`font-size:11px;font-weight:500;color:${task.done?"var(--text3)":"var(--text)"};line-height:1.4;text-decoration:${task.done?"line-through":"none"};`;
                 tt.textContent=task.text;
                 const badge=document.createElement("span");
-                badge.style.cssText="font-size:9px;font-weight:700;letter-spacing:.8px;padding:2px 6px;border-radius:4px;background:#5e72e422;color:#5e72e4;width:fit-content;";
+                badge.style.cssText="font-size:11px;font-weight:700;letter-spacing:.8px;padding:2px 6px;border-radius:4px;background:#5e72e422;color:#5e72e4;width:fit-content;";
                 badge.textContent="RECORRENTE";
                 card.appendChild(chk);card.appendChild(tt);card.appendChild(badge);
                 if(task.done){
@@ -3224,7 +3224,7 @@ function render(){
                 const barBg=document.createElement("div");barBg.style.cssText="background:var(--border2);border-radius:99px;height:3px;";
                 const barFill=document.createElement("div");barFill.style.cssText=`background:${todosPassosFeitos?"#00dfc3":pc};height:3px;border-radius:99px;width:${pct}%;transition:width .3s;`;
                 barBg.appendChild(barFill);
-                const progLabel=document.createElement("div");progLabel.style.cssText=`font-size:9px;color:${todosPassosFeitos?"#00dfc3":"var(--text3)"};`;
+                const progLabel=document.createElement("div");progLabel.style.cssText=`font-size:11px;color:${todosPassosFeitos?"#00dfc3":"var(--text3)"};`;
                 progLabel.textContent=`${feitos} de ${task.subtarefas.length} concluídas`;
                 progWrap.appendChild(barBg);progWrap.appendChild(progLabel);
                 card.appendChild(progWrap);
@@ -3232,11 +3232,11 @@ function render(){
               // Meta: badge prio + dias atrasado
               const meta=document.createElement("div");meta.style.cssText="display:flex;flex-direction:column;gap:3px;margin-top:auto;";
               const puls=task.prio==="superurgente"?"animation:siren 0.6s infinite;":"";
-              const prioBadge=document.createElement("span");prioBadge.style.cssText=`font-size:9px;font-weight:700;letter-spacing:.8px;padding:2px 6px;border-radius:4px;background:${pc}22;color:${pc};width:fit-content;${puls}`;
+              const prioBadge=document.createElement("span");prioBadge.style.cssText=`font-size:11px;font-weight:700;letter-spacing:.8px;padding:2px 6px;border-radius:4px;background:${pc}22;color:${pc};width:fit-content;${puls}`;
               prioBadge.textContent=PRIO[task.prio].label.toUpperCase();
               meta.appendChild(prioBadge);
               const overdue=overdueBadgeHtml(task);
-              if(overdue){const od=document.createElement("span");od.style.cssText="font-size:9px;color:var(--text3);";od.innerHTML=overdue.replace(/<[^>]+>/g,"");meta.appendChild(od);}
+              if(overdue){const od=document.createElement("span");od.style.cssText="font-size:11px;color:var(--text3);";od.innerHTML=overdue.replace(/<[^>]+>/g,"");meta.appendChild(od);}
               card.appendChild(meta);
               // Abrir subtarefas em overlay ao clicar
               if(Array.isArray(task.subtarefas) && task.subtarefas.length>0){
@@ -3253,7 +3253,7 @@ function render(){
                   task.subtarefas.forEach((sub,idx)=>{
                     const subRow=document.createElement("div");subRow.style.cssText="display:flex;align-items:center;gap:8px;padding:3px 0;";
                     const subChk=document.createElement("button");
-                    subChk.style.cssText=`width:15px;height:15px;border-radius:3px;border:1.5px solid ${sub.feito?"#00dfc3":"var(--border2)"};background:${sub.feito?"#00dfc3":"none"};flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#000;font-size:9px;font-weight:700;`;
+                    subChk.style.cssText=`width:15px;height:15px;border-radius:3px;border:1.5px solid ${sub.feito?"#00dfc3":"var(--border2)"};background:${sub.feito?"#00dfc3":"none"};flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#000;font-size:11px;font-weight:700;`;
                     subChk.textContent=sub.feito?"✓":"";
                     subChk.addEventListener("click",(e)=>{e.stopPropagation();update(ref(db,`/tasks/${task.id}/subtarefas/${idx}`),{feito:!sub.feito});});
                     const subLabel=document.createElement("span");
@@ -3270,7 +3270,7 @@ function render(){
                     subRow.appendChild(subChk);subRow.appendChild(subLabel);overlay.appendChild(subRow);
                   });
                   // botão fechar
-                  const closeOverlay=document.createElement("button");closeOverlay.textContent="Fechar";closeOverlay.style.cssText="align-self:flex-end;background:none;border:1px solid var(--border2);border-radius:4px;color:var(--text3);font-size:9px;letter-spacing:1px;padding:3px 10px;cursor:pointer;font-family:inherit;margin-top:4px;";
+                  const closeOverlay=document.createElement("button");closeOverlay.textContent="Fechar";closeOverlay.style.cssText="align-self:flex-end;background:none;border:1px solid var(--border2);border-radius:4px;color:var(--text3);font-size:11px;letter-spacing:1px;padding:3px 10px;cursor:pointer;font-family:inherit;margin-top:4px;";
                   closeOverlay.addEventListener("click",(e)=>{e.stopPropagation();overlay.remove();});
                   overlay.appendChild(closeOverlay);
                   // inserir após o card
@@ -3301,19 +3301,19 @@ function render(){
               const divider=document.createElement("div");divider.className="section";divider.innerHTML=`<div class="section-label">Mensagem da equipe</div>`;
               teamTasks.forEach(task=>{
                 const card2=document.createElement("div");card2.style.cssText=`background:var(--bg3);border:1px solid ${themeColor(task.delegatedBy)}44;border-left:3px solid ${themeColor(task.delegatedBy)};border-radius:6px;padding:10px 12px;margin-bottom:6px;`;
-                const hdr=document.createElement("div");hdr.style.cssText="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;";hdr.innerHTML=`<span style="font-size:10px;color:${themeColor(task.delegatedBy)};letter-spacing:1px;font-weight:500">${task.delegatedBy}</span><span style="font-size:9px;color:var(--text3)">${PRIO[task.prio].label}</span>`;card2.appendChild(hdr);
+                const hdr=document.createElement("div");hdr.style.cssText="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;";hdr.innerHTML=`<span style="font-size:11px;color:${themeColor(task.delegatedBy)};letter-spacing:1px;font-weight:500">${task.delegatedBy}</span><span style="font-size:11px;color:var(--text3)">${PRIO[task.prio].label}</span>`;card2.appendChild(hdr);
                 const teamBadge=overdueBadgeHtml(task);
                 if(teamBadge){const bd=document.createElement("div");bd.style.cssText="margin-top:6px;margin-bottom:8px;display:flex;";bd.innerHTML=teamBadge;card2.appendChild(bd);}
                 const tt2=document.createElement("div");tt2.style.cssText="font-size:13px;color:var(--text);line-height:1.4;margin-bottom:8px;";tt2.textContent=task.text;card2.appendChild(tt2);
                 const threadMsgs=Object.values(state.messages||{}).filter(m=>m!=null&&m.taskId===task.id).sort((a,b)=>(a.ts_raw||0)-(b.ts_raw||0));
-                if(threadMsgs.length>0){const thread=document.createElement("div");thread.style.cssText="border-top:1px solid var(--sep);padding-top:8px;margin-bottom:8px;";threadMsgs.forEach(msg=>{const isMine=msg.from==="Diogo";const mEl=document.createElement("div");mEl.style.cssText=`display:flex;flex-direction:${isMine?"row-reverse":"row"};margin-bottom:5px;`;const bubble=document.createElement("div");bubble.style.cssText=`max-width:75%;padding:5px 9px;border-radius:${isMine?"9px 9px 2px 9px":"9px 9px 9px 2px"};background:${isMine?themeColor("Diogo")+"22":"var(--bg2)"};border:1px solid ${isMine?themeColor("Diogo")+"44":"var(--border)"};`;bubble.innerHTML=`<div style="font-size:12px;color:var(--text);line-height:1.4">${msg.text}</div><div style="font-size:9px;color:var(--text3);margin-top:2px;text-align:${isMine?"right":"left"}">${msg.ts}</div>`;mEl.appendChild(bubble);thread.appendChild(mEl);});card2.appendChild(thread);}
+                if(threadMsgs.length>0){const thread=document.createElement("div");thread.style.cssText="border-top:1px solid var(--sep);padding-top:8px;margin-bottom:8px;";threadMsgs.forEach(msg=>{const isMine=msg.from==="Diogo";const mEl=document.createElement("div");mEl.style.cssText=`display:flex;flex-direction:${isMine?"row-reverse":"row"};margin-bottom:5px;`;const bubble=document.createElement("div");bubble.style.cssText=`max-width:75%;padding:5px 9px;border-radius:${isMine?"9px 9px 2px 9px":"9px 9px 9px 2px"};background:${isMine?themeColor("Diogo")+"22":"var(--bg2)"};border:1px solid ${isMine?themeColor("Diogo")+"44":"var(--border)"};`;bubble.innerHTML=`<div style="font-size:12px;color:var(--text);line-height:1.4">${msg.text}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;text-align:${isMine?"right":"left"}">${msg.ts}</div>`;mEl.appendChild(bubble);thread.appendChild(mEl);});card2.appendChild(thread);}
                 const actions=document.createElement("div");actions.style.cssText="display:flex;gap:6px;";
-                const replyBtn=document.createElement("button");replyBtn.textContent="↩ Responder";replyBtn.style.cssText=`background:none;border:1px solid ${themeColor(task.delegatedBy)}66;color:${themeColor(task.delegatedBy)};border-radius:4px;padding:4px 10px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:1px;`;
-                const closeBtn=document.createElement("button");closeBtn.textContent="✓ Encerrar";closeBtn.style.cssText="background:none;border:1px solid #4ade8066;color:#4ade80;border-radius:4px;padding:4px 10px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:1px;";
+                const replyBtn=document.createElement("button");replyBtn.textContent="↩ Responder";replyBtn.style.cssText=`background:none;border:1px solid ${themeColor(task.delegatedBy)}66;color:${themeColor(task.delegatedBy)};border-radius:4px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:inherit;letter-spacing:1px;`;
+                const closeBtn=document.createElement("button");closeBtn.textContent="✓ Encerrar";closeBtn.style.cssText="background:none;border:1px solid #4ade8066;color:#4ade80;border-radius:4px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:inherit;letter-spacing:1px;";
                 closeBtn.addEventListener("click",()=>{push(ref(db,"/notices"),{forMember:task.delegatedBy,text:task.text,by:"Diogo",ts:new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}),ts_raw:Date.now()});set(ref(db,`/flashes/${task.delegatedBy}`),{ts:Date.now(),msg:`Diogo concluiu sua tarefa!`});Object.entries(state.messages||{}).forEach(([mid,m])=>{if(m!=null&&m.taskId===task.id)remove(ref(db,`/messages/${mid}`));});deleteTask(task.id);});
                 actions.appendChild(replyBtn);actions.appendChild(closeBtn);card2.appendChild(actions);
                 const mf=document.createElement("div");mf.style.cssText="display:none;margin-top:8px;";const mi=document.createElement("input");mi.placeholder="Sua resposta...";mi.style.cssText="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:6px 8px;color:var(--text);font-size:12px;font-family:inherit;outline:none;margin-bottom:6px;";
-                const mbr=document.createElement("div");mbr.style.cssText="display:flex;gap:6px;";const sb=document.createElement("button");sb.className="btn-primary";sb.style.cssText=`background:${color};color:#000;font-size:9px;letter-spacing:2px;border:none;border-radius:4px;padding:6px;cursor:pointer;font-family:inherit;flex:1;`;sb.textContent="ENVIAR";const cb=document.createElement("button");cb.className="btn-cancel";cb.textContent="✕";mbr.appendChild(sb);mbr.appendChild(cb);mf.appendChild(mi);mf.appendChild(mbr);
+                const mbr=document.createElement("div");mbr.style.cssText="display:flex;gap:6px;";const sb=document.createElement("button");sb.className="btn-primary";sb.style.cssText=`background:${color};color:#000;font-size:11px;letter-spacing:2px;border:none;border-radius:4px;padding:6px;cursor:pointer;font-family:inherit;flex:1;`;sb.textContent="ENVIAR";const cb=document.createElement("button");cb.className="btn-cancel";cb.textContent="✕";mbr.appendChild(sb);mbr.appendChild(cb);mf.appendChild(mi);mf.appendChild(mbr);
                 const submit=()=>{if(!mi.value.trim())return;sendMessage("Diogo",mi.value.trim(),task.id,task.text,task.delegatedBy,task.delegatedBy);mi.value="";mf.style.display="none";};
                 sb.addEventListener("click",submit);cb.addEventListener("click",()=>{mf.style.display="none";replyBtn.textContent="↩ Responder";});mi.addEventListener("keydown",e=>{if(e.key==="Enter")submit();if(e.key==="Escape"){mf.style.display="none";}});
                 replyBtn.addEventListener("click",()=>{const vis=mf.style.display!=="none";mf.style.display=vis?"none":"block";replyBtn.textContent=vis?"↩ Responder":"✕ Cancelar";if(!vis)setTimeout(()=>mi.focus(),50);});
@@ -3370,7 +3370,7 @@ function render(){
           }else if(window._diogotab==="concluidas"){
             if(Object.keys(completionAlerts).length>0){
               const sec=document.createElement("div");sec.style.marginBottom="12px";sec.innerHTML=`<div class="section-label" style="color:#00e676;margin-bottom:8px">Novas conclusões</div>`;
-              Object.entries(completionAlerts).forEach(([id,a])=>{const row=document.createElement("div");row.className="alert-row";row.innerHTML=`<span style="font-size:10px;color:${themeColor(a.member)};letter-spacing:1px">${a.member}</span><span style="flex:1;font-size:12px;color:var(--text2);text-decoration:line-through;margin:0 8px">${a.text}</span>`;const ok=document.createElement("button");ok.textContent="OK";ok.style.cssText="background:#00e676;color:#000;border:none;border-radius:3px;padding:3px 10px;font-size:9px;letter-spacing:1.5px;cursor:pointer;font-family:inherit;font-weight:700;";ok.addEventListener("click",()=>{delete completionAlerts[id];render();});row.appendChild(ok);sec.appendChild(row);});panel.appendChild(sec);
+              Object.entries(completionAlerts).forEach(([id,a])=>{const row=document.createElement("div");row.className="alert-row";row.innerHTML=`<span style="font-size:11px;color:${themeColor(a.member)};letter-spacing:1px">${a.member}</span><span style="flex:1;font-size:12px;color:var(--text2);text-decoration:line-through;margin:0 8px">${a.text}</span>`;const ok=document.createElement("button");ok.textContent="OK";ok.style.cssText="background:#00e676;color:#000;border:none;border-radius:3px;padding:3px 10px;font-size:11px;letter-spacing:1.5px;cursor:pointer;font-family:inherit;font-weight:700;";ok.addEventListener("click",()=>{delete completionAlerts[id];render();});row.appendChild(ok);sec.appendChild(row);});panel.appendChild(sec);
             }
             if(Object.keys(completionAlerts).length===0){const e=document.createElement("p");e.style.cssText="font-size:11px;color:var(--text3);text-align:center;padding:14px 0;";e.textContent="Nenhuma conclusão nova";panel.appendChild(e);}
           }else if(window._diogotab==="conversas"){
@@ -3381,10 +3381,10 @@ function render(){
             Object.entries(dThreads).forEach(([taskId,thread])=>{
               const tw=document.createElement("div");tw.style.cssText="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:8px;";
               const hdr=document.createElement("div");hdr.style.cssText="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--sep);";
-              const hdrText=document.createElement("div");hdrText.style.cssText="font-size:9px;color:var(--text3);flex:1;";hdrText.innerHTML=thread.taskText?`re: <span style="color:var(--text2)">${thread.taskText}</span>${thread.delegatedBy?` <span style="opacity:0.6">· de ${thread.delegatedBy}</span>`:""}` : "Conversa";
+              const hdrText=document.createElement("div");hdrText.style.cssText="font-size:11px;color:var(--text3);flex:1;";hdrText.innerHTML=thread.taskText?`re: <span style="color:var(--text2)">${thread.taskText}</span>${thread.delegatedBy?` <span style="opacity:0.6">· de ${thread.delegatedBy}</span>`:""}` : "Conversa";
               const closeBtn=document.createElement("button");closeBtn.textContent="×";closeBtn.style.cssText="background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:0 0 0 8px;line-height:1;opacity:0.6;";closeBtn.addEventListener("click",()=>{thread.msgs.forEach(msg=>deleteMsg(msg.id));});
               hdr.appendChild(hdrText);hdr.appendChild(closeBtn);tw.appendChild(hdr);
-              thread.msgs.forEach(msg=>{const isDiogo=msg.from==="Diogo";const me=document.createElement("div");me.style.cssText=`display:flex;flex-direction:${isDiogo?"row-reverse":"row"};gap:6px;margin-bottom:6px;`;const nameEl=document.createElement("div");nameEl.style.cssText=`font-size:9px;color:${themeColor(msg.from)};align-self:flex-end;white-space:nowrap;`;nameEl.textContent=msg.from;const bubble=document.createElement("div");bubble.style.cssText=`max-width:70%;padding:6px 10px;border-radius:10px;background:${isDiogo?themeColor("Diogo")+"22":"var(--bg2)"};border:1px solid ${isDiogo?themeColor("Diogo")+"44":"var(--border)"};`;bubble.innerHTML=`<div style="font-size:12px;color:var(--text);line-height:1.4">${msg.text}</div><div style="font-size:9px;color:var(--text3);margin-top:2px">${msg.ts}${msg.recipient&&msg.recipient!=="Diogo"?` → <span style="color:${themeColor(msg.recipient)}">${msg.recipient}</span>`:""}</div>`;me.appendChild(nameEl);me.appendChild(bubble);tw.appendChild(me);});
+              thread.msgs.forEach(msg=>{const isDiogo=msg.from==="Diogo";const me=document.createElement("div");me.style.cssText=`display:flex;flex-direction:${isDiogo?"row-reverse":"row"};gap:6px;margin-bottom:6px;`;const nameEl=document.createElement("div");nameEl.style.cssText=`font-size:11px;color:${themeColor(msg.from)};align-self:flex-end;white-space:nowrap;`;nameEl.textContent=msg.from;const bubble=document.createElement("div");bubble.style.cssText=`max-width:70%;padding:6px 10px;border-radius:10px;background:${isDiogo?themeColor("Diogo")+"22":"var(--bg2)"};border:1px solid ${isDiogo?themeColor("Diogo")+"44":"var(--border)"};`;bubble.innerHTML=`<div style="font-size:12px;color:var(--text);line-height:1.4">${msg.text}</div><div style="font-size:11px;color:var(--text3);margin-top:2px">${msg.ts}${msg.recipient&&msg.recipient!=="Diogo"?` → <span style="color:${themeColor(msg.recipient)}">${msg.recipient}</span>`:""}</div>`;me.appendChild(nameEl);me.appendChild(bubble);tw.appendChild(me);});
               const rw=document.createElement("div");rw.style.cssText="display:flex;gap:6px;margin-top:8px;padding-top:6px;border-top:1px solid var(--sep);";const ri=document.createElement("input");ri.placeholder="Responder...";ri.style.cssText="flex:1;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:5px 8px;color:var(--text);font-size:11px;font-family:inherit;outline:none;";const rb=document.createElement("button");rb.textContent="↑";rb.style.cssText=`background:${themeColor("Diogo")};color:#000;border:none;border-radius:4px;padding:5px 10px;cursor:pointer;font-size:13px;font-weight:700;`;
               const lastMsg=thread.msgs[thread.msgs.length-1];const replyTo=lastMsg.from==="Diogo"?lastMsg.recipient:lastMsg.from;
               const doR=()=>{if(!ri.value.trim())return;sendMessage("Diogo",ri.value.trim(),taskId,thread.taskText,replyTo,thread.delegatedBy);ri.value="";};rb.addEventListener("click",doR);ri.addEventListener("keydown",e=>{if(e.key==="Enter")doR();});rw.appendChild(ri);rw.appendChild(rb);tw.appendChild(rw);panel.appendChild(tw);
@@ -3439,14 +3439,14 @@ function render(){
             else chk.style.background="none";
             chk.addEventListener("click",()=>toggleTask(task.id,task.done,task.progress));
             const tw=document.createElement("div");tw.style.flex="1";const tt=document.createElement("div");tt.className="task-text";tt.textContent=task.text;tw.appendChild(tt);
-            if(task.delegatedBy){const dbb=document.createElement("div");dbb.style.cssText=`font-size:9px;color:${themeColor(task.delegatedBy)};margin-top:3px;letter-spacing:1px;`;dbb.textContent=`de ${task.delegatedBy}`;tw.appendChild(dbb);}
+            if(task.delegatedBy){const dbb=document.createElement("div");dbb.style.cssText=`font-size:11px;color:${themeColor(task.delegatedBy)};margin-top:3px;letter-spacing:1px;`;dbb.textContent=`de ${task.delegatedBy}`;tw.appendChild(dbb);}
             const delBadge=overdueBadgeHtml(task);
             if(delBadge){const bd=document.createElement("div");bd.style.cssText="margin-top:9px;display:flex;";bd.innerHTML=delBadge;tw.appendChild(bd);}
             row.appendChild(chk);row.appendChild(tw);
             const taskMsgs=Object.values(state.messages||{}).filter(m=>m!=null&&m.taskId===task.id);
             const mb=document.createElement("button");mb.className="msg-btn"+(taskMsgs.length>0?" has-msg":"");mb.textContent=taskMsgs.length>0?`💬 ${taskMsgs.length}`:"💬";
             const mf=document.createElement("div");mf.className="task-msg-form";mf.style.display="none";const mi=document.createElement("input");mi.placeholder="Recado sobre essa tarefa...";
-            const mbr=document.createElement("div");mbr.style.cssText="display:flex;gap:6px;";const sb=document.createElement("button");sb.className="btn-primary";sb.style.cssText=`background:${color};color:#000;font-size:9px;letter-spacing:2px;border:none;border-radius:4px;padding:6px;cursor:pointer;font-family:inherit;flex:1;`;sb.textContent="ENVIAR";const cbt=document.createElement("button");cbt.className="btn-cancel";cbt.textContent="✕";mbr.appendChild(sb);mbr.appendChild(cbt);mf.appendChild(mi);mf.appendChild(mbr);
+            const mbr=document.createElement("div");mbr.style.cssText="display:flex;gap:6px;";const sb=document.createElement("button");sb.className="btn-primary";sb.style.cssText=`background:${color};color:#000;font-size:11px;letter-spacing:2px;border:none;border-radius:4px;padding:6px;cursor:pointer;font-family:inherit;flex:1;`;sb.textContent="ENVIAR";const cbt=document.createElement("button");cbt.className="btn-cancel";cbt.textContent="✕";mbr.appendChild(sb);mbr.appendChild(cbt);mf.appendChild(mi);mf.appendChild(mbr);
             const submit=()=>{if(mi.value.trim()){sendMessage(member.name,mi.value.trim(),task.id,task.text,task.delegatedBy||"Diogo",task.delegatedBy||"Diogo");mi.value="";mf.style.display="none";}};
             sb.addEventListener("click",submit);cbt.addEventListener("click",()=>{mf.style.display="none";});mi.addEventListener("keydown",e=>{if(e.key==="Enter")submit();if(e.key==="Escape")mf.style.display="none";});mb.addEventListener("click",()=>{const vis=mf.style.display!=="none";mf.style.display=vis?"none":"block";if(!vis)setTimeout(()=>mi.focus(),50);});
             row.appendChild(mb);const rw=document.createElement("div");rw.appendChild(row);rw.appendChild(mf);panel.appendChild(rw);
@@ -3459,7 +3459,7 @@ function render(){
           const myNotices=Object.entries(state.notices||{}).filter(([,n])=>n!=null&&n.forMember===member.name).map(([id,n])=>({...n,id})).sort((a,b)=>b.ts_raw-a.ts_raw);
           if(myNotices.length>0){
             const nsec=document.createElement("div");nsec.className="section";nsec.innerHTML=`<div class="section-label">Tarefas concluídas</div>`;
-            myNotices.forEach(notice=>{const el=document.createElement("div");el.style.cssText="display:flex;align-items:center;gap:10px;padding:9px 10px;margin-bottom:4px;border-radius:5px;background:#00140a;border:1px solid #00e67644;";el.innerHTML=`<span style="color:#00e676;font-size:13px">✓</span><div style="flex:1"><div style="font-size:12px;color:var(--text2);text-decoration:line-through">${notice.text}</div><div style="font-size:9px;color:var(--text3);margin-top:2px">${notice.by} concluiu · ${notice.ts}</div></div>`;const ok=document.createElement("button");ok.textContent="OK";ok.style.cssText="background:#00e676;color:#000;border:none;border-radius:3px;padding:3px 10px;font-size:9px;letter-spacing:1.5px;cursor:pointer;font-family:inherit;font-weight:700;";ok.addEventListener("click",()=>remove(ref(db,`/notices/${notice.id}`)));el.appendChild(ok);nsec.appendChild(el);});panel.appendChild(nsec);
+            myNotices.forEach(notice=>{const el=document.createElement("div");el.style.cssText="display:flex;align-items:center;gap:10px;padding:9px 10px;margin-bottom:4px;border-radius:5px;background:#00140a;border:1px solid #00e67644;";el.innerHTML=`<span style="color:#00e676;font-size:13px">✓</span><div style="flex:1"><div style="font-size:12px;color:var(--text2);text-decoration:line-through">${notice.text}</div><div style="font-size:11px;color:var(--text3);margin-top:2px">${notice.by} concluiu · ${notice.ts}</div></div>`;const ok=document.createElement("button");ok.textContent="OK";ok.style.cssText="background:#00e676;color:#000;border:none;border-radius:3px;padding:3px 10px;font-size:11px;letter-spacing:1.5px;cursor:pointer;font-family:inherit;font-weight:700;";ok.addEventListener("click",()=>remove(ref(db,`/notices/${notice.id}`)));el.appendChild(ok);nsec.appendChild(el);});panel.appendChild(nsec);
           }
           const threadMsgs=Object.entries(state.messages||{}).filter(([,m])=>m!=null&&!m.closed&&(m.recipient===member.name||m.from===member.name)).map(([id,m])=>({...m,id})).sort((a,b)=>(a.ts_raw||0)-(b.ts_raw||0));
           const threads={};threadMsgs.forEach(msg=>{const key=msg.taskId||"general";if(!threads[key])threads[key]={taskText:msg.taskText,delegatedBy:msg.delegatedBy,msgs:[]};threads[key].msgs.push(msg);});
@@ -3467,8 +3467,8 @@ function render(){
             const sec=document.createElement("div");sec.className="section";sec.innerHTML=`<div class="section-label">Mensagens</div>`;
             Object.entries(threads).forEach(([taskId,thread])=>{
               const threadWrap=document.createElement("div");threadWrap.style.cssText="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:8px;";
-              const hdr=document.createElement("div");hdr.style.cssText="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--sep);";const hdrText=document.createElement("div");hdrText.style.cssText="font-size:9px;color:var(--text3);letter-spacing:0.5px;flex:1;";hdrText.innerHTML=thread.taskText?`re: <span style="color:var(--text2)">${thread.taskText}</span>${thread.delegatedBy?` <span style="opacity:0.6">· de ${thread.delegatedBy}</span>`:""}` : "Conversa";const closeBtn=document.createElement("button");closeBtn.textContent="×";closeBtn.style.cssText="background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:0 0 0 8px;line-height:1;opacity:0.6;";closeBtn.addEventListener("click",()=>{thread.msgs.forEach(msg=>deleteMsg(msg.id));});hdr.appendChild(hdrText);hdr.appendChild(closeBtn);threadWrap.appendChild(hdr);
-              thread.msgs.forEach(msg=>{const isMine=msg.from===member.name;const msgEl=document.createElement("div");msgEl.style.cssText=`display:flex;flex-direction:${isMine?"row-reverse":"row"};gap:6px;margin-bottom:6px;align-items:flex-end;`;const bubble=document.createElement("div");bubble.style.cssText=`max-width:75%;padding:6px 10px;border-radius:${isMine?"10px 10px 2px 10px":"10px 10px 10px 2px"};background:${isMine?themeColor(member.name)+"22":"var(--bg2)"};border:1px solid ${isMine?themeColor(member.name)+"44":"var(--border)"};`;bubble.innerHTML=`<div style="font-size:12px;color:var(--text);line-height:1.4">${msg.text}</div><div style="font-size:9px;color:var(--text3);margin-top:2px;text-align:${isMine?"right":"left"}">${msg.ts}</div>`;msgEl.appendChild(bubble);threadWrap.appendChild(msgEl);});
+              const hdr=document.createElement("div");hdr.style.cssText="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--sep);";const hdrText=document.createElement("div");hdrText.style.cssText="font-size:11px;color:var(--text3);letter-spacing:0.5px;flex:1;";hdrText.innerHTML=thread.taskText?`re: <span style="color:var(--text2)">${thread.taskText}</span>${thread.delegatedBy?` <span style="opacity:0.6">· de ${thread.delegatedBy}</span>`:""}` : "Conversa";const closeBtn=document.createElement("button");closeBtn.textContent="×";closeBtn.style.cssText="background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:0 0 0 8px;line-height:1;opacity:0.6;";closeBtn.addEventListener("click",()=>{thread.msgs.forEach(msg=>deleteMsg(msg.id));});hdr.appendChild(hdrText);hdr.appendChild(closeBtn);threadWrap.appendChild(hdr);
+              thread.msgs.forEach(msg=>{const isMine=msg.from===member.name;const msgEl=document.createElement("div");msgEl.style.cssText=`display:flex;flex-direction:${isMine?"row-reverse":"row"};gap:6px;margin-bottom:6px;align-items:flex-end;`;const bubble=document.createElement("div");bubble.style.cssText=`max-width:75%;padding:6px 10px;border-radius:${isMine?"10px 10px 2px 10px":"10px 10px 10px 2px"};background:${isMine?themeColor(member.name)+"22":"var(--bg2)"};border:1px solid ${isMine?themeColor(member.name)+"44":"var(--border)"};`;bubble.innerHTML=`<div style="font-size:12px;color:var(--text);line-height:1.4">${msg.text}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;text-align:${isMine?"right":"left"}">${msg.ts}</div>`;msgEl.appendChild(bubble);threadWrap.appendChild(msgEl);});
               const replyWrap=document.createElement("div");replyWrap.style.cssText="display:flex;gap:6px;margin-top:8px;padding-top:6px;border-top:1px solid var(--sep);";const replyInp=document.createElement("input");replyInp.placeholder="Responder...";replyInp.style.cssText="flex:1;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:5px 8px;color:var(--text);font-size:11px;font-family:inherit;outline:none;";const replyBtn=document.createElement("button");replyBtn.textContent="↑";replyBtn.style.cssText=`background:${themeColor(member.name)};color:#000;border:none;border-radius:4px;padding:5px 10px;cursor:pointer;font-size:13px;font-weight:700;`;
               const lastMsg=thread.msgs[thread.msgs.length-1];const replyTo=lastMsg.from===member.name?lastMsg.recipient:lastMsg.from;const doReply=()=>{if(!replyInp.value.trim())return;sendMessage(member.name,replyInp.value.trim(),taskId,thread.taskText,replyTo,thread.delegatedBy);replyInp.value="";};replyBtn.addEventListener("click",doReply);replyInp.addEventListener("keydown",e=>{if(e.key==="Enter")doReply();});replyWrap.appendChild(replyInp);replyWrap.appendChild(replyBtn);threadWrap.appendChild(replyWrap);sec.appendChild(threadWrap);
             });
@@ -3507,7 +3507,7 @@ function render(){
     avWrap.appendChild(avLarissa);
 
     const lbl = document.createElement("span");
-    lbl.style.cssText = "font-size:9px;color:#666;letter-spacing:1px;text-transform:uppercase;";
+    lbl.style.cssText = "font-size:11px;color:#666;letter-spacing:1px;text-transform:uppercase;";
     lbl.textContent = isExpanded ? "Esconder equipe" : "Ver equipe";
 
     pill.appendChild(avWrap);
@@ -3684,7 +3684,7 @@ function renderCancelamentos(panel) {
   topRow.style.cssText = "display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;";
   const refreshBtn = document.createElement("button");
   refreshBtn.textContent = "↻ Atualizar";
-  refreshBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:4px 10px;font-size:10px;cursor:pointer;font-family:inherit;";
+  refreshBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:inherit;";
   refreshBtn.addEventListener("click", () => {
     cancelamentosData = null; // reseta pra forçar nova busca
     const p = document.getElementById("cancelamentos-panel");
@@ -3771,21 +3771,21 @@ function renderCancelamentos(panel) {
     prodNome.style.cssText = "font-size:11px;font-weight:600;color:var(--text);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;";
     prodNome.textContent = it.produto;
     const compradorRow = document.createElement("div");
-    compradorRow.style.cssText = "display:flex;gap:8px;align-items:center;font-size:10px;color:var(--text3);flex-wrap:wrap;";
+    compradorRow.style.cssText = "display:flex;gap:8px;align-items:center;font-size:11px;color:var(--text3);flex-wrap:wrap;";
     compradorRow.appendChild(copiavel(it.comprador, `👤 ${it.comprador}`));
     const dataValor = document.createElement("span");
     dataValor.textContent = `${dataStr} · ${valorStr}`;
     compradorRow.appendChild(dataValor);
     prodInfo.appendChild(prodNome); prodInfo.appendChild(compradorRow);
     const badgeAlerta = document.createElement("span");
-    badgeAlerta.style.cssText = `background:${sd.cor}18;color:${sd.cor};border:1px solid ${sd.cor}55;border-radius:4px;padding:2px 8px;font-size:9px;white-space:nowrap;flex-shrink:0;letter-spacing:0.02em;font-weight:500;`;
+    badgeAlerta.style.cssText = `background:${sd.cor}18;color:${sd.cor};border:1px solid ${sd.cor}55;border-radius:4px;padding:2px 8px;font-size:11px;white-space:nowrap;flex-shrink:0;letter-spacing:0.02em;font-weight:500;`;
     badgeAlerta.textContent = `${sd.icone} ${sd.texto}`;
     linha1.appendChild(prodInfo); linha1.appendChild(badgeAlerta);
     card.appendChild(linha1);
 
     // Linha 2: pedido, NF e badge de situação da nota
     const linha2 = document.createElement("div");
-    linha2.style.cssText = "display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;font-size:10px;color:var(--text3);";
+    linha2.style.cssText = "display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;font-size:11px;color:var(--text3);";
     const pedidoLabel = document.createElement("span");
     pedidoLabel.textContent = "Pedido ML ";
     pedidoLabel.appendChild(copiavel(it.numeroPedido));
@@ -3796,7 +3796,7 @@ function renderCancelamentos(panel) {
       nfLabel.appendChild(copiavel(it.nf.nfNumero));
       const bs = badgeSituacao(it.nf.nfSituacao);
       const badgeNF = document.createElement("span");
-      badgeNF.style.cssText = `background:${bs.bg};color:${bs.cor};border:1px solid ${bs.borda};border-radius:3px;padding:1px 6px;font-size:9px;`;
+      badgeNF.style.cssText = `background:${bs.bg};color:${bs.cor};border:1px solid ${bs.borda};border-radius:3px;padding:1px 6px;font-size:11px;`;
       badgeNF.textContent = it.nf.nfSituacao;
       linha2.appendChild(sep); linha2.appendChild(nfLabel); linha2.appendChild(badgeNF);
     }
@@ -3813,7 +3813,7 @@ function renderCancelamentos(panel) {
         const btn = document.createElement("button");
         btn.textContent = `→ ${membro}`;
         btn.title = `Delegar para ${membro}`;
-        btn.style.cssText = `background:none;border:1px solid ${cor}44;color:${cor};border-radius:4px;padding:3px 10px;font-size:10px;cursor:pointer;font-family:inherit;`;
+        btn.style.cssText = `background:none;border:1px solid ${cor}44;color:${cor};border-radius:4px;padding:3px 10px;font-size:11px;cursor:pointer;font-family:inherit;`;
         btn.addEventListener("click", () => {
           push(ref(db, "/tasks"), {
             member: membro, text: textoTarefa, prio: "urgente",
@@ -3850,7 +3850,7 @@ function renderCancelamentosBruno(panel) {
   titulo.textContent = pendentes.length === 0 ? "Nenhuma NF pendente de cancelamento" : `${pendentes.length} NF${pendentes.length>1?"s":""} para cancelar no Bling`;
   const refBtn = document.createElement("button");
   refBtn.textContent = "↻ Atualizar";
-  refBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:4px 10px;font-size:10px;cursor:pointer;font-family:inherit;";
+  refBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:inherit;";
   refBtn.addEventListener("click", () => { cancelamentosData=null; const p=panel; p.innerHTML=""; renderCancelamentosBruno(p); fetchCancelamentos(true); });
   topRow.appendChild(titulo); topRow.appendChild(refBtn);
   panel.appendChild(topRow);
@@ -3870,7 +3870,7 @@ function renderCancelamentosBruno(panel) {
   const justCard = document.createElement("div");
   justCard.style.cssText = "background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px 14px;margin-bottom:14px;";
   const justTitle = document.createElement("div");
-  justTitle.style.cssText = "font-size:9px;color:var(--text3);letter-spacing:1.5px;margin-bottom:8px;text-transform:uppercase;";
+  justTitle.style.cssText = "font-size:11px;color:var(--text3);letter-spacing:1.5px;margin-bottom:8px;text-transform:uppercase;";
   justTitle.textContent = "Justificativas prontas (se o Bling pedir)";
   justCard.appendChild(justTitle);
   [
@@ -3885,7 +3885,7 @@ function renderCancelamentosBruno(panel) {
     label.textContent = txt;
     const copyBtn = document.createElement("button");
     copyBtn.textContent = "Copiar";
-    copyBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:3px 10px;font-size:10px;cursor:pointer;font-family:inherit;flex-shrink:0;";
+    copyBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:3px 10px;font-size:11px;cursor:pointer;font-family:inherit;flex-shrink:0;";
     copyBtn.addEventListener("click", () => {
       navigator.clipboard.writeText(txt).catch(()=>{});
       copyBtn.textContent = "✓"; copyBtn.style.color="#00dfc3";
@@ -3920,13 +3920,13 @@ function renderCancelamentosBruno(panel) {
     prodNome.style.cssText = "font-size:12px;font-weight:600;color:var(--text);flex:1;margin-right:8px;";
     prodNome.textContent = it.produto;
     const badge = document.createElement("span");
-    badge.style.cssText = "background:#e91e8c18;color:#e91e8c;border:1px solid #e91e8c55;border-radius:4px;padding:2px 8px;font-size:9px;white-space:nowrap;flex-shrink:0;font-weight:600;";
+    badge.style.cssText = "background:#e91e8c18;color:#e91e8c;border:1px solid #e91e8c55;border-radius:4px;padding:2px 8px;font-size:11px;white-space:nowrap;flex-shrink:0;font-weight:600;";
     badge.textContent = "⚠ Necessário cancelar NF";
     badgeRow.appendChild(prodNome); badgeRow.appendChild(badge);
     card.appendChild(badgeRow);
 
     const linha2 = document.createElement("div");
-    linha2.style.cssText = "display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:10px;color:var(--text3);margin-bottom:8px;";
+    linha2.style.cssText = "display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:11px;color:var(--text3);margin-bottom:8px;";
     const compRow = document.createElement("span");
     compRow.appendChild(copiavel(it.comprador, `👤 ${it.comprador}`));
     linha2.appendChild(compRow);
@@ -3947,7 +3947,7 @@ function renderCancelamentosBruno(panel) {
     const pedidoWrap = document.createElement("div");
     pedidoWrap.style.cssText = "display:flex;align-items:center;gap:6px;";
     const pedidoLabel = document.createElement("span");
-    pedidoLabel.style.cssText = "font-size:9px;color:var(--text3);letter-spacing:1px;";
+    pedidoLabel.style.cssText = "font-size:11px;color:var(--text3);letter-spacing:1px;";
     pedidoLabel.textContent = "PEDIDO ML";
     const pedidoNum = document.createElement("span");
     pedidoNum.style.cssText = "font-size:12px;font-weight:600;color:#9d7fff;font-family:'IBM Plex Mono',monospace;cursor:pointer;";
@@ -3965,7 +3965,7 @@ function renderCancelamentosBruno(panel) {
       const nfWrap = document.createElement("div");
       nfWrap.style.cssText = "display:flex;align-items:center;gap:6px;";
       const nfLabel = document.createElement("span");
-      nfLabel.style.cssText = "font-size:9px;color:var(--text3);letter-spacing:1px;";
+      nfLabel.style.cssText = "font-size:11px;color:var(--text3);letter-spacing:1px;";
       nfLabel.textContent = "NF";
       const nfNum = document.createElement("span");
       nfNum.style.cssText = "font-size:16px;font-weight:700;color:#e91e8c;font-family:'IBM Plex Mono',monospace;cursor:pointer;letter-spacing:1px;";
@@ -3977,7 +3977,7 @@ function renderCancelamentosBruno(panel) {
         setTimeout(()=>nfNum.style.color=orig, 800);
       });
       const nfBadge = document.createElement("span");
-      nfBadge.style.cssText = "background:#00dfc318;color:#00dfc3;border:1px solid #00dfc333;border-radius:3px;padding:1px 7px;font-size:9px;";
+      nfBadge.style.cssText = "background:#00dfc318;color:#00dfc3;border:1px solid #00dfc333;border-radius:3px;padding:1px 7px;font-size:11px;";
       nfBadge.textContent = it.nf.nfSituacao;
       nfWrap.appendChild(nfLabel); nfWrap.appendChild(nfNum); nfWrap.appendChild(nfBadge);
       bottomRow.appendChild(nfWrap);
@@ -4130,7 +4130,7 @@ function renderEstoqueTab(panel, color) {
   ["filial","matriz"].forEach(loc => {
     const btn = document.createElement("button");
     const active = estoqueLoc === loc;
-    btn.style.cssText = `padding:8px 16px;background:none;border:none;font-family:inherit;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:${active?"var(--text)":"var(--text3)"};border-bottom:2px solid ${active?"var(--text)":"transparent"};margin-bottom:-1px;transition:all 0.15s;`;
+    btn.style.cssText = `padding:8px 16px;background:none;border:none;font-family:inherit;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:${active?"var(--text)":"var(--text3)"};border-bottom:2px solid ${active?"var(--text)":"transparent"};margin-bottom:-1px;transition:all 0.15s;`;
     btn.textContent = loc === "filial" ? "Filial SP" : "Matriz RS";
     btn.addEventListener("click", () => { estoqueLoc = loc; render(); });
     locWrap.appendChild(btn);
@@ -4153,7 +4153,7 @@ function renderFilialSP(panel, color) {
   uploadWrap.style.cssText = "display:flex;align-items:center;gap:10px;flex-wrap:wrap;";
 
   const uploadLabel = document.createElement("label");
-  uploadLabel.style.cssText = `display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:none;border:1px dashed ${color}66;border-radius:5px;color:${color};font-size:10px;letter-spacing:1.5px;cursor:pointer;`;
+  uploadLabel.style.cssText = `display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:none;border:1px dashed ${color}66;border-radius:5px;color:${color};font-size:11px;letter-spacing:1.5px;cursor:pointer;`;
   uploadLabel.innerHTML = `<span>↑</span><span>Trocar planilha</span>`;
   const fileInput = document.createElement("input");
   fileInput.type = "file"; fileInput.accept = ".xlsx,.xls"; fileInput.style.display = "none";
@@ -4166,7 +4166,7 @@ function renderFilialSP(panel, color) {
 
   if (estoqueExcelData?.fileName) {
     const fn = document.createElement("span");
-    fn.style.cssText = "font-size:9px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:260px;";
+    fn.style.cssText = "font-size:11px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:260px;";
     fn.textContent = estoqueExcelData.fileName;
     uploadWrap.appendChild(fn);
   }
@@ -4174,7 +4174,7 @@ function renderFilialSP(panel, color) {
     const refreshBtn = document.createElement("button");
     refreshBtn.textContent = estoqueAutoLoading ? "↻ Atualizando..." : "↻ Atualizar do ML";
     refreshBtn.disabled = estoqueAutoLoading;
-    refreshBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:3px;padding:3px 10px;font-size:9px;cursor:pointer;letter-spacing:0.5px;font-family:inherit;";
+    refreshBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:3px;padding:3px 10px;font-size:11px;cursor:pointer;letter-spacing:0.5px;font-family:inherit;";
     refreshBtn.addEventListener("click", () => fetchEstoqueAutomatico(true));
     uploadWrap.appendChild(refreshBtn);
   }
@@ -4189,7 +4189,7 @@ function renderFilialSP(panel, color) {
     if (estoqueAutoLoading) {
       empty.innerHTML = '<span class="spinning">↻</span> Buscando estoque do Full automaticamente...';
     } else if (estoqueAutoErro) {
-      empty.innerHTML = `Erro ao buscar estoque automático: ${estoqueAutoErro}<br><span style="font-size:10px;">Tente importar a planilha manualmente enquanto isso.</span>`;
+      empty.innerHTML = `Erro ao buscar estoque automático: ${estoqueAutoErro}<br><span style="font-size:11px;">Tente importar a planilha manualmente enquanto isso.</span>`;
     } else if (state.ml_token_filial?.access_token) {
       empty.textContent = "Nenhum item encontrado no Full ainda.";
     } else {
@@ -4224,7 +4224,7 @@ function renderFilialSP(panel, color) {
   ].forEach(s => {
     const card = document.createElement("div");
     card.style.cssText = `background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;border-top:2px solid ${s.color};`;
-    card.innerHTML = `<div style="font-size:10px;color:var(--text3);letter-spacing:2px;margin-bottom:8px;text-transform:uppercase;">${s.label}</div><div style="font-size:24px;font-weight:600;color:${s.color};text-shadow:0 0 16px ${s.color}66;">${s.value}</div><div style="font-size:11px;color:var(--text3);margin-top:4px;">${s.sub}</div>`;
+    card.innerHTML = `<div style="font-size:11px;color:var(--text3);letter-spacing:2px;margin-bottom:8px;text-transform:uppercase;">${s.label}</div><div style="font-size:24px;font-weight:600;color:${s.color};text-shadow:0 0 16px ${s.color}66;">${s.value}</div><div style="font-size:11px;color:var(--text3);margin-top:4px;">${s.sub}</div>`;
     resumo.appendChild(card);
   });
   panel.appendChild(resumo);
@@ -4236,7 +4236,7 @@ function renderFilialSP(panel, color) {
   ["estoque","saude"].forEach(st => {
     const btn = document.createElement("button");
     const active = window._estoqueSubTab === st;
-    btn.style.cssText = `padding:7px 14px;background:none;border:none;font-family:inherit;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:${active?"var(--text)":"var(--text3)"};border-bottom:2px solid ${active?"var(--text)":"transparent"};margin-bottom:-1px;transition:all 0.15s;`;
+    btn.style.cssText = `padding:7px 14px;background:none;border:none;font-family:inherit;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:${active?"var(--text)":"var(--text3)"};border-bottom:2px solid ${active?"var(--text)":"transparent"};margin-bottom:-1px;transition:all 0.15s;`;
     btn.textContent = st === "estoque" ? "Estoque" : "Saúde";
     btn.addEventListener("click", () => { window._estoqueSubTab = st; render(); });
     subTabWrap.appendChild(btn);
@@ -4246,7 +4246,7 @@ function renderFilialSP(panel, color) {
   const helpBtn = document.createElement("button");
   helpBtn.textContent = "?";
   helpBtn.title = "O que é a aba Saúde?";
-  helpBtn.style.cssText = "margin-left:auto;background:none;border:0.5px solid var(--border2);border-radius:50%;width:20px;height:20px;color:var(--text3);font-size:10px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;flex-shrink:0;";
+  helpBtn.style.cssText = "margin-left:auto;background:none;border:0.5px solid var(--border2);border-radius:50%;width:20px;height:20px;color:var(--text3);font-size:11px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;flex-shrink:0;";
   helpBtn.addEventListener("click", () => {
     const existing = document.getElementById("saude-help-tooltip");
     if(existing) { existing.remove(); return; }
@@ -4262,7 +4262,7 @@ function renderFilialSP(panel, color) {
         <span style="color:#e91e8c;font-weight:600;">🔴 Vermelho (&gt;90d)</span> — Encalhado. Precisa de ação.<br><br>
         Clique num card pra ver projeção de receita e histórico de preço.
       </div>
-      <button onclick="document.getElementById('saude-help-tooltip').remove()" style="background:var(--accent);border:none;border-radius:6px;color:#000;font-size:10px;font-weight:700;letter-spacing:1px;padding:7px 16px;cursor:pointer;font-family:inherit;width:100%;">Entendido</button>
+      <button onclick="document.getElementById('saude-help-tooltip').remove()" style="background:var(--accent);border:none;border-radius:6px;color:#000;font-size:11px;font-weight:700;letter-spacing:1px;padding:7px 16px;cursor:pointer;font-family:inherit;width:100%;">Entendido</button>
     `;
     document.body.appendChild(tooltip);
     // Fechar ao clicar fora — com delay pra não fechar imediatamente
@@ -4282,13 +4282,13 @@ function renderFilialSP(panel, color) {
     const table = document.createElement("table");
     table.style.cssText = "width:100%;border-collapse:collapse;";
     table.innerHTML = `<thead><tr style="border-bottom:1px solid var(--sep);">
-      <th style="text-align:left;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">SKU</th>
-      <th style="text-align:left;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">PRODUTO</th>
-      <th style="text-align:center;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">APTAS</th>
-      <th style="text-align:center;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">TRANSF</th>
-      <th style="text-align:center;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">PEND</th>
-      <th style="text-align:right;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">CUSTO</th>
-      <th style="text-align:right;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">VALOR</th>
+      <th style="text-align:left;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">SKU</th>
+      <th style="text-align:left;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">PRODUTO</th>
+      <th style="text-align:center;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">APTAS</th>
+      <th style="text-align:center;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">TRANSF</th>
+      <th style="text-align:center;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">PEND</th>
+      <th style="text-align:right;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">CUSTO</th>
+      <th style="text-align:right;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">VALOR</th>
     </tr></thead><tbody id="estoque-tbody"></tbody>`;
     tableWrap.appendChild(table);
     panel.appendChild(tableWrap);
@@ -4296,7 +4296,7 @@ function renderFilialSP(panel, color) {
     const tbody = table.querySelector("#estoque-tbody");
     enriched.forEach(r => {
       const semCusto = !r.custo;
-      const custoStr = r.custo > 0 ? `R$ ${r.custo.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : `<span style="color:#e91e8c;font-size:9px;">sem custo</span>`;
+      const custoStr = r.custo > 0 ? `R$ ${r.custo.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : `<span style="color:#e91e8c;font-size:11px;">sem custo</span>`;
       const valorStr = r.valor > 0 ? `R$ ${r.valor.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : "—";
       const tr = document.createElement("tr");
       tr.style.borderBottom = "1px solid var(--sep2)";
@@ -4313,7 +4313,7 @@ function renderFilialSP(panel, color) {
 
     if (skusSemCusto > 0 && estoqueBlingData) {
       const warn = document.createElement("div");
-      warn.style.cssText = "margin-top:12px;padding:8px 12px;background:#f8711408;border:1px solid #f8711422;border-radius:5px;font-size:10px;color:#e91e8c;";
+      warn.style.cssText = "margin-top:12px;padding:8px 12px;background:#f8711408;border:1px solid #f8711422;border-radius:5px;font-size:11px;color:#e91e8c;";
       warn.textContent = `⚠ ${skusSemCusto} SKUs sem custo no Bling — verifique o campo "Preço de Custo" no cadastro do produto.`;
       panel.appendChild(warn);
     }
@@ -4332,7 +4332,7 @@ function renderMatrizRS(panel, color) {
   uploadWrap.style.cssText = "display:flex;align-items:center;gap:10px;flex-wrap:wrap;";
 
   const uploadLabel = document.createElement("label");
-  uploadLabel.style.cssText = `display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:none;border:1px dashed ${color}66;border-radius:5px;color:${color};font-size:10px;letter-spacing:1.5px;cursor:pointer;`;
+  uploadLabel.style.cssText = `display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:none;border:1px dashed ${color}66;border-radius:5px;color:${color};font-size:11px;letter-spacing:1.5px;cursor:pointer;`;
   uploadLabel.innerHTML = `<span>↑</span><span>Trocar relatório</span>`;
   const fileInput = document.createElement("input");
   fileInput.type = "file"; fileInput.accept = ".xlsx,.xls"; fileInput.style.display = "none";
@@ -4351,7 +4351,7 @@ function renderMatrizRS(panel, color) {
 
   if (matrizFileName) {
     const fn = document.createElement("span");
-    fn.style.cssText = "font-size:9px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:260px;";
+    fn.style.cssText = "font-size:11px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:260px;";
     fn.textContent = matrizFileName;
     uploadWrap.appendChild(fn);
   }
@@ -4359,20 +4359,20 @@ function renderMatrizRS(panel, color) {
 
   // Status ML Matriz
   const mlMatrizWrap = document.createElement("div");
-  mlMatrizWrap.style.cssText = "display:flex;align-items:center;gap:6px;font-size:9px;";
+  mlMatrizWrap.style.cssText = "display:flex;align-items:center;gap:6px;font-size:11px;";
   if(state.ml_token?.access_token){
     const nick = state.ml_token.nickname ? ` · ${state.ml_token.nickname}` : "";
     mlMatrizWrap.innerHTML = `<span style="color:#00dfc3">●</span><span style="color:var(--text3)">ML Matriz${nick}</span>`;
     const reconBtn = document.createElement("button");
     reconBtn.textContent = "Reconectar";
-    reconBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer;letter-spacing:1px;margin-left:4px;";
+    reconBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:3px;padding:2px 8px;font-size:11px;cursor:pointer;letter-spacing:1px;margin-left:4px;";
     reconBtn.addEventListener("click", () => window.open(`${VERCEL_BACKEND}/api/ml-auth?conta=matriz`, "_blank"));
     mlMatrizWrap.appendChild(reconBtn);
   }else{
     mlMatrizWrap.innerHTML = `<span style="color:var(--text3)">ML Matriz desconectado</span>`;
     const connBtn = document.createElement("button");
     connBtn.textContent = "Conectar ML Matriz";
-    connBtn.style.cssText = "background:none;border:1px solid #f0b40066;color:#f0b400;border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer;letter-spacing:1px;margin-left:4px;";
+    connBtn.style.cssText = "background:none;border:1px solid #f0b40066;color:#f0b400;border-radius:3px;padding:2px 8px;font-size:11px;cursor:pointer;letter-spacing:1px;margin-left:4px;";
     connBtn.addEventListener("click", () => window.open(`${VERCEL_BACKEND}/api/ml-auth?conta=matriz`, "_blank"));
     mlMatrizWrap.appendChild(connBtn);
   }
@@ -4401,7 +4401,7 @@ function renderMatrizRS(panel, color) {
   ].forEach(s => {
     const card = document.createElement("div");
     card.style.cssText = `background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;border-top:2px solid ${s.color};`;
-    card.innerHTML = `<div style="font-size:10px;color:var(--text3);letter-spacing:2px;margin-bottom:8px;text-transform:uppercase;">${s.label}</div><div style="font-size:24px;font-weight:600;color:${s.color};text-shadow:0 0 16px ${s.color}66;">${s.value}</div><div style="font-size:11px;color:var(--text3);margin-top:4px;">${s.sub}</div>`;
+    card.innerHTML = `<div style="font-size:11px;color:var(--text3);letter-spacing:2px;margin-bottom:8px;text-transform:uppercase;">${s.label}</div><div style="font-size:24px;font-weight:600;color:${s.color};text-shadow:0 0 16px ${s.color}66;">${s.value}</div><div style="font-size:11px;color:var(--text3);margin-top:4px;">${s.sub}</div>`;
     resumo.appendChild(card);
   });
   panel.appendChild(resumo);
@@ -4413,7 +4413,7 @@ function renderMatrizRS(panel, color) {
   ["estoque","saude"].forEach(st => {
     const btn = document.createElement("button");
     const active = window._matrizSubTab === st;
-    btn.style.cssText = `padding:7px 14px;background:none;border:none;font-family:inherit;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:${active?"var(--text)":"var(--text3)"};border-bottom:2px solid ${active?"var(--text)":"transparent"};margin-bottom:-1px;transition:all 0.15s;`;
+    btn.style.cssText = `padding:7px 14px;background:none;border:none;font-family:inherit;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:${active?"var(--text)":"var(--text3)"};border-bottom:2px solid ${active?"var(--text)":"transparent"};margin-bottom:-1px;transition:all 0.15s;`;
     btn.textContent = st === "estoque" ? "Estoque" : "Saúde";
     btn.addEventListener("click", () => { window._matrizSubTab = st; render(); });
     subTabWrap.appendChild(btn);
@@ -4427,11 +4427,11 @@ function renderMatrizRS(panel, color) {
     const table = document.createElement("table");
     table.style.cssText = "width:100%;border-collapse:collapse;";
     table.innerHTML = `<thead><tr style="border-bottom:1px solid var(--sep);">
-      <th style="text-align:left;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">SKU</th>
-      <th style="text-align:left;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">PRODUTO</th>
-      <th style="text-align:center;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">QTD</th>
-      <th style="text-align:right;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">CUSTO</th>
-      <th style="text-align:right;padding:6px 8px;font-size:9px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">VALOR</th>
+      <th style="text-align:left;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">SKU</th>
+      <th style="text-align:left;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">PRODUTO</th>
+      <th style="text-align:center;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">QTD</th>
+      <th style="text-align:right;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">CUSTO</th>
+      <th style="text-align:right;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">VALOR</th>
     </tr></thead><tbody></tbody>`;
     tableWrap.appendChild(table);
     panel.appendChild(tableWrap);
@@ -4472,7 +4472,7 @@ function renderSaudeChart(panel, enriched) {
 
   // Legenda
   const leg = document.createElement("div");
-  leg.style.cssText = "display:flex;gap:14px;margin-bottom:14px;font-size:10px;flex-wrap:wrap;";
+  leg.style.cssText = "display:flex;gap:14px;margin-bottom:14px;font-size:11px;flex-wrap:wrap;";
   [{c:"#00ffb8",l:"<15d — subir"},{c:"#f0b400",l:"15–90d — acompanhar"},{c:"#e91e8c",l:">90d — baixar"}].forEach(({c,l}) => {
     const s = document.createElement("span");
     s.style.cssText = "display:flex;align-items:center;gap:4px;color:var(--text3);";
@@ -4524,9 +4524,9 @@ function renderSaudeChart(panel, enriched) {
     chip.style.cssText = "position:relative;display:flex;flex-direction:column;gap:3px;padding:8px 10px;border-radius:6px;border:1px solid " + c + "28;border-top:2px solid " + c + ";background:linear-gradient(135deg," + c + "18 0%,#161616 65%);cursor:pointer;min-width:110px;transition:all 0.15s;";
     chip.innerHTML =
       (mostrarPonto ? '<div style="position:absolute;top:6px;right:6px;width:6px;height:6px;border-radius:50%;background:' + c + ';box-shadow:0 0 4px ' + c + ';"></div>' : '') +
-      '<div style="font-size:9px;color:' + c + ';font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px;">' + d.sku + '</div>' +
+      '<div style="font-size:11px;color:' + c + ';font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px;">' + d.sku + '</div>' +
       '<div style="font-size:12px;font-weight:600;color:' + c + ';">' + diasLabel(d) + '</div>' +
-      '<div style="font-size:9px;color:#aaa;">R$' + Math.round(d.valor / 1000) + 'k · ' + d.vendas30 + '/mês</div>';
+      '<div style="font-size:11px;color:#aaa;">R$' + Math.round(d.valor / 1000) + 'k · ' + d.vendas30 + '/mês</div>';
 
     chip.addEventListener("click", () => {
       if (mostrarPonto) update(ref(db, `/categoria_saude/${skuKey}`), { vista: true });
@@ -4550,13 +4550,13 @@ function renderSaudeChart(panel, enriched) {
       det.innerHTML =
         '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;">' +
           '<div style="font-size:13px;font-weight:600;color:' + c + ';">' + d.sku + '</div>' +
-          '<span style="background:' + c + '22;color:' + c + ';border:1px solid ' + c + '55;border-radius:4px;padding:3px 10px;font-size:10px;letter-spacing:1px;font-weight:500;">' + badgeText(d) + '</span>' +
+          '<span style="background:' + c + '22;color:' + c + ';border:1px solid ' + c + '55;border-radius:4px;padding:3px 10px;font-size:11px;letter-spacing:1px;font-weight:500;">' + badgeText(d) + '</span>' +
         '</div>' +
         '<div style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:10px;">' +
-          '<div><div style="font-size:9px;color:var(--text3);letter-spacing:1px;margin-bottom:3px;">VALOR EM ESTOQUE</div><div style="font-size:16px;font-weight:600;color:' + c + ';">' + (d.valor > 0 ? "R$ " + d.valor.toLocaleString("pt-BR") : "—") + '</div></div>' +
-          '<div><div style="font-size:9px;color:var(--text3);letter-spacing:1px;margin-bottom:3px;">VENDAS 30D</div><div style="font-size:16px;font-weight:500;color:var(--text);">' + d.vendas30 + ' un</div></div>' +
-          '<div><div style="font-size:9px;color:var(--text3);letter-spacing:1px;margin-bottom:3px;">DIAS ESTOQUE</div><div style="font-size:16px;font-weight:600;color:' + c + ';">' + diasLabel(d) + '</div></div>' +
-          '<div><div style="font-size:9px;color:var(--text3);letter-spacing:1px;margin-bottom:3px;">UNIDADES</div><div style="font-size:16px;font-weight:500;color:var(--text);">' + d.aptas + '</div></div>' +
+          '<div><div style="font-size:11px;color:var(--text3);letter-spacing:1px;margin-bottom:3px;">VALOR EM ESTOQUE</div><div style="font-size:16px;font-weight:600;color:' + c + ';">' + (d.valor > 0 ? "R$ " + d.valor.toLocaleString("pt-BR") : "—") + '</div></div>' +
+          '<div><div style="font-size:11px;color:var(--text3);letter-spacing:1px;margin-bottom:3px;">VENDAS 30D</div><div style="font-size:16px;font-weight:500;color:var(--text);">' + d.vendas30 + ' un</div></div>' +
+          '<div><div style="font-size:11px;color:var(--text3);letter-spacing:1px;margin-bottom:3px;">DIAS ESTOQUE</div><div style="font-size:16px;font-weight:600;color:' + c + ';">' + diasLabel(d) + '</div></div>' +
+          '<div><div style="font-size:11px;color:var(--text3);letter-spacing:1px;margin-bottom:3px;">UNIDADES</div><div style="font-size:16px;font-weight:500;color:var(--text);">' + d.aptas + '</div></div>' +
         '</div>' +
         '<div style="font-size:12px;color:var(--text3);line-height:1.6;font-family:system-ui,sans-serif;">' + msg + '</div>';
 
@@ -4577,23 +4577,23 @@ function renderSaudeChart(panel, enriched) {
           <div style="font-size:8px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;">Projeção do mês</div>
           <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:10px;">
             ${precoVenda > 0 ? `<div>
-              <div style="font-size:9px;color:var(--text3);margin-bottom:2px;">Receita projetada</div>
+              <div style="font-size:11px;color:var(--text3);margin-bottom:2px;">Receita projetada</div>
               <div style="font-size:15px;font-weight:600;color:${c};">R$ ${receitaProj.toLocaleString("pt-BR",{minimumFractionDigits:0})}</div>
-              <div style="font-size:9px;color:var(--text3);margin-top:2px;">${d.vendas30} un × R$ ${precoVenda.toFixed(0)}</div>
+              <div style="font-size:11px;color:var(--text3);margin-top:2px;">${d.vendas30} un × R$ ${precoVenda.toFixed(0)}</div>
             </div>` : ""}
             <div>
-              <div style="font-size:9px;color:var(--text3);margin-bottom:2px;">Ritmo atual</div>
+              <div style="font-size:11px;color:var(--text3);margin-bottom:2px;">Ritmo atual</div>
               <div style="font-size:15px;font-weight:600;color:var(--text);">${ritmo} un/dia</div>
             </div>
             <div>
-              <div style="font-size:9px;color:var(--text3);margin-bottom:2px;">Ruptura prevista</div>
+              <div style="font-size:11px;color:var(--text3);margin-bottom:2px;">Ruptura prevista</div>
               <div style="font-size:15px;font-weight:600;color:${rupturaColor};">${ruptura}</div>
             </div>
           </div>
           <div style="background:var(--bg2);border-radius:99px;height:4px;margin-bottom:4px;">
             <div style="height:4px;border-radius:99px;background:${c};width:${percMes}%;"></div>
           </div>
-          <div style="font-size:9px;color:var(--text3);">${percMes}% do mês percorrido</div>
+          <div style="font-size:11px;color:var(--text3);">${percMes}% do mês percorrido</div>
         `;
       }
       det.appendChild(projSection);
@@ -4606,7 +4606,7 @@ function renderSaudeChart(panel, enriched) {
       function buildRealSalesBlock(){
         const wrap = document.createElement("div");
         const header = document.createElement("div");
-        header.style.cssText = "font-size:9px;color:var(--text3);letter-spacing:1px;margin-bottom:8px;";
+        header.style.cssText = "font-size:11px;color:var(--text3);letter-spacing:1px;margin-bottom:8px;";
         header.textContent = "VENDAS REAIS NO ML DESDE A MUDANÇA";
         wrap.appendChild(header);
         const statsRow = document.createElement("div");
@@ -4647,11 +4647,11 @@ function renderSaudeChart(panel, enriched) {
               statsRow.innerHTML = '<span style="color:var(--text3);font-size:11px;">Nenhuma venda registrada desde a mudança.' + extra + '</span>';
             }else{
               statsRow.innerHTML =
-                '<div><div style="font-size:9px;color:var(--text3);">UNIDADES</div><div style="font-size:15px;font-weight:600;color:#f0b400;">' + m.qty + '</div></div>' +
-                '<div><div style="font-size:9px;color:var(--text3);">FATURAMENTO</div><div style="font-size:15px;font-weight:600;color:#f0b400;">R$ ' + m.revenue.toLocaleString("pt-BR",{minimumFractionDigits:2}) + '</div></div>';
+                '<div><div style="font-size:11px;color:var(--text3);">UNIDADES</div><div style="font-size:15px;font-weight:600;color:#f0b400;">' + m.qty + '</div></div>' +
+                '<div><div style="font-size:11px;color:var(--text3);">FATURAMENTO</div><div style="font-size:15px;font-weight:600;color:#f0b400;">R$ ' + m.revenue.toLocaleString("pt-BR",{minimumFractionDigits:2}) + '</div></div>';
               const toggleBtn = document.createElement("button");
               toggleBtn.textContent = "Ver lista";
-              toggleBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:3px 10px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:0.5px;";
+              toggleBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:3px 10px;font-size:11px;cursor:pointer;font-family:inherit;letter-spacing:0.5px;";
               toggleBtn.addEventListener("click", () => {
                 const vis = listWrap.style.display !== "none";
                 if(vis){ listWrap.style.display = "none"; toggleBtn.textContent = "Ver lista"; return; }
@@ -4698,30 +4698,30 @@ function renderSaudeChart(panel, enriched) {
           const varVendas = vendasAntes > 0 ? (((vendasDepois - vendasAntes) / vendasAntes) * 100).toFixed(0) : null;
 
           info.innerHTML =
-            '<div style="font-size:9px;color:var(--text3);letter-spacing:1px;margin-bottom:8px;">MUDANÇA DE PREÇO · há ' + diasDesde + 'd</div>' +
+            '<div style="font-size:11px;color:var(--text3);letter-spacing:1px;margin-bottom:8px;">MUDANÇA DE PREÇO · há ' + diasDesde + 'd</div>' +
             '<div style="background:var(--bg2);border-radius:8px;padding:10px 12px;margin-bottom:10px;display:flex;align-items:center;gap:10px;">' +
               '<div style="font-size:13px;color:#888;text-decoration:line-through;">R$ ' + Number(pc.priceBefore).toFixed(2) + '</div>' +
               '<div style="color:var(--text3);">→</div>' +
               '<div style="font-size:13px;font-weight:700;color:' + precoColor + ';">R$ ' + Number(pc.priceAfter).toFixed(2) + '</div>' +
-              '<div style="font-size:10px;color:' + precoColor + ';margin-left:4px;">' + (subiu ? "+" : "") + diffPct + '%</div>' +
-              '<div style="margin-left:auto;font-size:9px;color:var(--text3);">' + (pc.changedBy || "automático") + '</div>' +
+              '<div style="font-size:11px;color:' + precoColor + ';margin-left:4px;">' + (subiu ? "+" : "") + diffPct + '%</div>' +
+              '<div style="margin-left:auto;font-size:11px;color:var(--text3);">' + (pc.changedBy || "automático") + '</div>' +
             '</div>' +
             (vendasAntes > 0 ? 
               '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">' +
                 '<div style="background:var(--bg2);border-radius:7px;padding:10px;">' +
                   '<div style="font-size:8px;color:var(--text3);letter-spacing:1px;margin-bottom:4px;">ANTES (R$ ' + Number(pc.priceBefore).toFixed(0) + ')</div>' +
                   '<div style="font-size:18px;font-weight:700;color:#888;">' + vendasAntes + ' un</div>' +
-                  '<div style="font-size:9px;color:var(--text3);margin-top:2px;">em 30 dias</div>' +
+                  '<div style="font-size:11px;color:var(--text3);margin-top:2px;">em 30 dias</div>' +
                 '</div>' +
                 '<div style="background:var(--bg2);border-radius:7px;padding:10px;">' +
                   '<div style="font-size:8px;color:var(--text3);letter-spacing:1px;margin-bottom:4px;">DEPOIS (R$ ' + Number(pc.priceAfter).toFixed(0) + ')</div>' +
                   '<div style="font-size:18px;font-weight:700;color:' + (varVendas > 0 ? "#22c55e" : "#e91e8c") + ';">' + (varVendas > 0 ? "+" : "") + varVendas + '%</div>' +
-                  '<div style="font-size:9px;color:var(--text3);margin-top:2px;">' + vendasDepois + ' un em ' + diasDesde + 'd ↑</div>' +
+                  '<div style="font-size:11px;color:var(--text3);margin-top:2px;">' + vendasDepois + ' un em ' + diasDesde + 'd ↑</div>' +
                 '</div>' +
               '</div>'
             : "");
         }else{
-          info.innerHTML = '<div style="font-size:9px;color:var(--text3);letter-spacing:1px;">MUDANÇA DE PREÇO · há ' + diasDesde + 'd</div>';
+          info.innerHTML = '<div style="font-size:11px;color:var(--text3);letter-spacing:1px;">MUDANÇA DE PREÇO · há ' + diasDesde + 'd</div>';
         }
         priceSection.appendChild(info);
 
@@ -4729,23 +4729,23 @@ function renderSaudeChart(panel, enriched) {
           priceSection.appendChild(buildRealSalesBlock());
         }else{
           const hint = document.createElement("div");
-          hint.style.cssText = "font-size:10px;color:var(--text3);line-height:1.5;";
+          hint.style.cssText = "font-size:11px;color:var(--text3);line-height:1.5;";
           hint.textContent = "Conecte o ML Filial (no topo da aba) pra ver as vendas reais desde essa mudança.";
           priceSection.appendChild(hint);
         }
       }else if(mlFilialOn){
         const hint = document.createElement("div");
-        hint.style.cssText = "font-size:10px;color:var(--text3);line-height:1.5;";
+        hint.style.cssText = "font-size:11px;color:var(--text3);line-height:1.5;";
         hint.textContent = "Assim que o preço desse SKU mudar no Mercado Livre, o painel detecta sozinho na próxima vez que você abrir a aba Estoque.";
         priceSection.appendChild(hint);
       }else{
         const markBtn = document.createElement("button");
         markBtn.textContent = "📌 Marquei mudança de preço agora";
-        markBtn.style.cssText = `background:none;border:1px dashed ${c}66;color:${c};border-radius:5px;padding:7px 12px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:1px;width:100%;`;
+        markBtn.style.cssText = `background:none;border:1px dashed ${c}66;color:${c};border-radius:5px;padding:7px 12px;font-size:11px;cursor:pointer;font-family:inherit;letter-spacing:1px;width:100%;`;
         markBtn.addEventListener("click",()=>{set(ref(db,`/price_changes/${d.sku}`),{vendas30AtChange:d.vendas30,changedAt:Date.now(),changedBy:currentUser});});
         priceSection.appendChild(markBtn);
         const hint = document.createElement("div");
-        hint.style.cssText = "font-size:10px;color:var(--text3);margin-top:6px;line-height:1.5;";
+        hint.style.cssText = "font-size:11px;color:var(--text3);margin-top:6px;line-height:1.5;";
         hint.textContent = "Conecte o ML Filial (no topo da aba) pra isso ficar automático.";
         priceSection.appendChild(hint);
       }
@@ -4844,7 +4844,7 @@ function renderFechamentoMensal(panel, color) {
   rightWrap.style.cssText = "display:flex;gap:8px;align-items:center;";
 
   const uploadLabel = document.createElement("label");
-  uploadLabel.style.cssText = `display:inline-flex;align-items:center;gap:5px;padding:6px 14px;background:none;border:1px dashed ${color}66;border-radius:5px;color:${color};font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:1px;`;
+  uploadLabel.style.cssText = `display:inline-flex;align-items:center;gap:5px;padding:6px 14px;background:none;border:1px dashed ${color}66;border-radius:5px;color:${color};font-size:11px;cursor:pointer;font-family:inherit;letter-spacing:1px;`;
   uploadLabel.textContent = "↑ Importar planilha";
   const fileInput = document.createElement("input");
   fileInput.type = "file"; fileInput.accept = ".csv,.xlsx,.xls"; fileInput.style.display = "none";
@@ -4872,7 +4872,7 @@ function renderFechamentoMensal(panel, color) {
 
   if(savedAt) {
     const statusBar = document.createElement("div");
-    statusBar.style.cssText = "font-size:9px;color:var(--text3);margin-bottom:12px;text-align:right;letter-spacing:0.5px;";
+    statusBar.style.cssText = "font-size:11px;color:var(--text3);margin-bottom:12px;text-align:right;letter-spacing:0.5px;";
     statusBar.textContent = `✓ Salvo em ${new Date(savedAt).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}`;
     panel.appendChild(statusBar);
   }
@@ -4930,14 +4930,14 @@ function renderFechamentoMensal(panel, color) {
       iNome.style.cssText += "font-size:13px;font-weight:600;";
       iNome.addEventListener("input", () => { nf.fornecedor = iNome.value; });
       const iCnpj = inpClean(nf.cnpj, "CNPJ", "var(--text3)", true);
-      iCnpj.style.cssText += "font-size:10px;margin-top:2px;";
+      iCnpj.style.cssText += "font-size:11px;margin-top:2px;";
       iCnpj.addEventListener("input", () => { nf.cnpj = iCnpj.value; });
       nomeWrap.appendChild(iNome); nomeWrap.appendChild(iCnpj);
 
       const valorWrap = document.createElement("div");
       valorWrap.style.cssText = "text-align:right;flex-shrink:0;";
       const vLabel = document.createElement("div");
-      vLabel.style.cssText = "font-size:10px;color:var(--text3);margin-bottom:2px;";
+      vLabel.style.cssText = "font-size:11px;color:var(--text3);margin-bottom:2px;";
       vLabel.textContent = "Valor";
       const iValWrap = document.createElement("div");
       iValWrap.style.cssText = "display:flex;align-items:baseline;gap:3px;justify-content:flex-end;";
@@ -4966,7 +4966,7 @@ function renderFechamentoMensal(panel, color) {
         const col = document.createElement("div");
         col.style.cssText = `${width?"width:"+width+";flex-shrink:0;":"flex:1;min-width:80px;"}`;
         const lbl = document.createElement("div");
-        lbl.style.cssText = "font-size:10px;color:var(--text3);margin-bottom:3px;letter-spacing:0.03em;";
+        lbl.style.cssText = "font-size:11px;color:var(--text3);margin-bottom:3px;letter-spacing:0.03em;";
         lbl.textContent = label;
         const inp = inpClean(val, "—", cor||"var(--text2)", mono);
         inp.style.fontSize = "12px";
@@ -5004,7 +5004,7 @@ function renderFechamentoMensal(panel, color) {
       cardsWrap.parentNode.insertBefore(totalCard, cardsWrap.nextSibling);
     }
     totalCard.innerHTML = `
-      <span style="font-size:10px;color:var(--text3);letter-spacing:0.08em;">TOTAL GERAL — ${ativas.length} nota${ativas.length!==1?"s":""}</span>
+      <span style="font-size:11px;color:var(--text3);letter-spacing:0.08em;">TOTAL GERAL — ${ativas.length} nota${ativas.length!==1?"s":""}</span>
       <span id="fechamento-total" style="font-size:17px;font-weight:600;color:#4ade80;">${total>0?"R$ "+total.toLocaleString("pt-BR",{minimumFractionDigits:2}):"—"}</span>`;
   }
 
@@ -5022,7 +5022,7 @@ function renderFechamentoMensal(panel, color) {
   // Botão adicionar
   const addBtn = document.createElement("button");
   addBtn.textContent = "+ adicionar nota manualmente";
-  addBtn.style.cssText = `width:100%;background:none;border:1px dashed ${color}33;color:${color};border-radius:8px;padding:8px;font-size:10px;cursor:pointer;font-family:inherit;margin-bottom:12px;opacity:0.6;`;
+  addBtn.style.cssText = `width:100%;background:none;border:1px dashed ${color}33;color:${color};border-radius:8px;padding:8px;font-size:11px;cursor:pointer;font-family:inherit;margin-bottom:12px;opacity:0.6;`;
   addBtn.addEventListener("click", () => {
     notasState.push({ fornecedor:"", cnpj:"", numero:"", servico:"", valor:"", emissao:"", _idx:notasState.length, _removido:false });
     renderCards();
@@ -5170,7 +5170,7 @@ function renderConfig(panel, color) {
   ["geral","apis"].forEach(t => {
     const btn = document.createElement("button");
     btn.textContent = t === "geral" ? "Geral" : "APIs";
-    btn.style.cssText = `flex:1;padding:6px;border:none;border-radius:5px;font-size:10px;letter-spacing:1px;cursor:pointer;font-family:inherit;transition:all .15s;background:${window._configTab===t?"var(--bg2)":"none"};color:${window._configTab===t?"var(--text)":"var(--text3)"};font-weight:${window._configTab===t?"600":"400"};`;
+    btn.style.cssText = `flex:1;padding:6px;border:none;border-radius:5px;font-size:11px;letter-spacing:1px;cursor:pointer;font-family:inherit;transition:all .15s;background:${window._configTab===t?"var(--bg2)":"none"};color:${window._configTab===t?"var(--text)":"var(--text3)"};font-weight:${window._configTab===t?"600":"400"};`;
     btn.addEventListener("click", () => { window._configTab = t; render(); });
     configTabs.appendChild(btn);
   });
@@ -5222,13 +5222,13 @@ function renderConfig(panel, color) {
       nomeEl.style.cssText = "font-size:11px;color:var(--text2);font-weight:500;";
       nomeEl.textContent = api.nome;
       const statusEl = document.createElement("div");
-      statusEl.style.cssText = `font-size:9px;color:${dotColor};margin-top:2px;`;
+      statusEl.style.cssText = `font-size:11px;color:${dotColor};margin-top:2px;`;
       statusEl.textContent = api.ativo ? ("Conectado" + (api.sub ? " · "+api.sub : "")) : api.expirado ? "Token expirado" : (api.sub ? "Erro · "+api.sub : "Não conectado");
       info.appendChild(nomeEl); info.appendChild(statusEl);
       left.appendChild(dot); left.appendChild(info);
 
       const btn = document.createElement("button");
-      btn.style.cssText = `background:none;border:0.5px solid ${api.ativo?"var(--border2)":dotColor+"55"};border-radius:5px;color:${api.ativo?"var(--text3)":dotColor};font-size:9px;letter-spacing:1px;padding:5px 12px;cursor:pointer;font-family:inherit;`;
+      btn.style.cssText = `background:none;border:0.5px solid ${api.ativo?"var(--border2)":dotColor+"55"};border-radius:5px;color:${api.ativo?"var(--text3)":dotColor};font-size:11px;letter-spacing:1px;padding:5px 12px;cursor:pointer;font-family:inherit;`;
       btn.textContent = api.ativo ? "Reconectar" : "Conectar";
       if(api.url) {
         btn.addEventListener("click", () => window.open(api.url, "_blank"));
@@ -5254,7 +5254,7 @@ function renderConfig(panel, color) {
   secAtrib.body.appendChild(descAtrib);
 
   const atribStatus = document.createElement("div");
-  atribStatus.style.cssText = "font-size:10px;margin-bottom:10px;";
+  atribStatus.style.cssText = "font-size:11px;margin-bottom:10px;";
   const atribSalvo = state.config_atributos;
   if(atribSalvo?.total) {
     atribStatus.innerHTML = `<span style="color:#00dfc3;">✓ ${atribSalvo.total} SKUs carregados</span> <span style="color:var(--text3);">· atualizado em ${new Date(atribSalvo.atualizadoEm).toLocaleDateString("pt-BR")}</span>`;
@@ -5277,7 +5277,7 @@ function renderConfig(panel, color) {
   secKits.body.appendChild(descKits);
 
   const kitsStatus = document.createElement("div");
-  kitsStatus.style.cssText = "font-size:10px;margin-bottom:10px;";
+  kitsStatus.style.cssText = "font-size:11px;margin-bottom:10px;";
   const kitsSalvos = state.config_kits;
   if(kitsSalvos?.total) {
     kitsStatus.innerHTML = `<span style="color:#00dfc3;">✓ ${kitsSalvos.total} kits carregados</span> <span style="color:var(--text3);">· atualizado em ${new Date(kitsSalvos.atualizadoEm).toLocaleDateString("pt-BR")}</span>`;
@@ -5305,7 +5305,7 @@ function renderConfig(panel, color) {
       compsRow.style.cssText = "display:flex;gap:6px;flex-wrap:wrap;";
       comps.forEach(c => {
         const tag = document.createElement("span");
-        tag.style.cssText = "background:var(--bg3);border:1px solid var(--border2);border-radius:4px;padding:2px 8px;font-size:10px;color:var(--text2);";
+        tag.style.cssText = "background:var(--bg3);border:1px solid var(--border2);border-radius:4px;padding:2px 8px;font-size:11px;color:var(--text2);";
         tag.textContent = `${c.sku} × ${c.qtd}`;
         compsRow.appendChild(tag);
       });
@@ -5322,7 +5322,7 @@ function criarSecaoConfig(titulo, color) {
   const wrap = document.createElement("div");
   wrap.style.cssText = "background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:12px;";
   const header = document.createElement("div");
-  header.style.cssText = "font-size:9px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;";
+  header.style.cssText = "font-size:11px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;";
   header.textContent = titulo;
   const body = document.createElement("div");
   wrap.appendChild(header); wrap.appendChild(body);
@@ -5331,7 +5331,7 @@ function criarSecaoConfig(titulo, color) {
 
 function criarBotaoUpload(label, color, onFile) {
   const lbl = document.createElement("label");
-  lbl.style.cssText = `display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:none;border:1px dashed ${color}66;border-radius:5px;color:${color};font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:0.5px;`;
+  lbl.style.cssText = `display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:none;border:1px dashed ${color}66;border-radius:5px;color:${color};font-size:11px;cursor:pointer;font-family:inherit;letter-spacing:0.5px;`;
   lbl.textContent = label;
   const inp = document.createElement("input");
   inp.type = "file"; inp.accept = ".csv"; inp.style.display = "none";
@@ -5597,8 +5597,8 @@ function notifRefreshFalhou(conta) {
     </div>
     <div style="font-size:11px;color:#aaa;margin-bottom:12px;line-height:1.5;">O refresh automático falhou. Reconecte manualmente abrindo o link no browser certo.</div>
     <div style="display:flex;gap:8px;">
-      <button onclick="window.open('${VERCEL_BACKEND}/api/ml-auth?conta=${conta}','_blank')" style="flex:1;background:#e91e8c;border:none;border-radius:5px;color:#fff;font-size:10px;font-weight:700;letter-spacing:1px;padding:6px;cursor:pointer;font-family:inherit;">RECONECTAR</button>
-      <button onclick="document.getElementById('${id}').remove()" style="background:none;border:1px solid #333;border-radius:5px;color:#666;font-size:10px;padding:6px 10px;cursor:pointer;font-family:inherit;">✕</button>
+      <button onclick="window.open('${VERCEL_BACKEND}/api/ml-auth?conta=${conta}','_blank')" style="flex:1;background:#e91e8c;border:none;border-radius:5px;color:#fff;font-size:11px;font-weight:700;letter-spacing:1px;padding:6px;cursor:pointer;font-family:inherit;">RECONECTAR</button>
+      <button onclick="document.getElementById('${id}').remove()" style="background:none;border:1px solid #333;border-radius:5px;color:#666;font-size:11px;padding:6px 10px;cursor:pointer;font-family:inherit;">✕</button>
     </div>
   `;
   document.body.appendChild(notif);
@@ -5763,7 +5763,7 @@ async function renderConferencia(panel, color) {
     meses.push(key);
   }
   const selMes = document.createElement("select");
-  selMes.style.cssText = "background:var(--bg3);border:0.5px solid var(--border2);border-radius:7px;color:var(--text3);font-size:10px;padding:6px 12px;cursor:pointer;font-family:inherit;outline:none;";
+  selMes.style.cssText = "background:var(--bg3);border:0.5px solid var(--border2);border-radius:7px;color:var(--text3);font-size:11px;padding:6px 12px;cursor:pointer;font-family:inherit;outline:none;";
   meses.forEach(m => {
     const opt = document.createElement("option");
     opt.value = m; opt.textContent = formatarMes(m);
@@ -5810,7 +5810,7 @@ async function renderConferencia(panel, color) {
     val.style.cssText = `font-size:18px;font-weight:700;color:${cor};letter-spacing:-0.5px;`;
     val.textContent = "R$ "+valor.toLocaleString("pt-BR",{minimumFractionDigits:2});
     const cnt = document.createElement("div");
-    cnt.style.cssText = "font-size:9px;color:var(--text3);margin-top:4px;";
+    cnt.style.cssText = "font-size:11px;color:var(--text3);margin-top:4px;";
     cnt.textContent = count;
     c.appendChild(hat); c.appendChild(lbl); c.appendChild(val); c.appendChild(cnt);
     return c;
@@ -5828,14 +5828,14 @@ async function renderConferencia(panel, color) {
     filtrosWrap.style.cssText = "display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;";
     const btnTodos = document.createElement("button");
     btnTodos.textContent = "Todos";
-    btnTodos.style.cssText = `background:${!confFiltroTipo?"var(--accent)":"none"};border:0.5px solid ${!confFiltroTipo?"var(--accent)":"var(--border2)"};border-radius:99px;color:${!confFiltroTipo?"#000":"var(--text3)"};font-size:9px;font-weight:${!confFiltroTipo?"700":"400"};letter-spacing:1px;padding:4px 12px;cursor:pointer;font-family:inherit;`;
+    btnTodos.style.cssText = `background:${!confFiltroTipo?"var(--accent)":"none"};border:0.5px solid ${!confFiltroTipo?"var(--accent)":"var(--border2)"};border-radius:99px;color:${!confFiltroTipo?"#000":"var(--text3)"};font-size:11px;font-weight:${!confFiltroTipo?"700":"400"};letter-spacing:1px;padding:4px 12px;cursor:pointer;font-family:inherit;`;
     btnTodos.addEventListener("click", () => { confFiltroTipo = null; renderConferencia(panel, color); });
     filtrosWrap.appendChild(btnTodos);
     tiposExistentes.forEach(tipo => {
       const btn = document.createElement("button");
       btn.textContent = tipo;
       const ativo = confFiltroTipo === tipo;
-      btn.style.cssText = `background:${ativo?"#e91e8c":"none"};border:0.5px solid ${ativo?"#e91e8c":"#e91e8c44"};border-radius:99px;color:${ativo?"#000":"#e91e8c"};font-size:9px;font-weight:${ativo?"700":"400"};letter-spacing:1px;padding:4px 12px;cursor:pointer;font-family:inherit;`;
+      btn.style.cssText = `background:${ativo?"#e91e8c":"none"};border:0.5px solid ${ativo?"#e91e8c":"#e91e8c44"};border-radius:99px;color:${ativo?"#000":"#e91e8c"};font-size:11px;font-weight:${ativo?"700":"400"};letter-spacing:1px;padding:4px 12px;cursor:pointer;font-family:inherit;`;
       btn.addEventListener("click", () => { confFiltroTipo = tipo; renderConferencia(panel, color); });
       filtrosWrap.appendChild(btn);
     });
@@ -5848,16 +5848,16 @@ async function renderConferencia(panel, color) {
     viewer.style.cssText = "background:var(--bg3);border:0.5px solid var(--border2);border-radius:12px;overflow:hidden;margin-bottom:14px;";
     const vHeader = document.createElement("div");
     vHeader.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:0.5px solid var(--sep);";
-    vHeader.innerHTML = `<span style="font-size:10px;color:var(--text2);">Visualizando documento</span>`;
+    vHeader.innerHTML = `<span style="font-size:11px;color:var(--text2);">Visualizando documento</span>`;
     const vActions = document.createElement("div");
     vActions.style.cssText = "display:flex;gap:6px;";
     const btnAba = document.createElement("button");
     btnAba.textContent = "↗ Abrir em nova aba";
-    btnAba.style.cssText = "background:none;border:0.5px solid var(--border2);border-radius:4px;color:var(--text3);font-size:9px;padding:3px 9px;cursor:pointer;font-family:inherit;";
+    btnAba.style.cssText = "background:none;border:0.5px solid var(--border2);border-radius:4px;color:var(--text3);font-size:11px;padding:3px 9px;cursor:pointer;font-family:inherit;";
     btnAba.addEventListener("click", () => window.open(confVisualizando, "_blank"));
     const btnFechar = document.createElement("button");
     btnFechar.textContent = "✕ Fechar";
-    btnFechar.style.cssText = "background:none;border:0.5px solid var(--border2);border-radius:4px;color:var(--text3);font-size:9px;padding:3px 9px;cursor:pointer;font-family:inherit;";
+    btnFechar.style.cssText = "background:none;border:0.5px solid var(--border2);border-radius:4px;color:var(--text3);font-size:11px;padding:3px 9px;cursor:pointer;font-family:inherit;";
     btnFechar.addEventListener("click", () => { confVisualizando = null; renderConferencia(panel, color); });
     vActions.appendChild(btnAba); vActions.appendChild(btnFechar);
     vHeader.appendChild(vActions);
@@ -5888,10 +5888,10 @@ async function renderConferencia(panel, color) {
     const secLeft = document.createElement("div");
     secLeft.style.cssText = "display:flex;align-items:center;gap:10px;";
     const pillEl = document.createElement("span");
-    pillEl.style.cssText = `font-size:9px;font-weight:700;letter-spacing:1.5px;padding:4px 10px;border-radius:99px;background:${cor}14;color:${cor};border:0.5px solid ${cor}33;`;
+    pillEl.style.cssText = `font-size:11px;font-weight:700;letter-spacing:1.5px;padding:4px 10px;border-radius:99px;background:${cor}14;color:${cor};border:0.5px solid ${cor}33;`;
     pillEl.textContent = pill;
     const countEl = document.createElement("span");
-    countEl.style.cssText = "font-size:9px;color:var(--text3);";
+    countEl.style.cssText = "font-size:11px;color:var(--text3);";
     countEl.textContent = `${docs.length} documentos`;
     const totalEl = document.createElement("div");
     totalEl.style.cssText = `font-size:13px;font-weight:600;color:${cor};`;
@@ -5924,7 +5924,7 @@ async function renderConferencia(panel, color) {
       if(doc.cnpj) badgeItems.push(doc.cnpj);
       badgeItems.forEach(txt => {
         const b = document.createElement("span");
-        b.style.cssText = "font-size:9px;font-weight:500;padding:2px 8px;border-radius:4px;background:var(--bg2);border:0.5px solid var(--border2);color:var(--text3);white-space:nowrap;";
+        b.style.cssText = "font-size:11px;font-weight:500;padding:2px 8px;border-radius:4px;background:var(--bg2);border:0.5px solid var(--border2);color:var(--text3);white-space:nowrap;";
         b.textContent = txt;
         badges.appendChild(b);
       });
@@ -5937,19 +5937,19 @@ async function renderConferencia(panel, color) {
       const btnVer = document.createElement("button");
       btnVer.textContent = "ver";
       if(doc.viewUrl) {
-        btnVer.style.cssText = "background:none;border:0.5px solid var(--border2);border-radius:4px;color:var(--text3);font-size:9px;padding:3px 9px;cursor:pointer;font-family:inherit;";
+        btnVer.style.cssText = "background:none;border:0.5px solid var(--border2);border-radius:4px;color:var(--text3);font-size:11px;padding:3px 9px;cursor:pointer;font-family:inherit;";
         btnVer.addEventListener("click", () => {
           confVisualizando = confVisualizando === doc.viewUrl ? null : doc.viewUrl;
           renderConferencia(panel, color);
         });
       } else {
-        btnVer.style.cssText = "background:none;border:0.5px solid var(--border2);border-radius:4px;color:var(--text3);font-size:9px;padding:3px 9px;cursor:not-allowed;font-family:inherit;opacity:0.3;";
+        btnVer.style.cssText = "background:none;border:0.5px solid var(--border2);border-radius:4px;color:var(--text3);font-size:11px;padding:3px 9px;cursor:not-allowed;font-family:inherit;opacity:0.3;";
         btnVer.title = "Drive não conectado — sem link de visualização";
         btnVer.disabled = true;
       }
       const btnDel = document.createElement("button");
       btnDel.textContent = "✕";
-      btnDel.style.cssText = "background:none;border:0.5px solid #e91e8c22;border-radius:4px;color:#e91e8c66;font-size:9px;padding:3px 7px;cursor:pointer;font-family:inherit;";
+      btnDel.style.cssText = "background:none;border:0.5px solid #e91e8c22;border-radius:4px;color:#e91e8c66;font-size:11px;padding:3px 7px;cursor:pointer;font-family:inherit;";
       btnDel.addEventListener("click", async () => {
         if(!confirm(`Remover "${doc.nome}"?`)) return;
         await removerDocFirebase(confMes, categoria, doc.id);
@@ -5967,7 +5967,7 @@ async function renderConferencia(panel, color) {
     uploadRow.style.cssText = "padding:10px 16px;";
     const uploadBtn = document.createElement("button");
     uploadBtn.textContent = `+ Anexar ${categoria === "servicos" ? "nota de serviço" : "guia de imposto"}`;
-    uploadBtn.style.cssText = "background:none;border:0.5px dashed var(--border2);border-radius:7px;color:var(--text3);font-size:10px;padding:8px 16px;cursor:pointer;font-family:inherit;letter-spacing:1px;width:100%;text-align:center;";
+    uploadBtn.style.cssText = "background:none;border:0.5px dashed var(--border2);border-radius:7px;color:var(--text3);font-size:11px;padding:8px 16px;cursor:pointer;font-family:inherit;letter-spacing:1px;width:100%;text-align:center;";
     const fileInput = document.createElement("input");
     fileInput.type = "file"; fileInput.accept = ".pdf"; fileInput.style.display = "none";
     fileInput.addEventListener("change", async () => {
@@ -6011,20 +6011,20 @@ async function renderConferencia(panel, color) {
           form.className = "manual-form";
           form.style.cssText = "margin-top:10px;background:var(--bg2);border:0.5px solid #f0b40055;border-radius:8px;padding:12px 14px;";
           form.innerHTML = `
-            <div style="font-size:10px;color:#f0b400;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+            <div style="font-size:11px;color:#f0b400;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
               <span>⚠</span> Não consegui extrair os dados automaticamente de <strong style="color:var(--text2);">${file.name}</strong>
             </div>
             <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
               <div style="flex:1;min-width:100px;">
-                <div style="font-size:9px;color:var(--text3);letter-spacing:1px;margin-bottom:4px;">VALOR (R$)</div>
+                <div style="font-size:11px;color:var(--text3);letter-spacing:1px;margin-bottom:4px;">VALOR (R$)</div>
                 <input class="manual-valor" placeholder="ex: 1234,56" style="width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:5px;color:var(--text);font-size:12px;padding:6px 10px;font-family:inherit;outline:none;">
               </div>
               <div style="flex:1;min-width:100px;">
-                <div style="font-size:9px;color:var(--text3);letter-spacing:1px;margin-bottom:4px;">COMPETÊNCIA</div>
+                <div style="font-size:11px;color:var(--text3);letter-spacing:1px;margin-bottom:4px;">COMPETÊNCIA</div>
                 <input class="manual-comp" placeholder="ex: 06/2026" value="${competencia}" style="width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:5px;color:var(--text);font-size:12px;padding:6px 10px;font-family:inherit;outline:none;">
               </div>
-              <button class="manual-ok" style="background:var(--accent);border:none;border-radius:5px;color:#000;font-size:10px;font-weight:700;letter-spacing:1px;padding:7px 14px;cursor:pointer;font-family:inherit;white-space:nowrap;">CONFIRMAR</button>
-              <button class="manual-cancel" style="background:none;border:0.5px solid var(--border2);border-radius:5px;color:var(--text3);font-size:10px;padding:7px 10px;cursor:pointer;font-family:inherit;">✕</button>
+              <button class="manual-ok" style="background:var(--accent);border:none;border-radius:5px;color:#000;font-size:11px;font-weight:700;letter-spacing:1px;padding:7px 14px;cursor:pointer;font-family:inherit;white-space:nowrap;">CONFIRMAR</button>
+              <button class="manual-cancel" style="background:none;border:0.5px solid var(--border2);border-radius:5px;color:var(--text3);font-size:11px;padding:7px 10px;cursor:pointer;font-family:inherit;">✕</button>
             </div>
           `;
 
@@ -6098,7 +6098,7 @@ async function renderConferencia(panel, color) {
 
     // Botão CSV Bling
     const btnCSV = document.createElement("button");
-    btnCSV.style.cssText = `background:none;border:1px dashed var(--border2);border-radius:6px;color:var(--text3);font-size:10px;letter-spacing:1px;padding:9px 0;cursor:pointer;font-family:inherit;flex:1;text-align:center;`;
+    btnCSV.style.cssText = `background:none;border:1px dashed var(--border2);border-radius:6px;color:var(--text3);font-size:11px;letter-spacing:1px;padding:9px 0;cursor:pointer;font-family:inherit;flex:1;text-align:center;`;
     btnCSV.innerHTML = `↓ Gerar CSV Bling`;
     btnCSV.addEventListener("click", async () => {
       btnCSV.textContent = "⏳ Gerando..."; btnCSV.disabled = true;
@@ -6126,7 +6126,7 @@ async function renderConferencia(panel, color) {
 
     // Botão Rascunho contador
     const btnEmail = document.createElement("button");
-    btnEmail.style.cssText = `background:none;border:1px dashed var(--border2);border-radius:6px;color:var(--text3);font-size:10px;letter-spacing:1px;padding:9px 0;cursor:pointer;font-family:inherit;flex:1;text-align:center;`;
+    btnEmail.style.cssText = `background:none;border:1px dashed var(--border2);border-radius:6px;color:var(--text3);font-size:11px;letter-spacing:1px;padding:9px 0;cursor:pointer;font-family:inherit;flex:1;text-align:center;`;
     btnEmail.innerHTML = `✉ Rascunho pro contador`;
     btnEmail.addEventListener("click", async () => {
       btnEmail.textContent = "⏳ Criando rascunho..."; btnEmail.disabled = true;
