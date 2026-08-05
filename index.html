@@ -506,12 +506,12 @@ function renderDashboard(panel, color) {
     if(!d) return `<div style="text-align:center;padding:20px;color:var(--text3);font-size:11px;">Token não conectado</div>`;
     return `
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;">
-        <div style="background:var(--bg2);border-radius:10px;padding:12px;"><div style="font-size:8px;color:#777;margin-bottom:5px;letter-spacing:.5px;text-transform:uppercase;font-family:'Inter',sans-serif;">Hoje</div><div style="font-size:30px;font-weight:700;color:#fff;margin-bottom:6px;letter-spacing:-1px;font-family:'IBM Plex Mono',monospace;">${fmtFull(d.fatHoje)}</div><div style="padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:.4px;font-family:'Inter',sans-serif;display:inline-block;background:rgba(45,206,137,.13);color:#2dce89;border:1px solid rgba(45,206,137,.3);">↑ EM TEMPO REAL</div></div>
-        <div style="background:var(--bg2);border-radius:10px;padding:12px;"><div style="font-size:8px;color:#777;margin-bottom:5px;letter-spacing:.5px;text-transform:uppercase;font-family:'Inter',sans-serif;">Projeção</div><div style="font-size:30px;font-weight:700;color:#fff;margin-bottom:6px;letter-spacing:-1px;font-family:'IBM Plex Mono',monospace;">${fmt(d.projecaoDia)}</div><div style="padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:.4px;font-family:'Inter',sans-serif;display:inline-block;background:rgba(255,255,255,.08);color:#aaa;border:1px solid rgba(255,255,255,.18);">${percDia}% DO DIA</div></div>
-        <div style="background:var(--bg2);border-radius:10px;padding:12px;"><div style="font-size:8px;color:#777;margin-bottom:5px;letter-spacing:.5px;text-transform:uppercase;font-family:'Inter',sans-serif;">Mês atual</div><div style="font-size:30px;font-weight:700;color:#fff;margin-bottom:6px;letter-spacing:-1px;font-family:'IBM Plex Mono',monospace;">${fmt(d.fatMes)}</div><div style="padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:.4px;font-family:'Inter',sans-serif;display:inline-block;background:rgba(45,206,137,.13);color:#2dce89;border:1px solid rgba(45,206,137,.3);">${d.pedidosMes} PEDIDOS</div></div>
+        <div style="background:var(--bg2);border-radius:10px;padding:12px;"><div style="font-size:10px;color:#666;margin-bottom:5px;font-family:'Inter',sans-serif;font-weight:500;">Hoje</div><div style="font-size:30px;font-weight:700;color:#fff;margin-bottom:6px;letter-spacing:-1px;font-family:'IBM Plex Mono',monospace;">${fmtFull(d.fatHoje)}</div><div style="padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;font-family:'Inter',sans-serif;display:inline-block;background:rgba(45,206,137,.13);color:#2dce89;border:1px solid rgba(45,206,137,.3);">↑ EM TEMPO REAL</div></div>
+        <div style="background:var(--bg2);border-radius:10px;padding:12px;"><div style="font-size:10px;color:#666;margin-bottom:5px;font-family:'Inter',sans-serif;font-weight:500;">Projeção</div><div style="font-size:30px;font-weight:700;color:#fff;margin-bottom:6px;letter-spacing:-1px;font-family:'IBM Plex Mono',monospace;">${fmt(d.projecaoDia)}</div><div style="padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;font-family:'Inter',sans-serif;display:inline-block;background:rgba(255,255,255,.08);color:#aaa;border:1px solid rgba(255,255,255,.18);">${percDia}% DO DIA</div></div>
+        <div style="background:var(--bg2);border-radius:10px;padding:12px;"><div style="font-size:10px;color:#666;margin-bottom:5px;font-family:'Inter',sans-serif;font-weight:500;">Mês atual</div><div style="font-size:30px;font-weight:700;color:#fff;margin-bottom:6px;letter-spacing:-1px;font-family:'IBM Plex Mono',monospace;">${fmt(d.fatMes)}</div><div style="padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;font-family:'Inter',sans-serif;display:inline-block;background:rgba(45,206,137,.13);color:#2dce89;border:1px solid rgba(45,206,137,.3);">${d.pedidosMes} PEDIDOS</div></div>
       </div>
       <div style="background:#1a1a1a;border-radius:99px;height:6px;margin-bottom:20px;"><div style="height:6px;border-radius:99px;background:linear-gradient(90deg,#5e72e4,#11cdef);width:${percDia}%;box-shadow:0 0 10px rgba(17,205,239,0.35);"></div></div>
-      <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#888;text-transform:uppercase;margin-bottom:12px;padding-top:14px;border-top:1px solid #222;">Mais vendidos hoje</div>
+      <div style="font-size:9px;font-weight:600;color:#888;font-size:10px;font-weight:500;margin-bottom:12px;padding-top:14px;border-top:1px solid #222;">Mais vendidos hoje</div>
       ${(d.top5hoje||[]).map((p,i) => `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg2);border-radius:10px;margin-bottom:5px;"><div style="font-size:10px;font-weight:700;color:${i===0?"#f0b400":"#bbb"};width:16px;text-align:center;flex-shrink:0;">${i+1}</div><div style="font-size:10px;font-weight:600;color:#fff;flex:1;">${p.sku||"—"}</div><div style="font-size:9px;color:#777;">${p.qty} un</div><div style="font-size:9px;color:#444;margin:0 4px;">·</div><div style="font-size:11px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">${fmt(p.revenue||0)}</div></div>`).join("")}
     `;
   }
@@ -536,7 +536,7 @@ function renderDashboard(panel, color) {
 
   vendasCard.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 16px 0;">
-      <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#bbb;text-transform:uppercase;">Vendas Mercado Livre</div>
+      <div style="font-size:9px;font-weight:600;color:#888;font-size:10px;font-weight:500;">Vendas Mercado Livre</div>
       <div style="font-size:8px;color:#444;">${dashData.hora}</div>
     </div>
     <div style="padding:12px 16px 14px;">
@@ -568,7 +568,7 @@ function renderDashboard(panel, color) {
   const taskCard = document.createElement("div");
   taskCard.style.cssText = "background:linear-gradient(180deg,#252525 0%,#101010 100%);border:1px solid #303030;border-radius:14px;padding:16px;";
   taskCard.innerHTML = `
-    <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#777;text-transform:uppercase;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;">Minhas tarefas</div>
+    <div style="font-size:9px;font-weight:600;color:#888;font-size:10px;font-weight:500;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;">Minhas tarefas</div>
     ${[
       {label:"Urgente", count:urgentes, color:"#e91e8c"},
       {label:"Importante", count:importantes, color:"#f0b400"},
@@ -596,7 +596,7 @@ function renderDashboard(panel, color) {
   }).slice(0,3);
   const unidades = estoqueRows.reduce((s,r)=>s+Number(r.aptas||0),0);
   estoqueCard.innerHTML = `
-    <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#777;text-transform:uppercase;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;">Estoque Full · Filial SP</div>
+    <div style="font-size:9px;font-weight:600;color:#888;font-size:10px;font-weight:500;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;">Estoque Full · Filial SP</div>
     <div style="font-size:38px;font-weight:700;color:#2dce89;margin-bottom:4px;letter-spacing:-2px;font-family:'IBM Plex Mono',monospace;">${fmtFull(valorTotal)}</div>
     <div style="font-size:10px;color:#bbb;margin-bottom:14px;">${unidades} unidades · ${estoqueRows.length} SKUs</div>
     ${criticos.length > 0 ? criticos.map(r => {
@@ -627,7 +627,7 @@ function renderDashboard(panel, color) {
     else if(e.tipo !== "difal") fiscal_agrupado.push(e);
   });
   fiscalCard.innerHTML = `
-    <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#777;text-transform:uppercase;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;">Calendário fiscal</div>
+    <div style="font-size:9px;font-weight:600;color:#888;font-size:10px;font-weight:500;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;">Calendário fiscal</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
       ${fiscal_agrupado.slice(0,6).map(e => {
         const cor = e.diff <= 5 ? "#e91e8c" : e.diff <= 14 ? "#f0b400" : "#bbb";
@@ -644,7 +644,7 @@ function renderDashboard(panel, color) {
     const expCard = document.createElement("div");
     expCard.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:14px;padding:16px;grid-column:1/-1;";
     expCard.innerHTML = `
-      <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#bbb;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-size:9px;font-weight:600;color:#888;font-size:10px;font-weight:500;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;">
         <span>Experiência de compra · Filial SP</span>
         <span style="font-size:9px;color:#e91e8c;font-weight:700;">${dashExperiencia.problemas.length} com problema</span>
       </div>
@@ -670,7 +670,7 @@ function renderDashboard(panel, color) {
   topCard.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:14px;padding:16px;grid-column:1/-1;";
   const maxRevenue = dashData.top10mes[0]?.revenue || 1;
   topCard.innerHTML = `
-    <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#bbb;text-transform:uppercase;margin-bottom:14px;">Top 10 produtos · mês atual</div>
+    <div style="font-size:9px;font-weight:600;color:#888;font-size:10px;font-weight:500;margin-bottom:14px;">Top 10 produtos · mês atual</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
       ${dashData.top10mes.map((p,i) => `<div style="display:flex;align-items:center;gap:10px;padding:9px 10px;background:var(--bg2);border-radius:8px;"><div style="font-size:10px;font-weight:700;color:${i===0?"#f0b400":"#ccc"};width:14px;text-align:center;flex-shrink:0;">${i+1}</div><div style="flex:1;min-width:0;"><div style="font-size:10px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.sku||"—"}</div><div style="background:var(--bg3);border-radius:99px;height:2px;margin-top:4px;"><div style="height:2px;border-radius:99px;background:${i===0?"#f0b400":"#5e72e4"};width:${Math.round((p.revenue/maxRevenue)*100)}%;"></div></div></div><div style="text-align:right;flex-shrink:0;min-width:52px;"><div style="font-size:9px;color:#bbb;">${p.qty} un</div><div style="font-size:10px;font-weight:600;color:#ccc;">${fmt(p.revenue||0)}</div></div></div>`).join("")}
     </div>
