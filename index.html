@@ -291,6 +291,7 @@ function _buildEntrySVG() {
 }
 
 function setupIdentityScreen() {
+  const _isMobile = window.innerWidth <= 768;
   if(currentUser) { requestNotif(); return; }
 
   const DEVICE_KEY = "digoo_device_v1";
@@ -316,8 +317,6 @@ function setupIdentityScreen() {
     requestNotif();
     render();
   }
-
-  const _isMobile = window.innerWidth <= 768;
 
   function buildLeft() {
     const d = document.createElement("div");
