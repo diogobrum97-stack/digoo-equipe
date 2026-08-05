@@ -35,7 +35,7 @@
 <div class="grid" id="cards"></div>
 
 <!-- Painel flutuante do calendário fiscal -->
-<div id="cal-panel" style="display:none;position:fixed;top:60px;left:12px;right:12px;max-width:360px;margin:0 auto;background:#0f0f0f;border:0.5px solid #2a2a2a;border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.6);z-index:9998;"></div>
+<div id="cal-panel" style="display:none;position:fixed;top:60px;left:12px;right:12px;max-width:360px;margin:0 auto;background:var(--bg);border:0.5px solid #2a2a2a;border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.6);z-index:9998;"></div>
 
 <footer>Digoo Brasil · Porto Alegre<br><span id="user-label"></span></footer>
 
@@ -48,11 +48,11 @@
 <div id="ml-fullscreen">
   <div id="ml-fullscreen-header">
     <div style="display:flex;align-items:center;gap:10px;">
-      <span style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:4px;color:#e8aa00;">MERCADO LIVRE</span>
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:4px;color:#f0b400;">MERCADO LIVRE</span>
     </div>
     <div style="display:flex;gap:8px;align-items:center;">
       <div id="ml-fs-subtabs" style="display:flex;border-bottom:none;"></div>
-      <button onclick="toggleMLMax()" style="background:none;border:1px solid #e8aa0044;border-radius:4px;padding:4px 10px;color:#e8aa00;font-size:12px;cursor:pointer;" title="Minimizar">⤡</button>
+      <button onclick="toggleMLMax()" style="background:none;border:1px solid #f0b40044;border-radius:4px;padding:4px 10px;color:#f0b400;font-size:12px;cursor:pointer;" title="Minimizar">⤡</button>
     </div>
   </div>
   <div id="ml-fullscreen-body"></div>
@@ -63,13 +63,13 @@
   <div id="ml-modal-header">
     <div style="display:flex;align-items:center;gap:12px;">
       <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-        <rect width="32" height="32" rx="6" fill="#e8aa00" opacity="0.1"/>
-        <ellipse cx="16" cy="16" rx="12" ry="8" stroke="#e8aa00" stroke-width="1.5" fill="none"/>
-        <path d="M8 16 Q12 10 16 16 Q20 22 24 16" stroke="#e8aa00" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <rect width="32" height="32" rx="6" fill="#f0b400" opacity="0.1"/>
+        <ellipse cx="16" cy="16" rx="12" ry="8" stroke="#f0b400" stroke-width="1.5" fill="none"/>
+        <path d="M8 16 Q12 10 16 16 Q20 22 24 16" stroke="#f0b400" stroke-width="2" fill="none" stroke-linecap="round"/>
       </svg>
-      <span style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:4px;color:#e8aa00;">MERCADO LIVRE</span>
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:4px;color:#f0b400;">MERCADO LIVRE</span>
     </div>
-    <button onclick="fecharML()" style="background:none;border:1px solid #e8aa0044;border-radius:50%;width:30px;height:30px;color:#e8aa00;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+    <button onclick="fecharML()" style="background:none;border:1px solid #f0b40044;border-radius:50%;width:30px;height:30px;color:#f0b400;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
   </div>
   <div id="ml-modal-body"></div>
 </div>
@@ -222,7 +222,7 @@ function themeHbg(name) {
 }
 function themePrio(p) {
   const light = document.body.classList.contains("light");
-  return ({superurgente:light?"#d4000c":"#d4000c",urgente:light?"#d4000c":"#d4000c",importante:light?"#e8aa00":"#e8aa00",normal:light?"#007744":"#00ff77"})[p]||"#aaa";
+  return ({superurgente:light?"#e91e8c":"#e91e8c",urgente:light?"#e91e8c":"#e91e8c",importante:light?"#f0b400":"#f0b400",normal:light?"#007744":"#2dce89"})[p]||"#aaa";
 }
 
 window.toggleTheme = function() {
@@ -238,7 +238,7 @@ if (localStorage.getItem(THEME_KEY)==="light") {
   document.body.classList.add("light");
   const thumb=document.getElementById("toggle-thumb"),icon=document.getElementById("toggle-icon");
   if(thumb){thumb.style.transform="translateX(22px)";thumb.style.background="#fff";}
-  if(icon){icon.innerHTML='<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';icon.style.color='#e8aa00';}
+  if(icon){icon.innerHTML='<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';icon.style.color='#f0b400';}
 }
 
 let currentUser = localStorage.getItem(STORAGE_KEY)||null;
@@ -328,7 +328,7 @@ onValue(ref(db,"/"),snap=>{
     fetchEstoqueAutomatico();
   }
   if(!cmpSalvando)render();
-},()=>{syncDot.style.background="#d4000c";});
+},()=>{syncDot.style.background="#e91e8c";});
 
 function addTask(member,text,prio,sender){
   setSyncing(true);push(ref(db,"/tasks"),{member,text,prio,done:false,delegatedBy:sender||null,createdAt:Date.now()});
@@ -493,7 +493,7 @@ function renderDashboard(panel, color) {
 
   const header = document.createElement("div");
   header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;";
-  header.innerHTML = `<div><div style="font-size:15px;font-weight:600;color:#fff;">${saudacao}, Diogo 👋</div><div style="font-size:9px;letter-spacing:1.5px;color:#999;text-transform:uppercase;margin-top:3px;">${dias[now.getDay()]} · ${now.getDate()} ${meses[now.getMonth()]} ${now.getFullYear()}</div></div><div style="display:flex;align-items:center;gap:10px;"><div style="font-size:10px;font-weight:600;color:#1a6be0;">${dashData.hora}</div><button onclick="dashData=null;fetchDashboard();" style="background:none;border:none;color:#444;font-size:16px;cursor:pointer;padding:4px;line-height:1;transition:color .15s;" onmouseover="this.style.color='#aaa'" onmouseout="this.style.color='#444'" title="Atualizar">↻</button></div>`;
+  header.innerHTML = `<div><div style="font-size:15px;font-weight:600;color:#fff;">${saudacao}, Diogo 👋</div><div style="font-size:9px;letter-spacing:1.5px;color:#999;text-transform:uppercase;margin-top:3px;">${dias[now.getDay()]} · ${now.getDate()} ${meses[now.getMonth()]} ${now.getFullYear()}</div></div><div style="display:flex;align-items:center;gap:10px;"><div style="font-size:10px;font-weight:600;color:#5e72e4;">${dashData.hora}</div><button onclick="dashData=null;fetchDashboard();" style="background:none;border:none;color:#444;font-size:16px;cursor:pointer;padding:4px;line-height:1;transition:color .15s;" onmouseover="this.style.color='#aaa'" onmouseout="this.style.color='#444'" title="Atualizar">↻</button></div>`;
   wrap.appendChild(header);
 
   const grid = document.createElement("div");
@@ -506,13 +506,13 @@ function renderDashboard(panel, color) {
     if(!d) return `<div style="text-align:center;padding:20px;color:var(--text3);font-size:11px;">Token não conectado</div>`;
     return `
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;">
-        <div style="background:#141414;border-radius:10px;padding:12px;"><div style="font-size:8px;color:#777;margin-bottom:5px;letter-spacing:.5px;text-transform:uppercase;">Hoje</div><div style="font-size:20px;font-weight:700;color:#fff;margin-bottom:4px;">${fmtFull(d.fatHoje)}</div><div style="font-size:9px;font-weight:600;color:${GREEN};">↑ em tempo real</div></div>
-        <div style="background:#141414;border-radius:10px;padding:12px;"><div style="font-size:8px;color:#777;margin-bottom:5px;letter-spacing:.5px;text-transform:uppercase;">Projeção</div><div style="font-size:20px;font-weight:700;color:#ccc;margin-bottom:4px;">${fmt(d.projecaoDia)}</div><div style="font-size:9px;color:#666;">${percDia}% do dia</div></div>
-        <div style="background:#141414;border-radius:10px;padding:12px;"><div style="font-size:8px;color:#777;margin-bottom:5px;letter-spacing:.5px;text-transform:uppercase;">Mês atual</div><div style="font-size:20px;font-weight:700;color:#fff;margin-bottom:4px;">${fmt(d.fatMes)}</div><div style="font-size:9px;font-weight:600;color:${GREEN};">${d.pedidosMes} pedidos</div></div>
+        <div style="background:var(--bg2);border-radius:10px;padding:12px;"><div style="font-size:8px;color:#777;margin-bottom:5px;letter-spacing:.5px;text-transform:uppercase;">Hoje</div><div style="font-size:20px;font-weight:700;color:#fff;margin-bottom:4px;">${fmtFull(d.fatHoje)}</div><div style="font-size:9px;font-weight:600;color:${GREEN};">↑ em tempo real</div></div>
+        <div style="background:var(--bg2);border-radius:10px;padding:12px;"><div style="font-size:8px;color:#777;margin-bottom:5px;letter-spacing:.5px;text-transform:uppercase;">Projeção</div><div style="font-size:20px;font-weight:700;color:#ccc;margin-bottom:4px;">${fmt(d.projecaoDia)}</div><div style="font-size:9px;color:#666;">${percDia}% do dia</div></div>
+        <div style="background:var(--bg2);border-radius:10px;padding:12px;"><div style="font-size:8px;color:#777;margin-bottom:5px;letter-spacing:.5px;text-transform:uppercase;">Mês atual</div><div style="font-size:20px;font-weight:700;color:#fff;margin-bottom:4px;">${fmt(d.fatMes)}</div><div style="font-size:9px;font-weight:600;color:${GREEN};">${d.pedidosMes} pedidos</div></div>
       </div>
-      <div style="background:#1a1a1a;border-radius:99px;height:3px;margin-bottom:16px;"><div style="height:3px;border-radius:99px;background:linear-gradient(90deg,#1a6be0,#4a9eff);width:${percDia}%;"></div></div>
+      <div style="background:var(--bg3);border-radius:99px;height:3px;margin-bottom:16px;"><div style="height:3px;border-radius:99px;background:linear-gradient(90deg,#5e72e4,#11cdef);width:${percDia}%;"></div></div>
       <div style="font-size:8px;font-weight:600;letter-spacing:2px;color:#555;text-transform:uppercase;margin-bottom:10px;">Mais vendidos hoje</div>
-      ${(d.top5hoje||[]).map((p,i) => `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:#141414;border-radius:10px;margin-bottom:5px;"><div style="font-size:10px;font-weight:700;color:${i===0?"#e8aa00":"#bbb"};width:16px;text-align:center;flex-shrink:0;">${i+1}</div><div style="font-size:10px;font-weight:600;color:#fff;flex:1;">${p.sku||"—"}</div><div style="font-size:9px;color:#777;">${p.qty} un</div><div style="font-size:9px;color:#444;margin:0 4px;">·</div><div style="font-size:10px;font-weight:600;color:#ccc;">${fmt(p.revenue||0)}</div></div>`).join("")}
+      ${(d.top5hoje||[]).map((p,i) => `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg2);border-radius:10px;margin-bottom:5px;"><div style="font-size:10px;font-weight:700;color:${i===0?"#f0b400":"#bbb"};width:16px;text-align:center;flex-shrink:0;">${i+1}</div><div style="font-size:10px;font-weight:600;color:#fff;flex:1;">${p.sku||"—"}</div><div style="font-size:9px;color:#777;">${p.qty} un</div><div style="font-size:9px;color:#444;margin:0 4px;">·</div><div style="font-size:10px;font-weight:600;color:#ccc;">${fmt(p.revenue||0)}</div></div>`).join("")}
     `;
   }
 
@@ -524,12 +524,12 @@ function renderDashboard(panel, color) {
     if(!tabFilial || !tabMatriz || !body) return;
     const _vendasAba = window._vendasAba || 'filial';
     if(_vendasAba === 'filial') {
-      tabFilial.style.cssText = "padding:7px 18px;font-size:10px;font-weight:600;letter-spacing:.5px;cursor:pointer;border-radius:8px;color:#fff;background:#2a2a2a;box-shadow:0 1px 4px rgba(0,0,0,.4);transition:all .2s;white-space:nowrap;";
+      tabFilial.style.cssText = "padding:7px 18px;font-size:10px;font-weight:600;letter-spacing:.5px;cursor:pointer;border-radius:8px;color:#fff;background:var(--bg3);box-shadow:0 1px 4px rgba(0,0,0,.4);transition:all .2s;white-space:nowrap;";
       tabMatriz.style.cssText = "padding:7px 18px;font-size:10px;font-weight:600;letter-spacing:.5px;cursor:pointer;border-radius:8px;color:#555;transition:all .2s;white-space:nowrap;";
       body.innerHTML = vendasTabContent({fatHoje:dashData.fatHoje, projecaoDia:dashData.projecaoDia, fatMes:dashData.fatMes, pedidosMes:dashData.pedidosMes, top5hoje:dashData.top5hoje}, dashData.percDia);
     } else {
       tabFilial.style.cssText = "padding:7px 18px;font-size:10px;font-weight:600;letter-spacing:.5px;cursor:pointer;border-radius:8px;color:#555;transition:all .2s;white-space:nowrap;";
-      tabMatriz.style.cssText = "padding:7px 18px;font-size:10px;font-weight:600;letter-spacing:.5px;cursor:pointer;border-radius:8px;color:#fff;background:#2a2a2a;box-shadow:0 1px 4px rgba(0,0,0,.4);transition:all .2s;white-space:nowrap;";
+      tabMatriz.style.cssText = "padding:7px 18px;font-size:10px;font-weight:600;letter-spacing:.5px;cursor:pointer;border-radius:8px;color:#fff;background:var(--bg3);box-shadow:0 1px 4px rgba(0,0,0,.4);transition:all .2s;white-space:nowrap;";
       body.innerHTML = vendasTabContent(dashData.matriz, dashData.percDia);
     }
   }
@@ -540,8 +540,8 @@ function renderDashboard(panel, color) {
       <div style="font-size:8px;color:#444;">${dashData.hora}</div>
     </div>
     <div style="padding:12px 16px 14px;">
-      <div style="display:inline-flex;background:#1a1a1a;border-radius:10px;padding:3px;gap:2px;">
-        <div id="dash-aba-filial" onclick="window._vendasAba='filial';window.renderVendasAba();" style="padding:7px 18px;font-size:10px;font-weight:600;letter-spacing:.5px;cursor:pointer;border-radius:8px;color:#fff;background:#2a2a2a;box-shadow:0 1px 4px rgba(0,0,0,.4);white-space:nowrap;">Filial SP</div>
+      <div style="display:inline-flex;background:var(--bg3);border-radius:10px;padding:3px;gap:2px;">
+        <div id="dash-aba-filial" onclick="window._vendasAba='filial';window.renderVendasAba();" style="padding:7px 18px;font-size:10px;font-weight:600;letter-spacing:.5px;cursor:pointer;border-radius:8px;color:#fff;background:var(--bg3);box-shadow:0 1px 4px rgba(0,0,0,.4);white-space:nowrap;">Filial SP</div>
         <div id="dash-aba-matriz" onclick="window._vendasAba='matriz';window.renderVendasAba();" style="padding:7px 18px;font-size:10px;font-weight:600;letter-spacing:.5px;cursor:pointer;border-radius:8px;color:#555;white-space:nowrap;">${dashData.matriz ? "Matriz RS" : "Matriz (desconectado)"}</div>
       </div>
     </div>
@@ -570,11 +570,11 @@ function renderDashboard(panel, color) {
   taskCard.innerHTML = `
     <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#bbb;text-transform:uppercase;margin-bottom:14px;">Minhas tarefas</div>
     ${[
-      {label:"Urgente", count:urgentes, color:"#d4000c"},
-      {label:"Importante", count:importantes, color:"#e8aa00"},
+      {label:"Urgente", count:urgentes, color:"#e91e8c"},
+      {label:"Importante", count:importantes, color:"#f0b400"},
       {label:"Normal", count:normais, color:GREEN},
       {label:"Concluídas", count:concluidas, color:GREEN, opacity:"0.5"},
-    ].map(t => `<div onclick="window._diogotab='tarefas';render();" style="display:flex;align-items:center;gap:12px;padding:11px 12px;background:#141414;border-radius:8px;margin-bottom:6px;cursor:pointer;opacity:${t.opacity||1};"><div style="width:8px;height:8px;border-radius:50%;background:${t.color};flex-shrink:0;"></div><div style="font-size:12px;font-weight:500;color:#fff;flex:1;">${t.label}</div><div style="font-size:20px;font-weight:700;color:${t.color};">${t.count}</div><div style="font-size:14px;color:#444;">›</div></div>`).join("")}
+    ].map(t => `<div onclick="window._diogotab='tarefas';render();" style="display:flex;align-items:center;gap:12px;padding:11px 12px;background:var(--bg2);border-radius:8px;margin-bottom:6px;cursor:pointer;opacity:${t.opacity||1};"><div style="width:8px;height:8px;border-radius:50%;background:${t.color};flex-shrink:0;"></div><div style="font-size:12px;font-weight:500;color:#fff;flex:1;">${t.label}</div><div style="font-size:20px;font-weight:700;color:${t.color};">${t.count}</div><div style="font-size:14px;color:#444;">›</div></div>`).join("")}
   `;
   grid.appendChild(taskCard);
 
@@ -602,8 +602,8 @@ function renderDashboard(panel, color) {
     ${criticos.length > 0 ? criticos.map(r => {
       const v30 = r.vendas30||0;
       const dias = v30>0 ? Math.round(r.aptas/(v30/30)) : 999;
-      const cor = dias <= 7 ? "#d4000c" : "#e8aa00";
-      return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:#141414;border-radius:8px;margin-bottom:5px;"><div style="width:7px;height:7px;border-radius:50%;background:${cor};flex-shrink:0;"></div><div style="font-size:11px;font-weight:600;color:#fff;flex:1;">${r.sku}</div><div style="font-size:12px;font-weight:700;color:${cor};">${dias}d</div></div>`;
+      const cor = dias <= 7 ? "#e91e8c" : "#f0b400";
+      return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg2);border-radius:8px;margin-bottom:5px;"><div style="width:7px;height:7px;border-radius:50%;background:${cor};flex-shrink:0;"></div><div style="font-size:11px;font-weight:600;color:#fff;flex:1;">${r.sku}</div><div style="font-size:12px;font-weight:700;color:${cor};">${dias}d</div></div>`;
     }).join("") : `<div style="font-size:10px;color:#bbb;padding:10px 0;">Nenhum produto crítico ✓</div>`}
   `;
   grid.appendChild(estoqueCard);
@@ -614,7 +614,7 @@ function renderDashboard(panel, color) {
   const hoje2 = new Date();
   const mes2 = hoje2.getMonth();
   const ano2 = hoje2.getFullYear();
-  const coresFiscal = {difal:"#e8aa00", dare:"#a855f7", ipi:"#1a6be0"};
+  const coresFiscal = {difal:"#f0b400", dare:"#a855f7", ipi:"#5e72e4"};
   const visto = new Set();
   const fiscal_agrupado = [];
   FISCAL_EVENTS.map(e => {
@@ -630,9 +630,9 @@ function renderDashboard(panel, color) {
     <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#bbb;text-transform:uppercase;margin-bottom:14px;">Calendário fiscal</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
       ${fiscal_agrupado.slice(0,6).map(e => {
-        const cor = e.diff <= 5 ? "#d4000c" : e.diff <= 14 ? "#e8aa00" : "#bbb";
+        const cor = e.diff <= 5 ? "#e91e8c" : e.diff <= 14 ? "#f0b400" : "#bbb";
         const dotCor = coresFiscal[e.tipo] || "#bbb";
-        return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#141414;border-radius:8px;"><div style="width:7px;height:7px;border-radius:50%;background:${dotCor};flex-shrink:0;"></div><div style="flex:1;"><div style="font-size:11px;font-weight:600;color:#fff;">${e.nome}</div><div style="font-size:9px;color:#888;margin-top:2px;">Ref. ${String(mes2).padStart(2,"0")}/${ano2}</div></div><div style="font-size:12px;font-weight:700;color:${cor};">em ${e.diff}d</div></div>`;
+        return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg2);border-radius:8px;"><div style="width:7px;height:7px;border-radius:50%;background:${dotCor};flex-shrink:0;"></div><div style="flex:1;"><div style="font-size:11px;font-weight:600;color:#fff;">${e.nome}</div><div style="font-size:9px;color:#888;margin-top:2px;">Ref. ${String(mes2).padStart(2,"0")}/${ano2}</div></div><div style="font-size:12px;font-weight:700;color:${cor};">em ${e.diff}d</div></div>`;
       }).join("")}
     </div>
   `;
@@ -646,11 +646,11 @@ function renderDashboard(panel, color) {
     expCard.innerHTML = `
       <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#bbb;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;">
         <span>Experiência de compra · Filial SP</span>
-        <span style="font-size:9px;color:#d4000c;font-weight:700;">${dashExperiencia.problemas.length} com problema</span>
+        <span style="font-size:9px;color:#e91e8c;font-weight:700;">${dashExperiencia.problemas.length} com problema</span>
       </div>
       ${dashExperiencia.problemas.map(p => {
-        const cor = p.color === "red" ? "#d4000c" : "#e8aa00";
-        return `<div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:#141414;border-radius:10px;margin-bottom:6px;">
+        const cor = p.color === "red" ? "#e91e8c" : "#f0b400";
+        return `<div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--bg2);border-radius:10px;margin-bottom:6px;">
           <div style="width:8px;height:8px;border-radius:50%;background:${cor};flex-shrink:0;"></div>
           <div style="flex:1;min-width:0;">
             <div style="font-size:10px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.title}</div>
@@ -658,7 +658,7 @@ function renderDashboard(panel, color) {
           </div>
           <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
             <div style="font-size:10px;font-weight:700;color:${cor};">${p.level}</div>
-            <a href="${p.link}" target="_blank" style="font-size:9px;color:#1a6be0;text-decoration:none;padding:4px 8px;border:0.5px solid #1a6be044;border-radius:5px;">Abrir ↗</a>
+            <a href="${p.link}" target="_blank" style="font-size:9px;color:#5e72e4;text-decoration:none;padding:4px 8px;border:0.5px solid #5e72e444;border-radius:5px;">Abrir ↗</a>
           </div>
         </div>`;
       }).join("")}
@@ -672,7 +672,7 @@ function renderDashboard(panel, color) {
   topCard.innerHTML = `
     <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#bbb;text-transform:uppercase;margin-bottom:14px;">Top 10 produtos · mês atual</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
-      ${dashData.top10mes.map((p,i) => `<div style="display:flex;align-items:center;gap:10px;padding:9px 10px;background:#141414;border-radius:8px;"><div style="font-size:10px;font-weight:700;color:${i===0?"#e8aa00":"#ccc"};width:14px;text-align:center;flex-shrink:0;">${i+1}</div><div style="flex:1;min-width:0;"><div style="font-size:10px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.sku||"—"}</div><div style="background:#2a2a2a;border-radius:99px;height:2px;margin-top:4px;"><div style="height:2px;border-radius:99px;background:${i===0?"#e8aa00":"#1a6be0"};width:${Math.round((p.revenue/maxRevenue)*100)}%;"></div></div></div><div style="text-align:right;flex-shrink:0;min-width:52px;"><div style="font-size:9px;color:#bbb;">${p.qty} un</div><div style="font-size:10px;font-weight:600;color:#ccc;">${fmt(p.revenue||0)}</div></div></div>`).join("")}
+      ${dashData.top10mes.map((p,i) => `<div style="display:flex;align-items:center;gap:10px;padding:9px 10px;background:var(--bg2);border-radius:8px;"><div style="font-size:10px;font-weight:700;color:${i===0?"#f0b400":"#ccc"};width:14px;text-align:center;flex-shrink:0;">${i+1}</div><div style="flex:1;min-width:0;"><div style="font-size:10px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.sku||"—"}</div><div style="background:var(--bg3);border-radius:99px;height:2px;margin-top:4px;"><div style="height:2px;border-radius:99px;background:${i===0?"#f0b400":"#5e72e4"};width:${Math.round((p.revenue/maxRevenue)*100)}%;"></div></div></div><div style="text-align:right;flex-shrink:0;min-width:52px;"><div style="font-size:9px;color:#bbb;">${p.qty} un</div><div style="font-size:10px;font-weight:600;color:#ccc;">${fmt(p.revenue||0)}</div></div></div>`).join("")}
     </div>
   `;
   grid.appendChild(topCard);
@@ -690,9 +690,9 @@ function renderDashboard(panel, color) {
 
 
 const CAL_CORES = {
-  difal: "#e8aa00",
+  difal: "#f0b400",
   dare:  "#a855f7",
-  ipi:   "#1a6be0",
+  ipi:   "#5e72e4",
   inss:  "#22c55e",
 };
 
@@ -757,7 +757,7 @@ function renderCalFiscal() {
           const isHoje = d===hoje.getDate() && mes===hoje.getMonth() && ano===hoje.getFullYear();
           const evs = eventosPorDia[d] || [];
           const cor = evs.length > 0 ? CAL_CORES[evs[0].tipo] : null;
-          return `<div style="height:26px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:4px;font-size:10px;cursor:pointer;position:relative;${isHoje?"background:#1a6be0;color:#fff;font-weight:700;":"color:"+(evs.length?"#ddd":"#888")+";"}">
+          return `<div style="height:26px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:4px;font-size:10px;cursor:pointer;position:relative;${isHoje?"background:#5e72e4;color:#fff;font-weight:700;":"color:"+(evs.length?"#ddd":"#888")+";"}">
             ${d}
             ${cor && !isHoje ? `<div style="width:3px;height:3px;border-radius:50%;background:${cor};position:absolute;bottom:2px;"></div>` : ""}
           </div>`;
@@ -769,7 +769,7 @@ function renderCalFiscal() {
       <div style="font-size:8px;letter-spacing:1.5px;color:#999;text-transform:uppercase;padding:8px 14px 4px;">Próximos vencimentos</div>
       ${eventosComDias.filter(e => e.diff >= -1).map(e => {
         const cor = CAL_CORES[e.tipo] || "#555";
-        const diasCor = e.diff < 0 ? "#d4000c" : e.diff <= 7 ? "#d4000c" : e.diff <= 14 ? "#e8aa00" : "#888";
+        const diasCor = e.diff < 0 ? "#e91e8c" : e.diff <= 7 ? "#e91e8c" : e.diff <= 14 ? "#f0b400" : "#888";
         const diasTxt = e.diff < 0 ? `${Math.abs(e.diff)}d atrás` : e.diff === 0 ? "hoje" : `em ${e.diff}d`;
         return `<div style="display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:0.5px solid #111;">
           <div style="font-size:10px;font-weight:700;color:#aaa;width:18px;text-align:center;flex-shrink:0;">${e.dia}</div>
@@ -900,10 +900,10 @@ function returnStatusStyle(key){
   const map={
     transit:  {bg:"#a78bfa22",color:"#a78bfa",border:"#a78bfa44"},
     delivered:{bg:"#4ade8022",color:"#4ade80",border:"#4ade8044"},
-    review:   {bg:"#e8aa0022",color:"#e8aa00",border:"#e8aa0044"},
-    waiting:  {bg:"#e8aa0022",color:"#e8aa00",border:"#e8aa0044"},
-    dispute:  {bg:"#d4000c22",color:"#d4000c",border:"#d4000c44"},
-    lost:     {bg:"#d4000c22",color:"#d4000c",border:"#d4000c44"},
+    review:   {bg:"#f0b40022",color:"#f0b400",border:"#f0b40044"},
+    waiting:  {bg:"#f0b40022",color:"#f0b400",border:"#f0b40044"},
+    dispute:  {bg:"#e91e8c22",color:"#e91e8c",border:"#e91e8c44"},
+    lost:     {bg:"#e91e8c22",color:"#e91e8c",border:"#e91e8c44"},
     cancelled:{bg:"#88888822",color:"#888",border:"#88888844"},
     default:  {bg:"#88888822",color:"#888",border:"#88888844"},
   };
@@ -928,7 +928,7 @@ function renderMLFullscreen() {
     fsSubtabs.innerHTML = "";
     ["devolucoes","custos"].forEach(tab => {
       const btn = document.createElement("button");
-      btn.style.cssText = `padding:6px 14px;background:none;border:none;font-family:inherit;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:${diogomltab===tab?"#e8aa00":"var(--text3)"};border-bottom:2px solid ${diogomltab===tab?"#e8aa00":"transparent"};transition:all 0.15s;`;
+      btn.style.cssText = `padding:6px 14px;background:none;border:none;font-family:inherit;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:${diogomltab===tab?"#f0b400":"var(--text3)"};border-bottom:2px solid ${diogomltab===tab?"#f0b400":"transparent"};transition:all 0.15s;`;
       btn.textContent = tab==="devolucoes"?"Devoluções":"Custo de Devoluções";
       btn.addEventListener("click",()=>{ diogomltab=tab; renderMLFullscreen(); });
       fsSubtabs.appendChild(btn);
@@ -937,8 +937,8 @@ function renderMLFullscreen() {
   const body = document.getElementById("ml-fullscreen-body");
   if(!body) return;
   body.innerHTML = "";
-  if(diogomltab==="devolucoes") renderDiogoDevTab(body,"#e8aa00");
-  else renderDiogoCustoTab(body,"#e8aa00");
+  if(diogomltab==="devolucoes") renderDiogoDevTab(body,"#f0b400");
+  else renderDiogoCustoTab(body,"#f0b400");
 }
 
 window.fecharML = function() {
@@ -970,8 +970,8 @@ function renderMLModal() {
   });
   body.appendChild(subTabs);
 
-  if(diogomltab==="devolucoes") renderDiogoDevTab(body, "#e8aa00");
-  else renderDiogoCustoTab(body, "#e8aa00");
+  if(diogomltab==="devolucoes") renderDiogoDevTab(body, "#f0b400");
+  else renderDiogoCustoTab(body, "#f0b400");
 }
 
 async function fetchDiogoDevolucoes(){
@@ -999,9 +999,9 @@ async function fetchFinanceiro(month){
 function renderDiogoML(container, color) {
   // Botão discreto com logo ML
   const mlBtn = document.createElement("button");
-  mlBtn.style.cssText = `display:flex;align-items:center;gap:6px;background:none;border:1px solid #e8aa0033;border-radius:5px;padding:5px 12px;cursor:pointer;font-family:inherit;font-size:10px;color:#e8aa00;letter-spacing:1px;margin-top:12px;transition:all 0.15s;`;
-  mlBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="4" fill="#e8aa00" opacity="0.15"/><text x="16" y="22" text-anchor="middle" font-size="14" font-weight="700" fill="#e8aa00">ML</text></svg> MERCADO LIVRE`;
-  mlBtn.addEventListener("mouseenter", () => { mlBtn.style.background="#e8aa0011"; });
+  mlBtn.style.cssText = `display:flex;align-items:center;gap:6px;background:none;border:1px solid #f0b40033;border-radius:5px;padding:5px 12px;cursor:pointer;font-family:inherit;font-size:10px;color:#f0b400;letter-spacing:1px;margin-top:12px;transition:all 0.15s;`;
+  mlBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="4" fill="#f0b400" opacity="0.15"/><text x="16" y="22" text-anchor="middle" font-size="14" font-weight="700" fill="#f0b400">ML</text></svg> MERCADO LIVRE`;
+  mlBtn.addEventListener("mouseenter", () => { mlBtn.style.background="#f0b40011"; });
   mlBtn.addEventListener("mouseleave", () => { mlBtn.style.background="none"; });
   mlBtn.addEventListener("click", () => {
     digoMLOpen = !digoMLOpen;
@@ -1014,14 +1014,14 @@ function renderDiogoML(container, color) {
 
   // Painel ML
   const mlPanel = document.createElement("div");
-  mlPanel.style.cssText = "background:var(--bg3);border:1px solid #e8aa0033;border-radius:6px;padding:14px;margin-top:8px;";
+  mlPanel.style.cssText = "background:var(--bg3);border:1px solid #f0b40033;border-radius:6px;padding:14px;margin-top:8px;";
 
   // Sub-abas
   const subTabs = document.createElement("div");
   subTabs.style.cssText = "display:flex;gap:0;border-bottom:1px solid var(--sep);margin-bottom:14px;";
   ["devolucoes","custos"].forEach(tab => {
     const btn = document.createElement("button");
-    btn.style.cssText = `padding:6px 14px;background:none;border:none;font-family:inherit;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:${diogomltab===tab?"#e8aa00":"var(--text3)"};border-bottom:2px solid ${diogomltab===tab?"#e8aa00":"transparent"};margin-bottom:-1px;transition:all 0.15s;`;
+    btn.style.cssText = `padding:6px 14px;background:none;border:none;font-family:inherit;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:${diogomltab===tab?"#f0b400":"var(--text3)"};border-bottom:2px solid ${diogomltab===tab?"#f0b400":"transparent"};margin-bottom:-1px;transition:all 0.15s;`;
     btn.textContent = tab === "devolucoes" ? "Devoluções" : "Custo de Devoluções";
     btn.addEventListener("click", () => { diogomltab = tab; render(); });
     subTabs.appendChild(btn);
@@ -1269,7 +1269,7 @@ function renderCalcIpiPanel(container, task){
 
   if(calc.erro){
     const erroBox = document.createElement("div");
-    erroBox.style.cssText = "margin-bottom:12px;padding:8px 10px;background:#d4000c10;border:1px solid #d4000c33;border-radius:5px;font-size:11px;color:#d4000c;";
+    erroBox.style.cssText = "margin-bottom:12px;padding:8px 10px;background:#e91e8c10;border:1px solid #e91e8c33;border-radius:5px;font-size:11px;color:#e91e8c;";
     erroBox.textContent = calc.erro;
     wrap.appendChild(erroBox);
   }
@@ -1297,7 +1297,7 @@ function renderCalcIpiPanel(container, task){
     const box = document.createElement("div"); box.style.cssText="flex:1;min-width:120px;";
     const lbl = document.createElement("div"); lbl.style.cssText="font-size:9px;color:var(--text3);margin-bottom:4px;"; lbl.textContent=label;
     const inp = document.createElement("input"); inp.type="number"; inp.value=valor;
-    inp.style.cssText="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:5px 7px;color:#e8aa00;font-family:inherit;font-size:12px;";
+    inp.style.cssText="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:5px 7px;color:#f0b400;font-family:inherit;font-size:12px;";
     inp.addEventListener("input", ()=>{ onInput(parseFloat(inp.value)||0); recalcular(); });
     box.appendChild(lbl); box.appendChild(inp); return box;
   };
@@ -1320,7 +1320,7 @@ function renderCalcIpiPanel(container, task){
     <th style="text-align:left;padding:5px 3px;color:var(--text3);font-weight:400;">SKU / PRODUTO</th>
     <th style="text-align:center;padding:5px 3px;color:var(--text3);font-weight:400;">QTD</th>
     <th style="text-align:right;padding:5px 3px;color:var(--text3);font-weight:400;">VALOR NF</th>
-    <th style="text-align:right;padding:5px 3px;color:#e8aa00;font-weight:400;">PREÇO VENDA</th>
+    <th style="text-align:right;padding:5px 3px;color:#f0b400;font-weight:400;">PREÇO VENDA</th>
     <th style="text-align:right;padding:5px 3px;color:var(--text3);font-weight:400;">VALOR DO IPI</th>
     <th style="text-align:right;padding:5px 3px;color:var(--text3);font-weight:400;">CMV C/ IPI+FRETE</th>
     <th style="width:16px;"></th>
@@ -1333,7 +1333,7 @@ function renderCalcIpiPanel(container, task){
   if(!calc.linhaExpandida) calc.linhaExpandida = null; // índice do produto expandido pra editar NCM/alíquota, ou null
 
   const avisoBox = document.createElement("div");
-  avisoBox.style.cssText = "margin-top:8px;font-size:10px;color:#e8aa00;display:none;";
+  avisoBox.style.cssText = "margin-top:8px;font-size:10px;color:#f0b400;display:none;";
   wrap.appendChild(avisoBox);
 
   const addBtn = document.createElement("button");
@@ -1360,7 +1360,7 @@ function renderCalcIpiPanel(container, task){
 
       const tdSku = document.createElement("td"); tdSku.style.cssText="padding:6px 3px;";
       const aliqTextoHtml = (val) => val==null
-        ? `<span class="aliqBadge" style="color:#d4000c;font-size:9px;">sem %</span>`
+        ? `<span class="aliqBadge" style="color:#e91e8c;font-size:9px;">sem %</span>`
         : `<span class="aliqBadge" style="color:var(--text3);font-size:9px;">${(val*100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}%</span>`;
       const seta = calc.linhaExpandida===i ? "▾" : "▸";
       if(p.automatico){
@@ -1388,7 +1388,7 @@ function renderCalcIpiPanel(container, task){
       const tdPreco = document.createElement("td"); tdPreco.style.cssText="padding:6px 3px;text-align:right;";
       const inpPreco = document.createElement("input"); inpPreco.type="number"; inpPreco.placeholder="digitar";
       inpPreco.value = p.precoVenda!=null ? p.precoVenda.toFixed(2) : "";
-      inpPreco.style.cssText=`width:70px;background:var(--bg);border:1px solid ${p.precoVenda==null?"#d4000c":"var(--border2)"};border-radius:4px;padding:3px 5px;color:#e8aa00;font-family:inherit;font-size:11px;text-align:right;`;
+      inpPreco.style.cssText=`width:70px;background:var(--bg);border:1px solid ${p.precoVenda==null?"#e91e8c":"var(--border2)"};border-radius:4px;padding:3px 5px;color:#f0b400;font-family:inherit;font-size:11px;text-align:right;`;
       inpPreco.addEventListener("click",e=>e.stopPropagation());
       // Só recalcula localmente enquanto digita (sem gravar no Firebase a cada
       // tecla — isso disparava um recarregamento da tela inteira e derrubava
@@ -1432,14 +1432,14 @@ function renderCalcIpiPanel(container, task){
         const lblAliq = document.createElement("div"); lblAliq.style.cssText="font-size:9px;color:var(--text3);margin-bottom:3px;"; lblAliq.textContent="ALÍQUOTA %";
         const inpAliqDet = document.createElement("input"); inpAliqDet.type="number"; inpAliqDet.step="0.01"; inpAliqDet.placeholder="digitar";
         inpAliqDet.value = p.aliquotaValor!=null ? (p.aliquotaValor*100) : "";
-        inpAliqDet.style.cssText = "width:80px;background:var(--bg3);border:1px solid #e8aa0066;border-radius:4px;padding:5px 8px;color:#e8aa00;font-family:inherit;font-size:12px;";
+        inpAliqDet.style.cssText = "width:80px;background:var(--bg3);border:1px solid #f0b40066;border-radius:4px;padding:5px 8px;color:#f0b400;font-family:inherit;font-size:12px;";
         inpAliqDet.addEventListener("click",e=>e.stopPropagation());
         inpAliqDet.addEventListener("input",()=>{
           const v=parseFloat(inpAliqDet.value);
           p.aliquotaValor=isNaN(v)?null:v/100;
           const badge = tr.querySelector(".aliqBadge");
           if(badge){
-            if(p.aliquotaValor==null){ badge.style.color="#d4000c"; badge.textContent="sem %"; }
+            if(p.aliquotaValor==null){ badge.style.color="#e91e8c"; badge.textContent="sem %"; }
             else{ badge.style.color="var(--text3)"; badge.textContent=`${(p.aliquotaValor*100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}%`; }
           }
           recalcular();
@@ -1686,11 +1686,11 @@ function renderCalcIpiPanel(container, task){
           iCusto.step = "0.01";
           iCusto.value = l.custoAtual != null ? parseFloat(String(l.custoAtual).replace(",",".")).toFixed(2) : "";
           iCusto.placeholder = semCusto ? "⚠ preencher" : "";
-          iCusto.style.cssText = `width:80px;background:none;border:none;border-bottom:1px solid ${semCusto?"#d4000c66":"var(--border2)"};color:${semCusto?"#d4000c":"#e8aa00"};font-family:inherit;font-size:11px;text-align:right;outline:none;padding:2px 4px;`;
+          iCusto.style.cssText = `width:80px;background:none;border:none;border-bottom:1px solid ${semCusto?"#e91e8c66":"var(--border2)"};color:${semCusto?"#e91e8c":"#f0b400"};font-family:inherit;font-size:11px;text-align:right;outline:none;padding:2px 4px;`;
           iCusto.addEventListener("input", () => {
             l.custoAtual = iCusto.value;
             iCusto.style.borderBottomColor = "var(--border2)";
-            iCusto.style.color = "#e8aa00";
+            iCusto.style.color = "#f0b400";
             l.novoCmp = calcNovoCmp(l);
             tdNovoCmp.textContent = fmt(l.novoCmp);
             tdNovoCmp.style.color = l.novoCmp ? "#4ade80" : "var(--text3)";
@@ -1741,7 +1741,7 @@ function renderCalcIpiPanel(container, task){
         salvarCmpBtn.style.color = "#4ade80";
         salvarCmpBtn.style.borderColor = "#4ade8066";
         csvAtribBtn.disabled = false;
-        csvAtribBtn.style.cssText = "margin-top:0;margin-left:8px;background:none;border:1px solid #e8aa0066;color:#e8aa00;border-radius:4px;padding:6px 16px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:0.5px;opacity:1;";
+        csvAtribBtn.style.cssText = "margin-top:0;margin-left:8px;background:none;border:1px solid #f0b40066;color:#f0b400;border-radius:4px;padding:6px 16px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:0.5px;opacity:1;";
         csvAtribBtn._custosMerged = custosMerged;
         setTimeout(() => {
           salvarCmpBtn.textContent = "✓ Salvar CMP";
@@ -1757,7 +1757,7 @@ function renderCalcIpiPanel(container, task){
       const csvAtribBtn = document.createElement("button");
       csvAtribBtn.textContent = "↓ Gerar CSV de Atributos";
       csvAtribBtn.disabled = true;
-      csvAtribBtn.style.cssText = "margin-top:0;margin-left:8px;background:none;border:1px solid #e8aa0033;color:#e8aa0066;border-radius:4px;padding:6px 16px;font-size:10px;cursor:not-allowed;font-family:inherit;letter-spacing:0.5px;opacity:0.5;";
+      csvAtribBtn.style.cssText = "margin-top:0;margin-left:8px;background:none;border:1px solid #f0b40033;color:#f0b40066;border-radius:4px;padding:6px 16px;font-size:10px;cursor:not-allowed;font-family:inherit;letter-spacing:0.5px;opacity:0.5;";
       csvAtribBtn.addEventListener("click", async () => {
         const custos = csvAtribBtn._custosMerged || (await get(ref(db, "/custos_medios_filial"))).val() || {};
         gerarCSVAtributos(custos);
@@ -1797,7 +1797,7 @@ function renderVendasTab(panel, color) {
   [7,14,30].forEach(d=>{
     const btn=document.createElement("button");
     btn.textContent=d===7?"7 dias":d===14?"14 dias":"30 dias";
-    btn.style.cssText=`padding:4px 12px;background:${vendasDays===d?"#e8aa0022":"none"};border:1px solid ${vendasDays===d?"#e8aa00":"var(--border2)"};color:${vendasDays===d?"#e8aa00":"var(--text3)"};border-radius:4px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:1px;`;
+    btn.style.cssText=`padding:4px 12px;background:${vendasDays===d?"#f0b40022":"none"};border:1px solid ${vendasDays===d?"#f0b400":"var(--border2)"};color:${vendasDays===d?"#f0b400":"var(--text3)"};border-radius:4px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:1px;`;
     btn.addEventListener("click",()=>{vendasDays=d;vendasData=null;fetchVendas(d);});
     filterWrap.appendChild(btn);
   });
@@ -1813,7 +1813,7 @@ function renderVendasTab(panel, color) {
     l.innerHTML='<span class="spinning">↻</span> Carregando...';panel.appendChild(l);return;
   }
   if(!vendasData||vendasData.error){
-    const err=document.createElement("p");err.style.cssText="color:#d4000c;font-size:12px;padding:14px 0;";
+    const err=document.createElement("p");err.style.cssText="color:#e91e8c;font-size:12px;padding:14px 0;";
     err.textContent=vendasData?.error||"Erro ao carregar";panel.appendChild(err);return;
   }
 
@@ -1822,7 +1822,7 @@ function renderVendasTab(panel, color) {
   summaryGrid.style.cssText="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;";
   [
     {label:"FATURAMENTO",value:`R$ ${vendasData.summary.totalRevenue.toLocaleString("pt-BR",{minimumFractionDigits:2})}`,color:"#4ade80"},
-    {label:"VENDAS",value:vendasData.summary.totalOrders,color:"#1a6be0"},
+    {label:"VENDAS",value:vendasData.summary.totalOrders,color:"#5e72e4"},
     {label:"TICKET MÉDIO",value:`R$ ${vendasData.summary.avgTicket.toLocaleString("pt-BR",{minimumFractionDigits:2})}`,color:"#a78bfa"},
   ].forEach(s=>{
     const card=document.createElement("div");
@@ -1850,19 +1850,19 @@ function renderVendasTab(panel, color) {
       barWrap.style.cssText="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;position:relative;";
       const pct=day.revenue/maxRev;
       const bar=document.createElement("div");
-      bar.style.cssText=`width:100%;background:linear-gradient(to top,#e8aa0044,#e8aa0022);border:1px solid #e8aa0066;border-radius:3px 3px 0 0;height:${Math.max(pct*100,2)}%;transition:height 0.3s;cursor:default;position:relative;`;
+      bar.style.cssText=`width:100%;background:linear-gradient(to top,#f0b40044,#f0b40022);border:1px solid #f0b40066;border-radius:3px 3px 0 0;height:${Math.max(pct*100,2)}%;transition:height 0.3s;cursor:default;position:relative;`;
       bar.title=`${day.label}: R$ ${day.revenue.toLocaleString("pt-BR",{minimumFractionDigits:2})}`;
       // Tooltip on hover
       bar.addEventListener("mouseenter",()=>{
-        bar.style.background="linear-gradient(to top,#e8aa0088,#e8aa0044)";
+        bar.style.background="linear-gradient(to top,#f0b40088,#f0b40044)";
         const tip=document.createElement("div");
         tip.id="chart-tip";
-        tip.style.cssText="position:absolute;bottom:105%;left:50%;transform:translateX(-50%);background:#0a0a0a;border:1px solid #e8aa0044;border-radius:4px;padding:4px 8px;font-size:9px;color:#e8aa00;white-space:nowrap;z-index:100;";
+        tip.style.cssText="position:absolute;bottom:105%;left:50%;transform:translateX(-50%);background:var(--bg);border:1px solid #f0b40044;border-radius:4px;padding:4px 8px;font-size:9px;color:#f0b400;white-space:nowrap;z-index:100;";
         tip.textContent=`R$ ${day.revenue.toLocaleString("pt-BR",{minimumFractionDigits:2})}`;
         bar.appendChild(tip);
       });
       bar.addEventListener("mouseleave",()=>{
-        bar.style.background="linear-gradient(to top,#e8aa0044,#e8aa0022)";
+        bar.style.background="linear-gradient(to top,#f0b40044,#f0b40022)";
         const tip=bar.querySelector("#chart-tip");if(tip)tip.remove();
       });
       const label=document.createElement("div");
@@ -1905,14 +1905,14 @@ function renderVendasTab(panel, color) {
     sec.appendChild(t);
     vendasData.stoppedItems.slice(0,5).forEach(p=>{
       const row=document.createElement("div");
-      row.style.cssText="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg2);border-radius:5px;margin-bottom:5px;border-left:2px solid #d4000c;";
+      row.style.cssText="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg2);border-radius:5px;margin-bottom:5px;border-left:2px solid #e91e8c;";
       row.innerHTML=`
         <div style="flex:1;min-width:0;">
           <div style="font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.title}</div>
           <div style="font-size:9px;color:var(--text3);margin-top:2px;">Estoque: ${p.available_quantity} · Total vendido: ${p.sold_quantity}</div>
         </div>
         <div style="text-align:right;flex-shrink:0;">
-          <div style="font-size:12px;color:#d4000c;">R$ ${p.price?.toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
+          <div style="font-size:12px;color:#e91e8c;">R$ ${p.price?.toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
         </div>`;
       sec.appendChild(row);
     });
@@ -1991,7 +1991,7 @@ function renderDiogoDevTab(panel, color) {
   }
   if(!diogoDevolucoes || diogoDevolucoes.error) {
     const err = document.createElement("p");
-    err.style.cssText = "color:#d4000c;font-size:12px;padding:14px 0;";
+    err.style.cssText = "color:#e91e8c;font-size:12px;padding:14px 0;";
     err.textContent = diogoDevolucoes?.error || "Erro ao carregar";
     panel.appendChild(err); return;
   }
@@ -2005,7 +2005,7 @@ function renderDiogoDevTab(panel, color) {
   // Total
   const totalDiv = document.createElement("div");
   totalDiv.style.cssText = "display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--bg2);border-radius:5px;margin-bottom:12px;";
-  totalDiv.innerHTML = `<span style="font-size:10px;color:var(--text3);letter-spacing:1px">${diogoDevolucoes.count} devoluções</span><span style="font-size:16px;font-family:'Bebas Neue',sans-serif;color:#d4000c;letter-spacing:2px;">-R$ ${diogoDevolucoes.totalCost.toLocaleString("pt-BR",{minimumFractionDigits:2})}</span>`;
+  totalDiv.innerHTML = `<span style="font-size:10px;color:var(--text3);letter-spacing:1px">${diogoDevolucoes.count} devoluções</span><span style="font-size:16px;font-family:'Bebas Neue',sans-serif;color:#e91e8c;letter-spacing:2px;">-R$ ${diogoDevolucoes.totalCost.toLocaleString("pt-BR",{minimumFractionDigits:2})}</span>`;
   panel.appendChild(totalDiv);
 
   // Lista
@@ -2013,7 +2013,7 @@ function renderDiogoDevTab(panel, color) {
   grid.style.cssText = "display:flex;flex-direction:column;gap:6px;";
   diogoDevolucoes.data.forEach(dev => {
     const card = document.createElement("div");
-    card.style.cssText = `display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--bg2);border-radius:4px;border-left:2px solid ${dev.refundedAmount>0?"#d4000c":"#4ade80"};`;
+    card.style.cssText = `display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--bg2);border-radius:4px;border-left:2px solid ${dev.refundedAmount>0?"#e91e8c":"#4ade80"};`;
     const date = dev.closedAt ? new Date(dev.closedAt).toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"}) : "—";
     card.innerHTML = `
       <div style="flex:1;min-width:0;">
@@ -2021,8 +2021,8 @@ function renderDiogoDevTab(panel, color) {
         <div style="font-size:9px;color:var(--text3);margin-top:2px;">${dev.buyer} · ${date}</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;margin-left:8px;flex-shrink:0;">
-        <span style="font-size:11px;color:${dev.refundedAmount>0?'#d4000c':'#4ade80'};">${dev.refundedAmount>0?'-R$ '+dev.refundedAmount.toFixed(2).replace('.',','):'R$ 0,00'}</span>
-        <a href="${dev.permalink}" target="_blank" style="color:#e8aa00;font-size:10px;text-decoration:none;">→</a>
+        <span style="font-size:11px;color:${dev.refundedAmount>0?'#e91e8c':'#4ade80'};">${dev.refundedAmount>0?'-R$ '+dev.refundedAmount.toFixed(2).replace('.',','):'R$ 0,00'}</span>
+        <a href="${dev.permalink}" target="_blank" style="color:#f0b400;font-size:10px;text-decoration:none;">→</a>
       </div>`;
     grid.appendChild(card);
   });
@@ -2040,7 +2040,7 @@ function renderDiogoCustoTab(panel, color) {
   uploadSection.appendChild(uploadLabel);
 
   const uploadBtn = document.createElement("label");
-  uploadBtn.style.cssText = "display:inline-block;padding:7px 14px;background:none;border:1px dashed #e8aa0066;border-radius:5px;color:#e8aa00;font-size:10px;letter-spacing:1.5px;cursor:pointer;font-family:inherit;transition:all 0.15s;";
+  uploadBtn.style.cssText = "display:inline-block;padding:7px 14px;background:none;border:1px dashed #f0b40066;border-radius:5px;color:#f0b400;font-size:10px;letter-spacing:1.5px;cursor:pointer;font-family:inherit;transition:all 0.15s;";
   uploadBtn.textContent = diogoCustoData ? "↑ Trocar planilha" : "↑ Importar planilha";
   const fileInput = document.createElement("input");
   fileInput.type = "file";
@@ -2072,7 +2072,7 @@ function renderDiogoCustoTab(panel, color) {
       <div style="font-size:9px;color:var(--text3);letter-spacing:2px;margin-bottom:4px">CUSTO REAL DE DEVOLUÇÕES</div>
       <div style="font-size:9px;color:var(--text3);">${diogoCustoData.negCount} devoluções com frete negativo</div>
     </div>
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;color:#d4000c;">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;color:#e91e8c;">
       R$ ${Math.abs(diogoCustoData.totalNeg).toLocaleString("pt-BR",{minimumFractionDigits:2})}
     </div>`;
   panel.appendChild(totalCard);
@@ -2083,13 +2083,13 @@ function renderDiogoCustoTab(panel, color) {
     grid.style.cssText = "display:flex;flex-direction:column;gap:5px;";
     diogoCustoData.negItems.forEach(item => {
       const row = document.createElement("div");
-      row.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--bg2);border-radius:4px;border-left:2px solid #d4000c;";
+      row.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--bg2);border-radius:4px;border-left:2px solid #e91e8c;";
       row.innerHTML = `
         <div style="flex:1;min-width:0;">
           <div style="font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.titulo}</div>
           <div style="font-size:9px;color:var(--text3);margin-top:2px;">${item.status} · ${item.data}</div>
         </div>
-        <span style="font-size:12px;color:#d4000c;margin-left:8px;flex-shrink:0;">R$ ${Math.abs(item.total).toLocaleString("pt-BR",{minimumFractionDigits:2})}</span>`;
+        <span style="font-size:12px;color:#e91e8c;margin-left:8px;flex-shrink:0;">R$ ${Math.abs(item.total).toLocaleString("pt-BR",{minimumFractionDigits:2})}</span>`;
       grid.appendChild(row);
     });
     panel.appendChild(grid);
@@ -2195,7 +2195,7 @@ function renderFinanceiroTab(panel,color){
     if(!state.ml_token?.access_token||finData?.error==="token ausente"){
       const msg=document.createElement("p");msg.style.cssText="font-size:11px;color:var(--text3);margin-bottom:12px;";msg.textContent="Conecte o Mercado Livre no card da Larissa.";panel.appendChild(msg);
     }else{
-      const err=document.createElement("p");err.style.cssText="color:#d4000c;font-size:12px;padding:20px 0;";err.textContent=finData?.error||"Erro ao carregar";panel.appendChild(err);
+      const err=document.createElement("p");err.style.cssText="color:#e91e8c;font-size:12px;padding:20px 0;";err.textContent=finData?.error||"Erro ao carregar";panel.appendChild(err);
     }
     return;
   }
@@ -2206,7 +2206,7 @@ function renderFinanceiroTab(panel,color){
   const totalLabel=document.createElement("div");
   totalLabel.innerHTML=`<div style="font-size:9px;color:var(--text3);letter-spacing:2px;margin-bottom:4px">CUSTO DE DEVOLUÇÕES</div><div style="font-size:9px;color:var(--text3);letter-spacing:1px">${finData.count} devoluções concluídas</div>`;
   const totalValue=document.createElement("div");
-  totalValue.style.cssText=`font-size:22px;font-family:'Bebas Neue',sans-serif;letter-spacing:2px;color:${finData.totalCost>0?"#d4000c":"#4ade80"};`;
+  totalValue.style.cssText=`font-size:22px;font-family:'Bebas Neue',sans-serif;letter-spacing:2px;color:${finData.totalCost>0?"#e91e8c":"#4ade80"};`;
   totalValue.textContent=`-R$ ${finData.totalCost.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
   totalCard.appendChild(totalLabel);totalCard.appendChild(totalValue);
   panel.appendChild(totalCard);
@@ -2224,7 +2224,7 @@ function renderFinanceiroTab(panel,color){
     const card=document.createElement("div");
     card.className="ml-card";
     const hasCost=dev.refundedAmount>0;
-    card.style.borderLeftColor=hasCost?"#d4000c":"#4ade80";
+    card.style.borderLeftColor=hasCost?"#e91e8c":"#4ade80";
     card.style.borderLeftWidth="3px";
 
     const date=dev.closedAt?new Date(dev.closedAt).toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"}):"—";
@@ -2236,7 +2236,7 @@ function renderFinanceiroTab(panel,color){
           ${dev.buyer} · <span style="color:var(--text3)">${date}</span>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;">
-          <span class="ml-badge" style="background:${hasCost?"#d4000c22":"#4ade8022"};color:${hasCost?"#d4000c":"#4ade80"};border:1px solid ${hasCost?"#d4000c44":"#4ade8044"}">
+          <span class="ml-badge" style="background:${hasCost?"#e91e8c22":"#4ade8022"};color:${hasCost?"#e91e8c":"#4ade80"};border:1px solid ${hasCost?"#e91e8c44":"#4ade8044"}">
             ${hasCost?`-R$ ${dev.refundedAmount.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}`:"R$ 0,00"}
           </span>
           <a href="${dev.permalink}" target="_blank" class="ml-link" style="margin-top:0">Ver →</a>
@@ -2291,7 +2291,7 @@ function renderMLInPanel(panel,color){
       const msg=document.createElement("p");msg.style.cssText="font-size:11px;color:var(--text3);margin-bottom:12px;line-height:1.6;";msg.textContent="Conecte sua conta do Mercado Livre para ver os dados.";panel.appendChild(msg);
       const btn=document.createElement("button");btn.className="ml-connect-btn";btn.textContent="Conectar Mercado Livre";btn.addEventListener("click",()=>{window.open(`${VERCEL_BACKEND}/api/ml-auth`,"_blank");});panel.appendChild(btn);
     }else{
-      const err=document.createElement("p");err.style.cssText="color:#d4000c;font-size:12px;padding:20px 0;";err.textContent=data.error;panel.appendChild(err);
+      const err=document.createElement("p");err.style.cssText="color:#e91e8c;font-size:12px;padding:20px 0;";err.textContent=data.error;panel.appendChild(err);
     }
     return;
   }
@@ -2323,7 +2323,7 @@ function renderMLInPanel(panel,color){
   }
 
   displayData.forEach(dev=>{
-    const stageColors={"waiting_seller":"#d4000c","seller":"#d4000c","buyer":"#e8aa00","dispute":"#d4000c","resolved":"#4ade80"};
+    const stageColors={"waiting_seller":"#e91e8c","seller":"#e91e8c","buyer":"#f0b400","dispute":"#e91e8c","resolved":"#4ade80"};
     const stageLabels={"waiting_seller":"Aguarda você","seller":"Aguarda você","buyer":"Aguarda comprador","dispute":"Em disputa","resolved":"Resolvida"};
     const sc=stageColors[dev.stage]||"#888";
     const sl=stageLabels[dev.stage]||dev.stage||dev.status;
@@ -2332,8 +2332,8 @@ function renderMLInPanel(panel,color){
 
     // Cor da borda pelo status de revisão
     let borderColor = sc;
-    if(dev.needsReview) borderColor = "#e8aa00";
-    if(dev.returnStatusKey === "dispute") borderColor = "#d4000c";
+    if(dev.needsReview) borderColor = "#f0b400";
+    if(dev.returnStatusKey === "dispute") borderColor = "#e91e8c";
     card.style.borderLeftColor=borderColor;card.style.borderLeftWidth="3px";
 
     // Badge de status
@@ -2358,7 +2358,7 @@ function renderMLInPanel(panel,color){
           dueBadgeHtml=`<span class="ml-badge" style="background:#a3e63515;color:#a3e635;border:1px solid #a3e63533">até hoje</span>`;
         } else {
           const label=`até ${d.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"})}`;
-          dueBadgeHtml=`<span class="ml-badge" style="background:#1a6be015;color:#1a6be0;border:1px solid #1a6be033">${label}</span>`;
+          dueBadgeHtml=`<span class="ml-badge" style="background:#5e72e415;color:#5e72e4;border:1px solid #5e72e433">${label}</span>`;
         }
       }catch{}
     }
@@ -2373,7 +2373,7 @@ function renderMLInPanel(panel,color){
         <div style="font-size:10px;color:var(--text3);margin-bottom:6px">
           Comprador: <span style="color:var(--text2)">${dev.buyer}</span>
           ${dev.returnQty ? ` · <span style="color:var(--text2)">${Math.round(Number(dev.returnQty))} un.</span>` : ""}
-          ${dev.valor?` · <span style="color:#e8aa00">R$ ${Number(dev.valor).toFixed(2)}</span>`:""}
+          ${dev.valor?` · <span style="color:#f0b400">R$ ${Number(dev.valor).toFixed(2)}</span>`:""}
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px;">
           ${statusBadgeHtml}
@@ -2381,7 +2381,7 @@ function renderMLInPanel(panel,color){
         </div>
         ${dev.needsReview ? `<div id="${actionBtnsId}" style="display:flex;gap:6px;flex-wrap:wrap;">
           <button onclick="window._reviewDev('${dev.id}','ok')" style="background:#4ade8022;border:1px solid #4ade8066;color:#4ade80;border-radius:4px;padding:5px 12px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:1px;">✓ Chegou ok</button>
-          <button onclick="window._reviewDev('${dev.id}','fail')" style="background:#d4000c22;border:1px solid #d4000c66;color:#d4000c;border-radius:4px;padding:5px 12px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:1px;">✗ Reportar problema</button>
+          <button onclick="window._reviewDev('${dev.id}','fail')" style="background:#e91e8c22;border:1px solid #e91e8c66;color:#e91e8c;border-radius:4px;padding:5px 12px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:1px;">✗ Reportar problema</button>
         </div>` : `<a href="${dev.permalink}" target="_blank" class="ml-link">Abrir no ML →</a>`}
       </div>`;
     cardsGrid.appendChild(card);
@@ -2405,10 +2405,10 @@ function renderMLInPanel(panel,color){
         // Atualiza a lista após 2s
         setTimeout(() => { mlDevolucoes = null; fetchMLData("devolucoes"); }, 2000);
       } else {
-        if (btn) btn.innerHTML = `<span style="font-size:11px;color:#d4000c">Erro: ${data.error}</span>`;
+        if (btn) btn.innerHTML = `<span style="font-size:11px;color:#e91e8c">Erro: ${data.error}</span>`;
       }
     } catch(e) {
-      if (btn) btn.innerHTML = `<span style="font-size:11px;color:#d4000c">Erro: ${e.message}</span>`;
+      if (btn) btn.innerHTML = `<span style="font-size:11px;color:#e91e8c">Erro: ${e.message}</span>`;
     }
   };
 
@@ -2773,7 +2773,7 @@ function render(){
         calCircleBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`;
         if(proxCal.length > 0) {
           const dot = document.createElement("div");
-          dot.style.cssText = "position:absolute;top:-1px;right:-1px;width:8px;height:8px;border-radius:50%;background:#d4000c;border:1.5px solid #000;";
+          dot.style.cssText = "position:absolute;top:-1px;right:-1px;width:8px;height:8px;border-radius:50%;background:#e91e8c;border:1.5px solid #000;";
           calCircleBtn.appendChild(dot);
         }
         calCircleBtn.title = "Calendário Fiscal";
@@ -2813,7 +2813,7 @@ function render(){
       if(diogoCardFullscreen) { panel.style.flex="1"; panel.style.overflowY="auto"; panel.style.maxHeight="none"; }
 
       if(member.locked&&!diogoPinUnlocked){
-        panel.innerHTML=`<div class="pin-wrap"><div class="pin-icon">◈</div><p>Digite o PIN para acessar</p><input class="pin-input" type="password" inputmode="numeric" autocomplete="new-password" name="digoo-pin-${Date.now()}" data-lpignore="true" data-form-type="other" maxlength="10" placeholder="••••••" id="pin-field" readonly><div style="font-size:10px;color:#d4000c;margin-top:8px;letter-spacing:1px;display:none" id="pin-err">PIN incorreto</div><button class="pin-btn" style="background:${color};color:#000" id="pin-btn">ENTRAR</button></div>`;
+        panel.innerHTML=`<div class="pin-wrap"><div class="pin-icon">◈</div><p>Digite o PIN para acessar</p><input class="pin-input" type="password" inputmode="numeric" autocomplete="new-password" name="digoo-pin-${Date.now()}" data-lpignore="true" data-form-type="other" maxlength="10" placeholder="••••••" id="pin-field" readonly><div style="font-size:10px;color:#e91e8c;margin-top:8px;letter-spacing:1px;display:none" id="pin-err">PIN incorreto</div><button class="pin-btn" style="background:${color};color:#000" id="pin-btn">ENTRAR</button></div>`;
         setTimeout(()=>{
           const f=document.getElementById("pin-field"),e=document.getElementById("pin-err"),b=document.getElementById("pin-btn");
           if(f){f.value="";f.removeAttribute("readonly");f.focus();f.click();}
@@ -2941,7 +2941,7 @@ function render(){
             mainGroups.forEach(group => {
               const isActive = window._activeNavGroup === group.label || (group.tab && group.tab === currentTab);
               const chip = document.createElement("div");
-              chip.style.cssText = `padding:6px 14px;border-radius:99px;font-size:10px;font-weight:600;letter-spacing:0.5px;white-space:nowrap;cursor:pointer;flex-shrink:0;transition:all .15s;background:${isActive?"#1a6be0":"#1a1a1a"};color:${isActive?"#fff":"#666"};border:0.5px solid ${isActive?"transparent":"#222"};font-family:inherit;`;
+              chip.style.cssText = `padding:6px 14px;border-radius:99px;font-size:10px;font-weight:600;letter-spacing:0.5px;white-space:nowrap;cursor:pointer;flex-shrink:0;transition:all .15s;background:${isActive?"#5e72e4":"#1a1a1a"};color:${isActive?"#fff":"#666"};border:0.5px solid ${isActive?"transparent":"#222"};font-family:inherit;`;
               chip.textContent = group.label;
               chip.addEventListener("click", () => {
                 window._activeNavGroup = group.label;
@@ -2957,11 +2957,11 @@ function render(){
             const activeGroup = mainGroups.find(g => g.label === window._activeNavGroup);
             if(activeGroup && activeGroup.subs.length > 0) {
               const subRow = document.createElement("div");
-              subRow.style.cssText = "display:flex;gap:5px;padding:8px 14px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;border-bottom:0.5px solid var(--sep);background:#0a0a0a;";
+              subRow.style.cssText = "display:flex;gap:5px;padding:8px 14px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;border-bottom:0.5px solid var(--sep);background:var(--bg);";
               activeGroup.subs.forEach(sub => {
                 const isSubActive = currentTab === sub.tab;
                 const subChip = document.createElement("div");
-                subChip.style.cssText = `padding:5px 12px;border-radius:99px;font-size:9px;font-weight:600;letter-spacing:0.5px;white-space:nowrap;cursor:pointer;flex-shrink:0;font-family:inherit;background:${isSubActive?"#1a6be022":"#141414"};color:${isSubActive?"#1a6be0":"#555"};border:0.5px solid ${isSubActive?"#1a6be044":"#1e1e1e"};`;
+                subChip.style.cssText = `padding:5px 12px;border-radius:99px;font-size:9px;font-weight:600;letter-spacing:0.5px;white-space:nowrap;cursor:pointer;flex-shrink:0;font-family:inherit;background:${isSubActive?"#5e72e422":"#141414"};color:${isSubActive?"#5e72e4":"#555"};border:0.5px solid ${isSubActive?"#5e72e444":"#1e1e1e"};`;
                 subChip.textContent = sub.label;
                 subChip.addEventListener("click", () => { window._diogotab = sub.tab; render(); });
                 subRow.appendChild(subChip);
@@ -2995,7 +2995,7 @@ function render(){
 
               const recarregarBtn = document.createElement("button");
               recarregarBtn.textContent = "↻ Recarregar NF do Bling";
-              recarregarBtn.style.cssText = "background:none;border:1px solid #e8aa0066;color:#e8aa00;border-radius:4px;padding:5px 12px;font-size:11px;cursor:pointer;font-family:inherit;";
+              recarregarBtn.style.cssText = "background:none;border:1px solid #f0b40066;color:#f0b400;border-radius:4px;padding:5px 12px;font-size:11px;cursor:pointer;font-family:inherit;";
               recarregarBtn.addEventListener("click", async () => {
                 const chave = extrairNumeroNFDaTarefa(taskFS) || calcIpiState[taskFS.id]?.nfUsada;
                 if (!chave) { alert("Número da NF não identificado."); return; }
@@ -3081,7 +3081,7 @@ function render(){
               recGrid.style.cssText="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;";
               // Cards de alerta fiscal — piscam em azul
               fiscalAlerts.forEach(e => {
-                const cor = "#1a6be0";
+                const cor = "#5e72e4";
                 const card = document.createElement("div");
                 card.style.cssText = `background:var(--bg3);border:0.5px solid ${cor}33;border-top:2px solid ${cor};border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;box-sizing:border-box;--c:${cor};animation:cardFlash 1.2s ease-in-out infinite;`;
                 const title = document.createElement("div");
@@ -3101,23 +3101,23 @@ function render(){
 
               recTasks.forEach(task=>{
                 const card=document.createElement("div");
-                card.style.cssText=`background:var(--bg3);border:0.5px solid #1a6be033;border-top:2px solid #1a6be0;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;box-sizing:border-box;`;
+                card.style.cssText=`background:var(--bg3);border:0.5px solid #5e72e433;border-top:2px solid #5e72e4;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;box-sizing:border-box;`;
                 const chk=document.createElement("button");
-                chk.style.cssText=`width:15px;height:15px;border-radius:3px;border:1.5px solid #1a6be0;background:${task.done?"#1a6be0":"none"};flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#000;font-size:9px;font-weight:700;`;
+                chk.style.cssText=`width:15px;height:15px;border-radius:3px;border:1.5px solid #5e72e4;background:${task.done?"#5e72e4":"none"};flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#000;font-size:9px;font-weight:700;`;
                 chk.textContent=task.done?"✓":"";
                 chk.addEventListener("click",()=>toggleTask(task.id,task.done,task.progress,true));
                 const tt=document.createElement("div");
                 tt.style.cssText=`font-size:11px;font-weight:500;color:${task.done?"var(--text3)":"var(--text)"};line-height:1.4;text-decoration:${task.done?"line-through":"none"};`;
                 tt.textContent=task.text;
                 const badge=document.createElement("span");
-                badge.style.cssText="font-size:9px;font-weight:700;letter-spacing:.8px;padding:2px 6px;border-radius:4px;background:#1a6be022;color:#1a6be0;width:fit-content;";
+                badge.style.cssText="font-size:9px;font-weight:700;letter-spacing:.8px;padding:2px 6px;border-radius:4px;background:#5e72e422;color:#5e72e4;width:fit-content;";
                 badge.textContent="RECORRENTE";
                 card.appendChild(chk);card.appendChild(tt);card.appendChild(badge);
                 if(task.done){
                   const btnWrap=document.createElement("div");btnWrap.style.cssText="display:flex;gap:4px;margin-top:2px;";
-                  const reopen=document.createElement("button");reopen.style.cssText="background:none;border:1px solid #1a6be044;border-radius:3px;color:#1a6be077;font-size:8px;letter-spacing:1px;padding:2px 7px;cursor:pointer;font-family:inherit;";reopen.textContent="Reabrir";
+                  const reopen=document.createElement("button");reopen.style.cssText="background:none;border:1px solid #5e72e444;border-radius:3px;color:#5e72e477;font-size:8px;letter-spacing:1px;padding:2px 7px;cursor:pointer;font-family:inherit;";reopen.textContent="Reabrir";
                   reopen.addEventListener("click",(e)=>{e.stopPropagation();update(ref(db,`/tasks/${task.id}`),{done:false,progress:false});});
-                  const okBtn=document.createElement("button");okBtn.style.cssText="background:#1a6be0;border:none;border-radius:3px;color:#000;font-size:8px;font-weight:700;letter-spacing:1px;padding:2px 7px;cursor:pointer;font-family:inherit;";okBtn.textContent="OK";
+                  const okBtn=document.createElement("button");okBtn.style.cssText="background:#5e72e4;border:none;border-radius:3px;color:#000;font-size:8px;font-weight:700;letter-spacing:1px;padding:2px 7px;cursor:pointer;font-family:inherit;";okBtn.textContent="OK";
                   okBtn.addEventListener("click",(e)=>{e.stopPropagation();remove(ref(db,`/tasks/${task.id}`));});
                   btnWrap.appendChild(reopen);btnWrap.appendChild(okBtn);card.appendChild(btnWrap);
                 }
@@ -3696,7 +3696,7 @@ function renderCancelamentos(panel) {
 
   if (cancelamentosErro) {
     const err = document.createElement("div");
-    err.style.cssText = "padding:10px;background:#d4000c10;border:1px solid #d4000c33;border-radius:5px;font-size:11px;color:#d4000c;margin-bottom:12px;";
+    err.style.cssText = "padding:10px;background:#e91e8c10;border:1px solid #e91e8c33;border-radius:5px;font-size:11px;color:#e91e8c;margin-bottom:12px;";
     err.textContent = `Erro: ${cancelamentosErro}`;
     panel.appendChild(err);
     return;
@@ -3711,8 +3711,8 @@ function renderCancelamentos(panel) {
 
   // 4 status — definição de cor, ícone e texto do badge
   const statusDefs = {
-    nf_pendente:        { cor: "#d4000c", texto: "Cancelar NF",          icone: "⚠" },
-    devolucao_pendente: { cor: "#e8aa00", texto: "Devolução — processar", icone: "↩" },
+    nf_pendente:        { cor: "#e91e8c", texto: "Cancelar NF",          icone: "⚠" },
+    devolucao_pendente: { cor: "#f0b400", texto: "Devolução — processar", icone: "↩" },
     nf_cancelada:       { cor: "#00dfc3", texto: "NF cancelada",          icone: "✓" },
   };
 
@@ -3735,7 +3735,7 @@ function renderCancelamentos(panel) {
     const s = String(situacao||"").toLowerCase();
     if(/cancelad/.test(s)) return { bg:"#33333380", cor:"#888", borda:"#44444480" };
     if(/autoriz/.test(s))  return { bg:"#00dfc318", cor:"#00dfc3", borda:"#00dfc333" };
-    return { bg:"#e8aa0018", cor:"#e8aa00", borda:"#e8aa0033" };
+    return { bg:"#f0b40018", cor:"#f0b400", borda:"#f0b40033" };
   }
 
   function copiavel(texto, exibir) {
@@ -3863,7 +3863,7 @@ function renderCancelamentosBruno(panel) {
   }
 
   const instrucao = document.createElement("div");
-  instrucao.style.cssText = "padding:10px 14px;background:#e8aa0010;border:1px solid #e8aa0033;border-radius:6px;font-size:11px;color:#e8aa00;line-height:1.7;margin-bottom:12px;";
+  instrucao.style.cssText = "padding:10px 14px;background:#f0b40010;border:1px solid #f0b40033;border-radius:6px;font-size:11px;color:#f0b400;line-height:1.7;margin-bottom:12px;";
   instrucao.innerHTML = "<strong>Como cancelar:</strong> copie o número da NF → acesse o Bling → Nota Fiscal → busca pelo número → abre a NF → clica em <em>Cancelar NF</em>.";
   panel.appendChild(instrucao);
 
@@ -3912,7 +3912,7 @@ function renderCancelamentosBruno(panel) {
 
   pendentes.forEach(it => {
     const card = document.createElement("div");
-    card.style.cssText = "background:var(--bg3);border:1px solid #d4000c33;border-left:3px solid #d4000c;border-radius:6px;padding:10px 14px;margin-bottom:8px;";
+    card.style.cssText = "background:var(--bg3);border:1px solid #e91e8c33;border-left:3px solid #e91e8c;border-radius:6px;padding:10px 14px;margin-bottom:8px;";
 
     const badgeRow = document.createElement("div");
     badgeRow.style.cssText = "display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;";
@@ -3920,7 +3920,7 @@ function renderCancelamentosBruno(panel) {
     prodNome.style.cssText = "font-size:12px;font-weight:600;color:var(--text);flex:1;margin-right:8px;";
     prodNome.textContent = it.produto;
     const badge = document.createElement("span");
-    badge.style.cssText = "background:#d4000c18;color:#d4000c;border:1px solid #d4000c55;border-radius:4px;padding:2px 8px;font-size:9px;white-space:nowrap;flex-shrink:0;font-weight:600;";
+    badge.style.cssText = "background:#e91e8c18;color:#e91e8c;border:1px solid #e91e8c55;border-radius:4px;padding:2px 8px;font-size:9px;white-space:nowrap;flex-shrink:0;font-weight:600;";
     badge.textContent = "⚠ Necessário cancelar NF";
     badgeRow.appendChild(prodNome); badgeRow.appendChild(badge);
     card.appendChild(badgeRow);
@@ -3936,7 +3936,7 @@ function renderCancelamentosBruno(panel) {
       linha2.appendChild(dataEl);
     }
     const valorEl = document.createElement("span");
-    valorEl.style.color="#e8aa00";
+    valorEl.style.color="#f0b400";
     valorEl.textContent = `R$ ${Number(it.valor).toLocaleString("pt-BR",{minimumFractionDigits:2})}`;
     linha2.appendChild(valorEl);
     card.appendChild(linha2);
@@ -3968,7 +3968,7 @@ function renderCancelamentosBruno(panel) {
       nfLabel.style.cssText = "font-size:9px;color:var(--text3);letter-spacing:1px;";
       nfLabel.textContent = "NF";
       const nfNum = document.createElement("span");
-      nfNum.style.cssText = "font-size:16px;font-weight:700;color:#d4000c;font-family:'IBM Plex Mono',monospace;cursor:pointer;letter-spacing:1px;";
+      nfNum.style.cssText = "font-size:16px;font-weight:700;color:#e91e8c;font-family:'IBM Plex Mono',monospace;cursor:pointer;letter-spacing:1px;";
       nfNum.textContent = it.nf.nfNumero;
       nfNum.title = "Clique pra copiar";
       nfNum.addEventListener("click", () => {
@@ -4218,8 +4218,8 @@ function renderFilialSP(panel, color) {
 
   [
     { label:"VALOR EM ESTOQUE", value: estoqueBlingData ? `R$ ${totalValor.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : "—", color:"#00dfc3", sub: skusSemCusto > 0 ? `${skusSemCusto} SKUs sem custo` : "todos com custo" },
-    { label:"UNIDADES APTAS", value: totalAptas.toLocaleString("pt-BR"), color:"#1a6be0", sub:`${rows.length} SKUs` },
-    { label:"EM TRANSFERÊNCIA", value: totalTransf.toLocaleString("pt-BR"), color:"#e8aa00", sub:"entre centros do Full" },
+    { label:"UNIDADES APTAS", value: totalAptas.toLocaleString("pt-BR"), color:"#5e72e4", sub:`${rows.length} SKUs` },
+    { label:"EM TRANSFERÊNCIA", value: totalTransf.toLocaleString("pt-BR"), color:"#f0b400", sub:"entre centros do Full" },
     { label:"TOTAL NO FULL", value: (totalAptas+totalTransf).toLocaleString("pt-BR"), color:"#7F77DD", sub:"aptas + transferência" },
   ].forEach(s => {
     const card = document.createElement("div");
@@ -4258,8 +4258,8 @@ function renderFilialSP(panel, color) {
       <div style="font-size:11px;color:var(--text3);line-height:1.7;margin-bottom:14px;">
         Mostra quanto tempo o estoque de cada produto vai durar no ritmo de vendas atual dos últimos 30 dias.<br><br>
         <span style="color:#22c55e;font-weight:600;">🟢 Verde (&lt;15d)</span> — Acabando. Risco de ruptura.<br>
-        <span style="color:#e8aa00;font-weight:600;">🟡 Amarelo (15–90d)</span> — Saudável. Acompanhar.<br>
-        <span style="color:#d4000c;font-weight:600;">🔴 Vermelho (&gt;90d)</span> — Encalhado. Precisa de ação.<br><br>
+        <span style="color:#f0b400;font-weight:600;">🟡 Amarelo (15–90d)</span> — Saudável. Acompanhar.<br>
+        <span style="color:#e91e8c;font-weight:600;">🔴 Vermelho (&gt;90d)</span> — Encalhado. Precisa de ação.<br><br>
         Clique num card pra ver projeção de receita e histórico de preço.
       </div>
       <button onclick="document.getElementById('saude-help-tooltip').remove()" style="background:var(--accent);border:none;border-radius:6px;color:#000;font-size:10px;font-weight:700;letter-spacing:1px;padding:7px 16px;cursor:pointer;font-family:inherit;width:100%;">Entendido</button>
@@ -4296,7 +4296,7 @@ function renderFilialSP(panel, color) {
     const tbody = table.querySelector("#estoque-tbody");
     enriched.forEach(r => {
       const semCusto = !r.custo;
-      const custoStr = r.custo > 0 ? `R$ ${r.custo.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : `<span style="color:#d4000c;font-size:9px;">sem custo</span>`;
+      const custoStr = r.custo > 0 ? `R$ ${r.custo.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : `<span style="color:#e91e8c;font-size:9px;">sem custo</span>`;
       const valorStr = r.valor > 0 ? `R$ ${r.valor.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : "—";
       const tr = document.createElement("tr");
       tr.style.borderBottom = "1px solid var(--sep2)";
@@ -4305,15 +4305,15 @@ function renderFilialSP(panel, color) {
         <td style="padding:8px 8px;color:var(--text2);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;">${r.produto}</td>
         <td style="padding:8px 8px;text-align:center;color:${r.aptas>0?"var(--text)":"var(--text3)"};font-weight:${r.aptas>0?"500":"400"};">${r.aptas||"—"}</td>
         <td style="padding:8px 8px;text-align:center;color:var(--text3);">${r.transf||"—"}</td>
-        <td style="padding:8px 8px;text-align:center;color:${r.pendente>0?"#e8aa00":"var(--text3)"};font-weight:${r.pendente>0?"500":"400"};">${r.pendente||"—"}</td>
-        <td style="padding:8px 8px;text-align:right;color:${semCusto?"#d4000c":"var(--text2)"};">${custoStr}</td>
+        <td style="padding:8px 8px;text-align:center;color:${r.pendente>0?"#f0b400":"var(--text3)"};font-weight:${r.pendente>0?"500":"400"};">${r.pendente||"—"}</td>
+        <td style="padding:8px 8px;text-align:right;color:${semCusto?"#e91e8c":"var(--text2)"};">${custoStr}</td>
         <td style="padding:8px 8px;text-align:right;color:${semCusto?"var(--text3)":r.valor>5000?"#00dfc3":r.valor>1000?"#00dfc3":"var(--text2)"};font-weight:500;">${valorStr}</td>`;
       tbody.appendChild(tr);
     });
 
     if (skusSemCusto > 0 && estoqueBlingData) {
       const warn = document.createElement("div");
-      warn.style.cssText = "margin-top:12px;padding:8px 12px;background:#f8711408;border:1px solid #f8711422;border-radius:5px;font-size:10px;color:#d4000c;";
+      warn.style.cssText = "margin-top:12px;padding:8px 12px;background:#f8711408;border:1px solid #f8711422;border-radius:5px;font-size:10px;color:#e91e8c;";
       warn.textContent = `⚠ ${skusSemCusto} SKUs sem custo no Bling — verifique o campo "Preço de Custo" no cadastro do produto.`;
       panel.appendChild(warn);
     }
@@ -4372,7 +4372,7 @@ function renderMatrizRS(panel, color) {
     mlMatrizWrap.innerHTML = `<span style="color:var(--text3)">ML Matriz desconectado</span>`;
     const connBtn = document.createElement("button");
     connBtn.textContent = "Conectar ML Matriz";
-    connBtn.style.cssText = "background:none;border:1px solid #e8aa0066;color:#e8aa00;border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer;letter-spacing:1px;margin-left:4px;";
+    connBtn.style.cssText = "background:none;border:1px solid #f0b40066;color:#f0b400;border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer;letter-spacing:1px;margin-left:4px;";
     connBtn.addEventListener("click", () => window.open(`${VERCEL_BACKEND}/api/ml-auth?conta=matriz`, "_blank"));
     mlMatrizWrap.appendChild(connBtn);
   }
@@ -4396,7 +4396,7 @@ function renderMatrizRS(panel, color) {
   resumo.style.cssText = "display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;";
   [
     { label:"VALOR EM ESTOQUE", value:`R$ ${totalValor.toLocaleString("pt-BR",{minimumFractionDigits:2})}`, color:"#00dfc3", sub:`${matrizRows.length} SKUs` },
-    { label:"UNIDADES", value: totalQty.toLocaleString("pt-BR"), color:"#1a6be0", sub:"peças" },
+    { label:"UNIDADES", value: totalQty.toLocaleString("pt-BR"), color:"#5e72e4", sub:"peças" },
     { label:"CUSTO MÉDIO/UN", value:`R$ ${custoMedio.toLocaleString("pt-BR",{minimumFractionDigits:2})}`, color:"#7F77DD", sub:"ponderado" },
   ].forEach(s => {
     const card = document.createElement("div");
@@ -4473,7 +4473,7 @@ function renderSaudeChart(panel, enriched) {
   // Legenda
   const leg = document.createElement("div");
   leg.style.cssText = "display:flex;gap:14px;margin-bottom:14px;font-size:10px;flex-wrap:wrap;";
-  [{c:"#00ffb8",l:"<15d — subir"},{c:"#e8aa00",l:"15–90d — acompanhar"},{c:"#d4000c",l:">90d — baixar"}].forEach(({c,l}) => {
+  [{c:"#00ffb8",l:"<15d — subir"},{c:"#f0b400",l:"15–90d — acompanhar"},{c:"#e91e8c",l:">90d — baixar"}].forEach(({c,l}) => {
     const s = document.createElement("span");
     s.style.cssText = "display:flex;align-items:center;gap:4px;color:var(--text3);";
     s.innerHTML = '<span style="width:8px;height:8px;border-radius:2px;background:' + c + ';display:inline-block;flex-shrink:0;"></span>' + l;
@@ -4495,7 +4495,7 @@ function renderSaudeChart(panel, enriched) {
     return {...r, vendas30, aptas, dias};
   }).sort((a,b) => b.dias - a.dias);
 
-  const cor = d => d.dias <= 15 ? "#00ffb8" : d.dias <= 90 ? "#e8aa00" : "#d4000c";
+  const cor = d => d.dias <= 15 ? "#00ffb8" : d.dias <= 90 ? "#f0b400" : "#e91e8c";
   const categoriaKey = d => d.dias <= 15 ? "verde" : d.dias <= 90 ? "amarelo" : "vermelho";
   const badgeText = d => d.dias <= 15 ? "↑ SUBIR" : d.dias <= 90 ? "~ ACOMPANHAR" : "↓ BAIXAR";
   const diasLabel = d => d.dias >= 999 ? "sem vendas" : d.dias + "d";
@@ -4571,7 +4571,7 @@ function renderSaudeChart(panel, enriched) {
         const diasMes = new Date(new Date().getFullYear(), new Date().getMonth()+1, 0).getDate();
         const percMes = Math.round((diaAtual / diasMes) * 100);
         const ruptura = d.dias < 999 ? `em ~${d.dias} dias` : "sem previsão";
-        const rupturaColor = d.dias <= 15 ? "#d4000c" : d.dias <= 60 ? "#e8aa00" : "#22c55e";
+        const rupturaColor = d.dias <= 15 ? "#e91e8c" : d.dias <= 60 ? "#f0b400" : "#22c55e";
 
         projSection.innerHTML = `
           <div style="font-size:8px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;">Projeção do mês</div>
@@ -4631,7 +4631,7 @@ function renderSaudeChart(panel, enriched) {
             const rdata = await r.json();
             ultimoRdata = rdata;
             if(!r.ok || rdata.error){
-              statsRow.innerHTML = `<span style="color:#d4000c;font-size:11px;">Erro: ${rdata.error||"falha na consulta"}</span>`;
+              statsRow.innerHTML = `<span style="color:#e91e8c;font-size:11px;">Erro: ${rdata.error||"falha na consulta"}</span>`;
               return;
             }
             const m = rdata.skuMatch;
@@ -4642,13 +4642,13 @@ function renderSaudeChart(panel, enriched) {
               const parecidos = lista.filter(s => skuNorm.length>=6 && (norm(s).includes(skuNorm.slice(0,6)) || skuNorm.includes(norm(s).slice(0,6))));
               let extra = "";
               if(parecidos.length){
-                extra = ' <span style="color:#e8aa00;">⚠ achei SKU parecido nas vendas: ' + parecidos.join(", ") + '</span>';
+                extra = ' <span style="color:#f0b400;">⚠ achei SKU parecido nas vendas: ' + parecidos.join(", ") + '</span>';
               }
               statsRow.innerHTML = '<span style="color:var(--text3);font-size:11px;">Nenhuma venda registrada desde a mudança.' + extra + '</span>';
             }else{
               statsRow.innerHTML =
-                '<div><div style="font-size:9px;color:var(--text3);">UNIDADES</div><div style="font-size:15px;font-weight:600;color:#e8aa00;">' + m.qty + '</div></div>' +
-                '<div><div style="font-size:9px;color:var(--text3);">FATURAMENTO</div><div style="font-size:15px;font-weight:600;color:#e8aa00;">R$ ' + m.revenue.toLocaleString("pt-BR",{minimumFractionDigits:2}) + '</div></div>';
+                '<div><div style="font-size:9px;color:var(--text3);">UNIDADES</div><div style="font-size:15px;font-weight:600;color:#f0b400;">' + m.qty + '</div></div>' +
+                '<div><div style="font-size:9px;color:var(--text3);">FATURAMENTO</div><div style="font-size:15px;font-weight:600;color:#f0b400;">R$ ' + m.revenue.toLocaleString("pt-BR",{minimumFractionDigits:2}) + '</div></div>';
               const toggleBtn = document.createElement("button");
               toggleBtn.textContent = "Ver lista";
               toggleBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:3px 10px;font-size:10px;cursor:pointer;font-family:inherit;letter-spacing:0.5px;";
@@ -4677,7 +4677,7 @@ function renderSaudeChart(panel, enriched) {
               actionsRow.appendChild(toggleBtn);
             }
           }catch(err){
-            statsRow.innerHTML = `<span style="color:#d4000c;font-size:11px;">Erro de conexão: ${err.message}</span>`;
+            statsRow.innerHTML = `<span style="color:#e91e8c;font-size:11px;">Erro de conexão: ${err.message}</span>`;
           }
         };
         buscar(); // busca automática ao abrir o card, sem precisar clicar
@@ -4690,7 +4690,7 @@ function renderSaudeChart(panel, enriched) {
         info.style.cssText = "margin-bottom:10px;";
         if(pc.priceBefore!=null && pc.priceAfter!=null){
           const subiu = Number(pc.priceAfter) > Number(pc.priceBefore);
-          const precoColor = subiu ? "#22c55e" : "#1a6be0";
+          const precoColor = subiu ? "#22c55e" : "#5e72e4";
           const diff = Number(pc.priceAfter) - Number(pc.priceBefore);
           const diffPct = ((diff / Number(pc.priceBefore)) * 100).toFixed(1);
           const vendasAntes = pc.vendas30AtChange || 0;
@@ -4715,7 +4715,7 @@ function renderSaudeChart(panel, enriched) {
                 '</div>' +
                 '<div style="background:var(--bg2);border-radius:7px;padding:10px;">' +
                   '<div style="font-size:8px;color:var(--text3);letter-spacing:1px;margin-bottom:4px;">DEPOIS (R$ ' + Number(pc.priceAfter).toFixed(0) + ')</div>' +
-                  '<div style="font-size:18px;font-weight:700;color:' + (varVendas > 0 ? "#22c55e" : "#d4000c") + ';">' + (varVendas > 0 ? "+" : "") + varVendas + '%</div>' +
+                  '<div style="font-size:18px;font-weight:700;color:' + (varVendas > 0 ? "#22c55e" : "#e91e8c") + ';">' + (varVendas > 0 ? "+" : "") + varVendas + '%</div>' +
                   '<div style="font-size:9px;color:var(--text3);margin-top:2px;">' + vendasDepois + ' un em ' + diasDesde + 'd ↑</div>' +
                 '</div>' +
               '</div>'
@@ -4901,7 +4901,7 @@ function renderFechamentoMensal(panel, color) {
     const vazio = !val || String(val).toUpperCase().includes("NÃO") || String(val) === "—";
     inp.value = vazio ? "" : (val || "");
     inp.placeholder = vazio ? "⚠ preencher" : (placeholder || "");
-    inp.style.cssText = `background:none;border:none;border-bottom:1px solid ${vazio?"#d4000c44":"transparent"};color:${vazio?"#d4000c":(cor||"var(--text)")};font-family:${mono?"var(--font-mono, monospace)":"inherit"};font-size:inherit;padding:0;outline:none;width:100%;`;
+    inp.style.cssText = `background:none;border:none;border-bottom:1px solid ${vazio?"#e91e8c44":"transparent"};color:${vazio?"#e91e8c":(cor||"var(--text)")};font-family:${mono?"var(--font-mono, monospace)":"inherit"};font-size:inherit;padding:0;outline:none;width:100%;`;
     inp.addEventListener("focus", () => inp.style.borderBottomColor = color);
     inp.addEventListener("blur",  () => { inp.style.borderBottomColor = "transparent"; if(inp.value) inp.style.color = cor||"var(--text)"; });
     return inp;
@@ -4918,7 +4918,7 @@ function renderFechamentoMensal(panel, color) {
       total += valNum;
 
       const card = document.createElement("div");
-      card.style.cssText = `background:var(--bg3);border:1px solid ${semValor?"#e8aa0044":"var(--border)"};border-radius:10px;padding:14px 16px;`;
+      card.style.cssText = `background:var(--bg3);border:1px solid ${semValor?"#f0b40044":"var(--border)"};border-radius:10px;padding:14px 16px;`;
 
       // Linha topo: nome + valor
       const topo = document.createElement("div");
@@ -4944,8 +4944,8 @@ function renderFechamentoMensal(panel, color) {
       const rSign = document.createElement("span");
       rSign.style.cssText = "font-size:11px;color:var(--text3);";
       rSign.textContent = "R$";
-      const iVal = inpClean(fmtValor(nf.valor), "0,00", semValor?"#e8aa00":"#4ade80");
-      iVal.style.cssText += `font-size:15px;font-weight:600;text-align:right;width:90px;color:${semValor?"#e8aa00":"#4ade80"};`;
+      const iVal = inpClean(fmtValor(nf.valor), "0,00", semValor?"#f0b400":"#4ade80");
+      iVal.style.cssText += `font-size:15px;font-weight:600;text-align:right;width:90px;color:${semValor?"#f0b400":"#4ade80"};`;
       iVal.addEventListener("input", () => {
         nf.valor = iVal.value;
         iVal.style.color = "#4ade80";
@@ -5214,7 +5214,7 @@ function renderConfig(panel, color) {
       left.style.cssText = "display:flex;align-items:center;gap:10px;";
 
       const dot = document.createElement("div");
-      const dotColor = api.ativo ? "#22c55e" : api.expirado ? "#e8aa00" : "#d4000c";
+      const dotColor = api.ativo ? "#22c55e" : api.expirado ? "#f0b400" : "#e91e8c";
       dot.style.cssText = `width:7px;height:7px;border-radius:50%;background:${dotColor};flex-shrink:0;${!api.ativo?"animation:siren 1s infinite;":""}`;
 
       const info = document.createElement("div");
@@ -5372,7 +5372,7 @@ async function processarPlanilhaAtributos(file, statusEl, color) {
     await set(ref(db, "/config_atributos"), { atributos, total, atualizadoEm: Date.now() });
     statusEl.innerHTML = `<span style="color:#00dfc3;">✓ ${total} SKUs importados com sucesso</span>`;
   } catch(e) {
-    statusEl.innerHTML = `<span style="color:#d4000c;">Erro: ${e.message}</span>`;
+    statusEl.innerHTML = `<span style="color:#e91e8c;">Erro: ${e.message}</span>`;
   }
 }
 
@@ -5417,14 +5417,14 @@ async function processarPlanilhaKits(file, statusEl, color) {
     await set(ref(db, "/config_kits"), { composicoes, total, atualizadoEm: Date.now() });
 
     let msg = `<span style="color:#00dfc3;">✓ ${total} kits importados</span>`;
-    if(novos.length) msg += ` <span style="color:#e8aa00;">· ${novos.length} novo(s): ${novos.join(", ")}</span>`;
-    if(alterados.length) msg += ` <span style="color:#1a6be0;">· ${alterados.length} alterado(s)</span>`;
+    if(novos.length) msg += ` <span style="color:#f0b400;">· ${novos.length} novo(s): ${novos.join(", ")}</span>`;
+    if(alterados.length) msg += ` <span style="color:#5e72e4;">· ${alterados.length} alterado(s)</span>`;
     statusEl.innerHTML = msg;
 
     const p = document.querySelector("#diogo-panel");
     if(p && window._diogotab === "config") { p.innerHTML=""; renderConfig(p, color); }
   } catch(e) {
-    statusEl.innerHTML = `<span style="color:#d4000c;">Erro: ${e.message}</span>`;
+    statusEl.innerHTML = `<span style="color:#e91e8c;">Erro: ${e.message}</span>`;
   }
 }
 
@@ -5553,17 +5553,17 @@ function checkBlingModal() {
   modalOverlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;";
 
   const modalBox = document.createElement("div");
-  modalBox.style.cssText = "background:var(--bg2);border:0.5px solid #1a6be055;border-radius:14px;padding:20px 24px;width:320px;max-width:90vw;";
+  modalBox.style.cssText = "background:var(--bg2);border:0.5px solid #5e72e455;border-radius:14px;padding:20px 24px;width:320px;max-width:90vw;";
 
   modalBox.innerHTML = `
     <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;display:flex;align-items:center;gap:8px;">
-      <span style="color:#1a6be0;font-size:16px;">⚠</span> Token do Bling expirado
+      <span style="color:#5e72e4;font-size:16px;">⚠</span> Token do Bling expirado
     </div>
     <div style="font-size:11px;color:var(--text3);margin-bottom:16px;line-height:1.6;">
       O token do Bling expira a cada 1 hora e precisa ser renovado manualmente. Clique em reconectar para gerar um novo token — leva menos de 1 minuto.
     </div>
     <div style="display:flex;gap:8px;">
-      <button id="bling-modal-reconectar" style="flex:1;background:#1a6be0;border:none;border-radius:7px;color:#000;font-size:11px;font-weight:700;letter-spacing:1px;padding:9px;cursor:pointer;font-family:inherit;">RECONECTAR BLING</button>
+      <button id="bling-modal-reconectar" style="flex:1;background:#5e72e4;border:none;border-radius:7px;color:#000;font-size:11px;font-weight:700;letter-spacing:1px;padding:9px;cursor:pointer;font-family:inherit;">RECONECTAR BLING</button>
       <button id="bling-modal-fechar" style="background:none;border:0.5px solid var(--border2);border-radius:7px;color:var(--text3);font-size:11px;padding:9px 14px;cursor:pointer;font-family:inherit;">Depois</button>
     </div>
   `;
@@ -5588,16 +5588,16 @@ function notifRefreshFalhou(conta) {
   if(document.getElementById(id)) return; // já está mostrando
   const notif = document.createElement("div");
   notif.id = id;
-  notif.style.cssText = "position:fixed;bottom:20px;right:20px;background:#1a1a1a;border:1px solid #d4000c55;border-radius:10px;padding:14px 18px;z-index:9999;max-width:300px;box-shadow:0 4px 20px rgba(0,0,0,0.4);";
+  notif.style.cssText = "position:fixed;bottom:20px;right:20px;background:var(--bg3);border:1px solid #e91e8c55;border-radius:10px;padding:14px 18px;z-index:9999;max-width:300px;box-shadow:0 4px 20px rgba(0,0,0,0.4);";
   const label = conta === "filial" ? "Filial SP" : "Matriz RS";
   notif.innerHTML = `
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-      <span style="color:#d4000c;font-size:16px;">⚠</span>
+      <span style="color:#e91e8c;font-size:16px;">⚠</span>
       <span style="font-size:12px;font-weight:600;color:#fff;">Token ML ${label} expirou</span>
     </div>
     <div style="font-size:11px;color:#aaa;margin-bottom:12px;line-height:1.5;">O refresh automático falhou. Reconecte manualmente abrindo o link no browser certo.</div>
     <div style="display:flex;gap:8px;">
-      <button onclick="window.open('${VERCEL_BACKEND}/api/ml-auth?conta=${conta}','_blank')" style="flex:1;background:#d4000c;border:none;border-radius:5px;color:#fff;font-size:10px;font-weight:700;letter-spacing:1px;padding:6px;cursor:pointer;font-family:inherit;">RECONECTAR</button>
+      <button onclick="window.open('${VERCEL_BACKEND}/api/ml-auth?conta=${conta}','_blank')" style="flex:1;background:#e91e8c;border:none;border-radius:5px;color:#fff;font-size:10px;font-weight:700;letter-spacing:1px;padding:6px;cursor:pointer;font-family:inherit;">RECONECTAR</button>
       <button onclick="document.getElementById('${id}').remove()" style="background:none;border:1px solid #333;border-radius:5px;color:#666;font-size:10px;padding:6px 10px;cursor:pointer;font-family:inherit;">✕</button>
     </div>
   `;
@@ -5817,8 +5817,8 @@ async function renderConferencia(panel, color) {
   }
 
   summary.appendChild(sumCard("Total do mês", totalGeral, "#ffffff88", `${servicosFiltrados.length + impostosFiltrados.length} documentos`));
-  summary.appendChild(sumCard("Serviços", totalServicos, "#1a6be0", `${servicosFiltrados.length} notas`));
-  summary.appendChild(sumCard("Impostos", totalImpostos, "#d4000c", `${impostosFiltrados.length} guias`));
+  summary.appendChild(sumCard("Serviços", totalServicos, "#5e72e4", `${servicosFiltrados.length} notas`));
+  summary.appendChild(sumCard("Impostos", totalImpostos, "#e91e8c", `${impostosFiltrados.length} guias`));
   panel.appendChild(summary);
 
   // Filtros dinâmicos de tipo de imposto
@@ -5835,7 +5835,7 @@ async function renderConferencia(panel, color) {
       const btn = document.createElement("button");
       btn.textContent = tipo;
       const ativo = confFiltroTipo === tipo;
-      btn.style.cssText = `background:${ativo?"#d4000c":"none"};border:0.5px solid ${ativo?"#d4000c":"#d4000c44"};border-radius:99px;color:${ativo?"#000":"#d4000c"};font-size:9px;font-weight:${ativo?"700":"400"};letter-spacing:1px;padding:4px 12px;cursor:pointer;font-family:inherit;`;
+      btn.style.cssText = `background:${ativo?"#e91e8c":"none"};border:0.5px solid ${ativo?"#e91e8c":"#e91e8c44"};border-radius:99px;color:${ativo?"#000":"#e91e8c"};font-size:9px;font-weight:${ativo?"700":"400"};letter-spacing:1px;padding:4px 12px;cursor:pointer;font-family:inherit;`;
       btn.addEventListener("click", () => { confFiltroTipo = tipo; renderConferencia(panel, color); });
       filtrosWrap.appendChild(btn);
     });
@@ -5949,7 +5949,7 @@ async function renderConferencia(panel, color) {
       }
       const btnDel = document.createElement("button");
       btnDel.textContent = "✕";
-      btnDel.style.cssText = "background:none;border:0.5px solid #d4000c22;border-radius:4px;color:#d4000c66;font-size:9px;padding:3px 7px;cursor:pointer;font-family:inherit;";
+      btnDel.style.cssText = "background:none;border:0.5px solid #e91e8c22;border-radius:4px;color:#e91e8c66;font-size:9px;padding:3px 7px;cursor:pointer;font-family:inherit;";
       btnDel.addEventListener("click", async () => {
         if(!confirm(`Remover "${doc.nome}"?`)) return;
         await removerDocFirebase(confMes, categoria, doc.id);
@@ -6009,9 +6009,9 @@ async function renderConferencia(panel, color) {
 
           const form = document.createElement("div");
           form.className = "manual-form";
-          form.style.cssText = "margin-top:10px;background:var(--bg2);border:0.5px solid #e8aa0055;border-radius:8px;padding:12px 14px;";
+          form.style.cssText = "margin-top:10px;background:var(--bg2);border:0.5px solid #f0b40055;border-radius:8px;padding:12px 14px;";
           form.innerHTML = `
-            <div style="font-size:10px;color:#e8aa00;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+            <div style="font-size:10px;color:#f0b400;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
               <span>⚠</span> Não consegui extrair os dados automaticamente de <strong style="color:var(--text2);">${file.name}</strong>
             </div>
             <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
@@ -6033,7 +6033,7 @@ async function renderConferencia(panel, color) {
             const vStr = form.querySelector(".manual-valor").value;
             const v = parseFloat(vStr.replace(",","."));
             const c = form.querySelector(".manual-comp").value.trim();
-            if(!v || v <= 0) { form.querySelector(".manual-valor").style.borderColor="#d4000c"; return; }
+            if(!v || v <= 0) { form.querySelector(".manual-valor").style.borderColor="#e91e8c"; return; }
             form.remove();
             uploadBtn.textContent = "⏳ Enviando para o Drive..."; uploadBtn.disabled = true;
             const driveResult = await uploadParaDrive(file, confMes, categoria);
@@ -6206,8 +6206,8 @@ Digoo Brasil`;
     panel._actBar = actBar;
   }
 
-  renderSecao("Notas de Serviço", servicosFiltrados, "#1a6be0", "Notas de Serviço", "servicos");
-  renderSecao("Impostos", impostosFiltrados, "#d4000c", "Impostos", "impostos");
+  renderSecao("Notas de Serviço", servicosFiltrados, "#5e72e4", "Notas de Serviço", "servicos");
+  renderSecao("Impostos", impostosFiltrados, "#e91e8c", "Impostos", "impostos");
 
   if(panel._actBar) panel.appendChild(panel._actBar);
 }
