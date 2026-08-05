@@ -596,7 +596,7 @@ function renderDashboard(panel, color) {
   }).slice(0,3);
   const unidades = estoqueRows.reduce((s,r)=>s+Number(r.aptas||0),0);
   estoqueCard.innerHTML = `
-    <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#777;text-transform:uppercase;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;">Estoque Full · Filial SP</div>
+    <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#777;text-transform:uppercase;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;display:flex;align-items:center;justify-content:space-between;">Estoque Full · Filial SP<span style="padding:3px 9px;border-radius:5px;font-size:9px;font-weight:700;letter-spacing:.6px;white-space:nowrap;font-family:monospace;display:inline-block;background:rgba(45,206,137,.1);color:#2dce89;border:1px solid rgba(45,206,137,.22);">FULL</span></div>
     <div style="font-size:38px;font-weight:700;color:#2dce89;margin-bottom:4px;letter-spacing:-2px;font-family:'IBM Plex Mono',monospace;">${fmtFull(valorTotal)}</div>
     <div style="margin-bottom:14px;display:flex;gap:6px;flex-wrap:wrap;"><span style="padding:3px 9px;border-radius:5px;font-size:9px;font-weight:700;letter-spacing:.6px;white-space:nowrap;font-family:monospace;display:inline-block;background:rgba(255,255,255,.05);color:#666;border:1px solid rgba(255,255,255,.1);">${unidades} UN</span><span style="padding:3px 9px;border-radius:5px;font-size:9px;font-weight:700;letter-spacing:.6px;white-space:nowrap;font-family:monospace;display:inline-block;background:rgba(255,255,255,.05);color:#666;border:1px solid rgba(255,255,255,.1);">${estoqueRows.length} SKUs</span></div>
     ${criticos.length > 0 ? criticos.map(r => {
