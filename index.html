@@ -644,61 +644,88 @@ function renderDashboard(panel, color) {
     const expCard = document.createElement("div");
     expCard.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:14px;padding:16px;grid-column:1/-1;";
     expCard.innerHTML = (() => {
-      const total = dashExperiencia.todos || 1;
       const prob  = dashExperiencia.problemas.length;
+      const total = dashExperiencia.todos || 1;
       const ok    = total - prob;
-      const score = Math.round((ok / total) * 100);
-      const scoreColor = score >= 80 ? "#2dce89" : score >= 60 ? "#f0b400" : "#e91e8c";
-      const R = 42, CX = 54, CY = 54, stroke = 7;
-      const circ = 2 * Math.PI * R;
-      const dashOk  = (ok  / total) * circ;
-      const dashProb = (prob / total) * circ;
-      const probColor = "#e91e8c";
-      const okColor   = "#2dce89";
-      const rotateStart = -90;
-      return `
-      <div style="font-size:11px;font-weight:500;color:#888;font-family:'Inter',sans-serif;margin-bottom:16px;">Experiência de compra · Filial SP</div>
-      <div style="display:grid;grid-template-columns:120px 1fr;gap:20px;align-items:start;">
-        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
-          <svg width="108" height="108" viewBox="0 0 108 108">
-            <circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="#1e1e1e" stroke-width="${stroke}"/>
-            <circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="${okColor}" stroke-width="${stroke}"
-              stroke-dasharray="${dashOk} ${circ}" stroke-dashoffset="${circ * 0.25}"
-              stroke-linecap="round" style="transition:stroke-dasharray .6s ease;"/>
-            <circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="${probColor}" stroke-width="${stroke}"
-              stroke-dasharray="${dashProb} ${circ}" stroke-dashoffset="${circ * 0.25 - dashOk}"
-              stroke-linecap="round" style="transition:stroke-dasharray .6s ease;"/>
-            <text x="${CX}" y="${CY - 6}" text-anchor="middle" fill="${scoreColor}" font-size="22" font-weight="700" font-family="'IBM Plex Mono',monospace">${score}</text>
-            <text x="${CX}" y="${CY + 12}" text-anchor="middle" fill="#666" font-size="10" font-family="'Inter',sans-serif">de 100</text>
-          </svg>
-          <div style="display:flex;flex-direction:column;gap:5px;width:100%;">
-            <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-family:'Inter',sans-serif;">
-              <span style="width:8px;height:8px;border-radius:2px;background:#2dce89;flex-shrink:0;display:inline-block;"></span>
-              <span style="color:#888;">OK</span>
-              <span style="color:#fff;font-weight:600;margin-left:auto;">${ok}</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-family:'Inter',sans-serif;">
-              <span style="width:8px;height:8px;border-radius:2px;background:#e91e8c;flex-shrink:0;display:inline-block;"></span>
-              <span style="color:#888;">Problema</span>
-              <span style="color:#fff;font-weight:600;margin-left:auto;">${prob}</span>
-            </div>
-          </div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:6px;">
-          ${dashExperiencia.problemas.slice(0,5).map(p => {
-            const cor = p.color === "red" ? "#e91e8c" : "#f0b400";
-            return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:#181818;border:1px solid #242424;border-radius:8px;">
-              <div style="width:6px;height:6px;border-radius:50%;background:${cor};flex-shrink:0;"></div>
-              <div style="flex:1;min-width:0;">
-                <div style="font-size:11px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:'Inter',sans-serif;">${p.title}</div>
-                <div style="font-size:11px;color:#666;margin-top:1px;font-family:'Inter',sans-serif;">${p.actions[0] || ""}</div>
-              </div>
-              <a href="${p.link}" target="_blank" style="font-size:11px;color:#5e72e4;text-decoration:none;padding:3px 8px;border:1px solid #5e72e433;border-radius:5px;white-space:nowrap;font-family:'Inter',sans-serif;">Abrir ↗</a>
-            </div>`;
-          }).join("")}
-        </div>
-      </div>`;
-    })();
+      const circ  = 2 * Math.PI * 42;
+
+      // Registrar função de toggle globalmente
+      window._expToggle = function(i) {
+        document.querySelectorAll('.exp-detail').forEach((el, j) => {
+          const card = document.querySelectorAll('.exp-card')[j];
+          if(j === i && el.style.display === 'none') {
+            el.style.display = 'block';
+            if(card) card.style.borderColor = '#5e72e4';
+          } else {
+            el.style.display = 'none';
+            if(card) card.style.borderColor = '#242424';
+          }
+        });
+      };
+
+      const items = dashExperiencia.problemas.map((p, i) => {
+        const cor   = p.color === 'red' ? '#e91e8c' : '#f0b400';
+        const score = p.value || 0;
+        const dash  = ((score / 100) * circ).toFixed(1);
+        const label = p.level || (p.color === 'red' ? 'Ruim' : 'Regular');
+        const nome  = (p.title || p.sku || '');
+        const nomeShort = nome.length > 40 ? nome.slice(0,40)+'\u2026' : nome;
+
+        // Detalhes — usa dados reais da API se existirem, senão usa actions
+        const detRows = (p.detalhes && p.detalhes.length)
+          ? p.detalhes.map(det => {
+              const qtd = det.quantidade ? ' <span style="color:'+cor+';font-weight:600;">'+det.quantidade+'x</span>' : '';
+              return '<div style="padding:9px 0;border-bottom:1px solid #1e1e1e;">'
+                + (det.tipo ? '<div style="font-size:11px;color:#666;font-family:Inter,sans-serif;">'+det.tipo+qtd+'</div>' : '')
+                + (det.descricao ? '<div style="font-size:11px;font-weight:600;color:#fff;font-family:Inter,sans-serif;margin:3px 0;">'+det.descricao+'</div>' : '')
+                + (det.comoMelhorar ? '<div style="font-size:11px;color:#2dce89;font-family:Inter,sans-serif;">\u2192 '+det.comoMelhorar+'</div>' : '')
+                + '</div>';
+            }).join('')
+          : (p.actions||[]).map(a =>
+              '<div style="padding:8px 0;border-bottom:1px solid #1e1e1e;font-size:11px;color:#888;font-family:Inter,sans-serif;">'+a+'</div>'
+            ).join('');
+
+        const cardHTML = '<div class="exp-card" onclick="window._expToggle('+i+')" '
+          + 'style="background:#181818;border:1px solid #242424;border-radius:10px;padding:14px;'
+          + 'display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;cursor:pointer;transition:border-color .2s;">'
+          + '<svg width="64" height="64" viewBox="0 0 108 108">'
+          + '<circle cx="54" cy="54" r="42" fill="none" stroke="#1e1e1e" stroke-width="7"/>'
+          + '<circle cx="54" cy="54" r="42" fill="none" stroke="'+cor+'" stroke-width="7"'
+          + ' stroke-dasharray="'+dash+' '+circ.toFixed(1)+'" stroke-dashoffset="'+(circ*0.25).toFixed(1)+'" stroke-linecap="round"/>'
+          + '<text x="54" y="62" text-anchor="middle" fill="'+cor+'" font-size="22" font-weight="700" font-family="IBM Plex Mono,monospace">'+score+'</text>'
+          + '</svg>'
+          + '<div style="font-size:11px;font-weight:600;color:'+cor+';font-family:Inter,sans-serif;">'+label+'</div>'
+          + '<div style="font-size:11px;font-weight:600;color:#fff;line-height:1.4;font-family:Inter,sans-serif;">'+nomeShort+'</div>'
+          + (p.sku ? '<div style="font-size:11px;color:#444;font-family:Inter,sans-serif;">'+p.sku+'</div>' : '')
+          + '</div>';
+
+        const detailHTML = '<div class="exp-detail" style="display:none;grid-column:1/-1;background:#141414;border:1px solid #242424;border-radius:10px;padding:16px;margin-top:2px;">'
+          + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #1e1e1e;">'
+          + '<div style="font-size:12px;font-weight:600;color:#fff;font-family:Inter,sans-serif;">'+nome+'</div>'
+          + '<a href="'+p.link+'" target="_blank" style="font-size:11px;color:#5e72e4;text-decoration:none;padding:3px 10px;border:1px solid #5e72e433;border-radius:5px;font-family:Inter,sans-serif;white-space:nowrap;">Abrir no ML \u2197</a>'
+          + '</div>'
+          + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">'
+          + '<div><div style="font-size:11px;font-weight:500;color:#777;font-family:Inter,sans-serif;margin-bottom:8px;">Tipo de problema</div>'+detRows+'</div>'
+          + '<div><div style="font-size:11px;font-weight:500;color:#777;font-family:Inter,sans-serif;margin-bottom:8px;">A\u00e7\u00f5es recomendadas</div>'
+          + (p.actions||[]).map(a =>
+              '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#181818;border-radius:7px;margin-bottom:5px;">'
+              + '<div style="width:6px;height:6px;border-radius:50%;background:'+cor+';flex-shrink:0;"></div>'
+              + '<div style="font-size:11px;color:#ccc;font-family:Inter,sans-serif;">'+a+'</div>'
+              + '</div>'
+            ).join('')
+          + '</div></div></div>';
+
+        return cardHTML + detailHTML;
+      }).join('');
+
+      return '<div style="font-size:12px;font-weight:500;color:#888;font-family:Inter,sans-serif;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;display:flex;align-items:center;justify-content:space-between;">'
+        + 'Experi\u00eancia de compra \u00b7 Filial SP'
+        + '<span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;font-family:Inter,sans-serif;background:rgba(233,30,140,.12);color:#e91e8c;border:1px solid rgba(233,30,140,.25);">'+prob+' com problema</span>'
+        + '</div>'
+        + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;">'
+        + items
+        + '</div>';
+    })()
     grid.appendChild(expCard);
   }
 
