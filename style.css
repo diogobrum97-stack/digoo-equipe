@@ -20,7 +20,7 @@ body {
   transition: background 0.3s, color 0.3s;
 }
 body {
-  --bg: #080808; --bg2: #111111; --bg3: #1c1c1c;
+  --bg: #080808; --bg2: #0f0f0f; --bg3: #222222;
   --border: #202020; --border2: #282828;
   --text: #ffffff; --text2: #cccccc; --text3: #888888; --sub: #555555;
   --done: #888; --sep: rgba(255,255,255,0.08);
@@ -71,11 +71,11 @@ h1 { font-family: 'Digoo', 'Bebas Neue', sans-serif; font-size: 44px; letter-spa
 .grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; max-width: 1280px; margin: 0 auto; align-items: start; }
 .card { border-radius: 10px; border: 1px solid var(--border); overflow: hidden; transition: border-color 0.3s, box-shadow 0.3s; background: linear-gradient(180deg, var(--bg3) 0%, var(--bg2) 100%); position: relative; }
 .card::before { content: ''; position: absolute; top: 0; left: 15%; right: 15%; height: 1px; background: linear-gradient(90deg, transparent, var(--sep), transparent); pointer-events: none; z-index: 1; }
-.card.card-fullscreen { position: fixed; inset: 0; z-index: 1000; border-radius: 0; overflow: hidden; margin: 0; height: 100vh; width: 100vw; box-sizing: border-box; display: flex; flex-direction: column; }
+.card.card-fullscreen { position: fixed; inset: 0; z-index: 1000; border-radius: 0; overflow: hidden; margin: 0; height: 100vh; width: 100vw; box-sizing: border-box; display: flex; flex-direction: column; background: var(--bg); }
 .card.card-fullscreen .panel.open { flex: 1; overflow-y: auto; max-height: none; display: block; }
 @keyframes cardFlash { 0%,100% { box-shadow: none; } 50% { box-shadow: 0 0 40px var(--c), 0 0 80px var(--c); border-color: var(--c) !important; } }
 .card.flashing { animation: cardFlash 0.9s ease-in-out infinite; }
-.card-header { padding: 16px 14px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--sep); cursor: pointer; transition: filter 0.15s; user-select: none; }
+.card-header { padding: 16px 14px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--sep); cursor: pointer; transition: filter 0.15s; user-select: none; background: transparent; }
 .card-header:hover { filter: brightness(1.08); }
 .avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; letter-spacing: 1px; flex-shrink: 0; }
 /* member-name mantém Bebas Neue — identidade visual dos cards */
@@ -85,7 +85,7 @@ h1 { font-family: 'Digoo', 'Bebas Neue', sans-serif; font-size: 44px; letter-spa
 .chevron { margin-left: auto; font-size: 11px; color: #9a9a9a; transition: transform 0.2s; }
 .chevron.open { transform: rotate(180deg); }
 .unread-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-.panel { background: var(--bg2); padding: 16px; display: none; border-top: 1px solid var(--sep); }
+.panel { background: transparent; padding: 16px; display: none; border-top: 1px solid var(--sep); }
 .panel.open { display: block; }
 .pin-wrap { text-align: center; padding: 20px 0; }
 .pin-icon { font-size: 26px; margin-bottom: 12px; color: var(--text2); }
