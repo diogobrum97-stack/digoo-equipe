@@ -632,7 +632,7 @@ function renderDashboard(panel, color) {
       ${fiscal_agrupado.slice(0,6).map(e => {
         const cor = e.diff <= 5 ? "#e91e8c" : e.diff <= 14 ? "#f0b400" : "#bbb";
         const dotCor = coresFiscal[e.tipo] || "#bbb";
-        return `<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#181818;border:1px solid #242424;border-radius:10px;"><div style="width:7px;height:7px;border-radius:50%;background:${dotCor};flex-shrink:0;"></div><div style="flex:1;"><div style="font-size:11px;font-weight:600;color:#fff;">${e.nome}</div><div style="font-size:9px;color:#888;margin-top:2px;">Ref. ${String(mes2).padStart(2,"0")}/${ano2}</div></div><div style="font-size:14px;font-weight:700;color:${cor};font-family:'IBM Plex Mono',monospace;">em ${e.diff}d</div></div>`;
+        return `<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#181818;border:1px solid #242424;border-radius:10px;"><div style="width:7px;height:7px;border-radius:50%;background:${dotCor};flex-shrink:0;"></div><div style="flex:1;"><div style="font-size:11px;font-weight:600;color:#fff;">${e.nome}</div><div style="font-size:9px;color:#888;margin-top:2px;">Ref. ${String(mes2).padStart(2,"0")}/${ano2}</div></div><div style="font-size:14px;font-weight:700;color:${cor};font-family:'IBM Plex Mono',"padding:3px 9px;border-radius:5px;font-size:9px;font-weight:700;letter-spacing:.6px;white-space:nowrap;font-family:monospace;display:inline-block;background:${cor}18;color:${cor};border:1px solid ${cor}33;">EM ${e.diff}D</div></div>`;
       }).join("")}
     </div>
   `;
