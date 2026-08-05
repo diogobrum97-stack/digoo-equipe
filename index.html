@@ -493,7 +493,7 @@ function renderDashboard(panel, color) {
 
   const header = document.createElement("div");
   header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;";
-  header.innerHTML = `<div><div style="font-size:20px;font-weight:700;color:#fff;letter-spacing:-0.3px;">${saudacao}, Diogo 👋</div><div style="font-size:9px;letter-spacing:1.5px;color:#999;text-transform:uppercase;margin-top:3px;">${dias[now.getDay()]} · ${now.getDate()} ${meses[now.getMonth()]} ${now.getFullYear()}</div></div><div style="display:flex;align-items:center;gap:10px;"><div style="font-size:10px;font-weight:600;color:#5e72e4;font-family:'Inter',sans-serif;">${dashData.hora}</div><button onclick="dashData=null;fetchDashboard();" style="background:none;border:none;color:#444;font-size:16px;cursor:pointer;padding:4px;line-height:1;transition:color .15s;" onmouseover="this.style.color='#aaa'" onmouseout="this.style.color='#444'" title="Atualizar">↻</button></div>`;
+  header.innerHTML = `<div><div style="font-size:20px;font-weight:700;color:#fff;letter-spacing:-0.3px;">${saudacao}, Diogo 👋</div><div style="font-size:9px;letter-spacing:1.5px;color:#999;text-transform:uppercase;margin-top:3px;">${dias[now.getDay()]} · ${now.getDate()} ${meses[now.getMonth()]} ${now.getFullYear()}</div></div><div style="display:flex;align-items:center;gap:10px;"><div style="font-size:10px;font-weight:600;color:#5e72e4;">${dashData.hora}</div><button onclick="dashData=null;fetchDashboard();" style="background:none;border:none;color:#444;font-size:16px;cursor:pointer;padding:4px;line-height:1;transition:color .15s;" onmouseover="this.style.color='#aaa'" onmouseout="this.style.color='#444'" title="Atualizar">↻</button></div>`;
   wrap.appendChild(header);
 
   const grid = document.createElement("div");
@@ -506,13 +506,13 @@ function renderDashboard(panel, color) {
     if(!d) return `<div style="text-align:center;padding:20px;color:var(--text3);font-size:11px;">Token não conectado</div>`;
     return `
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;">
-        <div style="background:var(--bg2);border-radius:10px;padding:12px;"><div style="font-size:8px;color:#777;margin-bottom:5px;letter-spacing:.5px;text-transform:uppercase;font-family:'Inter',sans-serif;>Hoje</div><div style="font-size:30px;font-weight:700;color:#fff;margin-bottom:6px;letter-spacing:-1px;font-family:'IBM Plex Mono',monospace;">${fmtFull(d.fatHoje)}</div><div style="padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:.5px;display:inline-block;background:rgba(45,206,137,.12);color:#2dce89;border:1px solid rgba(45,206,137,.3);">↑ TEMPO REAL</div></div>
-        <div style="background:var(--bg2);border-radius:10px;padding:12px;"><div style="font-size:8px;color:#777;margin-bottom:5px;letter-spacing:.5px;text-transform:uppercase;font-family:'Inter',sans-serif;>Projeção</div><div style="font-size:30px;font-weight:700;color:#fff;margin-bottom:6px;letter-spacing:-1px;font-family:'IBM Plex Mono',monospace;">${fmt(d.projecaoDia)}</div><div style="padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:.5px;display:inline-block;font-family:'Inter',sans-serif;background:rgba(255,255,255,.1);color:#aaa;border:1px solid rgba(255,255,255,.2);">${percDia}% DO DIA</div></div>
-        <div style="background:var(--bg2);border-radius:10px;padding:12px;"><div style="font-size:8px;color:#777;margin-bottom:5px;letter-spacing:.5px;text-transform:uppercase;font-family:'Inter',sans-serif;>Mês atual</div><div style="font-size:30px;font-weight:700;color:#fff;margin-bottom:6px;letter-spacing:-1px;font-family:'IBM Plex Mono',monospace;">${fmt(d.fatMes)}</div><div style="padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:.5px;display:inline-block;font-family:'Inter',sans-serif;background:rgba(45,206,137,.12);color:#2dce89;border:1px solid rgba(45,206,137,.3);">${d.pedidosMes} PEDIDOS</div></div>
+        <div style="background:var(--bg2);border-radius:10px;padding:12px;"><div style="font-size:8px;color:#777;margin-bottom:5px;letter-spacing:.5px;text-transform:uppercase;">Hoje</div><div style="font-size:30px;font-weight:700;color:#fff;margin-bottom:6px;letter-spacing:-1px;font-family:'IBM Plex Mono',monospace;">${fmtFull(d.fatHoje)}</div><div style="font-size:9px;font-weight:600;color:${GREEN};">↑ em tempo real</div></div>
+        <div style="background:var(--bg2);border-radius:10px;padding:12px;"><div style="font-size:8px;color:#777;margin-bottom:5px;letter-spacing:.5px;text-transform:uppercase;">Projeção</div><div style="font-size:30px;font-weight:700;color:#fff;margin-bottom:6px;letter-spacing:-1px;font-family:'IBM Plex Mono',monospace;">${fmt(d.projecaoDia)}</div><div style="font-size:9px;color:#666;">${percDia}% do dia</div></div>
+        <div style="background:var(--bg2);border-radius:10px;padding:12px;"><div style="font-size:8px;color:#777;margin-bottom:5px;letter-spacing:.5px;text-transform:uppercase;">Mês atual</div><div style="font-size:30px;font-weight:700;color:#fff;margin-bottom:6px;letter-spacing:-1px;font-family:'IBM Plex Mono',monospace;">${fmt(d.fatMes)}</div><div style="font-size:9px;font-weight:600;color:${GREEN};">${d.pedidosMes} pedidos</div></div>
       </div>
       <div style="background:#1a1a1a;border-radius:99px;height:6px;margin-bottom:20px;"><div style="height:6px;border-radius:99px;background:linear-gradient(90deg,#5e72e4,#11cdef);width:${percDia}%;box-shadow:0 0 10px rgba(17,205,239,0.35);"></div></div>
-      <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#888;text-transform:uppercase;margin-bottom:12px;padding-top:14px;border-top:1px solid #222;font-family:'Inter',sans-serif;">Mais vendidos hoje</div>
-      ${(d.top5hoje||[]).map((p,i) => `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg2);border-radius:10px;margin-bottom:5px;"><div style="font-size:10px;font-weight:700;color:${i===0?"#f0b400":"#bbb"};width:16px;text-align:center;flex-shrink:0;">${i+1}</div><div style="font-size:10px;font-weight:600;color:#fff;flex:1;font-family:'Inter',sans-serif;">${p.sku||"—"}</div><div style="padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:.5px;display:inline-block;font-family:'Inter',sans-serif;background:rgba(255,255,255,.04);color:#666;border:1px solid rgba(255,255,255,.08);">${p.qty} UN</div><div style="padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:.5px;display:inline-block;font-family:'Inter',sans-serif;background:rgba(255,255,255,.08);color:#ccc;border:1px solid rgba(255,255,255,.15);">${fmt(p.revenue||0)}</div></div>`).join("")}
+      <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#888;text-transform:uppercase;margin-bottom:12px;padding-top:14px;border-top:1px solid #222;">Mais vendidos hoje</div>
+      ${(d.top5hoje||[]).map((p,i) => `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg2);border-radius:10px;margin-bottom:5px;"><div style="font-size:10px;font-weight:700;color:${i===0?"#f0b400":"#bbb"};width:16px;text-align:center;flex-shrink:0;">${i+1}</div><div style="font-size:10px;font-weight:600;color:#fff;flex:1;">${p.sku||"—"}</div><div style="font-size:9px;color:#777;">${p.qty} un</div><div style="font-size:9px;color:#444;margin:0 4px;">·</div><div style="font-size:11px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">${fmt(p.revenue||0)}</div></div>`).join("")}
     `;
   }
 
@@ -536,8 +536,8 @@ function renderDashboard(panel, color) {
 
   vendasCard.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 16px 0;">
-      <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#bbb;text-transform:uppercase;font-family:'Inter',sans-serif;>Vendas Mercado Livre</div>
-      <div style="font-size:8px;color:#444;font-family:'Inter',sans-serif;">${dashData.hora}</div>
+      <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#bbb;text-transform:uppercase;">Vendas Mercado Livre</div>
+      <div style="font-size:8px;color:#444;">${dashData.hora}</div>
     </div>
     <div style="padding:12px 16px 14px;">
       <div style="display:inline-flex;background:var(--bg3);border-radius:10px;padding:3px;gap:2px;">
@@ -568,7 +568,7 @@ function renderDashboard(panel, color) {
   const taskCard = document.createElement("div");
   taskCard.style.cssText = "background:linear-gradient(180deg,#252525 0%,#101010 100%);border:1px solid #303030;border-radius:14px;padding:16px;";
   taskCard.innerHTML = `
-    <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#777;text-transform:uppercase;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;;font-family:'Inter',sans-serif;">Minhas tarefas</div>
+    <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#777;text-transform:uppercase;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;">Minhas tarefas</div>
     ${[
       {label:"Urgente", count:urgentes, color:"#e91e8c"},
       {label:"Importante", count:importantes, color:"#f0b400"},
@@ -596,14 +596,14 @@ function renderDashboard(panel, color) {
   }).slice(0,3);
   const unidades = estoqueRows.reduce((s,r)=>s+Number(r.aptas||0),0);
   estoqueCard.innerHTML = `
-    <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#777;text-transform:uppercase;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;;font-family:'Inter',sans-serif;">Estoque Full · Filial SP</div>
+    <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#777;text-transform:uppercase;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;">Estoque Full · Filial SP</div>
     <div style="font-size:38px;font-weight:700;color:#2dce89;margin-bottom:4px;letter-spacing:-2px;font-family:'IBM Plex Mono',monospace;">${fmtFull(valorTotal)}</div>
-    <div style="display:flex;gap:6px;margin-bottom:14px;"><span style="padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:.5px;display:inline-block;font-family:'Inter',sans-serif;background:rgba(255,255,255,.05);color:#888;border:1px solid rgba(255,255,255,.1);">${unidades} UN</span><span style="padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:.5px;display:inline-block;font-family:'Inter',sans-serif;background:rgba(255,255,255,.05);color:#888;border:1px solid rgba(255,255,255,.1);">${estoqueRows.length} SKUs</span></div>
+    <div style="font-size:10px;color:#bbb;margin-bottom:14px;">${unidades} unidades · ${estoqueRows.length} SKUs</div>
     ${criticos.length > 0 ? criticos.map(r => {
       const v30 = r.vendas30||0;
       const dias = v30>0 ? Math.round(r.aptas/(v30/30)) : 999;
       const cor = dias <= 7 ? "#e91e8c" : "#f0b400";
-      return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg2);border-radius:8px;margin-bottom:5px;"><div style="width:7px;height:7px;border-radius:50%;background:${cor};flex-shrink:0;"></div><div style="font-size:11px;font-weight:600;color:#fff;flex:1;font-family:'Inter',sans-serif;">${r.sku}</div><div style="padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:.5px;display:inline-block;font-family:'Inter',sans-serif;background:${cor}18;color:${cor};border:1px solid ${cor}33;">${dias}D</div></div>`;
+      return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg2);border-radius:8px;margin-bottom:5px;"><div style="width:7px;height:7px;border-radius:50%;background:${cor};flex-shrink:0;"></div><div style="font-size:11px;font-weight:600;color:#fff;flex:1;">${r.sku}</div><div style="font-size:12px;font-weight:700;color:${cor};">${dias}d</div></div>`;
     }).join("") : `<div style="font-size:10px;color:#bbb;padding:10px 0;">Nenhum produto crítico ✓</div>`}
   `;
   grid.appendChild(estoqueCard);
@@ -627,12 +627,12 @@ function renderDashboard(panel, color) {
     else if(e.tipo !== "difal") fiscal_agrupado.push(e);
   });
   fiscalCard.innerHTML = `
-    <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#777;text-transform:uppercase;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;;font-family:'Inter',sans-serif;">Calendário fiscal</div>
+    <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#777;text-transform:uppercase;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;">Calendário fiscal</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
       ${fiscal_agrupado.slice(0,6).map(e => {
         const cor = e.diff <= 5 ? "#e91e8c" : e.diff <= 14 ? "#f0b400" : "#bbb";
         const dotCor = coresFiscal[e.tipo] || "#bbb";
-        return `<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#181818;border:1px solid #242424;border-radius:10px;"><div style="width:7px;height:7px;border-radius:50%;background:${dotCor};flex-shrink:0;"></div><div style="flex:1;"><div style="font-size:11px;font-weight:600;color:#fff;font-family:'Inter',sans-serif;">${e.nome}</div><div style="font-size:9px;color:#888;margin-top:2px;font-family:'Inter',sans-serif;>Ref. ${String(mes2).padStart(2,"0")}/${ano2}</div></div><div style="padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:.5px;display:inline-block;font-family:'Inter',sans-serif;background:${cor}18;color:${cor};border:1px solid ${cor}33;">EM ${e.diff}D</div></div>`;
+        return `<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#181818;border:1px solid #242424;border-radius:10px;"><div style="width:7px;height:7px;border-radius:50%;background:${dotCor};flex-shrink:0;"></div><div style="flex:1;"><div style="font-size:11px;font-weight:600;color:#fff;">${e.nome}</div><div style="font-size:9px;color:#888;margin-top:2px;">Ref. ${String(mes2).padStart(2,"0")}/${ano2}</div></div><div style="font-size:14px;font-weight:700;color:${cor};font-family:'IBM Plex Mono',monospace;">em ${e.diff}d</div></div>`;
       }).join("")}
     </div>
   `;
@@ -644,7 +644,7 @@ function renderDashboard(panel, color) {
     const expCard = document.createElement("div");
     expCard.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:14px;padding:16px;grid-column:1/-1;";
     expCard.innerHTML = `
-      <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#bbb;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;font-family:'Inter',sans-serif;>
+      <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:#bbb;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;">
         <span>Experiência de compra · Filial SP</span>
         <span style="font-size:9px;color:#e91e8c;font-weight:700;">${dashExperiencia.problemas.length} com problema</span>
       </div>
