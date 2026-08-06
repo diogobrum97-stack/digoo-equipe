@@ -865,16 +865,20 @@ function renderDashboard(panel, color) {
 
       // Registrar função de toggle globalmente
       window._expToggle = function(i) {
-        document.querySelectorAll('.exp-detail').forEach((el, j) => {
-          const card = document.querySelectorAll('.exp-card')[j];
-          if(j === i && el.style.display === 'none') {
-            el.style.display = 'block';
-            if(card) card.style.borderColor = '#5e72e4';
-          } else {
-            el.style.display = 'none';
-            if(card) card.style.borderColor = '#242424';
-          }
-        });
+        const wrap = document.getElementById('exp-detail-wrap');
+        const cards = document.querySelectorAll('.exp-card');
+        const isCurrentlyOpen = wrap.dataset.activeIndex == i && wrap.style.display !== 'none';
+        cards.forEach((c,j) => c.style.borderColor = j === i && !isCurrentlyOpen ? '#5e72e4' : '#242424');
+        if(isCurrentlyOpen) {
+          wrap.style.display = 'none';
+          wrap.dataset.activeIndex = '';
+        } else {
+          document.querySelectorAll('.exp-detail').forEach((el,j) => {
+            el.style.display = j === i ? 'block' : 'none';
+          });
+          wrap.style.display = 'block';
+          wrap.dataset.activeIndex = i;
+        }
       };
 
       const items = dashExperiencia.problemas.map((p, i) => {
@@ -913,7 +917,7 @@ function renderDashboard(panel, color) {
           + (p.sku ? '<div style="font-size:11px;color:#444;font-family:Inter,sans-serif;">'+p.sku+'</div>' : '')
           + '</div>';
 
-        const detailHTML = '<div class="exp-detail" style="display:none;grid-column:1/-1;background:#141414;border:1px solid #242424;border-radius:10px;padding:16px;margin-top:2px;">'
+        const detailHTML = '<div class="exp-detail" style="display:none;background:#141414;border:1px solid #242424;border-radius:10px;padding:16px;">'
           + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #1e1e1e;">'
           + '<div style="font-size:12px;font-weight:600;color:#fff;font-family:Inter,sans-serif;">'+nome+'</div>'
           + '<a href="'+p.link+'" target="_blank" style="font-size:11px;color:#5e72e4;text-decoration:none;padding:3px 10px;border:1px solid #5e72e433;border-radius:5px;font-family:Inter,sans-serif;white-space:nowrap;">Abrir no ML \u2197</a>'
@@ -929,15 +933,21 @@ function renderDashboard(panel, color) {
             ).join('')
           + '</div></div></div>';
 
-        return cardHTML + detailHTML;
-      }).join('');
+        return { card: cardHTML, detail: detailHTML };
+      });
+
+      const cardsHTML = items.map(it => it.card).join('');
+      const detailsHTML = items.map(it => it.detail).join('');
 
       return '<div style="font-size:12px;font-weight:500;color:#888;font-family:Inter,sans-serif;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;display:flex;align-items:center;justify-content:space-between;">'
         + 'Experi\u00eancia de compra \u00b7 Filial SP'
         + '<span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;font-family:Inter,sans-serif;background:rgba(233,30,140,.12);color:#e91e8c;border:1px solid rgba(233,30,140,.25);">'+prob+' com problema</span>'
         + '</div>'
         + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;">'
-        + items
+        + cardsHTML
+        + '</div>'
+        + '<div id="exp-detail-wrap" style="display:none;margin-top:8px;">'
+        + detailsHTML
         + '</div>';
     })()
     grid.appendChild(expCard);
