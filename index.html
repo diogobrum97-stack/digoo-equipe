@@ -6863,76 +6863,7 @@ function setupIdentityScreen() {
     document.getElementById("ov-larissa").onclick = () => { localStorage.setItem(DEVICE_KEY,"Larissa"); localStorage.setItem("digoo_pin_v1_Larissa","1"); loginAs("Larissa"); };
   }
 
-  function showPin() {
-    screen.innerHTML = "";
-    screen.appendChild(buildLeft());
-    const r = document.createElement("div");
-    r.style.cssText = _isMobile
-      ? "flex:1;width:100%;display:flex;flex-direction:column;justify-content:center;overflow-y:auto;box-sizing:border-box;"
-      : "flex:0 0 30%;display:flex;flex-direction:column;justify-content:center;height:100vh;overflow-y:auto;";
-
-    const W = _isMobile ? "min(260px,80vw)" : "220px";
-    const keys = [1,2,3,4,5,6,7,8,9,"\u232b",0,"\u2192"].map(k=>
-      '<div class="pk" data-k="'+k+'" style="background:#0f0f0f;border:1px solid #1a1a1a;border-radius:7px;height:44px;display:flex;align-items:center;justify-content:center;font-size:'+(k==="⌫"||k==="→"?"12":"15")+'px;color:'+(k==="→"?"#2dce89":k==="⌫"?"#555":"#888")+';cursor:pointer;font-weight:500;font-family:Inter,sans-serif;">'+k+'</div>'
-    ).join("");
-
-    const inner = document.createElement("div");
-    inner.style.cssText = "display:flex;flex-direction:column;width:"+W+";margin:0 auto;padding:32px 20px;box-sizing:border-box;";
-    inner.innerHTML =
-      '<div id="pk-back" style="font-size:11px;color:#333;cursor:pointer;margin-bottom:16px;font-family:Inter,sans-serif;">← voltar</div>'
-      +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">'
-        +'<div style="width:36px;height:36px;border-radius:50%;background:#1a1a1a;border:1px solid #333;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;">DG</div>'
-        +'<div><div style="font-size:14px;font-weight:700;color:#fff;font-family:Inter,sans-serif;">Diogo</div>'
-        +'<div style="font-size:11px;color:#444;font-family:Inter,sans-serif;">Digite seu PIN</div></div>'
-      +'</div>'
-      +'<div id="pk-dots" style="display:flex;gap:10px;margin-bottom:16px;">'
-        +[0,1,2,3,4,5].map(()=>'<div class="pkd" style="width:10px;height:10px;border-radius:50%;background:#1e1e1e;border:1px solid #333;transition:all .1s;"></div>').join("")
-      +'</div>'
-      +'<div id="pk-err" style="font-size:11px;color:#e91e8c;min-height:16px;margin-bottom:10px;font-family:Inter,sans-serif;"></div>'
-      +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;width:100%;">'+keys+'</div>';
-
-    r.appendChild(inner);
-    screen.appendChild(r);
-
-    document.getElementById("pk-back").onclick = showSelecao;
-    let entered = "";
-    const CORRECT = "845278";
-
-    function updateDots() {
-      document.querySelectorAll(".pkd").forEach((dot,i) => {
-        dot.style.background = i < entered.length ? "#fff" : "#1e1e1e";
-        dot.style.borderColor = i < entered.length ? "#fff" : "#333";
-      });
-    }
-    function checkPin() {
-      if(entered === CORRECT) {
-        localStorage.setItem(DEVICE_KEY, "Diogo");
-        localStorage.setItem(PIN_KEY, "1");
-        loginAs("Diogo");
-      } else {
-        const err = document.getElementById("pk-err"); if(err) err.textContent = "PIN incorreto.";
-        entered = ""; updateDots();
-      }
-    }
-    document.querySelectorAll(".pk").forEach(el => {
-      el.onclick = () => {
-        const k = el.dataset.k;
-        const err = document.getElementById("pk-err"); if(err) err.textContent = "";
-        if(k === "⌫") { entered = entered.slice(0,-1); }
-        else if(k === "→") { checkPin(); return; }
-        else if(entered.length < 6) { entered += k; if(entered.length === 6) { checkPin(); return; } }
-        updateDots();
-      };
-    });
-    function _kbd(e) {
-      if(!document.getElementById("pk-dots")) { document.removeEventListener("keydown",_kbd); return; }
-      const err = document.getElementById("pk-err"); if(err) err.textContent = "";
-      if(e.key>="0"&&e.key<="9"&&entered.length<6) { entered+=e.key; updateDots(); if(entered.length===6) checkPin(); }
-      else if(e.key==="Backspace") { entered=entered.slice(0,-1); updateDots(); }
-      else if(e.key==="Enter") checkPin();
-    }
-    document.addEventListener("keydown",_kbd);
-  }
+  
 
   if(savedUser && pinOk) {
     const initials = MEMBERS.find(m=>m.name===savedUser)?.initials || savedUser[0];
