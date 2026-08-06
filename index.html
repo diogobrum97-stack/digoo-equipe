@@ -5779,7 +5779,13 @@ async function gerarCSVAtributos(custosMedios) {
   }
 }
 
-document.getElementById("user-label").addEventListener("click",()=>{localStorage.removeItem(STORAGE_KEY);currentUser=null;const s=document.getElementById("identity-screen");s.innerHTML="";s.style.display="flex";// PWA — abre direto no Diogo sem PIN quando vem da tela inicial
+document.getElementById("user-label").addEventListener("click",()=>{
+  localStorage.removeItem(STORAGE_KEY);
+  currentUser=null;
+  setupIdentityScreen();
+});
+
+// PWA — abre direto no Diogo sem PIN quando vem da tela inicial
 const isPWA = window.matchMedia("(display-mode: standalone)").matches || 
               window.navigator.standalone === true ||
               new URLSearchParams(window.location.search).get("pwa") === "1";
@@ -5791,11 +5797,8 @@ if(isPWA && !currentUser) {
   document.getElementById("identity-screen").style.display = "none";
   render();
 } else {
-  
-
-
-setupIdentityScreen();
-}});
+  setupIdentityScreen();
+}
 
 const urlParams=new URLSearchParams(window.location.search);
 if(urlParams.get("ml_connected")==="1"){window.history.replaceState({},"",window.location.pathname);}
