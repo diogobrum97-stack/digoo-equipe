@@ -5921,6 +5921,16 @@ runAutoRefresh(); // roda imediatamente ao abrir o painel
 setInterval(runAutoRefresh, 15 * 60 * 1000); // e a cada 15 minutos
 // ── Fim auto-refresh ──────────────────────────────────────────────────────
 
+// ── Auto-refresh do Dashboard (independente de interação) ──────────────────
+setInterval(() => {
+  if(window._diogotab === "dashboard" && !dashLoading) {
+    const agora = Date.now();
+    if(!dashData || dashData.erro || (agora - (dashData._fetchedAt||0)) > 150*1000) {
+      fetchDashboard();
+    }
+  }
+}, 30 * 1000); // checa a cada 30s, refaz busca se passou de 150s
+
 // ─── CONFERÊNCIA FINANCEIRA ────────────────────────────────────────────────
 // ─── CONFERÊNCIA FINANCEIRA v2 — Google Drive ────────────────────────────────
 
