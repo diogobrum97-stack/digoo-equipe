@@ -3116,7 +3116,7 @@ function render(){
 
           // Barra de navegação com dropdown
           const navBar = document.createElement("div");
-          navBar.style.cssText = "display:flex;align-items:center;justify-content:center;border-bottom:0.5px solid var(--sep);padding:8px 4px;gap:0;";
+          navBar.style.cssText = "display:flex;align-items:center;justify-content:center;border-bottom:0.5px solid var(--sep);padding:0 4px;gap:0;";
 
           // Nav central
           const navCenter = document.createElement("div");
@@ -3139,7 +3139,7 @@ function render(){
             const isActive = group.tab === currentTab || group.subs.some(s => s.tab === currentTab);
 
             const btn = document.createElement("button");
-            btn.style.cssText = `background:${isActive?"#5e72e4":"#1a1a1a"};border:0.5px solid ${isActive?"transparent":"#242424"};border-radius:99px;color:${isActive?"#fff":"#888"};font-size:11px;font-weight:600;letter-spacing:0.5px;padding:7px 16px;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap;flex-shrink:0;`;
+            btn.style.cssText = `background:${isActive?"#5e72e4":"#1a1a1a"};border:0.5px solid ${isActive?"transparent":"#242424"};border-radius:99px;color:${isActive?"#fff":"#888"};font-size:11px;font-weight:600;letter-spacing:0.5px;padding:5px 14px;margin:8px 0;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap;flex-shrink:0;`;
             btn.textContent = group.label;
 
             if(group.tab) {
