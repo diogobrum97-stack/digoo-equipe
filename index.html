@@ -315,20 +315,9 @@ function setupIdentityScreen() {
       window._diogotab = "dashboard";
     }
     requestNotif();
-    // Aguardar state do Firebase antes de renderizar
-    if(typeof state !== "undefined" && state && Object.keys(state).length > 0) {
-      render();
-    } else {
-      // state ainda não chegou — tentar algumas vezes
-      let tries = 0;
-      const wait = setInterval(() => {
-        tries++;
-        if((typeof state !== "undefined" && state && Object.keys(state).length > 0) || tries > 20) {
-          clearInterval(wait);
-          render();
-        }
-      }, 100);
-    }
+    render();
+    // Scroll para o topo após render
+    setTimeout(() => { window.scrollTo(0, 0); }, 100);
   }
 
   function buildLeft() {
