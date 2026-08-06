@@ -3006,7 +3006,7 @@ function render(){
 
 
 
-    const card=document.createElement("div");card.className="card"+(hasPending||isFlashing?" flashing":"");
+    const card=document.createElement("div");card.className="card"+(hasPending||isFlashing?" flashing":"")+(isOpen?" card-active":"");
     card.style.setProperty("--c",color);
     card.style.borderColor=isOpen?color+"88":(hasPending||isFlashing)?color:"var(--border)";
     if(diogIsFullAuto && member.name==="Diogo") card.style.gridColumn="1 / -1";
@@ -3083,7 +3083,7 @@ function render(){
       header.appendChild(minBtn);
     }
     header.appendChild(chev);
-    header.addEventListener("click",()=>{openCard=openCard===member.name?null:member.name;if(!isOpen&&member.locked){diogoPinUnlocked=false;diogoAutoFullscreen=false;diogoCardFullscreen=false;}if(flashQueue[member.name]){delete flashQueue[member.name];remove(ref(db,`/flashes/${member.name}`));}render();});
+    header.addEventListener("click",()=>{openCard=openCard===member.name?null:member.name;if(!isOpen&&member.locked){diogoPinUnlocked=false;diogoAutoFullscreen=false;diogoCardFullscreen=false;}if(flashQueue[member.name]){delete flashQueue[member.name];remove(ref(db,`/flashes/${member.name}`));}render();document.querySelectorAll(".card").forEach(c=>c.classList.remove("card-active"));card.classList.add("card-active");});
     card.appendChild(header);
 
     if(isOpen){
