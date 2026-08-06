@@ -301,7 +301,7 @@ function setupIdentityScreen() {
 
   const screen = document.getElementById("identity-screen");
   screen.innerHTML = "";
-  screen.style.cssText = "position:fixed;inset:0;background:#000;display:flex;flex-direction:"+(_isMobile?"column":"row")+";height:100%;width:100%;z-index:99999;font-family:Inter,sans-serif;overflow:hidden;";
+  screen.style.cssText = "position:fixed;inset:0;background:#000;display:flex;flex-direction:"+(_isMobile?"column":"row")+";height:100%;width:100%;z-index:99999;font-family:Inter,sans-serif;overflow:hidden;align-items:stretch;";
 
   function loginAs(name) {
     currentUser = name;
