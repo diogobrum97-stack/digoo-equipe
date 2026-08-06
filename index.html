@@ -301,7 +301,7 @@ function setupIdentityScreen() {
 
   const screen = document.getElementById("identity-screen");
   screen.innerHTML = "";
-  screen.style.cssText = "position:fixed;inset:0;background:#000;z-index:99999;font-family:Inter,sans-serif;overflow:hidden;";
+  screen.style.cssText = "position:fixed;inset:0;background:#000;display:flex;flex-direction:row;z-index:99999;font-family:Inter,sans-serif;overflow:hidden;";
 
   function loginAs(name) {
     currentUser = name;
@@ -323,7 +323,7 @@ function setupIdentityScreen() {
     if(_isMobile) {
       d.style.cssText = "width:100%;height:180px;position:relative;overflow:hidden;border-bottom:1px solid #141414;flex-shrink:0;";
     } else {
-      d.style.cssText = "position:absolute;inset:0;right:320px;overflow:hidden;border-right:1px solid #141414;";
+      d.style.cssText = "flex:1;position:relative;overflow:hidden;border-right:1px solid #141414;height:100vh;";
     }
     const brandSize = _isMobile ? "52px" : "clamp(72px,8vw,120px)";
     const brandBottom = _isMobile ? "16px" : "36px";
@@ -378,7 +378,7 @@ function setupIdentityScreen() {
     const r = document.createElement("div");
     r.style.cssText = _isMobile
       ? "position:absolute;inset:0;top:40vh;display:flex;flex-direction:column;justify-content:center;overflow-y:auto;box-sizing:border-box;padding:20px;"
-      : "position:absolute;right:0;top:0;width:320px;height:100vh;display:flex;flex-direction:column;justify-content:center;overflow-y:auto;background:#000;border-left:1px solid #141414;";
+      : "width:320px;flex-shrink:0;display:flex;flex-direction:column;justify-content:center;height:100vh;overflow-y:auto;";
 
     const W = "260px";
     const keys = [1,2,3,4,5,6,7,8,9,"\u232b",0,"\u2192"].map(k=>
