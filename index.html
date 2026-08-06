@@ -306,7 +306,7 @@ function setupIdentityScreen() {
   function loginAs(name) {
     currentUser = name;
     localStorage.setItem(STORAGE_KEY, name);
-    // Ocultar tela de entrada com getElementById (não depende de closure)
+    // Ocultar tela de entrada
     const _s = document.getElementById("identity-screen");
     if(_s) { _s.innerHTML = ""; _s.removeAttribute("style"); _s.className = "id-hidden"; }
     if(name === "Diogo") {
@@ -315,7 +315,20 @@ function setupIdentityScreen() {
       window._diogotab = "dashboard";
     }
     requestNotif();
-    render();
+    // Aguardar state do Firebase antes de renderizar
+    if(typeof state !== "undefined" && state && Object.keys(state).length > 0) {
+      render();
+    } else {
+      // state ainda não chegou — tentar algumas vezes
+      let tries = 0;
+      const wait = setInterval(() => {
+        tries++;
+        if((typeof state !== "undefined" && state && Object.keys(state).length > 0) || tries > 20) {
+          clearInterval(wait);
+          render();
+        }
+      }, 100);
+    }
   }
 
   function buildLeft() {
