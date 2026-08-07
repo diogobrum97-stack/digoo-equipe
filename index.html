@@ -967,10 +967,8 @@ function renderDashboard(panel, color) {
       }).join("")}
     </div>
   `;
-  grid.appendChild(fiscalCard);
-
   // Top 10 mês
-  // ── Experiência de compra ──
+  // ── Experiência de compra — antes do calendário fiscal ──
   if(dashExperiencia?.problemas?.length > 0) {
     const expCard = document.createElement("div");
     expCard.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:14px;padding:16px;grid-column:1/-1;";
@@ -1059,7 +1057,7 @@ function renderDashboard(panel, color) {
     })()
     grid.appendChild(expCard);
   }
-
+  grid.appendChild(fiscalCard);
   const topCard = document.createElement("div");
   topCard.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:14px;padding:16px;grid-column:1/-1;";
   const maxRevenue = dashData.top10mes[0]?.revenue || 1;
