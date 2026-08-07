@@ -764,37 +764,35 @@ function renderDashboard(panel, color) {
         </div>
       </div>
       <div style="background:#1e1e1e;border-radius:99px;height:3px;margin-bottom:8px;overflow:hidden;"><div style="height:3px;border-radius:99px;background:linear-gradient(90deg,#c0392b,#f77614);width:${percDia}%;transition:width .4s;"></div></div>
-      <script>
-      (function(){
-        var cur = -1;
-        var open = false;
-        window._vdcActivate = function(n) {
-          var isSame = cur === n;
-          // Fechar card atual
-          if(cur >= 0) {
-            var prevTop  = document.getElementById('vdc-top-'+cur);
-            var prevList = document.getElementById('vdc-list-'+cur);
-            var prevBars = document.getElementById('vdc-bars-'+cur);
-            if(prevTop)  prevTop.style.background = '#222';
-            if(prevList) prevList.style.maxHeight = '0';
-            if(prevBars) prevBars.style.opacity = '1';
-          }
-          if(isSame && open){ cur=-1; open=false; return; }
-          // Abrir novo card
-          cur = n; open = true;
-          var nextTop  = document.getElementById('vdc-top-'+n);
-          var nextList = document.getElementById('vdc-list-'+n);
-          var nextBars = document.getElementById('vdc-bars-'+n);
-          if(nextTop)  nextTop.style.background = '#f77614';
-          if(nextList) nextList.style.maxHeight = '260px';
-          if(nextBars) nextBars.style.opacity = '0';
-        };
-      })();
-      <\/script>
     `;
   }
 
   let _vendasAba = 'filial';
+  // Função de toggle dos mini cards do dashboard — definida fora do innerHTML
+  (function(){
+    var _cur = -1;
+    var _open = false;
+    window._vdcActivate = function(n) {
+      var isSame = (_cur === n);
+      if(_cur >= 0) {
+        var pt = document.getElementById('vdc-top-'+_cur);
+        var pl = document.getElementById('vdc-list-'+_cur);
+        var pb = document.getElementById('vdc-bars-'+_cur);
+        if(pt) pt.style.background = '#222';
+        if(pl) pl.style.maxHeight = '0';
+        if(pb) pb.style.opacity = '1';
+      }
+      if(isSame && _open){ _cur=-1; _open=false; return; }
+      _cur = n; _open = true;
+      var nt = document.getElementById('vdc-top-'+n);
+      var nl = document.getElementById('vdc-list-'+n);
+      var nb = document.getElementById('vdc-bars-'+n);
+      if(nt) nt.style.background = '#f77614';
+      if(nl) nl.style.maxHeight = '260px';
+      if(nb) nb.style.opacity = '0';
+    };
+  })();
+
   function renderVendasAba() {
     const tabFilial = document.getElementById('dash-aba-filial');
     const tabMatriz = document.getElementById('dash-aba-matriz');
