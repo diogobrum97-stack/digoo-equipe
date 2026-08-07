@@ -978,18 +978,26 @@ function renderDashboard(panel, color) {
       const ok    = total - prob;
       const circ  = 2 * Math.PI * 42;
 
-      // Registrar função de toggle globalmente
-      window._expToggle = function(i) {
-        document.querySelectorAll('.exp-detail').forEach((el, j) => {
-          const card = document.querySelectorAll('.exp-card')[j];
-          if(j === i && el.style.display === 'none') {
-            el.style.display = 'block';
-            if(card) card.style.borderColor = '#e8432d';
-          } else {
-            el.style.display = 'none';
-            if(card) card.style.borderColor = '#242424';
-          }
-        });
+      // Guardar detalhes globalmente para o toggle
+      window._expDetailsCache = dashExperiencia.problemas.map((p,i)=>{
+        const cor=p.color==='red'?'#e8432d':'#f0b400';
+        const nome=p.title||p.sku||'';
+        const detRows=(p.detalhes&&p.detalhes.length)
+          ?p.detalhes.map(d=>{const qtd=d.quantidade?' <span style="color:'+cor+';font-weight:600;">'+d.quantidade+'x</span>':'';return'<div style="padding:8px 0;border-bottom:1px solid #1e1e1e;">'+(d.tipo?'<div style="font-size:11px;color:#666;">'+d.tipo+qtd+'</div>':'')+(d.descricao?'<div style="font-size:11px;font-weight:600;color:#fff;margin:3px 0;">'+d.descricao+'</div>':'')+(d.comoMelhorar?'<div style="font-size:11px;color:#2dce89;">→ '+d.comoMelhorar+'</div>':'')+'</div>';}).join('')
+          :(p.actions||[]).map(a=>'<div style="padding:7px 0;border-bottom:1px solid #1e1e1e;font-size:11px;color:#888;">'+a+'</div>').join('');
+        return'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #1e1e1e;"><div style="font-size:12px;font-weight:600;color:#fff;">'+nome+'</div><a href="'+(p.link||'#')+'" target="_blank" style="font-size:11px;color:#1a6be0;text-decoration:none;padding:3px 10px;border:1px solid #1a6be033;border-radius:5px;white-space:nowrap;">Abrir no ML ↗</a></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;"><div><div style="font-size:11px;color:#777;margin-bottom:8px;">Tipo de problema</div>'+detRows+'</div><div><div style="font-size:11px;color:#777;margin-bottom:8px;">Ações recomendadas</div>'+(p.actions||[]).map(a=>'<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#1e1e1e;border-radius:6px;margin-bottom:4px;"><div style="width:6px;height:6px;border-radius:50%;background:'+cor+';flex-shrink:0;"></div><div style="font-size:11px;color:#ccc;">'+a+'</div></div>').join('')+'</div></div>';
+      });
+      window._expToggle=function(idx){
+        const cards=document.querySelectorAll('.exp-card');
+        const panel=document.getElementById('exp-detail-panel');
+        if(!panel)return;
+        const cur=parseInt(panel.dataset.idx||'-1');
+        cards.forEach(c=>c.style.borderColor='#242424');
+        if(cur===idx){panel.style.display='none';panel.dataset.idx='-1';return;}
+        panel.dataset.idx=idx;
+        panel.style.display='block';
+        panel.innerHTML=(window._expDetailsCache||[])[idx]||'';
+        if(cards[idx])cards[idx].style.borderColor='#e8432d';
       };
 
       const items = dashExperiencia.problemas.map((p, i) => {
@@ -1044,16 +1052,17 @@ function renderDashboard(panel, color) {
             ).join('')
           + '</div></div></div>';
 
-        return cardHTML + detailHTML;
+        return cardHTML;
       }).join('');
 
       return '<div style="font-size:12px;font-weight:500;color:#888;font-family:Inter,sans-serif;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;display:flex;align-items:center;justify-content:space-between;">'
         + 'Experi\u00eancia de compra \u00b7 Filial SP'
         + '<span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;font-family:Inter,sans-serif;background:rgba(232,67,45,.12);color:#e8432d;border:1px solid rgba(232,67,45,.25);">'+prob+' com problema</span>'
         + '</div>'
-        + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;">'
+        + '<div style="display:flex;flex-wrap:wrap;gap:8px;">'
         + items
-        + '</div>';
+        + '</div>'
+        + '<div id="exp-detail-panel" data-idx="-1" style="display:none;background:#141414;border:1px solid #242424;border-radius:10px;padding:16px;margin-top:8px;"></div>';
     })()
     grid.appendChild(expCard);
   }
