@@ -748,7 +748,7 @@ function renderDashboard(panel, color) {
       <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;"><div style="${lStyle}">Faturamento mês</div><div style="${vStyle}">${fmt(d.fatMes)}</div></div>`;
 
     return `
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;align-items:start;">
         <div id="vdc-0" onclick="window._vdcActivate(0)" style="background:linear-gradient(to top,#252525 0%,#000 100%);border-radius:10px;overflow:hidden;border:1px solid #333;cursor:pointer;transition:border-color .2s;">
           <div id="vdc-top-0" style="height:3px;background:#f77614;"></div>
           <div style="padding:12px 14px 13px;">
