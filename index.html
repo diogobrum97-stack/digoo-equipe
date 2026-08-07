@@ -971,7 +971,7 @@ function renderDashboard(panel, color) {
   // ── Experiência de compra — antes do calendário fiscal ──
   if(dashExperiencia?.problemas?.length > 0) {
     const expCard = document.createElement("div");
-    expCard.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:14px;padding:16px;grid-column:1/-1;";
+    expCard.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:14px;padding:16px;grid-column:1/-1;margin-top:8px;";
     expCard.innerHTML = (() => {
       const prob  = dashExperiencia.problemas.length;
       const total = dashExperiencia.todos || 1;
@@ -984,7 +984,7 @@ function renderDashboard(panel, color) {
           const card = document.querySelectorAll('.exp-card')[j];
           if(j === i && el.style.display === 'none') {
             el.style.display = 'block';
-            if(card) card.style.borderColor = '#c0392b';
+            if(card) card.style.borderColor = '#e74c3c';
           } else {
             el.style.display = 'none';
             if(card) card.style.borderColor = '#242424';
@@ -993,7 +993,7 @@ function renderDashboard(panel, color) {
       };
 
       const items = dashExperiencia.problemas.map((p, i) => {
-        const cor   = p.color === 'red' ? '#c0392b' : '#f0b400';
+        const cor   = p.color === 'red' ? '#e74c3c' : '#f0b400';
         const score = p.value || 0;
         const dash  = ((score / 100) * circ).toFixed(1);
         const label = p.level || (p.color === 'red' ? 'Ruim' : 'Regular');
@@ -1049,7 +1049,7 @@ function renderDashboard(panel, color) {
 
       return '<div style="font-size:12px;font-weight:500;color:#888;font-family:Inter,sans-serif;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;display:flex;align-items:center;justify-content:space-between;">'
         + 'Experi\u00eancia de compra \u00b7 Filial SP'
-        + '<span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;font-family:Inter,sans-serif;background:rgba(192,57,43,.12);color:#c0392b;border:1px solid rgba(192,57,43,.25);">'+prob+' com problema</span>'
+        + '<span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;font-family:Inter,sans-serif;background:rgba(231,76,60,.12);color:#e74c3c;border:1px solid rgba(231,76,60,.25);">'+prob+' com problema</span>'
         + '</div>'
         + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;">'
         + items
