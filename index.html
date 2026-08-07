@@ -887,16 +887,26 @@ function renderDashboard(panel, color) {
     render();
   };
   window._sbarToggle = function(id) {
+    const ids = ['tasks','stock'];
+    ids.forEach(function(other) {
+      if(other === id) return;
+      const od = document.getElementById('sbar-drawer-'+other);
+      const oc = document.getElementById('sbar-card-'+other);
+      const oa = document.getElementById('sbar-arr-'+other);
+      if(od) { od.style.maxHeight='0px'; od.style.borderTopWidth='0px'; }
+      if(oc) oc.style.borderColor='#222';
+      if(oa) { oa.style.transform=''; oa.style.color='#2e2e2e'; }
+    });
     const drawer = document.getElementById('sbar-drawer-'+id);
     const card   = document.getElementById('sbar-card-'+id);
     const arr    = document.getElementById('sbar-arr-'+id);
     if(!drawer) return;
     const open = drawer.style.maxHeight === '0px' || !drawer.style.maxHeight;
-    drawer.style.maxHeight  = open ? '280px' : '0px';
+    drawer.style.maxHeight      = open ? '280px' : '0px';
     drawer.style.borderTopWidth = open ? '1px' : '0px';
-    card.style.borderColor  = open ? '#f77614' : '#222';
-    arr.style.transform     = open ? 'rotate(180deg)' : '';
-    arr.style.color         = open ? '#f77614' : '#2e2e2e';
+    card.style.borderColor      = open ? '#f77614' : '#222';
+    arr.style.transform         = open ? 'rotate(180deg)' : '';
+    arr.style.color             = open ? '#f77614' : '#2e2e2e';
   };
 
   const statusBar = document.createElement("div");
