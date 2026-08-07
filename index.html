@@ -984,7 +984,7 @@ function renderDashboard(panel, color) {
           const card = document.querySelectorAll('.exp-card')[j];
           if(j === i && el.style.display === 'none') {
             el.style.display = 'block';
-            if(card) card.style.borderColor = '#5e72e4';
+            if(card) card.style.borderColor = '#1a6be0';
           } else {
             el.style.display = 'none';
             if(card) card.style.borderColor = '#242424';
@@ -993,7 +993,7 @@ function renderDashboard(panel, color) {
       };
 
       const items = dashExperiencia.problemas.map((p, i) => {
-        const cor   = p.color === 'red' ? '#e91e8c' : '#f0b400';
+        const cor   = p.color === 'red' ? '#1a6be0' : '#f0b400';
         const score = p.value || 0;
         const dash  = ((score / 100) * circ).toFixed(1);
         const label = p.level || (p.color === 'red' ? 'Ruim' : 'Regular');
@@ -1021,7 +1021,7 @@ function renderDashboard(panel, color) {
           + '<circle cx="54" cy="54" r="42" fill="none" stroke="#1e1e1e" stroke-width="7"/>'
           + '<circle cx="54" cy="54" r="42" fill="none" stroke="'+cor+'" stroke-width="7"'
           + ' stroke-dasharray="'+dash+' '+circ.toFixed(1)+'" stroke-dashoffset="'+(circ*0.25).toFixed(1)+'" stroke-linecap="round"/>'
-          + '<text x="54" y="62" text-anchor="middle" fill="'+cor+'" font-size="22" font-weight="700" font-family="IBM Plex Mono,monospace">'+score+'</text>'
+          + '<text x="54" y="62" text-anchor="middle" fill="'+cor+'" font-size="22" font-weight="700" font-family="Inter,sans-serif">'+score+'</text>'
           + '</svg>'
           + '<div style="font-size:11px;font-weight:600;color:'+cor+';font-family:Inter,sans-serif;">'+label+'</div>'
           + '<div style="font-size:11px;font-weight:600;color:#fff;line-height:1.4;font-family:Inter,sans-serif;">'+nomeShort+'</div>'
@@ -1031,7 +1031,7 @@ function renderDashboard(panel, color) {
         const detailHTML = '<div class="exp-detail" style="display:none;grid-column:1/-1;background:#141414;border:1px solid #242424;border-radius:10px;padding:16px;margin-top:2px;">'
           + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #1e1e1e;">'
           + '<div style="font-size:12px;font-weight:600;color:#fff;font-family:Inter,sans-serif;">'+nome+'</div>'
-          + '<a href="'+p.link+'" target="_blank" style="font-size:11px;color:#5e72e4;text-decoration:none;padding:3px 10px;border:1px solid #5e72e433;border-radius:5px;font-family:Inter,sans-serif;white-space:nowrap;">Abrir no ML \u2197</a>'
+          + '<a href="'+p.link+'" target="_blank" style="font-size:11px;color:#1a6be0;text-decoration:none;padding:3px 10px;border:1px solid #1a6be033;border-radius:5px;font-family:Inter,sans-serif;white-space:nowrap;">Abrir no ML \u2197</a>'
           + '</div>'
           + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">'
           + '<div><div style="font-size:11px;font-weight:500;color:#777;font-family:Inter,sans-serif;margin-bottom:8px;">Tipo de problema</div>'+detRows+'</div>'
@@ -1049,7 +1049,7 @@ function renderDashboard(panel, color) {
 
       return '<div style="font-size:12px;font-weight:500;color:#888;font-family:Inter,sans-serif;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;display:flex;align-items:center;justify-content:space-between;">'
         + 'Experi\u00eancia de compra \u00b7 Filial SP'
-        + '<span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;font-family:Inter,sans-serif;background:rgba(233,30,140,.12);color:#e91e8c;border:1px solid rgba(233,30,140,.25);">'+prob+' com problema</span>'
+        + '<span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;font-family:Inter,sans-serif;background:rgba(26,107,224,.12);color:#1a6be0;border:1px solid rgba(26,107,224,.25);">'+prob+' com problema</span>'
         + '</div>'
         + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;">'
         + items
