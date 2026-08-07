@@ -20,7 +20,7 @@ body {
   transition: background 0.3s, color 0.3s;
 }
 body {
-  --bg: #111111; --bg2: #0d0d0d; --bg3: #1e1e1e;
+  --bg: #000000; --bg2: #080808; --bg3: #161616;
   --border: #1e1e1e; --border2: #282828;
   --text: #ffffff; --text2: #aaaaaa; --text3: #666666; --sub: #444444;
   --done: #666; --sep: rgba(255,255,255,0.06);
@@ -72,7 +72,7 @@ h1 { font-family: 'Digoo', 'Bebas Neue', sans-serif; font-size: 44px; letter-spa
 @keyframes atrasoBlink { 0%,100%{opacity:1} 50%{opacity:0.25} }
 .task-row.dragover-hint { background:rgba(17,205,239,0.08);border-radius:6px;outline:1px dashed rgba(17,205,239,0.3); }
 .grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; max-width: 1280px; margin: 0 auto; align-items: start; }
-.card { border-radius: 10px; border: 1px solid #222222; overflow: hidden; transition: border-color 0.3s, box-shadow 0.3s; background: #171717; position: relative; }
+.card { border-radius: 10px; border: 1px solid #333; overflow: hidden; transition: border-color 0.3s, box-shadow 0.3s; background: linear-gradient(to top, #252525 0%, #000 100%); position: relative; }
 .card::before { content: ''; display: block; height: 3px; width: 100%; background: #222222; flex-shrink: 0; }
 .card.card-fullscreen { position: fixed; inset: 0; z-index: 1000; border-radius: 0; overflow: hidden; margin: 0; height: 100vh; width: 100vw; box-sizing: border-box; display: flex; flex-direction: column; background: var(--bg); }
 .card.card-fullscreen .panel.open { flex: 1; overflow-y: auto; max-height: none; display: block; }
