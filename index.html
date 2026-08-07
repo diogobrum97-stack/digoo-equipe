@@ -793,22 +793,20 @@ function renderDashboard(panel, color) {
   (function(){
     var _cur = -1;
     var _open = false;
-    window._vdcActivate = function(n) {
-      var isSame = (_cur === n && _open);
-      // Fechar todos
+    window._vdcApply = function() {
       [0,1,2].forEach(function(i) {
         var l = document.getElementById('vdc-list-'+i);
         var b = document.getElementById('vdc-bars-'+i);
-        if(l) l.style.maxHeight = '0';
-        if(b) b.style.opacity = '1';
+        var isOpen = (_open && _cur === i);
+        if(l) l.style.maxHeight = isOpen ? '280px' : '0';
+        if(b) b.style.opacity = isOpen ? '0' : '1';
       });
-      if(isSame){ _cur=-1; _open=false; return; }
-      // Abrir o clicado
-      _cur=n; _open=true;
-      var nl = document.getElementById('vdc-list-'+n);
-      var nb = document.getElementById('vdc-bars-'+n);
-      if(nl) nl.style.maxHeight = '280px';
-      if(nb) nb.style.opacity = '0';
+    };
+    window._vdcActivate = function(n) {
+      var isSame = (_cur === n && _open);
+      if(isSame){ _cur=-1; _open=false; }
+      else { _cur=n; _open=true; }
+      window._vdcApply();
     };
   })();
 
@@ -821,11 +819,11 @@ function renderDashboard(panel, color) {
     if(_vendasAba === 'filial') {
       tabFilial.style.cssText = "padding:6px 16px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;color:#fff;background:#f77614;border:1px solid #f77614;transition:all .2s;white-space:nowrap;font-family:'Inter',sans-serif;";
       tabMatriz.style.cssText = "padding:6px 16px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;color:#444;background:transparent;transition:all .2s;white-space:nowrap;font-family:'Inter',sans-serif;";
-      body.innerHTML = vendasTabContent({fatHoje:dashData.fatHoje, projecaoDia:dashData.projecaoDia, fatMes:dashData.fatMes, pedidosMes:dashData.pedidosMes, top5hoje:dashData.top5hoje}, dashData.percDia);
+      body.innerHTML = vendasTabContent({fatHoje:dashData.fatHoje, projecaoDia:dashData.projecaoDia, fatMes:dashData.fatMes, pedidosMes:dashData.pedidosMes, top5hoje:dashData.top5hoje}, dashData.percDia); window._vdcApply && window._vdcApply();
     } else {
       tabFilial.style.cssText = "padding:6px 16px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;color:#444;background:transparent;transition:all .2s;white-space:nowrap;font-family:'Inter',sans-serif;";
       tabMatriz.style.cssText = "padding:6px 16px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;color:#fff;background:#f77614;border:1px solid #f77614;transition:all .2s;white-space:nowrap;font-family:'Inter',sans-serif;";
-      body.innerHTML = vendasTabContent(dashData.matriz, dashData.percDia);
+      body.innerHTML = vendasTabContent(dashData.matriz, dashData.percDia); window._vdcApply && window._vdcApply();
     }
   }
 
