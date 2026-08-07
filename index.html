@@ -767,21 +767,27 @@ function renderDashboard(panel, color) {
       <script>
       (function(){
         var cur = -1;
+        var open = false;
         window._vdcActivate = function(n) {
+          var isSame = cur === n;
+          // Fechar card atual
           if(cur >= 0) {
-            document.getElementById('vdc-top-'+cur).style.background = '#222';
+            var prevTop  = document.getElementById('vdc-top-'+cur);
             var prevList = document.getElementById('vdc-list-'+cur);
             var prevBars = document.getElementById('vdc-bars-'+cur);
-            if(prevList){ prevList.style.maxHeight='0'; }
-            if(prevBars){ prevBars.style.opacity='1'; }
+            if(prevTop)  prevTop.style.background = '#222';
+            if(prevList) prevList.style.maxHeight = '0';
+            if(prevBars) prevBars.style.opacity = '1';
           }
-          if(cur === n){ cur=-1; return; }
-          cur = n;
-          document.getElementById('vdc-top-'+n).style.background = '#f77614';
+          if(isSame && open){ cur=-1; open=false; return; }
+          // Abrir novo card
+          cur = n; open = true;
+          var nextTop  = document.getElementById('vdc-top-'+n);
           var nextList = document.getElementById('vdc-list-'+n);
           var nextBars = document.getElementById('vdc-bars-'+n);
-          if(nextList){ nextList.style.maxHeight='260px'; }
-          if(nextBars){ nextBars.style.opacity='0'; }
+          if(nextTop)  nextTop.style.background = '#f77614';
+          if(nextList) nextList.style.maxHeight = '260px';
+          if(nextBars) nextBars.style.opacity = '0';
         };
       })();
       <\/script>
