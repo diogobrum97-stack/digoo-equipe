@@ -907,7 +907,7 @@ function renderDashboard(panel, color) {
   };
 
   const statusBar = document.createElement("div");
-  statusBar.style.cssText = "grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;";
+  statusBar.style.cssText = "grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;align-items:start;";
   statusBar.innerHTML = `
     <div id="sbar-card-tasks" onclick="window._sbarToggle('tasks')" style="background:#1a1a1a;border:1px solid #222;border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s;">
       <div style="padding:13px 16px;display:flex;align-items:center;gap:14px;">
