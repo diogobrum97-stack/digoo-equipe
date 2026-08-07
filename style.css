@@ -22,7 +22,7 @@ body {
 body {
   --bg: #000000; --bg2: #080808; --bg3: #161616;
   --border: #1e1e1e; --border2: #282828;
-  --text: #ffffff; --text2: #aaaaaa; --text3: #666666; --sub: #444444;
+  --text: #ffffff; --text2: #bbbbbb; --text3: #888888; --sub: #666666;
   --done: #666; --sep: rgba(255,255,255,0.06);
   --c-d: #f77614; --hbg-d: rgba(247,118,20,0.08);
   --c-b: #f77614; --hbg-b: rgba(247,118,20,0.08);
