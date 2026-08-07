@@ -767,14 +767,12 @@ function renderDashboard(panel, color) {
             <div style="font-size:10px;color:#ffffff;margin-bottom:6px;">Projeção</div>
             <div style="font-size:26px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">${fmt(d.projecaoDia)}</div>
             <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;display:inline-block;background:#222;color:#888;margin-top:8px;">${percDia}% DO DIA</div>
-            <div style="display:flex;align-items:flex-end;gap:3px;height:22px;margin-top:12px;opacity:.2;">
-              <div style="flex:1;height:${Math.round(percDia)}%;border-radius:2px 2px 0 0;background:#f77614;min-height:3px;"></div>
-              <div style="flex:1;height:${Math.min(100,Math.round(percDia*1.1))}%;border-radius:2px 2px 0 0;background:#f77614;min-height:3px;"></div>
-              <div style="flex:1;height:${Math.min(100,Math.round(percDia*0.9))}%;border-radius:2px 2px 0 0;background:#f77614;min-height:3px;"></div>
-              <div style="flex:1;height:${Math.min(100,Math.round(percDia*1.05))}%;border-radius:2px 2px 0 0;background:#f77614;min-height:3px;"></div>
-              <div style="flex:1;height:${Math.min(100,Math.round(percDia*0.95))}%;border-radius:2px 2px 0 0;background:#f77614;min-height:3px;"></div>
-              <div style="flex:1;height:${Math.min(100,Math.round(percDia*1.02))}%;border-radius:2px 2px 0 0;background:#f77614;min-height:3px;"></div>
-              <div style="flex:1;height:${Math.min(100,Math.round(percDia))}%;border-radius:2px 2px 0 0;background:#f77614;min-height:3px;"></div>
+            <div style="display:flex;align-items:center;gap:10px;margin-top:12px;height:22px;">
+              <svg width="22" height="22" viewBox="0 0 36 36" style="flex-shrink:0;">
+                <circle cx="18" cy="18" r="14" fill="none" stroke="#222" stroke-width="3"/>
+                <circle cx="18" cy="18" r="14" fill="none" stroke="#f77614" stroke-width="3" stroke-opacity="0.4" stroke-dasharray="${(percDia*0.879).toFixed(1)} 87.9" stroke-dashoffset="21.975" stroke-linecap="round"/>
+              </svg>
+              <div style="font-size:10px;color:#555;line-height:1.4;">falta <span style="color:#f77614;font-weight:600;">${100-percDia}%</span> pra meta</div>
             </div>
           </div>
           <div id="vdc-list-1" style="display:none;overflow:hidden;">
@@ -787,14 +785,11 @@ function renderDashboard(panel, color) {
             <div style="font-size:10px;color:#ffffff;margin-bottom:6px;">Mês atual</div>
             <div style="font-size:26px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">${fmt(d.fatMes)}</div>
             <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;display:inline-block;background:#f77614;color:#fff;margin-top:8px;">${d.pedidosMes} PEDIDOS</div>
-            <div style="display:flex;align-items:flex-end;gap:3px;height:22px;margin-top:12px;opacity:.2;">
-              <div style="flex:1;height:40%;border-radius:2px 2px 0 0;background:#f77614;"></div>
-              <div style="flex:1;height:60%;border-radius:2px 2px 0 0;background:#f77614;"></div>
-              <div style="flex:1;height:75%;border-radius:2px 2px 0 0;background:#f77614;"></div>
-              <div style="flex:1;height:55%;border-radius:2px 2px 0 0;background:#f77614;"></div>
-              <div style="flex:1;height:80%;border-radius:2px 2px 0 0;background:#f77614;"></div>
-              <div style="flex:1;height:90%;border-radius:2px 2px 0 0;background:#f77614;"></div>
-              <div style="flex:1;height:100%;border-radius:2px 2px 0 0;background:#f77614;"></div>
+            <div style="margin-top:12px;height:22px;">
+              <svg width="100%" height="22" viewBox="0 0 200 22" preserveAspectRatio="none">
+                <polyline points="0,19 30,16 60,15 90,11 120,8 150,6 180,4 200,2" fill="none" stroke="#f77614" stroke-width="1.5" stroke-opacity="0.4" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="200" cy="2" r="2.5" fill="#f77614" opacity="0.6"/>
+              </svg>
             </div>
           </div>
           <div id="vdc-list-2" style="display:none;overflow:hidden;">
