@@ -971,7 +971,7 @@ function renderDashboard(panel, color) {
   // ── Experiência de compra — antes do calendário fiscal ──
   if(dashExperiencia?.problemas?.length > 0) {
     const expCard = document.createElement("div");
-    expCard.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:14px;padding:16px;grid-column:1/-1;margin-top:8px;";
+    expCard.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:14px;padding:16px;grid-column:1/-1;margin-top:16px;";
     expCard.innerHTML = (() => {
       const prob  = dashExperiencia.problemas.length;
       const total = dashExperiencia.todos || 1;
@@ -984,7 +984,7 @@ function renderDashboard(panel, color) {
           const card = document.querySelectorAll('.exp-card')[j];
           if(j === i && el.style.display === 'none') {
             el.style.display = 'block';
-            if(card) card.style.borderColor = '#e74c3c';
+            if(card) card.style.borderColor = '#e8432d';
           } else {
             el.style.display = 'none';
             if(card) card.style.borderColor = '#242424';
@@ -993,7 +993,7 @@ function renderDashboard(panel, color) {
       };
 
       const items = dashExperiencia.problemas.map((p, i) => {
-        const cor   = p.color === 'red' ? '#e74c3c' : '#f0b400';
+        const cor   = p.color === 'red' ? '#e8432d' : '#f0b400';
         const score = p.value || 0;
         const dash  = ((score / 100) * circ).toFixed(1);
         const label = p.level || (p.color === 'red' ? 'Ruim' : 'Regular');
@@ -1049,7 +1049,7 @@ function renderDashboard(panel, color) {
 
       return '<div style="font-size:12px;font-weight:500;color:#888;font-family:Inter,sans-serif;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;display:flex;align-items:center;justify-content:space-between;">'
         + 'Experi\u00eancia de compra \u00b7 Filial SP'
-        + '<span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;font-family:Inter,sans-serif;background:rgba(231,76,60,.12);color:#e74c3c;border:1px solid rgba(231,76,60,.25);">'+prob+' com problema</span>'
+        + '<span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;font-family:Inter,sans-serif;background:rgba(232,67,45,.12);color:#e8432d;border:1px solid rgba(232,67,45,.25);">'+prob+' com problema</span>'
         + '</div>'
         + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;">'
         + items
@@ -1406,7 +1406,7 @@ function renderDiogoML(container, color) {
 
   // Painel ML
   const mlPanel = document.createElement("div");
-  mlPanel.style.cssText = "background:var(--bg3);border:1px solid #f0b40033;border-radius:6px;padding:14px;margin-top:8px;";
+  mlPanel.style.cssText = "background:var(--bg3);border:1px solid #f0b40033;border-radius:6px;padding:14px;margin-top:16px;";
 
   // Sub-abas
   const subTabs = document.createElement("div");
@@ -3705,7 +3705,7 @@ function render(){
                 const closeBtn=document.createElement("button");closeBtn.textContent="✓ Encerrar";closeBtn.style.cssText="background:none;border:1px solid #4ade8066;color:#4ade80;border-radius:4px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:inherit;letter-spacing:1px;";
                 closeBtn.addEventListener("click",()=>{push(ref(db,"/notices"),{forMember:task.delegatedBy,text:task.text,by:"Diogo",ts:new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}),ts_raw:Date.now()});set(ref(db,`/flashes/${task.delegatedBy}`),{ts:Date.now(),msg:`Diogo concluiu sua tarefa!`});Object.entries(state.messages||{}).forEach(([mid,m])=>{if(m!=null&&m.taskId===task.id)remove(ref(db,`/messages/${mid}`));});deleteTask(task.id);});
                 actions.appendChild(replyBtn);actions.appendChild(closeBtn);card2.appendChild(actions);
-                const mf=document.createElement("div");mf.style.cssText="display:none;margin-top:8px;";const mi=document.createElement("input");mi.placeholder="Sua resposta...";mi.style.cssText="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:6px 8px;color:var(--text);font-size:12px;font-family:inherit;outline:none;margin-bottom:6px;";
+                const mf=document.createElement("div");mf.style.cssText="display:none;margin-top:16px;";const mi=document.createElement("input");mi.placeholder="Sua resposta...";mi.style.cssText="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:6px 8px;color:var(--text);font-size:12px;font-family:inherit;outline:none;margin-bottom:6px;";
                 const mbr=document.createElement("div");mbr.style.cssText="display:flex;gap:6px;";const sb=document.createElement("button");sb.className="btn-primary";sb.style.cssText=`background:${color};color:#000;font-size:11px;letter-spacing:2px;border:none;border-radius:4px;padding:6px;cursor:pointer;font-family:inherit;flex:1;`;sb.textContent="ENVIAR";const cb=document.createElement("button");cb.className="btn-cancel";cb.textContent="✕";mbr.appendChild(sb);mbr.appendChild(cb);mf.appendChild(mi);mf.appendChild(mbr);
                 const submit=()=>{if(!mi.value.trim())return;sendMessage("Diogo",mi.value.trim(),task.id,task.text,task.delegatedBy,task.delegatedBy);mi.value="";mf.style.display="none";};
                 sb.addEventListener("click",submit);cb.addEventListener("click",()=>{mf.style.display="none";replyBtn.textContent="↩ Responder";});mi.addEventListener("keydown",e=>{if(e.key==="Enter")submit();if(e.key==="Escape"){mf.style.display="none";}});
@@ -5006,7 +5006,7 @@ function renderSaudeChart(panel, enriched) {
         statsRow.style.cssText = "display:flex;align-items:center;gap:20px;flex-wrap:wrap;";
         wrap.appendChild(statsRow);
         const actionsRow = document.createElement("div");
-        actionsRow.style.cssText = "margin-top:8px;";
+        actionsRow.style.cssText = "margin-top:16px;";
         wrap.appendChild(actionsRow);
         const listWrap = document.createElement("div");
         listWrap.style.cssText = "display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--sep);max-height:220px;overflow-y:auto;";
