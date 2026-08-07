@@ -794,18 +794,22 @@ function renderDashboard(panel, color) {
     var _cur = -1;
     var _open = false;
     if(!window._vdcState) window._vdcState = {open: null};
-    window._vdcApply = function() {
+    window._vdcApply = function(animate) {
       [0,1,2].forEach(function(i) {
         var l = document.getElementById('vdc-list-'+i);
         var b = document.getElementById('vdc-bars-'+i);
         var isOpen = (window._vdcState.open === i);
-        if(l) l.style.maxHeight = isOpen ? '280px' : '0';
+        if(l) {
+          if(!animate) l.style.transition = 'none';
+          l.style.maxHeight = isOpen ? '280px' : '0px';
+          if(!animate) setTimeout(function(){ l.style.transition = 'max-height .35s ease'; }, 50);
+        }
         if(b) b.style.opacity = isOpen ? '0' : '1';
       });
     };
     window._vdcActivate = function(n) {
       window._vdcState.open = (window._vdcState.open === n) ? null : n;
-      window._vdcApply();
+      window._vdcApply(true);
     };
   })();
 
