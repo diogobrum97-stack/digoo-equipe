@@ -737,8 +737,8 @@ function renderDashboard(panel, color) {
         <div id="vdc-0" onclick="window._vdcActivate(0)" style="background:linear-gradient(to top,#252525 0%,#000 100%);border-radius:10px;overflow:hidden;border:1px solid #333;cursor:pointer;transition:border-color .2s;">
           <div id="vdc-top-0" style="height:3px;background:#f77614;transition:background .25s;"></div>
           <div style="padding:12px 14px 13px;">
-            <div style="font-size:10px;color:#ffffff;margin-bottom:6px;font-family:'Inter',sans-serif;">Hoje</div>
-            <div style="font-size:26px;font-weight:700;color:#fff;letter-spacing:-1px;font-family:'IBM Plex Mono',monospace;">${fmtFull(d.fatHoje)}</div>
+            <div style="font-size:10px;color:#555;margin-bottom:6px;font-family:'Inter',sans-serif;">Hoje</div>
+            <div style="font-size:26px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">${fmtFull(d.fatHoje)}</div>
             <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;font-family:'Inter',sans-serif;display:inline-block;background:#f77614;color:#fff;margin-top:8px;">↑ EM TEMPO REAL</div>
             <div id="vdc-bars-0" style="display:flex;align-items:flex-end;gap:3px;height:22px;margin-top:12px;transition:opacity .25s;opacity:1;">${miniBars}</div>
           </div>
@@ -749,16 +749,16 @@ function renderDashboard(panel, color) {
         <div id="vdc-1" onclick="window._vdcActivate(1)" style="background:linear-gradient(to top,#252525 0%,#000 100%);border-radius:10px;overflow:hidden;border:1px solid #333;cursor:pointer;transition:border-color .2s;">
           <div id="vdc-top-1" style="height:3px;background:#f77614;transition:background .25s;"></div>
           <div style="padding:12px 14px 14px;">
-            <div style="font-size:10px;color:#ffffff;margin-bottom:6px;font-family:'Inter',sans-serif;">Projeção</div>
-            <div style="font-size:26px;font-weight:700;color:#fff;letter-spacing:-1px;font-family:'IBM Plex Mono',monospace;">${fmt(d.projecaoDia)}</div>
+            <div style="font-size:10px;color:#555;margin-bottom:6px;font-family:'Inter',sans-serif;">Projeção</div>
+            <div style="font-size:26px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">${fmt(d.projecaoDia)}</div>
             <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;font-family:'Inter',sans-serif;display:inline-block;background:#222;color:#555;margin-top:8px;">${percDia}% DO DIA</div>
           </div>
         </div>
         <div id="vdc-2" onclick="window._vdcActivate(2)" style="background:linear-gradient(to top,#252525 0%,#000 100%);border-radius:10px;overflow:hidden;border:1px solid #333;cursor:pointer;transition:border-color .2s;">
           <div id="vdc-top-2" style="height:3px;background:#f77614;transition:background .25s;"></div>
           <div style="padding:12px 14px 14px;">
-            <div style="font-size:10px;color:#ffffff;margin-bottom:6px;font-family:'Inter',sans-serif;">Mês atual</div>
-            <div style="font-size:26px;font-weight:700;color:#fff;letter-spacing:-1px;font-family:'IBM Plex Mono',monospace;">${fmt(d.fatMes)}</div>
+            <div style="font-size:10px;color:#555;margin-bottom:6px;font-family:'Inter',sans-serif;">Mês atual</div>
+            <div style="font-size:26px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">${fmt(d.fatMes)}</div>
             <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;font-family:'Inter',sans-serif;display:inline-block;background:#f77614;color:#fff;margin-top:8px;">${d.pedidosMes} PEDIDOS</div>
           </div>
         </div>
@@ -876,7 +876,7 @@ function renderDashboard(panel, color) {
       <div style="width:6px;height:6px;border-radius:50%;background:${cor};flex-shrink:0;"></div>
       <div style="font-size:10px;color:#777;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.sku}</div>
       <div style="width:40px;height:2px;background:#222;border-radius:2px;flex-shrink:0;"><div style="height:2px;border-radius:2px;background:${cor};width:${pct}%;"></div></div>
-      <div style="font-size:10px;font-weight:700;color:#fff;background:${cor};border-radius:4px;padding:2px 7px;font-family:'IBM Plex Mono',monospace;flex-shrink:0;">${dias}d</div>
+      <div style="font-size:10px;font-weight:700;color:#fff;background:${cor};border-radius:4px;padding:2px 7px;font-family:'Inter',sans-serif;flex-shrink:0;">${dias}d</div>
     </div>`;
   }).join("");
 
@@ -913,9 +913,9 @@ function renderDashboard(panel, color) {
       <div style="padding:13px 16px;display:flex;align-items:center;gap:14px;">
         <div style="font-size:10px;color:#555;white-space:nowrap;">Tarefas</div>
         <div style="display:flex;align-items:center;gap:8px;flex:1;">
-          <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#c0392b;"></div><div style="font-size:11px;font-weight:700;color:#c0392b;font-family:'IBM Plex Mono',monospace;">${urgentes}</div></div>
-          <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#f77614;"></div><div style="font-size:11px;font-weight:700;color:#f77614;font-family:'IBM Plex Mono',monospace;">${importantes}</div></div>
-          <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#333;"></div><div style="font-size:11px;font-weight:700;color:#444;font-family:'IBM Plex Mono',monospace;">${normais}</div></div>
+          <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#c0392b;"></div><div style="font-size:11px;font-weight:700;color:#c0392b;font-family:'Inter',sans-serif;">${urgentes}</div></div>
+          <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#f77614;"></div><div style="font-size:11px;font-weight:700;color:#f77614;font-family:'Inter',sans-serif;">${importantes}</div></div>
+          <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#333;"></div><div style="font-size:11px;font-weight:700;color:#444;font-family:'Inter',sans-serif;">${normais}</div></div>
         </div>
         <div id="sbar-arr-tasks" style="font-size:10px;color:#2e2e2e;transition:transform .2s,color .2s;">▾</div>
       </div>
@@ -963,7 +963,7 @@ function renderDashboard(panel, color) {
       ${fiscal_agrupado.slice(0,6).map(e => {
         const cor = e.diff <= 5 ? "#e91e8c" : e.diff <= 14 ? "#f0b400" : "#bbb";
         const dotCor = coresFiscal[e.tipo] || "#bbb";
-        return `<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#181818;border:1px solid #242424;border-radius:10px;"><div style="width:7px;height:7px;border-radius:50%;background:${dotCor};flex-shrink:0;"></div><div style="flex:1;"><div style="font-size:11px;font-weight:600;color:#fff;">${e.nome}</div><div style="font-size:11px;color:#888;margin-top:2px;">Ref. ${String(mes2).padStart(2,"0")}/${ano2}</div></div><div style="font-size:14px;font-weight:700;color:${cor};font-family:'IBM Plex Mono',monospace;">em ${e.diff}d</div></div>`;
+        return `<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#181818;border:1px solid #242424;border-radius:10px;"><div style="width:7px;height:7px;border-radius:50%;background:${dotCor};flex-shrink:0;"></div><div style="flex:1;"><div style="font-size:11px;font-weight:600;color:#fff;">${e.nome}</div><div style="font-size:11px;color:#888;margin-top:2px;">Ref. ${String(mes2).padStart(2,"0")}/${ano2}</div></div><div style="font-size:14px;font-weight:700;color:${cor};font-family:'Inter',sans-serif;">em ${e.diff}d</div></div>`;
       }).join("")}
     </div>
   `;
@@ -4352,7 +4352,7 @@ function renderCancelamentosBruno(panel) {
     pedidoLabel.style.cssText = "font-size:11px;color:var(--text3);letter-spacing:1px;";
     pedidoLabel.textContent = "PEDIDO ML";
     const pedidoNum = document.createElement("span");
-    pedidoNum.style.cssText = "font-size:12px;font-weight:600;color:#9d7fff;font-family:'IBM Plex Mono',monospace;cursor:pointer;";
+    pedidoNum.style.cssText = "font-size:12px;font-weight:600;color:#9d7fff;font-family:'Inter',sans-serif;cursor:pointer;";
     pedidoNum.textContent = it.numeroPedido;
     pedidoNum.title = "Clique pra copiar";
     pedidoNum.addEventListener("click", () => {
@@ -4370,7 +4370,7 @@ function renderCancelamentosBruno(panel) {
       nfLabel.style.cssText = "font-size:11px;color:var(--text3);letter-spacing:1px;";
       nfLabel.textContent = "NF";
       const nfNum = document.createElement("span");
-      nfNum.style.cssText = "font-size:16px;font-weight:700;color:#e91e8c;font-family:'IBM Plex Mono',monospace;cursor:pointer;letter-spacing:1px;";
+      nfNum.style.cssText = "font-size:16px;font-weight:700;color:#e91e8c;font-family:'Inter',sans-serif;cursor:pointer;";
       nfNum.textContent = it.nf.nfNumero;
       nfNum.title = "Clique pra copiar";
       nfNum.addEventListener("click", () => {
