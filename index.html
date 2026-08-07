@@ -6222,7 +6222,7 @@ async function renderConferencia(panel, color) {
     val.style.cssText = `font-size:18px;font-weight:700;color:#fff;letter-spacing:-0.5px;`;
     val.textContent = "R$ "+valor.toLocaleString("pt-BR",{minimumFractionDigits:2});
     const cnt = document.createElement("div");
-    cnt.style.cssText = "font-size:11px;color:var(--text3);margin-top:4px;";
+    cnt.style.cssText = "display:inline-block;font-size:10px;font-weight:600;color:#fff;background:#f77614;border-radius:5px;padding:2px 8px;margin-top:8px;";
     cnt.textContent = count;
     c.appendChild(hat); c.appendChild(lbl); c.appendChild(val); c.appendChild(cnt);
     return c;
