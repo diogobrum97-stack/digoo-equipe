@@ -941,7 +941,7 @@ function renderDashboard(panel, color) {
 
   // Calendário Fiscal
   const fiscalCard = document.createElement("div");
-  fiscalCard.style.cssText = "background:linear-gradient(180deg,#252525 0%,#101010 100%);border:1px solid #303030;border-radius:14px;padding:16px;grid-column:1/-1;";
+  fiscalCard.style.cssText = "background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:14px;padding:16px;grid-column:1/-1;";
   const hoje2 = new Date();
   const mes2 = hoje2.getMonth();
   const ano2 = hoje2.getFullYear();
@@ -971,7 +971,7 @@ function renderDashboard(panel, color) {
   // ── Experiência de compra — antes do calendário fiscal ──
   if(dashExperiencia?.problemas?.length > 0) {
     const expCard = document.createElement("div");
-    expCard.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:14px;padding:16px;grid-column:1/-1;margin-top:14px;";
+    expCard.style.cssText = "background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:14px;padding:16px;grid-column:1/-1;margin-top:14px;";
     expCard.innerHTML = (() => {
       const prob  = dashExperiencia.problemas.length;
       const total = dashExperiencia.todos || 1;
@@ -1023,7 +1023,7 @@ function renderDashboard(panel, color) {
             ).join('');
 
         const cardHTML = '<div class="exp-card" onclick="window._expToggle('+i+')" '
-          + 'style="background:#181818;border:1px solid #242424;border-radius:10px;padding:14px;'
+          + 'style="background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:10px;padding:14px;'
           + 'display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;cursor:pointer;transition:border-color .2s;">'
           + '<svg width="64" height="64" viewBox="0 0 108 108">'
           + '<circle cx="54" cy="54" r="42" fill="none" stroke="#1e1e1e" stroke-width="7"/>'
@@ -1062,7 +1062,7 @@ function renderDashboard(panel, color) {
         + '<div style="display:flex;flex-wrap:wrap;gap:8px;">'
         + items
         + '</div>'
-        + '<div id="exp-detail-panel" data-idx="-1" style="display:none;background:#141414;border:1px solid #242424;border-radius:10px;padding:16px;margin-top:8px;"></div>';
+        + '<div id="exp-detail-panel" data-idx="-1" style="display:none;background:linear-gradient(to top,#1e1e1e 0%,#000 100%);border:1px solid #2a2a2a;border-radius:10px;padding:16px;margin-top:8px;"></div>';
     })()
     grid.appendChild(expCard);
   }
@@ -2227,7 +2227,7 @@ function renderVendasTab(panel, color) {
     {label:"TICKET MÉDIO",value:`R$ ${vendasData.summary.avgTicket.toLocaleString("pt-BR",{minimumFractionDigits:2})}`,color:"#a78bfa"},
   ].forEach(s=>{
     const card=document.createElement("div");
-    card.style.cssText=`background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;border-top:2px solid ${s.color};`;
+    card.style.cssText=`background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:8px;padding:12px;text-align:center;border-top:2px solid ${s.color};`;
     card.innerHTML=`<div style="font-size:8px;color:var(--text3);letter-spacing:2px;margin-bottom:6px;">${s.label}</div><div style="font-size:18px;font-family:'Bebas Neue',sans-serif;letter-spacing:2px;color:${s.color};">${s.value}</div>`;
     summaryGrid.appendChild(card);
   });
@@ -2603,7 +2603,7 @@ function renderFinanceiroTab(panel,color){
 
   // Card de total
   const totalCard=document.createElement("div");
-  totalCard.style.cssText=`background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;`;
+  totalCard.style.cssText=`background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:8px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;`;
   const totalLabel=document.createElement("div");
   totalLabel.innerHTML=`<div style="font-size:11px;color:var(--text3);letter-spacing:2px;margin-bottom:4px">CUSTO DE DEVOLUÇÕES</div><div style="font-size:11px;color:var(--text3);letter-spacing:1px">${finData.count} devoluções concluídas</div>`;
   const totalValue=document.createElement("div");
@@ -4625,7 +4625,7 @@ function renderFilialSP(panel, color) {
     { label:"TOTAL NO FULL", value: (totalAptas+totalTransf).toLocaleString("pt-BR"), color:"#7F77DD", sub:"aptas + transferência" },
   ].forEach(s => {
     const card = document.createElement("div");
-    card.style.cssText = `background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;border-top:2px solid ${s.color};`;
+    card.style.cssText = `background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:8px;padding:14px 16px;border-top:2px solid ${s.color};`;
     card.innerHTML = `<div style="font-size:11px;color:var(--text3);letter-spacing:2px;margin-bottom:8px;text-transform:uppercase;">${s.label}</div><div style="font-size:24px;font-weight:600;color:${s.color};text-shadow:0 0 16px ${s.color}66;">${s.value}</div><div style="font-size:11px;color:var(--text3);margin-top:4px;">${s.sub}</div>`;
     resumo.appendChild(card);
   });
@@ -4802,7 +4802,7 @@ function renderMatrizRS(panel, color) {
     { label:"CUSTO MÉDIO/UN", value:`R$ ${custoMedio.toLocaleString("pt-BR",{minimumFractionDigits:2})}`, color:"#7F77DD", sub:"ponderado" },
   ].forEach(s => {
     const card = document.createElement("div");
-    card.style.cssText = `background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;border-top:2px solid ${s.color};`;
+    card.style.cssText = `background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:8px;padding:14px 16px;border-top:2px solid ${s.color};`;
     card.innerHTML = `<div style="font-size:11px;color:var(--text3);letter-spacing:2px;margin-bottom:8px;text-transform:uppercase;">${s.label}</div><div style="font-size:24px;font-weight:600;color:${s.color};text-shadow:0 0 16px ${s.color}66;">${s.value}</div><div style="font-size:11px;color:var(--text3);margin-top:4px;">${s.sub}</div>`;
     resumo.appendChild(card);
   });
@@ -5722,7 +5722,7 @@ function renderConfig(panel, color) {
 
 function criarSecaoConfig(titulo, color) {
   const wrap = document.createElement("div");
-  wrap.style.cssText = "background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:12px;";
+  wrap.style.cssText = "background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:8px;padding:14px 16px;margin-bottom:12px;";
   const header = document.createElement("div");
   header.style.cssText = "font-size:11px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;";
   header.textContent = titulo;
@@ -6212,7 +6212,7 @@ async function renderConferencia(panel, color) {
 
   function sumCard(label, valor, cor, count) {
     const c = document.createElement("div");
-    c.style.cssText = `background:var(--bg3);border:0.5px solid var(--border2);border-radius:12px;padding:16px;position:relative;overflow:hidden;`;
+    c.style.cssText = `background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:12px;padding:16px;position:relative;overflow:hidden;`;
     const hat = document.createElement("div");
     hat.style.cssText = `position:absolute;top:0;left:0;right:0;height:3px;background:${cor};`;
     const lbl = document.createElement("div");
