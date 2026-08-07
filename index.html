@@ -740,9 +740,9 @@ function renderDashboard(panel, color) {
             <div style="font-size:10px;color:#555;margin-bottom:6px;font-family:'Inter',sans-serif;">Hoje</div>
             <div style="font-size:26px;font-weight:700;color:#fff;letter-spacing:-1px;font-family:'IBM Plex Mono',monospace;">${fmtFull(d.fatHoje)}</div>
             <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;font-family:'Inter',sans-serif;display:inline-block;background:#f77614;color:#fff;margin-top:8px;">↑ EM TEMPO REAL</div>
-            <div id="vdc-bars-0" style="display:flex;align-items:flex-end;gap:3px;height:22px;margin-top:12px;transition:opacity .25s;opacity:0;">${miniBars}</div>
+            <div id="vdc-bars-0" style="display:flex;align-items:flex-end;gap:3px;height:22px;margin-top:12px;transition:opacity .25s;opacity:1;">${miniBars}</div>
           </div>
-          <div id="vdc-list-0" style="max-height:260px;overflow:hidden;transition:max-height .35s ease;">
+          <div id="vdc-list-0" style="max-height:0;overflow:hidden;transition:max-height .35s ease;">
             <div style="padding:8px 14px 12px;border-top:1px solid #1a1a1a;">${listRows}</div>
           </div>
         </div>
@@ -763,16 +763,18 @@ function renderDashboard(panel, color) {
           </div>
         </div>
       </div>
-      <div style="background:#1e1e1e;border-radius:99px;height:3px;margin-bottom:8px;"><div style="height:3px;border-radius:99px;background:#f77614;width:${percDia}%;"></div></div>
+      <div style="background:#1e1e1e;border-radius:99px;height:3px;margin-bottom:8px;overflow:hidden;"><div style="height:3px;border-radius:99px;background:linear-gradient(90deg,#c0392b,#f77614);width:${percDia}%;transition:width .4s;"></div></div>
       <script>
       (function(){
-        var cur = 0;
+        var cur = -1;
         window._vdcActivate = function(n) {
-          document.getElementById('vdc-top-'+cur).style.background = '#222';
-          var prevList = document.getElementById('vdc-list-'+cur);
-          var prevBars = document.getElementById('vdc-bars-'+cur);
-          if(prevList){ prevList.style.maxHeight='0'; }
-          if(prevBars){ prevBars.style.opacity='0.2'; }
+          if(cur >= 0) {
+            document.getElementById('vdc-top-'+cur).style.background = '#222';
+            var prevList = document.getElementById('vdc-list-'+cur);
+            var prevBars = document.getElementById('vdc-bars-'+cur);
+            if(prevList){ prevList.style.maxHeight='0'; }
+            if(prevBars){ prevBars.style.opacity='1'; }
+          }
           if(cur === n){ cur=-1; return; }
           cur = n;
           document.getElementById('vdc-top-'+n).style.background = '#f77614';
@@ -805,11 +807,11 @@ function renderDashboard(panel, color) {
   }
 
   vendasCard.innerHTML = `
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-      <div style="font-size:10px;color:#555;font-family:'Inter',sans-serif;">Vendas Mercado Livre</div>
-      <div style="display:inline-flex;background:#161616;border-radius:6px;padding:2px;gap:1px;">
-        <div id="dash-aba-filial" onclick="window._vendasAba='filial';window.renderVendasAba();" style="padding:4px 12px;font-size:10px;font-weight:600;cursor:pointer;border-radius:5px;font-family:'Inter',sans-serif;color:#ffffff;background:#2a2a2a;white-space:nowrap;">Filial SP</div>
-        <div id="dash-aba-matriz" onclick="window._vendasAba='matriz';window.renderVendasAba();" style="padding:4px 12px;font-size:10px;font-weight:600;cursor:pointer;border-radius:5px;font-family:'Inter',sans-serif;color:#555;white-space:nowrap;">${dashData.matriz ? "Matriz RS" : "Matriz (desconectado)"}</div>
+    <div style="margin-bottom:10px;">
+      <div style="font-size:11px;font-weight:500;color:#ffffff;font-family:'Inter',sans-serif;margin-bottom:10px;">Vendas Mercado Livre</div>
+      <div style="display:inline-flex;background:#1a1a1a;border-radius:8px;padding:3px;gap:2px;">
+        <div id="dash-aba-filial" onclick="window._vendasAba='filial';window.renderVendasAba();" style="padding:6px 18px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;font-family:'Inter',sans-serif;color:#ffffff;background:var(--bg2);border:1px solid #333;white-space:nowrap;">Filial SP</div>
+        <div id="dash-aba-matriz" onclick="window._vendasAba='matriz';window.renderVendasAba();" style="padding:6px 18px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;font-family:'Inter',sans-serif;color:#444;background:transparent;white-space:nowrap;">${dashData.matriz ? "Matriz RS" : "Matriz (desconectado)"}</div>
       </div>
     </div>
     <div id="dash-vendas-body"></div>
