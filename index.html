@@ -719,15 +719,37 @@ function renderDashboard(panel, color) {
   vendasCard.style.cssText = "background:linear-gradient(180deg,#252525 0%,#101010 100%);border:1px solid #303030;border-radius:16px;overflow:hidden;grid-column:1/-1;";
   function vendasTabContent(d, percDia) {
     if(!d) return `<div style="text-align:center;padding:20px;color:var(--text3);font-size:11px;">Token não conectado</div>`;
+    const top5 = d.top5hoje || [];
+    const maxRev = top5[0]?.revenue || 1;
+    const miniBars = [100, 65, 47, 30, 18].map(h =>
+      `<div style="flex:1;height:${h}%;border-radius:2px 2px 0 0;background:#f77614;opacity:.2;"></div>`
+    ).join('');
+    const listRows = top5.map((p,i) => `
+      <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #1a1a1a;">
+        <div style="font-size:9px;color:#2e2e2e;width:10px;flex-shrink:0;">${i+1}</div>
+        <div style="font-size:10px;color:#777;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.sku||"—"}</div>
+        <div style="font-size:9px;color:#3a3a3a;flex-shrink:0;">${p.qty} un</div>
+        <div style="width:32px;height:2px;background:#222;border-radius:2px;flex-shrink:0;"><div style="height:2px;border-radius:2px;background:#f77614;width:${i===0?100:Math.round((p.revenue/maxRev)*100)}%;"></div></div>
+        <div style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;font-family:'Inter',sans-serif;background:#f77614;color:#fff;flex-shrink:0;">${fmt(p.revenue||0)}</div>
+      </div>`).join('');
     return `
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;">
-        <div style="background:#1a1a1a;border-radius:10px;overflow:hidden;border:1px solid #222;"><div style="height:3px;background:#f77614;"></div><div style="padding:12px 14px 14px;"><div style="font-size:10px;color:#555;margin-bottom:6px;font-family:'Inter',sans-serif;">Hoje</div><div style="font-size:26px;font-weight:700;color:#fff;margin-bottom:8px;letter-spacing:-1px;font-family:'IBM Plex Mono',monospace;">${fmtFull(d.fatHoje)}</div><div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;font-family:'Inter',sans-serif;display:inline-block;background:#f77614;color:#fff;">↑ EM TEMPO REAL</div></div></div>
+        <div onclick="(function(el){const list=el.querySelector('.top5-list');const bars=el.querySelector('.mini-bars');const open=list.style.maxHeight==='260px';list.style.maxHeight=open?'0':'260px';list.style.overflow='hidden';bars.style.opacity=open?'1':'0';})(this)" style="background:#1a1a1a;border-radius:10px;overflow:hidden;border:1px solid #222;cursor:pointer;">
+          <div style="height:3px;background:#f77614;"></div>
+          <div style="padding:12px 14px 13px;">
+            <div style="font-size:10px;color:#555;margin-bottom:6px;font-family:'Inter',sans-serif;">Hoje</div>
+            <div style="font-size:26px;font-weight:700;color:#fff;margin-bottom:8px;letter-spacing:-1px;font-family:'IBM Plex Mono',monospace;">${fmtFull(d.fatHoje)}</div>
+            <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;font-family:'Inter',sans-serif;display:inline-block;background:#f77614;color:#fff;">↑ EM TEMPO REAL</div>
+            <div class="mini-bars" style="display:flex;align-items:flex-end;gap:3px;height:22px;margin-top:12px;transition:opacity .25s;">${miniBars}</div>
+          </div>
+          <div class="top5-list" style="max-height:0;overflow:hidden;transition:max-height .35s ease;">
+            <div style="padding:8px 14px 12px;border-top:1px solid #1a1a1a;">${listRows}</div>
+          </div>
+        </div>
         <div style="background:#1a1a1a;border-radius:10px;overflow:hidden;border:1px solid #222;"><div style="height:3px;background:#252525;"></div><div style="padding:12px 14px 14px;"><div style="font-size:10px;color:#555;margin-bottom:6px;font-family:'Inter',sans-serif;">Projeção</div><div style="font-size:26px;font-weight:700;color:#fff;margin-bottom:8px;letter-spacing:-1px;font-family:'IBM Plex Mono',monospace;">${fmt(d.projecaoDia)}</div><div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;font-family:'Inter',sans-serif;display:inline-block;background:#222;color:#555;">${percDia}% DO DIA</div></div></div>
         <div style="background:#1a1a1a;border-radius:10px;overflow:hidden;border:1px solid #222;"><div style="height:3px;background:#252525;"></div><div style="padding:12px 14px 14px;"><div style="font-size:10px;color:#555;margin-bottom:6px;font-family:'Inter',sans-serif;">Mês atual</div><div style="font-size:26px;font-weight:700;color:#fff;margin-bottom:8px;letter-spacing:-1px;font-family:'IBM Plex Mono',monospace;">${fmt(d.fatMes)}</div><div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;font-family:'Inter',sans-serif;display:inline-block;background:#f77614;color:#fff;">${d.pedidosMes} PEDIDOS</div></div></div>
       </div>
-      <div style="background:#1e1e1e;border-radius:99px;height:3px;margin-bottom:20px;"><div style="height:3px;border-radius:99px;background:#f77614;width:${percDia}%;"></div></div>
-      <div style="font-size:10px;color:#555;font-family:'Inter',sans-serif;margin-bottom:10px;padding-top:14px;border-top:1px solid #1e1e1e;">Mais vendidos hoje</div>
-      ${(d.top5hoje||[]).map((p,i) => `<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #1e1e1e;"><div style="font-size:10px;color:#333;width:14px;text-align:center;flex-shrink:0;">${i+1}</div><div style="font-size:11px;color:#888;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.sku||"—"}</div><div style="padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;font-family:'Inter',sans-serif;background:#1e1e1e;color:#555;">${p.qty} un</div><div style="width:40px;height:2px;background:#222;border-radius:2px;flex-shrink:0;"><div style="height:2px;border-radius:2px;background:#f77614;width:${i===0?100:Math.round((p.revenue/(d.top5hoje[0]?.revenue||1))*100)}%;"></div></div><div style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;font-family:'Inter',sans-serif;background:#f77614;color:#fff;flex-shrink:0;">${fmt(p.revenue||0)}</div></div>`).join("")}
+      <div style="background:#1e1e1e;border-radius:99px;height:3px;margin-bottom:8px;"><div style="height:3px;border-radius:99px;background:#f77614;width:${percDia}%;"></div></div>
     `;
   }
 
