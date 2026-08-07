@@ -838,48 +838,93 @@ function renderDashboard(panel, color) {
   const importantes = ownTasks.filter(t => t.prio === "importante").length;
   const normais = ownTasks.filter(t => t.prio === "normal" || !t.prio).length;
   const concluidas = tasksFor("Diogo").filter(t => t.done).length;
-  const taskCard = document.createElement("div");
-  taskCard.style.cssText = "background:linear-gradient(180deg,#252525 0%,#101010 100%);border:1px solid #303030;border-radius:14px;padding:16px;";
-  taskCard.innerHTML = `
-    <div style="font-size:11px;font-weight:500;color:#888;font-family:'Inter',sans-serif;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;">Minhas tarefas</div>
-    ${[
-      {label:"Urgente", count:urgentes, color:"#e91e8c"},
-      {label:"Importante", count:importantes, color:"#f0b400"},
-      {label:"Normal", count:normais, color:GREEN},
-      {label:"Concluídas", count:concluidas, color:GREEN, opacity:"0.5"},
-    ].map(t => `<div onclick="window._diogotab='tarefas';render();" style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:linear-gradient(90deg,${t.color}0a 0%,transparent 50%);border:1px solid ${t.color}22;border-radius:10px;margin-bottom:6px;cursor:pointer;opacity:${t.opacity||1};transition:filter .15s;"><div style="width:8px;height:8px;border-radius:50%;background:${t.color};flex-shrink:0;"></div><div style="font-size:12px;font-weight:500;color:#fff;flex:1;">${t.label}</div><div style="font-size:26px;font-weight:700;color:${t.color};font-family:'IBM Plex Mono',monospace;letter-spacing:-1px;">${t.count}</div><div style="font-size:14px;color:#444;">›</div></div>`).join("")}
-  `;
-  grid.appendChild(taskCard);
-
   // Estoque — buscar se não carregado
   if(!estoqueExcelData && !estoqueAutoLoading) fetchEstoqueAutomatico();
   if(!estoqueBlingData && !estoqueBlingLoading && tokenValido(state.bling_token)) fetchBlingProdutos();
 
-  const estoqueCard = document.createElement("div");
-  estoqueCard.style.cssText = "background:linear-gradient(180deg,#252525 0%,#101010 100%);border:1px solid #303030;border-radius:14px;padding:16px;";
   const estoqueRows = estoqueExcelData?.rows || [];
   const valorTotal = estoqueRows.reduce((s,r) => s + (Number(r.aptas||0) * (estoqueBlingData?.[normSku(r.sku)]||estoqueBlingData?.[r.sku]||0)), 0);
   const unidadesTotal = estoqueRows.reduce((s,r)=>s+Number(r.aptas||0),0);
-  // Expor para claude-chat.js
   window._dashEstoque = { valor: valorTotal.toFixed(0), unidades: unidadesTotal, criticos: estoqueRows.filter(r=>{ const v30=r.vendas30||0; const dias=v30>0?Math.round(r.aptas/(v30/30)):999; return dias<15&&r.aptas>0; }).map(r=>{ const v30=r.vendas30||0; const dias=v30>0?Math.round(r.aptas/(v30/30)):999; return `${r.sku}(${dias}d)`; }) };
   const criticos = estoqueRows.filter(r => {
     const v30 = r.vendas30||0;
     const dias = v30>0 ? Math.round(r.aptas/(v30/30)) : 999;
     return dias < 15 && r.aptas > 0;
-  }).slice(0,3);
-  const unidades = estoqueRows.reduce((s,r)=>s+Number(r.aptas||0),0);
-  estoqueCard.innerHTML = `
-    <div style="font-size:11px;font-weight:500;color:#888;font-family:'Inter',sans-serif;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;">Estoque Full · Filial SP</div>
-    <div style="font-size:38px;font-weight:700;color:#2dce89;margin-bottom:4px;letter-spacing:-2px;font-family:'IBM Plex Mono',monospace;">${fmtFull(valorTotal)}</div>
-    <div style="font-size:11px;color:#bbb;margin-bottom:14px;">${unidades} unidades · ${estoqueRows.length} SKUs</div>
-    ${criticos.length > 0 ? criticos.map(r => {
-      const v30 = r.vendas30||0;
-      const dias = v30>0 ? Math.round(r.aptas/(v30/30)) : 999;
-      const cor = dias <= 7 ? "#e91e8c" : "#f0b400";
-      return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg2);border-radius:8px;margin-bottom:5px;"><div style="width:7px;height:7px;border-radius:50%;background:${cor};flex-shrink:0;"></div><div style="font-size:11px;font-weight:600;color:#fff;flex:1;">${r.sku}</div><div style="font-size:12px;font-weight:700;color:${cor};">${dias}d</div></div>`;
-    }).join("") : `<div style="font-size:11px;color:#bbb;padding:10px 0;">Nenhum produto crítico ✓</div>`}
+  }).slice(0,4);
+  const alertasCount = criticos.length;
+
+  // Tarefas pendentes do Diogo para o drawer
+  const tarefasUrgentes = ownTasks.filter(t => t.prio === "urgente" || t.prio === "superurgente");
+  const tarefasImp = ownTasks.filter(t => t.prio === "importante");
+  const tarefasDrawerRows = [...tarefasUrgentes, ...tarefasImp].slice(0,6).map(t => {
+    const cor = (t.prio==="urgente"||t.prio==="superurgente") ? "#c0392b" : "#f77614";
+    const label = (t.prio==="urgente"||t.prio==="superurgente") ? "urgente" : "importante";
+    return `<div onclick="event.stopPropagation();window._diogotab='tarefas';render();" style="display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border-radius:6px;margin-bottom:3px;cursor:pointer;border:1px solid transparent;transition:background .12s,border-color .12s;" onmouseover="this.style.background='#141414';this.style.borderColor='#2a2a2a';this.querySelector('.tarr').style.opacity='1';this.querySelector('.tarr').style.color='#f77614';" onmouseout="this.style.background='';this.style.borderColor='transparent';this.querySelector('.tarr').style.opacity='0';this.querySelector('.tarr').style.color='#333';">
+      <div style="width:6px;height:6px;border-radius:50%;background:${cor};flex-shrink:0;margin-top:4px;"></div>
+      <div style="font-size:11px;color:#888;flex:1;line-height:1.4;">${t.text||t.title||"—"}</div>
+      <div style="font-size:9px;color:#555;background:#222;border-radius:4px;padding:2px 6px;white-space:nowrap;flex-shrink:0;">${label}</div>
+      <div class="tarr" style="font-size:10px;color:#333;opacity:0;transition:opacity .12s,color .12s;flex-shrink:0;">→</div>
+    </div>`;
+  }).join("");
+
+  const estDrawerRows = criticos.map(r => {
+    const v30 = r.vendas30||0;
+    const dias = v30>0 ? Math.round(r.aptas/(v30/30)) : 999;
+    const cor = dias <= 7 ? "#c0392b" : "#f0b400";
+    const pct = Math.min(100, Math.round((dias/30)*100));
+    return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #181818;">
+      <div style="width:6px;height:6px;border-radius:50%;background:${cor};flex-shrink:0;"></div>
+      <div style="font-size:10px;color:#777;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.sku}</div>
+      <div style="width:40px;height:2px;background:#222;border-radius:2px;flex-shrink:0;"><div style="height:2px;border-radius:2px;background:${cor};width:${pct}%;"></div></div>
+      <div style="font-size:10px;font-weight:700;color:${cor};font-family:'IBM Plex Mono',monospace;">${dias}d</div>
+    </div>`;
+  }).join("");
+
+  // Função toggle barra de status
+  window._sbarToggle = function(id) {
+    const drawer = document.getElementById('sbar-drawer-'+id);
+    const card   = document.getElementById('sbar-card-'+id);
+    const arr    = document.getElementById('sbar-arr-'+id);
+    if(!drawer) return;
+    const open = drawer.style.maxHeight === '0px' || !drawer.style.maxHeight;
+    drawer.style.maxHeight  = open ? '280px' : '0px';
+    drawer.style.borderTopWidth = open ? '1px' : '0px';
+    card.style.borderColor  = open ? '#f77614' : '#222';
+    arr.style.transform     = open ? 'rotate(180deg)' : '';
+    arr.style.color         = open ? '#f77614' : '#2e2e2e';
+  };
+
+  const statusBar = document.createElement("div");
+  statusBar.style.cssText = "grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;";
+  statusBar.innerHTML = `
+    <div id="sbar-card-tasks" onclick="window._sbarToggle('tasks')" style="background:#1a1a1a;border:1px solid #222;border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s;">
+      <div style="padding:9px 14px;display:flex;align-items:center;gap:14px;">
+        <div style="font-size:10px;color:#555;white-space:nowrap;">Tarefas</div>
+        <div style="display:flex;align-items:center;gap:8px;flex:1;">
+          <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#c0392b;"></div><div style="font-size:11px;font-weight:700;color:#c0392b;font-family:'IBM Plex Mono',monospace;">${urgentes}</div></div>
+          <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#f77614;"></div><div style="font-size:11px;font-weight:700;color:#f77614;font-family:'IBM Plex Mono',monospace;">${importantes}</div></div>
+          <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#333;"></div><div style="font-size:11px;font-weight:700;color:#444;font-family:'IBM Plex Mono',monospace;">${normais}</div></div>
+        </div>
+        <div id="sbar-arr-tasks" style="font-size:10px;color:#2e2e2e;transition:transform .2s,color .2s;">▾</div>
+      </div>
+      <div id="sbar-drawer-tasks" style="max-height:0;overflow:hidden;transition:max-height .3s ease;border-top:0px solid #1a1a1a;">
+        <div style="padding:8px 14px 10px;">${tarefasDrawerRows || '<div style="font-size:11px;color:#555;padding:6px 0;">Nenhuma tarefa pendente ✓</div>'}</div>
+      </div>
+    </div>
+    <div id="sbar-card-stock" onclick="window._sbarToggle('stock')" style="background:#1a1a1a;border:1px solid #222;border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s;">
+      <div style="padding:9px 14px;display:flex;align-items:center;gap:10px;">
+        <div style="font-size:10px;color:#555;white-space:nowrap;">Estoque Full · SP</div>
+        <div style="font-size:11px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">${fmtFull(valorTotal)}</div>
+        <div style="font-size:10px;color:#555;">${unidadesTotal} un</div>
+        ${alertasCount > 0 ? `<div style="margin-left:auto;display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#c0392b;"></div><div style="font-size:10px;color:#c0392b;">${alertasCount} alertas</div></div>` : `<div style="margin-left:auto;font-size:10px;color:#2dce89;">OK ✓</div>`}
+        <div id="sbar-arr-stock" style="font-size:10px;color:#2e2e2e;margin-left:8px;transition:transform .2s,color .2s;">▾</div>
+      </div>
+      <div id="sbar-drawer-stock" style="max-height:0;overflow:hidden;transition:max-height .3s ease;border-top:0px solid #1a1a1a;">
+        <div style="padding:8px 14px 10px;">${estDrawerRows || '<div style="font-size:11px;color:#555;padding:6px 0;">Nenhum produto crítico ✓</div>'}</div>
+      </div>
+    </div>
   `;
-  grid.appendChild(estoqueCard);
+  grid.appendChild(statusBar);
 
   // Calendário Fiscal
   const fiscalCard = document.createElement("div");
