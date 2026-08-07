@@ -732,14 +732,29 @@ function renderDashboard(panel, color) {
         <div style="width:32px;height:2px;background:#222;border-radius:2px;flex-shrink:0;"><div style="height:2px;border-radius:2px;background:#f77614;width:${i===0?100:Math.round((p.revenue/maxRev)*100)}%;"></div></div>
         <div style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;font-family:'Inter',sans-serif;background:#f77614;color:#fff;flex-shrink:0;">${fmt(p.revenue||0)}</div>
       </div>`).join('');
+    const ticketMedio = d.pedidosMes > 0 ? fmt(d.fatMes / d.pedidosMes) : 'R$ 0';
+    const rowStyle = 'display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1a1a1a;';
+    const lStyle = 'font-size:10px;color:#888;';
+    const vStyle = 'font-size:11px;font-weight:600;color:#fff;font-family:\'IBM Plex Mono\',monospace;';
+
+    const projRows = `
+      <div style="${rowStyle}"><div style="${lStyle}">Projeção do dia</div><div style="${vStyle}">${fmt(d.projecaoDia)}</div></div>
+      <div style="${rowStyle}"><div style="${lStyle}">% concluído</div><div style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;background:#222;color:#888;">${percDia}% DO DIA</div></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;"><div style="${lStyle}">Faturado hoje</div><div style="${vStyle}">${fmtFull(d.fatHoje)}</div></div>`;
+
+    const mesRows = `
+      <div style="${rowStyle}"><div style="${lStyle}">Pedidos no mês</div><div style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;background:#f77614;color:#fff;">${d.pedidosMes} PEDIDOS</div></div>
+      <div style="${rowStyle}"><div style="${lStyle}">Ticket médio</div><div style="${vStyle}">${ticketMedio}</div></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;"><div style="${lStyle}">Faturamento mês</div><div style="${vStyle}">${fmt(d.fatMes)}</div></div>`;
+
     return `
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;">
         <div id="vdc-0" onclick="window._vdcActivate(0)" style="background:linear-gradient(to top,#252525 0%,#000 100%);border-radius:10px;overflow:hidden;border:1px solid #333;cursor:pointer;transition:border-color .2s;">
-          <div id="vdc-top-0" style="height:3px;background:#f77614;transition:background .25s;"></div>
+          <div id="vdc-top-0" style="height:3px;background:#f77614;"></div>
           <div style="padding:12px 14px 13px;">
-            <div style="font-size:10px;color:#ffffff;margin-bottom:6px;font-family:'Inter',sans-serif;">Hoje</div>
+            <div style="font-size:10px;color:#ffffff;margin-bottom:6px;">Hoje</div>
             <div style="font-size:26px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">${fmtFull(d.fatHoje)}</div>
-            <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;font-family:'Inter',sans-serif;display:inline-block;background:#f77614;color:#fff;margin-top:8px;">↑ EM TEMPO REAL</div>
+            <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;display:inline-block;background:#f77614;color:#fff;margin-top:8px;">↑ EM TEMPO REAL</div>
             <div id="vdc-bars-0" style="display:flex;align-items:flex-end;gap:3px;height:22px;margin-top:12px;transition:opacity .25s;opacity:1;">${miniBars}</div>
           </div>
           <div id="vdc-list-0" style="max-height:0;overflow:hidden;transition:max-height .35s ease;">
@@ -747,19 +762,25 @@ function renderDashboard(panel, color) {
           </div>
         </div>
         <div id="vdc-1" onclick="window._vdcActivate(1)" style="background:linear-gradient(to top,#252525 0%,#000 100%);border-radius:10px;overflow:hidden;border:1px solid #333;cursor:pointer;transition:border-color .2s;">
-          <div id="vdc-top-1" style="height:3px;background:#f77614;transition:background .25s;"></div>
-          <div style="padding:12px 14px 14px;">
-            <div style="font-size:10px;color:#ffffff;margin-bottom:6px;font-family:'Inter',sans-serif;">Projeção</div>
+          <div id="vdc-top-1" style="height:3px;background:#f77614;"></div>
+          <div style="padding:12px 14px 13px;">
+            <div style="font-size:10px;color:#ffffff;margin-bottom:6px;">Projeção</div>
             <div style="font-size:26px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">${fmt(d.projecaoDia)}</div>
-            <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;font-family:'Inter',sans-serif;display:inline-block;background:#222;color:#555;margin-top:8px;">${percDia}% DO DIA</div>
+            <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;display:inline-block;background:#222;color:#888;margin-top:8px;">${percDia}% DO DIA</div>
+          </div>
+          <div id="vdc-list-1" style="max-height:0;overflow:hidden;transition:max-height .35s ease;">
+            <div style="padding:8px 14px 12px;border-top:1px solid #1a1a1a;">${projRows}</div>
           </div>
         </div>
         <div id="vdc-2" onclick="window._vdcActivate(2)" style="background:linear-gradient(to top,#252525 0%,#000 100%);border-radius:10px;overflow:hidden;border:1px solid #333;cursor:pointer;transition:border-color .2s;">
-          <div id="vdc-top-2" style="height:3px;background:#f77614;transition:background .25s;"></div>
-          <div style="padding:12px 14px 14px;">
-            <div style="font-size:10px;color:#ffffff;margin-bottom:6px;font-family:'Inter',sans-serif;">Mês atual</div>
+          <div id="vdc-top-2" style="height:3px;background:#f77614;"></div>
+          <div style="padding:12px 14px 13px;">
+            <div style="font-size:10px;color:#ffffff;margin-bottom:6px;">Mês atual</div>
             <div style="font-size:26px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">${fmt(d.fatMes)}</div>
-            <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;font-family:'Inter',sans-serif;display:inline-block;background:#f77614;color:#fff;margin-top:8px;">${d.pedidosMes} PEDIDOS</div>
+            <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;display:inline-block;background:#f77614;color:#fff;margin-top:8px;">${d.pedidosMes} PEDIDOS</div>
+          </div>
+          <div id="vdc-list-2" style="max-height:0;overflow:hidden;transition:max-height .35s ease;">
+            <div style="padding:8px 14px 12px;border-top:1px solid #1a1a1a;">${mesRows}</div>
           </div>
         </div>
       </div>
@@ -773,21 +794,21 @@ function renderDashboard(panel, color) {
     var _cur = -1;
     var _open = false;
     window._vdcActivate = function(n) {
-      // Fechar sempre a lista do card 0
-      var pl = document.getElementById('vdc-list-0');
-      var pb = document.getElementById('vdc-bars-0');
-      if(pl) pl.style.maxHeight = '0';
-      if(pb) pb.style.opacity = '1';
-      // Se clicou no card 0, toggle a lista
-      if(n === 0) {
-        var isSame = (_cur === 0 && _open);
-        if(isSame){ _cur=-1; _open=false; return; }
-        _cur=0; _open=true;
-        if(pl) pl.style.maxHeight = '260px';
-        if(pb) pb.style.opacity = '0';
-      } else {
-        _cur = n; _open = false;
-      }
+      var isSame = (_cur === n && _open);
+      // Fechar todos
+      [0,1,2].forEach(function(i) {
+        var l = document.getElementById('vdc-list-'+i);
+        var b = document.getElementById('vdc-bars-'+i);
+        if(l) l.style.maxHeight = '0';
+        if(b) b.style.opacity = '1';
+      });
+      if(isSame){ _cur=-1; _open=false; return; }
+      // Abrir o clicado
+      _cur=n; _open=true;
+      var nl = document.getElementById('vdc-list-'+n);
+      var nb = document.getElementById('vdc-bars-'+n);
+      if(nl) nl.style.maxHeight = '280px';
+      if(nb) nb.style.opacity = '0';
     };
   })();
 
