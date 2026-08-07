@@ -716,7 +716,7 @@ function renderDashboard(panel, color) {
 
   // Vendas ML com abas Filial/Matriz
   const vendasCard = document.createElement("div");
-  vendasCard.style.cssText = "background:linear-gradient(180deg,#252525 0%,#101010 100%);border:1px solid #303030;border-radius:16px;overflow:hidden;grid-column:1/-1;";
+  vendasCard.style.cssText = "grid-column:1/-1;";
   function vendasTabContent(d, percDia) {
     if(!d) return `<div style="text-align:center;padding:20px;color:var(--text3);font-size:11px;">Token não conectado</div>`;
     const top5 = d.top5hoje || [];
@@ -733,23 +733,56 @@ function renderDashboard(panel, color) {
         <div style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;font-family:'Inter',sans-serif;background:#f77614;color:#fff;flex-shrink:0;">${fmt(p.revenue||0)}</div>
       </div>`).join('');
     return `
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;">
-        <div onclick="(function(el){const list=el.querySelector('.top5-list');const bars=el.querySelector('.mini-bars');const open=list.style.maxHeight==='260px';list.style.maxHeight=open?'0':'260px';list.style.overflow='hidden';bars.style.opacity=open?'1':'0';})(this)" style="background:#1a1a1a;border-radius:10px;overflow:hidden;border:1px solid #222;cursor:pointer;">
-          <div style="height:3px;background:#f77614;"></div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;">
+        <div id="vdc-0" onclick="window._vdcActivate(0)" style="background:#1a1a1a;border-radius:10px;overflow:hidden;border:1px solid #222;cursor:pointer;transition:border-color .2s;">
+          <div id="vdc-top-0" style="height:3px;background:#f77614;transition:background .25s;"></div>
           <div style="padding:12px 14px 13px;">
             <div style="font-size:10px;color:#555;margin-bottom:6px;font-family:'Inter',sans-serif;">Hoje</div>
-            <div style="font-size:26px;font-weight:700;color:#fff;margin-bottom:8px;letter-spacing:-1px;font-family:'IBM Plex Mono',monospace;">${fmtFull(d.fatHoje)}</div>
-            <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;font-family:'Inter',sans-serif;display:inline-block;background:#f77614;color:#fff;">↑ EM TEMPO REAL</div>
-            <div class="mini-bars" style="display:flex;align-items:flex-end;gap:3px;height:22px;margin-top:12px;transition:opacity .25s;">${miniBars}</div>
+            <div style="font-size:26px;font-weight:700;color:#fff;letter-spacing:-1px;font-family:'IBM Plex Mono',monospace;">${fmtFull(d.fatHoje)}</div>
+            <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;font-family:'Inter',sans-serif;display:inline-block;background:#f77614;color:#fff;margin-top:8px;">↑ EM TEMPO REAL</div>
+            <div id="vdc-bars-0" style="display:flex;align-items:flex-end;gap:3px;height:22px;margin-top:12px;transition:opacity .25s;opacity:0;">${miniBars}</div>
           </div>
-          <div class="top5-list" style="max-height:0;overflow:hidden;transition:max-height .35s ease;">
+          <div id="vdc-list-0" style="max-height:260px;overflow:hidden;transition:max-height .35s ease;">
             <div style="padding:8px 14px 12px;border-top:1px solid #1a1a1a;">${listRows}</div>
           </div>
         </div>
-        <div style="background:#1a1a1a;border-radius:10px;overflow:hidden;border:1px solid #222;"><div style="height:3px;background:#252525;"></div><div style="padding:12px 14px 14px;"><div style="font-size:10px;color:#555;margin-bottom:6px;font-family:'Inter',sans-serif;">Projeção</div><div style="font-size:26px;font-weight:700;color:#fff;margin-bottom:8px;letter-spacing:-1px;font-family:'IBM Plex Mono',monospace;">${fmt(d.projecaoDia)}</div><div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;font-family:'Inter',sans-serif;display:inline-block;background:#222;color:#555;">${percDia}% DO DIA</div></div></div>
-        <div style="background:#1a1a1a;border-radius:10px;overflow:hidden;border:1px solid #222;"><div style="height:3px;background:#252525;"></div><div style="padding:12px 14px 14px;"><div style="font-size:10px;color:#555;margin-bottom:6px;font-family:'Inter',sans-serif;">Mês atual</div><div style="font-size:26px;font-weight:700;color:#fff;margin-bottom:8px;letter-spacing:-1px;font-family:'IBM Plex Mono',monospace;">${fmt(d.fatMes)}</div><div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;font-family:'Inter',sans-serif;display:inline-block;background:#f77614;color:#fff;">${d.pedidosMes} PEDIDOS</div></div></div>
+        <div id="vdc-1" onclick="window._vdcActivate(1)" style="background:#1a1a1a;border-radius:10px;overflow:hidden;border:1px solid #222;cursor:pointer;transition:border-color .2s;">
+          <div id="vdc-top-1" style="height:3px;background:#222;transition:background .25s;"></div>
+          <div style="padding:12px 14px 14px;">
+            <div style="font-size:10px;color:#555;margin-bottom:6px;font-family:'Inter',sans-serif;">Projeção</div>
+            <div style="font-size:26px;font-weight:700;color:#fff;letter-spacing:-1px;font-family:'IBM Plex Mono',monospace;">${fmt(d.projecaoDia)}</div>
+            <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;font-family:'Inter',sans-serif;display:inline-block;background:#222;color:#555;margin-top:8px;">${percDia}% DO DIA</div>
+          </div>
+        </div>
+        <div id="vdc-2" onclick="window._vdcActivate(2)" style="background:#1a1a1a;border-radius:10px;overflow:hidden;border:1px solid #222;cursor:pointer;transition:border-color .2s;">
+          <div id="vdc-top-2" style="height:3px;background:#222;transition:background .25s;"></div>
+          <div style="padding:12px 14px 14px;">
+            <div style="font-size:10px;color:#555;margin-bottom:6px;font-family:'Inter',sans-serif;">Mês atual</div>
+            <div style="font-size:26px;font-weight:700;color:#fff;letter-spacing:-1px;font-family:'IBM Plex Mono',monospace;">${fmt(d.fatMes)}</div>
+            <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;font-family:'Inter',sans-serif;display:inline-block;background:#f77614;color:#fff;margin-top:8px;">${d.pedidosMes} PEDIDOS</div>
+          </div>
+        </div>
       </div>
       <div style="background:#1e1e1e;border-radius:99px;height:3px;margin-bottom:8px;"><div style="height:3px;border-radius:99px;background:#f77614;width:${percDia}%;"></div></div>
+      <script>
+      (function(){
+        var cur = 0;
+        window._vdcActivate = function(n) {
+          document.getElementById('vdc-top-'+cur).style.background = '#222';
+          var prevList = document.getElementById('vdc-list-'+cur);
+          var prevBars = document.getElementById('vdc-bars-'+cur);
+          if(prevList){ prevList.style.maxHeight='0'; }
+          if(prevBars){ prevBars.style.opacity='0.2'; }
+          if(cur === n){ cur=-1; return; }
+          cur = n;
+          document.getElementById('vdc-top-'+n).style.background = '#f77614';
+          var nextList = document.getElementById('vdc-list-'+n);
+          var nextBars = document.getElementById('vdc-bars-'+n);
+          if(nextList){ nextList.style.maxHeight='260px'; }
+          if(nextBars){ nextBars.style.opacity='0'; }
+        };
+      })();
+      <\/script>
     `;
   }
 
@@ -772,16 +805,14 @@ function renderDashboard(panel, color) {
   }
 
   vendasCard.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 16px 0;">
-      <div style="font-size:11px;font-weight:500;color:#ffffff;font-family:'Inter',sans-serif;">Vendas Mercado Livre</div>
-    </div>
-    <div style="padding:12px 16px 14px;">
-      <div style="display:inline-flex;background:#1a1a1a;border-radius:8px;padding:3px;gap:2px;">
-        <div id="dash-aba-filial" onclick="window._vendasAba='filial';window.renderVendasAba();" style="padding:7px 18px;font-size:11px;font-weight:600;cursor:pointer;border-radius:8px;font-family:'Inter',sans-serif;color:#ffffff;background:var(--bg2);box-shadow:0 1px 4px rgba(0,0,0,.4);white-space:nowrap;">Filial SP</div>
-        <div id="dash-aba-matriz" onclick="window._vendasAba='matriz';window.renderVendasAba();" style="padding:7px 18px;font-size:11px;font-weight:600;cursor:pointer;border-radius:8px;font-family:'Inter',sans-serif;color:#ffffff;white-space:nowrap;">${dashData.matriz ? "Matriz RS" : "Matriz (desconectado)"}</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+      <div style="font-size:10px;color:#555;font-family:'Inter',sans-serif;">Vendas Mercado Livre</div>
+      <div style="display:inline-flex;background:#161616;border-radius:6px;padding:2px;gap:1px;">
+        <div id="dash-aba-filial" onclick="window._vendasAba='filial';window.renderVendasAba();" style="padding:4px 12px;font-size:10px;font-weight:600;cursor:pointer;border-radius:5px;font-family:'Inter',sans-serif;color:#ffffff;background:#2a2a2a;white-space:nowrap;">Filial SP</div>
+        <div id="dash-aba-matriz" onclick="window._vendasAba='matriz';window.renderVendasAba();" style="padding:4px 12px;font-size:10px;font-weight:600;cursor:pointer;border-radius:5px;font-family:'Inter',sans-serif;color:#555;white-space:nowrap;">${dashData.matriz ? "Matriz RS" : "Matriz (desconectado)"}</div>
       </div>
     </div>
-    <div id="dash-vendas-body" style="padding:0 16px 16px;"></div>
+    <div id="dash-vendas-body"></div>
   `;
 
   // Expor função globalmente para os onclick
