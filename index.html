@@ -726,8 +726,8 @@ function renderDashboard(panel, color) {
     ).join('');
     const listRows = top5.map((p,i) => `
       <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #1a1a1a;">
-        <div style="font-size:9px;color:#2e2e2e;width:10px;flex-shrink:0;">${i+1}</div>
-        <div style="font-size:10px;color:#ccc;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.sku||"—"}</div>
+        <div style="font-size:9px;color:#888;width:10px;flex-shrink:0;">${i+1}</div>
+        <div style="font-size:10px;color:#fff;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.sku||"—"}</div>
         <div style="font-size:9px;color:#888;flex-shrink:0;">${p.qty} un</div>
         <div style="width:32px;height:2px;background:#222;border-radius:2px;flex-shrink:0;"><div style="height:2px;border-radius:2px;background:#f77614;width:${i===0?100:Math.round((p.revenue/maxRev)*100)}%;"></div></div>
         <div style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;font-family:'Inter',sans-serif;background:#f77614;color:#fff;flex-shrink:0;">${fmt(p.revenue||0)}</div>
