@@ -859,7 +859,7 @@ function renderDashboard(panel, color) {
   const tarefasDrawerRows = [...tarefasUrgentes, ...tarefasImp].slice(0,6).map(t => {
     const cor = (t.prio==="urgente"||t.prio==="superurgente") ? "#c0392b" : "#f77614";
     const label = (t.prio==="urgente"||t.prio==="superurgente") ? "urgente" : "importante";
-    return `<div onclick="event.stopPropagation();window._diogotab='tarefas';render();" style="display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border-radius:6px;margin-bottom:3px;cursor:pointer;border:1px solid transparent;transition:background .12s,border-color .12s;" onmouseover="this.style.background='#141414';this.style.borderColor='#2a2a2a';this.querySelector('.tarr').style.opacity='1';this.querySelector('.tarr').style.color='#f77614';" onmouseout="this.style.background='';this.style.borderColor='transparent';this.querySelector('.tarr').style.opacity='0';this.querySelector('.tarr').style.color='#333';">
+    return `<div onclick="window._sbarNavTask(event)" style="display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border-radius:6px;margin-bottom:3px;cursor:pointer;border:1px solid transparent;transition:background .12s,border-color .12s;" onmouseover="this.style.background='#141414';this.style.borderColor='#2a2a2a';this.querySelector('.tarr').style.opacity='1';this.querySelector('.tarr').style.color='#f77614';" onmouseout="this.style.background='';this.style.borderColor='transparent';this.querySelector('.tarr').style.opacity='0';this.querySelector('.tarr').style.color='#333';">
       <div style="width:6px;height:6px;border-radius:50%;background:${cor};flex-shrink:0;margin-top:4px;"></div>
       <div style="font-size:11px;color:#888;flex:1;line-height:1.4;">${t.text||t.title||"—"}</div>
       <div style="font-size:9px;color:#555;background:#222;border-radius:4px;padding:2px 6px;white-space:nowrap;flex-shrink:0;">${label}</div>
@@ -881,6 +881,11 @@ function renderDashboard(panel, color) {
   }).join("");
 
   // Função toggle barra de status
+  window._sbarNavTask = function(e) {
+    e.stopPropagation();
+    window._diogotab = 'tarefas';
+    render();
+  };
   window._sbarToggle = function(id) {
     const drawer = document.getElementById('sbar-drawer-'+id);
     const card   = document.getElementById('sbar-card-'+id);
@@ -895,7 +900,7 @@ function renderDashboard(panel, color) {
   };
 
   const statusBar = document.createElement("div");
-  statusBar.style.cssText = "grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;";
+  statusBar.style.cssText = "grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px;";
   statusBar.innerHTML = `
     <div id="sbar-card-tasks" onclick="window._sbarToggle('tasks')" style="background:#1a1a1a;border:1px solid #222;border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s;">
       <div style="padding:9px 14px;display:flex;align-items:center;gap:14px;">
