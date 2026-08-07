@@ -6219,7 +6219,7 @@ async function renderConferencia(panel, color) {
     lbl.style.cssText = "font-size:8px;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;margin-bottom:8px;font-weight:500;";
     lbl.textContent = label;
     const val = document.createElement("div");
-    val.style.cssText = `font-size:18px;font-weight:700;color:${cor};letter-spacing:-0.5px;`;
+    val.style.cssText = `font-size:18px;font-weight:700;color:#fff;letter-spacing:-0.5px;`;
     val.textContent = "R$ "+valor.toLocaleString("pt-BR",{minimumFractionDigits:2});
     const cnt = document.createElement("div");
     cnt.style.cssText = "font-size:11px;color:var(--text3);margin-top:4px;";
@@ -6228,9 +6228,9 @@ async function renderConferencia(panel, color) {
     return c;
   }
 
-  summary.appendChild(sumCard("Total do mês", totalGeral, "#ffffff88", `${servicosFiltrados.length + impostosFiltrados.length} documentos`));
-  summary.appendChild(sumCard("Serviços", totalServicos, "#5e72e4", `${servicosFiltrados.length} notas`));
-  summary.appendChild(sumCard("Impostos", totalImpostos, "#e91e8c", `${impostosFiltrados.length} guias`));
+  summary.appendChild(sumCard("Total do mês", totalGeral, "#f77614", `${servicosFiltrados.length + impostosFiltrados.length} documentos`));
+  summary.appendChild(sumCard("Serviços", totalServicos, "#f77614", `${servicosFiltrados.length} notas`));
+  summary.appendChild(sumCard("Impostos", totalImpostos, "#f77614", `${impostosFiltrados.length} guias`));
   panel.appendChild(summary);
 
   // Filtros dinâmicos de tipo de imposto
@@ -6247,7 +6247,7 @@ async function renderConferencia(panel, color) {
       const btn = document.createElement("button");
       btn.textContent = tipo;
       const ativo = confFiltroTipo === tipo;
-      btn.style.cssText = `background:${ativo?"#e91e8c":"none"};border:0.5px solid ${ativo?"#e91e8c":"#e91e8c44"};border-radius:99px;color:${ativo?"#000":"#e91e8c"};font-size:11px;font-weight:${ativo?"700":"400"};letter-spacing:1px;padding:4px 12px;cursor:pointer;font-family:inherit;`;
+      btn.style.cssText = `background:${ativo?"#f77614":"none"};border:0.5px solid ${ativo?"#f77614":"#f7761444"};border-radius:99px;color:${ativo?"#fff":"#f77614"};font-size:11px;font-weight:${ativo?"700":"400"};letter-spacing:1px;padding:4px 12px;cursor:pointer;font-family:inherit;`;
       btn.addEventListener("click", () => { confFiltroTipo = tipo; renderConferencia(panel, color); });
       filtrosWrap.appendChild(btn);
     });
