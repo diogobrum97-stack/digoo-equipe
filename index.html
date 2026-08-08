@@ -1003,15 +1003,15 @@ function renderDashboard(panel, color) {
     expCard.style.cssText = "background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:14px;padding:16px;grid-column:1/-1;margin-top:14px;";
     expCard.innerHTML = (() => {
       const prob  = dashExperiencia.problemas.length;
-      const probRed    = dashExperiencia.problemas.filter(p => p.color === 'red').length;
-      const probOrange = dashExperiencia.problemas.filter(p => p.color === 'orange').length;
+      const probRed = dashExperiencia.problemas.filter(p => p.color === 'red').length;
+      const probReg = dashExperiencia.problemas.filter(p => p.color !== 'red').length;
       const total = dashExperiencia.todos || 1;
       const ok    = total - prob;
       const circ  = 2 * Math.PI * 42;
 
       // Guardar detalhes globalmente para o toggle
       window._expDetailsCache = dashExperiencia.problemas.map((p,i)=>{
-        const cor=p.color==='red'?'#e8432d':p.color==='orange'?'#f97316':'#f0b400';
+        const cor=p.color==='red'?'#e8432d':'#f0b400';
         const nome=p.title||p.sku||'';
         const detRows=(p.detalhes&&p.detalhes.length)
           ?p.detalhes.map(d=>{const qtd=d.quantidade?' <span style="color:'+cor+';font-weight:600;">'+d.quantidade+'x</span>':'';return'<div style="padding:8px 0;border-bottom:1px solid #1e1e1e;">'+(d.tipo?'<div style="font-size:11px;color:#666;">'+d.tipo+qtd+'</div>':'')+(d.descricao?'<div style="font-size:11px;font-weight:600;color:#fff;margin:3px 0;">'+d.descricao+'</div>':'')+(d.comoMelhorar?'<div style="font-size:11px;color:#2dce89;">→ '+d.comoMelhorar+'</div>':'')+'</div>';}).join('')
@@ -1032,10 +1032,10 @@ function renderDashboard(panel, color) {
       };
 
       const items = dashExperiencia.problemas.map((p, i) => {
-        const cor   = p.color === 'red' ? '#e8432d' : p.color === 'orange' ? '#f97316' : '#f0b400';
+        const cor   = p.color === 'red' ? '#e8432d' : '#f0b400';
         const score = p.value || 0;
         const dash  = ((score / 100) * circ).toFixed(1);
-        const label = p.level || (p.color === 'red' ? 'Ruim' : p.color === 'orange' ? 'Com problemas' : 'Regular');
+        const label = p.color === 'red' ? 'Ruim' : 'Regular';
         const nome  = (p.title || p.sku || '');
         const nomeShort = nome.length > 40 ? nome.slice(0,40)+'\u2026' : nome;
 
@@ -1088,9 +1088,12 @@ function renderDashboard(panel, color) {
         return cardHTML;
       }).join('');
 
-      return '<div style="font-size:12px;font-weight:500;color:#888;font-family:Inter,sans-serif;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;display:flex;align-items:center;justify-content:space-between;">'
+      return '<div style="font-size:12px;font-weight:500;color:#ffffff;font-family:Inter,sans-serif;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;display:flex;align-items:center;justify-content:space-between;">'
         + 'Experi\u00eancia de compra \u00b7 Filial SP'
-        + (probRed > 0 ? '<span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;font-family:Inter,sans-serif;background:rgba(232,67,45,.12);color:#e8432d;border:1px solid rgba(232,67,45,.25);">'+probRed+' ruim</span>' : '')+(probOrange > 0 ? '<span style="margin-left:4px;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;font-family:Inter,sans-serif;background:rgba(249,115,22,.12);color:#f97316;border:1px solid rgba(249,115,22,.25);">'+probOrange+' com problema</span>' : '')
+        + '<div style="display:flex;align-items:center;gap:6px;">'
+        + (probRed > 0 ? '<span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;font-family:Inter,sans-serif;background:rgba(232,67,45,.12);color:#e8432d;border:1px solid rgba(232,67,45,.25);">'+probRed+' ruim</span>' : '')
+        + (probReg > 0 ? '<span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;font-family:Inter,sans-serif;background:rgba(240,180,0,.12);color:#f0b400;border:1px solid rgba(240,180,0,.25);">'+probReg+' regular</span>' : '')
+        + '</div>'
         + '</div>'
         + '<div style="display:flex;flex-wrap:wrap;gap:8px;">'
         + items
