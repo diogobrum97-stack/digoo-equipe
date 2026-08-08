@@ -1011,7 +1011,7 @@ function renderDashboard(panel, color) {
 
       // Guardar detalhes globalmente para o toggle
       window._expDetailsCache = dashExperiencia.problemas.map((p,i)=>{
-        const cor=p.color==='red'?'#e8432d':'#f0b400';
+        const cor=p.color==='red'?'#e8432d':'#f77614';
         const nome=p.title||p.sku||'';
         const detRows=(p.detalhes&&p.detalhes.length)
           ?p.detalhes.map(d=>{const qtd=d.quantidade?' <span style="color:'+cor+';font-weight:600;">'+d.quantidade+'x</span>':'';return'<div style="padding:8px 0;border-bottom:1px solid #1e1e1e;">'+(d.tipo?'<div style="font-size:11px;color:#666;">'+d.tipo+qtd+'</div>':'')+(d.descricao?'<div style="font-size:11px;font-weight:600;color:#fff;margin:3px 0;">'+d.descricao+'</div>':'')+(d.comoMelhorar?'<div style="font-size:11px;color:#2dce89;">→ '+d.comoMelhorar+'</div>':'')+'</div>';}).join('')
@@ -1092,7 +1092,7 @@ function renderDashboard(panel, color) {
         + 'Experi\u00eancia de compra \u00b7 Filial SP'
         + '<div style="display:flex;align-items:center;gap:6px;">'
         + (probRed > 0 ? '<span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;font-family:Inter,sans-serif;background:rgba(232,67,45,.12);color:#e8432d;border:1px solid rgba(232,67,45,.25);">'+probRed+' ruim</span>' : '')
-        + (probReg > 0 ? '<span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;font-family:Inter,sans-serif;background:rgba(240,180,0,.12);color:#f0b400;border:1px solid rgba(240,180,0,.25);">'+probReg+' regular</span>' : '')
+        + (probReg > 0 ? '<span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;font-family:Inter,sans-serif;background:rgba(247,118,20,.12);color:#f77614;border:1px solid rgba(247,118,20,.25);">'+probReg+' regular</span>' : '')
         + '</div>'
         + '</div>'
         + '<div style="display:flex;flex-wrap:wrap;gap:8px;">'
