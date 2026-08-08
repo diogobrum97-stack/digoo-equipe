@@ -1032,7 +1032,7 @@ function renderDashboard(panel, color) {
       };
 
       const items = dashExperiencia.problemas.map((p, i) => {
-        const cor   = p.color === 'red' ? '#e8432d' : '#f0b400';
+        const cor   = p.color === 'red' ? '#e8432d' : '#f77614';
         const score = p.value || 0;
         const dash  = ((score / 100) * circ).toFixed(1);
         const label = p.color === 'red' ? 'Ruim' : 'Regular';
