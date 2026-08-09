@@ -715,7 +715,7 @@ function renderClonarTab(container) {
 
   if (clonarState.erro) {
     const errBox = document.createElement("div");
-    errBox.style.cssText = "background:#2a1000;border:1px solid #4a2010;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:11px;color:#f0a060;";
+    errBox.style.cssText = "background:#2a1000;border:1px solid #4a2010;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:11px;color:#f0a060;white-space:pre-wrap;line-height:1.5;";
     errBox.textContent = clonarState.erro;
     wrap.appendChild(errBox);
   }
@@ -859,7 +859,11 @@ function renderClonarTab(container) {
       const data = await r.json();
       clonarState.clonando = false;
       if (!data.ok) {
-        clonarState.erro = data.error || "Erro ao clonar o anúncio.";
+        let msg = data.error || "Erro ao clonar o anúncio.";
+        if (data.detalhes && data.detalhes.length) {
+          msg += "\n\nCampos faltando: " + data.detalhes.map(d => d.references?.join(", ") || d.message || d.code).join(" · ");
+        }
+        clonarState.erro = msg;
       } else {
         clonarState.resultado = data;
       }
