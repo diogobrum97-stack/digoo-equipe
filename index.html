@@ -665,6 +665,213 @@ async function fetchDashboard() {
 
 let expPageFiltro = "todos"; // todos | ruim | regular
 
+let clonarState = { itemBusca: "", contaOrigem: "matriz", itemEncontrado: null, buscando: false, clonando: false, resultado: null, erro: null, novoSku: "", novaQuantidade: "" };
+
+function extrairItemId(texto) {
+  if (!texto) return "";
+  const t = texto.trim();
+  // Aceita ID direto (MLB123456789) ou link completo
+  const matchId = t.match(/MLB-?\d{9,}/i);
+  if (matchId) return matchId[0].replace("-", "").toUpperCase();
+  return t.toUpperCase();
+}
+
+function renderClonarTab(container) {
+  container.innerHTML = "";
+
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "max-width:720px;";
+
+  // Título
+  const header = document.createElement("div");
+  header.style.cssText = "margin-bottom:20px;";
+  header.innerHTML = `
+    <div style="font-size:16px;font-weight:700;color:#fff;">Clonar anúncio</div>
+    <div style="font-size:11px;color:#666;margin-top:2px;">Copia título, categoria, ficha técnica, fotos, SKU, preço e estoque para a outra conta.</div>
+  `;
+  wrap.appendChild(header);
+
+  // Card de busca
+  const buscaCard = document.createElement("div");
+  buscaCard.style.cssText = "background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:10px;padding:16px;margin-bottom:16px;";
+  buscaCard.innerHTML = `
+    <div style="font-size:11px;color:#888;margin-bottom:8px;">ID ou link do anúncio de origem</div>
+    <input id="clonar-input-id" type="text" placeholder="Ex: MLB4718893383 ou link do ML" value="${clonarState.itemBusca}"
+      style="width:100%;background:#111;border:1px solid #333;border-radius:6px;padding:9px 12px;color:#fff;font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;margin-bottom:12px;">
+    <div style="font-size:11px;color:#888;margin-bottom:8px;">Conta de origem</div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <button id="clonar-origem-matriz" style="flex:1;padding:9px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid ${clonarState.contaOrigem==='matriz'?'#f77614':'#333'};background:${clonarState.contaOrigem==='matriz'?'#f77614':'#111'};color:${clonarState.contaOrigem==='matriz'?'#fff':'#888'};">Matriz RS</button>
+      <button id="clonar-origem-filial" style="flex:1;padding:9px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid ${clonarState.contaOrigem==='filial'?'#f77614':'#333'};background:${clonarState.contaOrigem==='filial'?'#f77614':'#111'};color:${clonarState.contaOrigem==='filial'?'#fff':'#888'};">Filial SP</button>
+    </div>
+    <button id="clonar-btn-buscar" style="width:100%;padding:10px;border-radius:6px;background:#f77614;border:none;color:#fff;font-size:12px;font-weight:600;cursor:pointer;">${clonarState.buscando ? "Buscando..." : "Buscar anúncio"}</button>
+  `;
+  wrap.appendChild(buscaCard);
+
+  if (clonarState.erro) {
+    const errBox = document.createElement("div");
+    errBox.style.cssText = "background:#2a1000;border:1px solid #4a2010;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:11px;color:#f0a060;";
+    errBox.textContent = clonarState.erro;
+    wrap.appendChild(errBox);
+  }
+
+  // Preview do item encontrado
+  if (clonarState.itemEncontrado && !clonarState.resultado) {
+    const item = clonarState.itemEncontrado;
+    const contaDestino = clonarState.contaOrigem === "matriz" ? "Filial SP" : "Matriz RS";
+
+    const previewCard = document.createElement("div");
+    previewCard.style.cssText = "background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:10px;padding:16px;margin-bottom:16px;";
+
+    const foto = item.pictures?.[0]?.source || "";
+    previewCard.innerHTML = `
+      <div style="display:flex;gap:12px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid #282828;">
+        ${foto ? `<img src="${foto}" style="width:64px;height:64px;border-radius:8px;object-fit:cover;flex-shrink:0;background:#111;">` : ""}
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12px;font-weight:600;color:#fff;line-height:1.4;">${item.title}</div>
+          <div style="font-size:11px;color:#666;margin-top:4px;">Categoria ${item.category_id} · ${item.condition === "new" ? "Novo" : item.condition}</div>
+        </div>
+      </div>
+
+      ${item.has_variations ? `<div style="background:#2a1000;border:1px solid #4a2010;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:11px;color:#f0a060;">⚠️ Este anúncio tem variações — clonagem de variações ainda não é suportada.</div>` : ""}
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+        <div>
+          <div style="font-size:10px;color:#666;margin-bottom:5px;">SKU</div>
+          <input id="clonar-input-sku" type="text" value="${item.sku || ""}" style="width:100%;background:#111;border:1px solid #333;border-radius:6px;padding:8px 10px;color:#fff;font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
+        </div>
+        <div>
+          <div style="font-size:10px;color:#666;margin-bottom:5px;">Quantidade</div>
+          <input id="clonar-input-qtd" type="number" value="${item.available_quantity}" style="width:100%;background:#111;border:1px solid #333;border-radius:6px;padding:8px 10px;color:#fff;font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
+        </div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <div style="font-size:10px;color:#666;margin-bottom:5px;">Preço (mantido igual ao original)</div>
+        <div style="font-size:16px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">R$ ${Number(item.price).toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#1e1e1e;border-radius:6px;margin-bottom:16px;">
+        <div style="font-size:11px;color:#888;">Clonando para</div>
+        <div style="font-size:12px;font-weight:600;color:#f77614;">${contaDestino}</div>
+      </div>
+
+      <button id="clonar-btn-confirmar" ${item.has_variations ? "disabled" : ""} style="width:100%;padding:11px;border-radius:6px;background:${item.has_variations ? "#333" : "#f77614"};border:none;color:${item.has_variations ? "#666" : "#fff"};font-size:12px;font-weight:600;cursor:${item.has_variations ? "not-allowed" : "pointer"};">${clonarState.clonando ? "Clonando..." : "Confirmar e clonar anúncio"}</button>
+    `;
+    wrap.appendChild(previewCard);
+  }
+
+  // Resultado
+  if (clonarState.resultado) {
+    const res = clonarState.resultado;
+    const resCard = document.createElement("div");
+    resCard.style.cssText = "background:linear-gradient(to top,#1a2a1a 0%,#000 100%);border:1px solid #2d5a2d;border-radius:10px;padding:16px;margin-bottom:16px;text-align:center;";
+    resCard.innerHTML = `
+      <div style="font-size:13px;font-weight:700;color:#2dce89;margin-bottom:6px;">Anúncio clonado com sucesso ✓</div>
+      <div style="font-size:11px;color:#888;margin-bottom:14px;">${res.item_id}</div>
+      <a href="${res.permalink}" target="_blank" style="display:inline-block;padding:9px 18px;background:#f77614;border-radius:6px;color:#fff;font-size:12px;font-weight:600;text-decoration:none;">Abrir anúncio no ML ↗</a>
+      <div style="margin-top:14px;">
+        <button id="clonar-btn-novo" style="background:none;border:none;color:#666;font-size:11px;cursor:pointer;text-decoration:underline;">Clonar outro anúncio</button>
+      </div>
+    `;
+    wrap.appendChild(resCard);
+  }
+
+  container.appendChild(wrap);
+
+  // ── Eventos ──
+  const inputId = container.querySelector("#clonar-input-id");
+  if (inputId) inputId.oninput = (e) => { clonarState.itemBusca = e.target.value; };
+
+  const btnMatriz = container.querySelector("#clonar-origem-matriz");
+  const btnFilial = container.querySelector("#clonar-origem-filial");
+  if (btnMatriz) btnMatriz.onclick = () => { clonarState.contaOrigem = "matriz"; clonarState.itemEncontrado = null; clonarState.resultado = null; renderClonarTab(container); };
+  if (btnFilial) btnFilial.onclick = () => { clonarState.contaOrigem = "filial"; clonarState.itemEncontrado = null; clonarState.resultado = null; renderClonarTab(container); };
+
+  const btnBuscar = container.querySelector("#clonar-btn-buscar");
+  if (btnBuscar) btnBuscar.onclick = async () => {
+    const itemId = extrairItemId(clonarState.itemBusca);
+    if (!itemId) return;
+    clonarState.buscando = true;
+    clonarState.erro = null;
+    clonarState.itemEncontrado = null;
+    renderClonarTab(container);
+
+    const tokenOrigem = clonarState.contaOrigem === "matriz" ? state.ml_token?.access_token : state.ml_token_filial?.access_token;
+    if (!tokenOrigem) {
+      clonarState.buscando = false;
+      clonarState.erro = "Token da conta de origem não encontrado. Verifique a conexão ML.";
+      renderClonarTab(container);
+      return;
+    }
+
+    try {
+      const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=buscar-clone&item_id=${itemId}&token=${tokenOrigem}`);
+      const data = await r.json();
+      clonarState.buscando = false;
+      if (!data.ok) {
+        clonarState.erro = data.error || "Não foi possível localizar o anúncio.";
+      } else {
+        clonarState.itemEncontrado = data.item;
+      }
+      renderClonarTab(container);
+    } catch (e) {
+      clonarState.buscando = false;
+      clonarState.erro = "Erro de conexão ao buscar o anúncio.";
+      renderClonarTab(container);
+    }
+  };
+
+  const inputSku = container.querySelector("#clonar-input-sku");
+  if (inputSku) inputSku.oninput = (e) => { clonarState.novoSku = e.target.value; };
+  const inputQtd = container.querySelector("#clonar-input-qtd");
+  if (inputQtd) inputQtd.oninput = (e) => { clonarState.novaQuantidade = e.target.value; };
+
+  const btnConfirmar = container.querySelector("#clonar-btn-confirmar");
+  if (btnConfirmar) btnConfirmar.onclick = async () => {
+    clonarState.clonando = true;
+    clonarState.erro = null;
+    renderClonarTab(container);
+
+    const tokenDestino = clonarState.contaOrigem === "matriz" ? state.ml_token_filial?.access_token : state.ml_token?.access_token;
+    if (!tokenDestino) {
+      clonarState.clonando = false;
+      clonarState.erro = "Token da conta de destino não encontrado.";
+      renderClonarTab(container);
+      return;
+    }
+
+    try {
+      const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=clonar`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          item: clonarState.itemEncontrado,
+          tokenDestino,
+          novoSku: inputSku?.value || clonarState.itemEncontrado.sku,
+          novaQuantidade: inputQtd?.value ? Number(inputQtd.value) : clonarState.itemEncontrado.available_quantity,
+        }),
+      });
+      const data = await r.json();
+      clonarState.clonando = false;
+      if (!data.ok) {
+        clonarState.erro = data.error || "Erro ao clonar o anúncio.";
+      } else {
+        clonarState.resultado = data;
+      }
+      renderClonarTab(container);
+    } catch (e) {
+      clonarState.clonando = false;
+      clonarState.erro = "Erro de conexão ao clonar o anúncio.";
+      renderClonarTab(container);
+    }
+  };
+
+  const btnNovo = container.querySelector("#clonar-btn-novo");
+  if (btnNovo) btnNovo.onclick = () => {
+    clonarState = { itemBusca: "", contaOrigem: "matriz", itemEncontrado: null, buscando: false, clonando: false, resultado: null, erro: null, novoSku: "", novaQuantidade: "" };
+    renderClonarTab(container);
+  };
+}
+
 function renderExperienciaTab(container) {
   container.innerHTML = "";
 
@@ -3341,7 +3548,7 @@ function render(){
             { label: "Dashboard", tab: "dashboard", subs: [] },
             { label: "Tarefas", tab: "tarefas", subs: [] },
             { label: "Equipe", tab: null, subs: [{label:"Concluídas",tab:"concluidas"},{label:"Conversas",tab:"conversas"}] },
-            { label: "Mercado Livre", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência de Compra",tab:"experiencia"}] },
+            { label: "Mercado Livre", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência de Compra",tab:"experiencia"},{label:"Clonar Anúncio",tab:"clonar"}] },
             { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"}] },
           ];
 
@@ -3868,6 +4075,11 @@ function render(){
             if(!expPageContainer){ expPageContainer = document.createElement("div"); expPageContainer.className="exp-page-container"; panel.appendChild(expPageContainer); }
             if(!dashExperiencia && !window._expPageLoading){ window._expPageLoading = true; fetchExperiencia().finally(()=>{ window._expPageLoading = false; }); }
             renderExperienciaTab(expPageContainer);
+          }else if(window._diogotab==="clonar"){
+            panel.style.maxHeight="none"; panel.style.overflowY="auto";
+            let clonarContainer = panel.querySelector(".clonar-container");
+            if(!clonarContainer){ clonarContainer = document.createElement("div"); clonarContainer.className="clonar-container"; panel.appendChild(clonarContainer); }
+            renderClonarTab(clonarContainer);
           }else if(window._diogotab==="conferencia"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
             let confContainer = panel.querySelector(".conf-container");
