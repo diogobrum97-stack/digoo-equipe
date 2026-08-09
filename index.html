@@ -763,6 +763,34 @@ function renderClonarTab(container) {
       <button id="clonar-btn-confirmar" ${item.has_variations ? "disabled" : ""} style="width:100%;padding:11px;border-radius:6px;background:${item.has_variations ? "#333" : "#f77614"};border:none;color:${item.has_variations ? "#666" : "#fff"};font-size:12px;font-weight:600;cursor:${item.has_variations ? "not-allowed" : "pointer"};">${clonarState.clonando ? "Clonando..." : "Confirmar e clonar anúncio"}</button>
     `;
     wrap.appendChild(previewCard);
+
+    // ── Card de prévia visual: como o anúncio vai ficar na conta destino ──
+    const listingWrap = document.createElement("div");
+    listingWrap.style.cssText = "background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:10px;padding:16px;margin-bottom:16px;";
+    listingWrap.innerHTML = `<div style="font-size:11px;color:#888;margin-bottom:12px;">Prévia do anúncio clonado</div><div id="clonar-listing-preview"></div>`;
+    wrap.appendChild(listingWrap);
+
+    window._clonarAtualizarPreview = function() {
+      const previewEl = document.getElementById("clonar-listing-preview");
+      if (!previewEl) return;
+      const skuAtual = document.getElementById("clonar-input-sku")?.value || item.sku || "";
+      const qtdAtual = document.getElementById("clonar-input-qtd")?.value || item.available_quantity;
+      const fotoP = item.pictures?.[0]?.source || "";
+      const contaDestinoP = clonarState.contaOrigem === "matriz" ? "Filial SP" : "Matriz RS";
+      previewEl.innerHTML = `
+        <div style="background:#111;border:1px solid #282828;border-radius:10px;padding:16px;">
+          <div style="display:inline-block;padding:3px 10px;border-radius:13px;background:#f77614;color:#fff;font-size:11px;font-weight:600;margin-bottom:14px;">${contaDestinoP}</div>
+          <div style="width:100%;aspect-ratio:1;border-radius:8px;overflow:hidden;background:#222;margin-bottom:14px;display:flex;align-items:center;justify-content:center;">
+            ${fotoP ? `<img src="${fotoP}" style="width:100%;height:100%;object-fit:cover;">` : `<div style="font-size:11px;color:#555;">Sem imagem</div>`}
+          </div>
+          <div style="font-size:13px;font-weight:700;color:#fff;line-height:1.4;margin-bottom:12px;">${item.title}</div>
+          <div style="font-size:22px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;margin-bottom:10px;">R$ ${Number(item.price).toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
+          <div style="display:inline-block;padding:3px 10px;border-radius:12px;background:#1a2a1a;border:1px solid #2d5a2d;color:#2dce89;font-size:11px;font-weight:600;margin-bottom:14px;">Frete grátis</div>
+          <div style="font-size:11px;color:#666;padding-top:12px;border-top:1px solid #282828;">SKU ${skuAtual} · ${qtdAtual} unidades</div>
+        </div>
+      `;
+    };
+    window._clonarAtualizarPreview();
   }
 
   // Resultado
@@ -827,9 +855,9 @@ function renderClonarTab(container) {
   };
 
   const inputSku = container.querySelector("#clonar-input-sku");
-  if (inputSku) inputSku.oninput = (e) => { clonarState.novoSku = e.target.value; };
+  if (inputSku) inputSku.oninput = (e) => { clonarState.novoSku = e.target.value; window._clonarAtualizarPreview && window._clonarAtualizarPreview(); };
   const inputQtd = container.querySelector("#clonar-input-qtd");
-  if (inputQtd) inputQtd.oninput = (e) => { clonarState.novaQuantidade = e.target.value; };
+  if (inputQtd) inputQtd.oninput = (e) => { clonarState.novaQuantidade = e.target.value; window._clonarAtualizarPreview && window._clonarAtualizarPreview(); };
 
   const btnConfirmar = container.querySelector("#clonar-btn-confirmar");
   if (btnConfirmar) btnConfirmar.onclick = async () => {
