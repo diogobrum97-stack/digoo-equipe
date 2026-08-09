@@ -1127,6 +1127,7 @@ function renderDashboard(panel, color) {
   if(dashExperiencia?.problemas?.length > 0) {
     const expCard = document.createElement("div");
     expCard.style.cssText = "background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:14px;padding:16px;grid-column:1/-1;margin-top:14px;";
+    window._goExperiencia = function(){ window._diogotab = 'experiencia'; render(); };
     expCard.innerHTML = (() => {
       const prob  = dashExperiencia.problemas.length;
       const probRed = dashExperiencia.problemas.filter(p => p.color === 'red').length;
@@ -1141,7 +1142,7 @@ function renderDashboard(panel, color) {
         const dashPrev = ((score/100)*circPrev).toFixed(1);
         const nome = (p.title || p.sku || '');
         const nomeShort = nome.length > 30 ? nome.slice(0,30)+'\u2026' : nome;
-        return '<div onclick="window._diogotab=\'experiencia\';render();" style="background:#141414;border:1px solid #242424;border-radius:8px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;cursor:pointer;">'
+        return '<div onclick="window._goExperiencia()" style="background:#141414;border:1px solid #242424;border-radius:8px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;cursor:pointer;">'
           + '<svg width="40" height="40" viewBox="0 0 52 52">'
           + '<circle cx="26" cy="26" r="20" fill="none" stroke="#1e1e1e" stroke-width="4"/>'
           + '<circle cx="26" cy="26" r="20" fill="none" stroke="'+cor+'" stroke-width="4" stroke-dasharray="'+dashPrev+' '+circPrev.toFixed(1)+'" stroke-dashoffset="'+(circPrev*0.25).toFixed(1)+'" stroke-linecap="round"/>'
@@ -1151,13 +1152,13 @@ function renderDashboard(panel, color) {
           + '</div>';
       }).join('');
 
-      return '<div onclick="window._diogotab=\'experiencia\';render();" style="cursor:pointer;">'
+      return '<div onclick="window._goExperiencia()" style="cursor:pointer;">'
         + '<div style="font-size:12px;font-weight:500;color:#ffffff;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;display:flex;align-items:center;justify-content:space-between;">'
         + 'Experi\u00eancia de compra \u00b7 Filial SP'
         + '<div style="display:flex;align-items:center;gap:6px;">'
         + (probRed > 0 ? '<span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(232,67,45,.12);color:#e8432d;border:1px solid rgba(232,67,45,.25);">'+probRed+' ruim</span>' : '')
         + (probReg > 0 ? '<span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(247,118,20,.12);color:#f77614;border:1px solid rgba(247,118,20,.25);">'+probReg+' regular</span>' : '')
-        + '<span onclick="window._diogotab=\'experiencia\';render();" style="font-size:10px;color:#888;font-weight:600;cursor:pointer;">Ver tudo \u2192</span>'
+        + '<span onclick="window._goExperiencia()" style="font-size:10px;color:#888;font-weight:600;cursor:pointer;">Ver tudo \u2192</span>'
         + '</div>'
         + '</div>'
         + (prob > 0
