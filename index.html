@@ -802,7 +802,6 @@ function renderClonarTab(container) {
         </div>
       `;
     };
-    window._clonarAtualizarPreview();
   }
 
   // Resultado
@@ -822,6 +821,7 @@ function renderClonarTab(container) {
   }
 
   container.appendChild(wrap);
+  if (window._clonarAtualizarPreview) window._clonarAtualizarPreview();
 
   // ── Eventos ──
   const inputId = container.querySelector("#clonar-input-id");
