@@ -686,7 +686,7 @@ function renderClonarTab(container) {
   container.innerHTML = "";
 
   const wrap = document.createElement("div");
-  wrap.style.cssText = "max-width:720px;";
+  wrap.style.cssText = "max-width:900px;";
 
   // Título
   const header = document.createElement("div");
@@ -696,6 +696,16 @@ function renderClonarTab(container) {
     <div style="font-size:11px;color:#666;margin-top:2px;">Copia título, categoria, ficha técnica, fotos, SKU, preço e estoque para a outra conta.</div>
   `;
   wrap.appendChild(header);
+
+  const temPreview = !!(clonarState.itemEncontrado && !clonarState.resultado);
+  const row = document.createElement("div");
+  row.style.cssText = temPreview
+    ? "display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;"
+    : "display:grid;grid-template-columns:1fr;gap:16px;max-width:460px;";
+  wrap.appendChild(row);
+
+  const colEsq = document.createElement("div");
+  row.appendChild(colEsq);
 
   // Card de busca
   const buscaCard = document.createElement("div");
@@ -711,13 +721,13 @@ function renderClonarTab(container) {
     </div>
     <button id="clonar-btn-buscar" style="width:100%;padding:10px;border-radius:6px;background:#f77614;border:none;color:#fff;font-size:12px;font-weight:600;cursor:pointer;">${clonarState.buscando ? "Buscando..." : "Buscar anúncio"}</button>
   `;
-  wrap.appendChild(buscaCard);
+  colEsq.appendChild(buscaCard);
 
   if (clonarState.erro) {
     const errBox = document.createElement("div");
     errBox.style.cssText = "background:#2a1000;border:1px solid #4a2010;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:11px;color:#f0a060;white-space:pre-wrap;line-height:1.5;";
     errBox.textContent = clonarState.erro;
-    wrap.appendChild(errBox);
+    colEsq.appendChild(errBox);
   }
 
   // Preview do item encontrado
@@ -762,13 +772,15 @@ function renderClonarTab(container) {
 
       <button id="clonar-btn-confirmar" ${item.has_variations ? "disabled" : ""} style="width:100%;padding:11px;border-radius:6px;background:${item.has_variations ? "#333" : "#f77614"};border:none;color:${item.has_variations ? "#666" : "#fff"};font-size:12px;font-weight:600;cursor:${item.has_variations ? "not-allowed" : "pointer"};">${clonarState.clonando ? "Clonando..." : "Confirmar e clonar anúncio"}</button>
     `;
-    wrap.appendChild(previewCard);
+    colEsq.appendChild(previewCard);
 
-    // ── Card de prévia visual: como o anúncio vai ficar na conta destino ──
+    // ── Coluna direita: prévia visual do anúncio clonado ──
+    const colDir = document.createElement("div");
     const listingWrap = document.createElement("div");
-    listingWrap.style.cssText = "background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:10px;padding:16px;margin-bottom:16px;";
+    listingWrap.style.cssText = "background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:10px;padding:16px;position:sticky;top:0;";
     listingWrap.innerHTML = `<div style="font-size:11px;color:#888;margin-bottom:12px;">Prévia do anúncio clonado</div><div id="clonar-listing-preview"></div>`;
-    wrap.appendChild(listingWrap);
+    colDir.appendChild(listingWrap);
+    row.appendChild(colDir);
 
     window._clonarAtualizarPreview = function() {
       const previewEl = document.getElementById("clonar-listing-preview");
