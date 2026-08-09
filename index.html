@@ -778,13 +778,16 @@ function renderClonarTab(container) {
     const colDir = document.createElement("div");
     const listingWrap = document.createElement("div");
     listingWrap.style.cssText = "background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:10px;padding:16px;position:sticky;top:0;";
-    listingWrap.innerHTML = `<div style="font-size:11px;color:#888;margin-bottom:12px;">Prévia do anúncio clonado</div><div id="clonar-listing-preview"></div>`;
+    const listingTitle = document.createElement("div");
+    listingTitle.style.cssText = "font-size:11px;color:#888;margin-bottom:12px;";
+    listingTitle.textContent = "Prévia do anúncio clonado";
+    const previewEl = document.createElement("div");
+    listingWrap.appendChild(listingTitle);
+    listingWrap.appendChild(previewEl);
     colDir.appendChild(listingWrap);
     row.appendChild(colDir);
 
     window._clonarAtualizarPreview = function() {
-      const previewEl = document.getElementById("clonar-listing-preview");
-      if (!previewEl) return;
       const skuAtual = document.getElementById("clonar-input-sku")?.value || item.sku || "";
       const qtdAtual = document.getElementById("clonar-input-qtd")?.value || item.available_quantity;
       const fotoP = item.pictures?.[0]?.source || "";
@@ -802,6 +805,8 @@ function renderClonarTab(container) {
         </div>
       `;
     };
+    // Popula imediatamente — usa a referência direta, não precisa esperar o DOM
+    window._clonarAtualizarPreview();
   }
 
   // Resultado
