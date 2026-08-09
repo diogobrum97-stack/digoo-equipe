@@ -686,7 +686,7 @@ function renderClonarTab(container) {
   container.innerHTML = "";
 
   const wrap = document.createElement("div");
-  wrap.style.cssText = "max-width:720px;";
+  wrap.style.cssText = "max-width:900px;margin:0 auto;";
 
   // Título
   const header = document.createElement("div");
@@ -696,6 +696,16 @@ function renderClonarTab(container) {
     <div style="font-size:11px;color:#666;margin-top:2px;">Copia título, categoria, ficha técnica, fotos, SKU, preço e estoque para a outra conta.</div>
   `;
   wrap.appendChild(header);
+
+  // Grid de 2 colunas: busca à esquerda, preview/resultado à direita
+  const row = document.createElement("div");
+  const temColunaDireita = !!(clonarState.itemEncontrado || clonarState.resultado);
+  row.style.cssText = temColunaDireita
+    ? "display:grid;grid-template-columns:360px 1fr;gap:16px;align-items:start;"
+    : "display:grid;grid-template-columns:1fr;gap:16px;max-width:480px;margin:0 auto;";
+
+  // Coluna esquerda: busca
+  const colEsq = document.createElement("div");
 
   // Card de busca
   const buscaCard = document.createElement("div");
@@ -711,76 +721,84 @@ function renderClonarTab(container) {
     </div>
     <button id="clonar-btn-buscar" style="width:100%;padding:10px;border-radius:6px;background:#f77614;border:none;color:#fff;font-size:12px;font-weight:600;cursor:pointer;">${clonarState.buscando ? "Buscando..." : "Buscar anúncio"}</button>
   `;
-  wrap.appendChild(buscaCard);
+  colEsq.appendChild(buscaCard);
 
   if (clonarState.erro) {
     const errBox = document.createElement("div");
     errBox.style.cssText = "background:#2a1000;border:1px solid #4a2010;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:11px;color:#f0a060;white-space:pre-wrap;line-height:1.5;";
     errBox.textContent = clonarState.erro;
-    wrap.appendChild(errBox);
+    colEsq.appendChild(errBox);
   }
 
-  // Preview do item encontrado
-  if (clonarState.itemEncontrado && !clonarState.resultado) {
-    const item = clonarState.itemEncontrado;
-    const contaDestino = clonarState.contaOrigem === "matriz" ? "Filial SP" : "Matriz RS";
+  row.appendChild(colEsq);
 
-    const previewCard = document.createElement("div");
-    previewCard.style.cssText = "background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:10px;padding:16px;margin-bottom:16px;";
+  // Coluna direita: preview do item encontrado ou resultado
+  if (temColunaDireita) {
+    const colDir = document.createElement("div");
 
-    const foto = item.pictures?.[0]?.source || "";
-    previewCard.innerHTML = `
-      <div style="display:flex;gap:12px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid #282828;">
-        ${foto ? `<img src="${foto}" style="width:64px;height:64px;border-radius:8px;object-fit:cover;flex-shrink:0;background:#111;">` : ""}
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:12px;font-weight:600;color:#fff;line-height:1.4;">${item.title}</div>
-          <div style="font-size:11px;color:#666;margin-top:4px;">Categoria ${item.category_id} · ${item.condition === "new" ? "Novo" : item.condition}</div>
+    if (clonarState.itemEncontrado && !clonarState.resultado) {
+      const item = clonarState.itemEncontrado;
+      const contaDestino = clonarState.contaOrigem === "matriz" ? "Filial SP" : "Matriz RS";
+
+      const previewCard = document.createElement("div");
+      previewCard.style.cssText = "background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:10px;padding:16px;";
+
+      const foto = item.pictures?.[0]?.source || "";
+      previewCard.innerHTML = `
+        <div style="display:flex;gap:12px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid #282828;">
+          ${foto ? `<img src="${foto}" style="width:64px;height:64px;border-radius:8px;object-fit:cover;flex-shrink:0;background:#111;">` : ""}
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:12px;font-weight:600;color:#fff;line-height:1.4;">${item.title}</div>
+            <div style="font-size:11px;color:#666;margin-top:4px;">Categoria ${item.category_id} · ${item.condition === "new" ? "Novo" : item.condition}</div>
+          </div>
         </div>
-      </div>
 
-      ${item.has_variations ? `<div style="background:#2a1000;border:1px solid #4a2010;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:11px;color:#f0a060;">⚠️ Este anúncio tem variações — clonagem de variações ainda não é suportada.</div>` : ""}
+        ${item.has_variations ? `<div style="background:#2a1000;border:1px solid #4a2010;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:11px;color:#f0a060;">⚠️ Este anúncio tem variações — clonagem de variações ainda não é suportada.</div>` : ""}
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
-        <div>
-          <div style="font-size:10px;color:#666;margin-bottom:5px;">SKU</div>
-          <input id="clonar-input-sku" type="text" value="${item.sku || ""}" style="width:100%;background:#111;border:1px solid #333;border-radius:6px;padding:8px 10px;color:#fff;font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+          <div>
+            <div style="font-size:10px;color:#666;margin-bottom:5px;">SKU</div>
+            <input id="clonar-input-sku" type="text" value="${item.sku || ""}" style="width:100%;background:#111;border:1px solid #333;border-radius:6px;padding:8px 10px;color:#fff;font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
+          </div>
+          <div>
+            <div style="font-size:10px;color:#666;margin-bottom:5px;">Quantidade</div>
+            <input id="clonar-input-qtd" type="number" value="${item.available_quantity}" style="width:100%;background:#111;border:1px solid #333;border-radius:6px;padding:8px 10px;color:#fff;font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
+          </div>
         </div>
-        <div>
-          <div style="font-size:10px;color:#666;margin-bottom:5px;">Quantidade</div>
-          <input id="clonar-input-qtd" type="number" value="${item.available_quantity}" style="width:100%;background:#111;border:1px solid #333;border-radius:6px;padding:8px 10px;color:#fff;font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
+        <div style="margin-bottom:16px;">
+          <div style="font-size:10px;color:#666;margin-bottom:5px;">Preço (mantido igual ao original)</div>
+          <div style="font-size:16px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">R$ ${Number(item.price).toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
         </div>
-      </div>
-      <div style="margin-bottom:16px;">
-        <div style="font-size:10px;color:#666;margin-bottom:5px;">Preço (mantido igual ao original)</div>
-        <div style="font-size:16px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">R$ ${Number(item.price).toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
-      </div>
 
-      <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#1e1e1e;border-radius:6px;margin-bottom:16px;">
-        <div style="font-size:11px;color:#888;">Clonando para</div>
-        <div style="font-size:12px;font-weight:600;color:#f77614;">${contaDestino}</div>
-      </div>
+        <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#1e1e1e;border-radius:6px;margin-bottom:16px;">
+          <div style="font-size:11px;color:#888;">Clonando para</div>
+          <div style="font-size:12px;font-weight:600;color:#f77614;">${contaDestino}</div>
+        </div>
 
-      <button id="clonar-btn-confirmar" ${item.has_variations ? "disabled" : ""} style="width:100%;padding:11px;border-radius:6px;background:${item.has_variations ? "#333" : "#f77614"};border:none;color:${item.has_variations ? "#666" : "#fff"};font-size:12px;font-weight:600;cursor:${item.has_variations ? "not-allowed" : "pointer"};">${clonarState.clonando ? "Clonando..." : "Confirmar e clonar anúncio"}</button>
-    `;
-    wrap.appendChild(previewCard);
+        <button id="clonar-btn-confirmar" ${item.has_variations ? "disabled" : ""} style="width:100%;padding:11px;border-radius:6px;background:${item.has_variations ? "#333" : "#f77614"};border:none;color:${item.has_variations ? "#666" : "#fff"};font-size:12px;font-weight:600;cursor:${item.has_variations ? "not-allowed" : "pointer"};">${clonarState.clonando ? "Clonando..." : "Confirmar e clonar anúncio"}</button>
+      `;
+      colDir.appendChild(previewCard);
+    }
+
+    if (clonarState.resultado) {
+      const res = clonarState.resultado;
+      const resCard = document.createElement("div");
+      resCard.style.cssText = "background:linear-gradient(to top,#1a2a1a 0%,#000 100%);border:1px solid #2d5a2d;border-radius:10px;padding:24px;text-align:center;";
+      resCard.innerHTML = `
+        <div style="font-size:13px;font-weight:700;color:#2dce89;margin-bottom:6px;">Anúncio clonado com sucesso ✓</div>
+        <div style="font-size:11px;color:#888;margin-bottom:14px;">${res.item_id}</div>
+        <a href="${res.permalink}" target="_blank" style="display:inline-block;padding:9px 18px;background:#f77614;border-radius:6px;color:#fff;font-size:12px;font-weight:600;text-decoration:none;">Abrir anúncio no ML ↗</a>
+        <div style="margin-top:14px;">
+          <button id="clonar-btn-novo" style="background:none;border:none;color:#666;font-size:11px;cursor:pointer;text-decoration:underline;">Clonar outro anúncio</button>
+        </div>
+      `;
+      colDir.appendChild(resCard);
+    }
+
+    row.appendChild(colDir);
   }
 
-  // Resultado
-  if (clonarState.resultado) {
-    const res = clonarState.resultado;
-    const resCard = document.createElement("div");
-    resCard.style.cssText = "background:linear-gradient(to top,#1a2a1a 0%,#000 100%);border:1px solid #2d5a2d;border-radius:10px;padding:16px;margin-bottom:16px;text-align:center;";
-    resCard.innerHTML = `
-      <div style="font-size:13px;font-weight:700;color:#2dce89;margin-bottom:6px;">Anúncio clonado com sucesso ✓</div>
-      <div style="font-size:11px;color:#888;margin-bottom:14px;">${res.item_id}</div>
-      <a href="${res.permalink}" target="_blank" style="display:inline-block;padding:9px 18px;background:#f77614;border-radius:6px;color:#fff;font-size:12px;font-weight:600;text-decoration:none;">Abrir anúncio no ML ↗</a>
-      <div style="margin-top:14px;">
-        <button id="clonar-btn-novo" style="background:none;border:none;color:#666;font-size:11px;cursor:pointer;text-decoration:underline;">Clonar outro anúncio</button>
-      </div>
-    `;
-    wrap.appendChild(resCard);
-  }
-
+  wrap.appendChild(row);
   container.appendChild(wrap);
 
   // ── Eventos ──
