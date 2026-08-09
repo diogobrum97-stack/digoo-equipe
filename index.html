@@ -700,7 +700,7 @@ function renderClonarTab(container) {
   const temPreview = !!(clonarState.itemEncontrado && !clonarState.resultado);
   const row = document.createElement("div");
   row.style.cssText = temPreview
-    ? "display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;"
+    ? "display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:stretch;"
     : "display:grid;grid-template-columns:1fr;gap:16px;max-width:460px;";
   wrap.appendChild(row);
 
@@ -777,7 +777,7 @@ function renderClonarTab(container) {
     // ── Coluna direita: prévia visual do anúncio clonado ──
     const colDir = document.createElement("div");
     const listingWrap = document.createElement("div");
-    listingWrap.style.cssText = "background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:10px;padding:16px;position:sticky;top:0;";
+    listingWrap.style.cssText = "background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:10px;padding:16px;height:100%;box-sizing:border-box;";
     const listingTitle = document.createElement("div");
     listingTitle.style.cssText = "font-size:11px;color:#888;margin-bottom:12px;";
     listingTitle.textContent = "Prévia do anúncio clonado";
@@ -792,16 +792,28 @@ function renderClonarTab(container) {
       const qtdAtual = document.getElementById("clonar-input-qtd")?.value || item.available_quantity;
       const fotoP = item.pictures?.[0]?.source || "";
       const contaDestinoP = clonarState.contaOrigem === "matriz" ? "Filial SP" : "Matriz RS";
+      const condicaoP = item.condition === "new" ? "Novo" : item.condition;
+      const listingTipoP = item.listing_type_id === "gold_special" ? "Clássico" : (item.listing_type_id || "—");
       previewEl.innerHTML = `
         <div style="background:#111;border:1px solid #282828;border-radius:10px;padding:16px;">
           <div style="display:inline-block;padding:3px 10px;border-radius:13px;background:#f77614;color:#fff;font-size:11px;font-weight:600;margin-bottom:14px;">${contaDestinoP}</div>
           <div style="width:100%;aspect-ratio:1;border-radius:8px;overflow:hidden;background:#222;margin-bottom:14px;display:flex;align-items:center;justify-content:center;">
             ${fotoP ? `<img src="${fotoP}" style="width:100%;height:100%;object-fit:cover;">` : `<div style="font-size:11px;color:#555;">Sem imagem</div>`}
           </div>
-          <div style="font-size:13px;font-weight:700;color:#fff;line-height:1.4;margin-bottom:12px;">${item.title}</div>
+          <div style="font-size:13px;font-weight:700;color:#fff;line-height:1.4;margin-bottom:10px;">${item.title}</div>
           <div style="font-size:22px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;margin-bottom:10px;">R$ ${Number(item.price).toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
-          <div style="display:inline-block;padding:3px 10px;border-radius:12px;background:#1a2a1a;border:1px solid #2d5a2d;color:#2dce89;font-size:11px;font-weight:600;margin-bottom:14px;">Frete grátis</div>
-          <div style="font-size:11px;color:#666;padding-top:12px;border-top:1px solid #282828;">SKU ${skuAtual} · ${qtdAtual} unidades</div>
+          <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+            <div style="display:inline-block;padding:3px 10px;border-radius:12px;background:#1a2a1a;border:1px solid #2d5a2d;color:#2dce89;font-size:11px;font-weight:600;">Frete grátis</div>
+            <div style="display:inline-block;padding:3px 10px;border-radius:12px;background:#1e1e1e;border:1px solid #333;color:#888;font-size:11px;font-weight:600;">${condicaoP}</div>
+            <div style="display:inline-block;padding:3px 10px;border-radius:12px;background:#1e1e1e;border:1px solid #333;color:#888;font-size:11px;font-weight:600;">${listingTipoP}</div>
+          </div>
+          <div style="padding-top:12px;border-top:1px solid #282828;display:flex;flex-direction:column;gap:6px;">
+            <div style="display:flex;justify-content:space-between;font-size:11px;"><span style="color:#666;">SKU</span><span style="color:#ccc;font-weight:600;">${skuAtual}</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;"><span style="color:#666;">Quantidade</span><span style="color:#ccc;font-weight:600;">${qtdAtual} unidades</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;"><span style="color:#666;">Categoria</span><span style="color:#ccc;font-weight:600;">${item.category_id}</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;"><span style="color:#666;">Fotos</span><span style="color:#ccc;font-weight:600;">${(item.pictures||[]).length} imagens</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;"><span style="color:#666;">Ficha técnica</span><span style="color:#ccc;font-weight:600;">${(item.attributes||[]).length} atributos</span></div>
+          </div>
         </div>
       `;
     };
