@@ -748,7 +748,7 @@ function renderExperienciaTab(container) {
 
     const card = document.createElement("div");
     card.className = "exp-page-card";
-    card.style.cssText = `background:linear-gradient(to top,#252525 0%,#000 100%);border-top:1px solid #333;border-bottom:1px solid #333;border-left:3px solid ${cor};border-right:3px solid ${cor};border-radius:10px;overflow:hidden;display:flex;flex-direction:column;align-items:center;gap:0;text-align:center;cursor:pointer;transition:border-color .2s;`;
+    card.style.cssText = `background:linear-gradient(to top,#252525 0%,#000 100%);border-top:1px solid #333;border-bottom:1px solid #333;border-right:1px solid #333;border-left:3px solid ${cor};border-radius:10px;overflow:hidden;display:flex;flex-direction:column;align-items:center;gap:0;text-align:center;cursor:pointer;transition:border-color .2s;`;
     card.innerHTML = `
       <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px;width:100%;">
         <svg width="64" height="64" viewBox="0 0 108 108">
@@ -778,13 +778,13 @@ function renderExperienciaTab(container) {
     const panel = cont.querySelector('#exp-page-detail-panel');
     if(!panel) return;
     const cur = parseInt(panel.dataset.idx||'-1');
-    cards.forEach(c => { c.style.borderTopColor='#333'; c.style.borderBottomColor='#333'; });
+    cards.forEach(c => { c.style.borderLeftColor='#333'; });
     if(cur === idx) { panel.style.display='none'; panel.dataset.idx='-1'; return; }
     panel.dataset.idx = idx;
     panel.style.display = 'block';
     panel.innerHTML = window._expPageDetailsCache[idx] || '';
     const corAtual = listaFiltrada[idx].color === 'red' ? '#e8432d' : '#f77614';
-    if(cards[idx]) { cards[idx].style.borderTopColor = corAtual; cards[idx].style.borderBottomColor = corAtual; }
+    if(cards[idx]) { cards[idx].style.borderLeftColor = corAtual; }
   };
 }
 
@@ -1141,7 +1141,7 @@ function renderDashboard(panel, color) {
         const dashPrev = ((score/100)*circPrev).toFixed(1);
         const nome = (p.title || p.sku || '');
         const nomeShort = nome.length > 30 ? nome.slice(0,30)+'\u2026' : nome;
-        return '<div onclick="window._goExperiencia()" style="background:#141414;border-top:1px solid #242424;border-bottom:1px solid #242424;border-left:3px solid '+cor+';border-right:3px solid '+cor+';border-radius:8px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;cursor:pointer;">'
+        return '<div onclick="window._goExperiencia()" style="background:#141414;border-top:1px solid #242424;border-bottom:1px solid #242424;border-right:1px solid #242424;border-left:3px solid '+cor+';border-radius:8px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;cursor:pointer;">'
           + '<svg width="40" height="40" viewBox="0 0 52 52">'
           + '<circle cx="26" cy="26" r="20" fill="none" stroke="#1e1e1e" stroke-width="4"/>'
           + '<circle cx="26" cy="26" r="20" fill="none" stroke="'+cor+'" stroke-width="4" stroke-dasharray="'+dashPrev+' '+circPrev.toFixed(1)+'" stroke-dashoffset="'+(circPrev*0.25).toFixed(1)+'" stroke-linecap="round"/>'
