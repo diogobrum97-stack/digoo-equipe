@@ -669,10 +669,16 @@ let clonarState = { itemBusca: "", contaOrigem: "matriz", itemEncontrado: null, 
 
 function extrairItemId(texto) {
   if (!texto) return "";
-  const t = texto.trim();
-  // Aceita ID direto (MLB123456789) ou link completo
+  let t = texto.trim();
+  // Aceita ID direto (MLB123456789), link completo, ou só os números
   const matchId = t.match(/MLB-?\d{9,}/i);
   if (matchId) return matchId[0].replace("-", "").toUpperCase();
+  // Link com padrão diferente, ex: .../p/MLB123456789 ou .../MLB-1234-5678...
+  const matchNum = t.match(/(\d[\d-]{8,})/);
+  if (matchNum) {
+    const soDigitos = matchNum[1].replace(/-/g, "");
+    return "MLB" + soDigitos;
+  }
   return t.toUpperCase();
 }
 
