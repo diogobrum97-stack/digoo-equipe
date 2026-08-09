@@ -663,6 +663,132 @@ async function fetchDashboard() {
   render();
 }
 
+let expPageFiltro = "todos"; // todos | ruim | regular
+
+function renderExperienciaTab(container) {
+  container.innerHTML = "";
+
+  if(!dashExperiencia) {
+    container.innerHTML = '<div style="padding:40px 0;text-align:center;font-size:12px;color:#555;">Carregando experiência de compra...</div>';
+    return;
+  }
+
+  const todosProblemas = dashExperiencia.problemas || [];
+  const ruins = todosProblemas.filter(p => p.color === 'red');
+  const regulares = todosProblemas.filter(p => p.color !== 'red');
+
+  let listaFiltrada = todosProblemas;
+  if(expPageFiltro === "ruim") listaFiltrada = ruins;
+  if(expPageFiltro === "regular") listaFiltrada = regulares;
+
+  // Header
+  const header = document.createElement("div");
+  header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;";
+  header.innerHTML = `
+    <div>
+      <div style="font-size:16px;font-weight:700;color:#fff;">Experiência de compra</div>
+      <div style="font-size:11px;color:#666;margin-top:2px;">${dashExperiencia.total || 0} anúncios ativos · ${todosProblemas.length} com problema</div>
+    </div>
+    <button onclick="window._expRefresh()" style="background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:6px;padding:7px 14px;color:#ccc;font-size:11px;cursor:pointer;">↻ Atualizar</button>
+  `;
+  container.appendChild(header);
+
+  window._expRefresh = function() {
+    dashExperiencia = null;
+    fetchExperiencia();
+  };
+
+  // Filtro tabs
+  const filterBar = document.createElement("div");
+  filterBar.style.cssText = "display:flex;gap:8px;margin-bottom:16px;";
+  const filtros = [
+    {key:"todos", label:`Todos (${todosProblemas.length})`, cor:"#888"},
+    {key:"ruim", label:`Ruim (${ruins.length})`, cor:"#e8432d"},
+    {key:"regular", label:`Regular (${regulares.length})`, cor:"#f77614"},
+  ];
+  filtros.forEach(f => {
+    const btn = document.createElement("button");
+    const ativo = expPageFiltro === f.key;
+    btn.style.cssText = `background:${ativo?f.cor:'linear-gradient(to top,#252525 0%,#000 100%)'};border:1px solid ${ativo?f.cor:'#333'};border-radius:6px;padding:7px 14px;color:${ativo?'#fff':'#888'};font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;`;
+    btn.textContent = f.label;
+    btn.onclick = () => { expPageFiltro = f.key; renderExperienciaTab(container); };
+    filterBar.appendChild(btn);
+  });
+  container.appendChild(filterBar);
+
+  // Grid de cards
+  if(listaFiltrada.length === 0) {
+    const empty = document.createElement("div");
+    empty.style.cssText = "padding:40px 0;text-align:center;font-size:12px;color:#555;";
+    empty.textContent = expPageFiltro === "todos" ? "Nenhum produto com problema de experiência. Tudo certo! ✓" : "Nenhum item nessa categoria.";
+    container.appendChild(empty);
+    return;
+  }
+
+  const grid = document.createElement("div");
+  grid.style.cssText = "display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;";
+
+  const circ = 2 * Math.PI * 42;
+  window._expPageDetailsCache = [];
+
+  listaFiltrada.forEach((p, i) => {
+    const cor = p.color === 'red' ? '#e8432d' : '#f77614';
+    const score = p.value || 0;
+    const dash = ((score/100)*circ).toFixed(1);
+    const label = p.level || (p.color === 'red' ? 'Ruim' : 'Regular');
+    const nome = p.title || p.sku || '';
+    const nomeShort = nome.length > 40 ? nome.slice(0,40)+'…' : nome;
+
+    const acoesRows = (p.actions||[]).map(a=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#1e1e1e;border-radius:6px;margin-bottom:5px;"><div style="width:6px;height:6px;border-radius:50%;background:${cor};flex-shrink:0;"></div><div style="font-size:11px;color:#ccc;">${a}</div></div>`).join('') || '<div style="font-size:11px;color:#555;">Nenhuma recomendação disponível.</div>';
+    const principalHTML = p.principalAcao ? `<div style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:${cor}1a;border:1px solid ${cor}44;border-radius:7px;margin-bottom:12px;"><div style="font-size:10px;color:${cor};font-weight:700;text-transform:uppercase;flex-shrink:0;">Prioridade</div><div style="font-size:12px;color:#fff;font-weight:600;">${p.principalAcao}</div></div>` : '';
+    const freezeHTML = p.freeze ? `<div style="display:flex;align-items:flex-start;gap:8px;padding:9px 12px;background:#2a1000;border:1px solid #4a2010;border-radius:7px;margin-bottom:12px;"><div style="font-size:13px;flex-shrink:0;">⚠️</div><div style="font-size:11px;color:#f0a060;line-height:1.4;">${p.freeze}</div></div>` : '';
+    const statusHTML = p.status && p.status !== 'active' ? `<div style="display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;background:#c0392b22;color:#c0392b;margin-bottom:10px;">Anúncio ${p.status==='paused'?'pausado':'em moderação'}</div>` : '';
+
+    window._expPageDetailsCache[i] = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #1e1e1e;"><div style="font-size:12px;font-weight:600;color:#fff;">${nome}</div><a href="${p.link||'#'}" target="_blank" style="font-size:11px;color:#1a6be0;text-decoration:none;padding:3px 10px;border:1px solid #1a6be033;border-radius:5px;white-space:nowrap;">Abrir no ML ↗</a></div>${statusHTML}${principalHTML}${freezeHTML}<div><div style="font-size:11px;color:#777;margin-bottom:8px;">Ações recomendadas</div>${acoesRows}</div>`;
+
+    const card = document.createElement("div");
+    card.className = "exp-page-card";
+    card.style.cssText = "background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:10px;overflow:hidden;display:flex;flex-direction:column;align-items:center;gap:0;text-align:center;cursor:pointer;transition:border-color .2s;";
+    card.innerHTML = `
+      <div style="height:3px;width:100%;background:${cor};flex-shrink:0;"></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px;width:100%;">
+        <svg width="64" height="64" viewBox="0 0 108 108">
+          <circle cx="54" cy="54" r="42" fill="none" stroke="#1e1e1e" stroke-width="7"/>
+          <circle cx="54" cy="54" r="42" fill="none" stroke="${cor}" stroke-width="7" stroke-dasharray="${dash} ${circ.toFixed(1)}" stroke-dashoffset="${(circ*0.25).toFixed(1)}" stroke-linecap="round"/>
+          <text x="54" y="62" text-anchor="middle" fill="${cor}" font-size="22" font-weight="700" font-family="Inter,sans-serif">${score}</text>
+        </svg>
+        <div style="font-size:11px;font-weight:600;color:${cor};">${label}</div>
+        <div style="font-size:11px;font-weight:600;color:#fff;line-height:1.4;">${nomeShort}</div>
+        ${p.sku ? `<div style="font-size:11px;color:#444;">${p.sku}</div>` : ''}
+      </div>
+    `;
+    card.onclick = () => window._expPageToggle(i, container);
+    grid.appendChild(card);
+  });
+
+  container.appendChild(grid);
+
+  const detailPanel = document.createElement("div");
+  detailPanel.id = "exp-page-detail-panel";
+  detailPanel.dataset.idx = "-1";
+  detailPanel.style.cssText = "display:none;background:linear-gradient(to top,#1e1e1e 0%,#000 100%);border:1px solid #2a2a2a;border-radius:10px;padding:16px;margin-top:12px;";
+  container.appendChild(detailPanel);
+
+  window._expPageToggle = function(idx, cont) {
+    const cards = cont.querySelectorAll('.exp-page-card');
+    const panel = cont.querySelector('#exp-page-detail-panel');
+    if(!panel) return;
+    const cur = parseInt(panel.dataset.idx||'-1');
+    cards.forEach(c => c.style.borderColor = '#333');
+    if(cur === idx) { panel.style.display='none'; panel.dataset.idx='-1'; return; }
+    panel.dataset.idx = idx;
+    panel.style.display = 'block';
+    panel.innerHTML = window._expPageDetailsCache[idx] || '';
+    const corAtual = listaFiltrada[idx].color === 'red' ? '#e8432d' : '#f77614';
+    if(cards[idx]) cards[idx].style.borderColor = corAtual;
+  };
+}
+
 function renderDashboard(panel, color) {
   // Rebuscar se dados têm mais de 5 minutos
   const agora = Date.now();
@@ -1006,100 +1132,32 @@ function renderDashboard(panel, color) {
       const probRed = dashExperiencia.problemas.filter(p => p.color === 'red').length;
       const probReg = dashExperiencia.problemas.filter(p => p.color !== 'red').length;
       const total = dashExperiencia.todos || 1;
-      const ok    = total - prob;
-      const circ  = 2 * Math.PI * 42;
+      const preview = dashExperiencia.problemas.slice(0, 3);
 
-      // Guardar detalhes globalmente para o toggle
-      window._expDetailsCache = dashExperiencia.problemas.map((p,i)=>{
-        const cor=p.color==='red'?'#e8432d':'#f77614';
-        const nome=p.title||p.sku||'';
-        const acoesRows=(p.actions||[]).map(a=>'<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#1e1e1e;border-radius:6px;margin-bottom:5px;"><div style="width:6px;height:6px;border-radius:50%;background:'+cor+';flex-shrink:0;"></div><div style="font-size:11px;color:#ccc;">'+a+'</div></div>').join('') || '<div style="font-size:11px;color:#555;">Nenhuma recomendação disponível.</div>';
-        const principalHTML = p.principalAcao ? '<div style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:'+cor+'1a;border:1px solid '+cor+'44;border-radius:7px;margin-bottom:12px;"><div style="font-size:10px;color:'+cor+';font-weight:700;text-transform:uppercase;flex-shrink:0;">Prioridade</div><div style="font-size:12px;color:#fff;font-weight:600;">'+p.principalAcao+'</div></div>' : '';
-        const freezeHTML = p.freeze ? '<div style="display:flex;align-items:flex-start;gap:8px;padding:9px 12px;background:#2a1000;border:1px solid #4a2010;border-radius:7px;margin-bottom:12px;"><div style="font-size:13px;flex-shrink:0;">⚠️</div><div style="font-size:11px;color:#f0a060;line-height:1.4;">'+p.freeze+'</div></div>' : '';
-        const statusHTML = p.status && p.status !== 'active' ? '<div style="display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;background:#c0392b22;color:#c0392b;margin-bottom:10px;">Anúncio '+(p.status==='paused'?'pausado':'em moderação')+'</div>' : '';
-        return'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #1e1e1e;"><div style="font-size:12px;font-weight:600;color:#fff;">'+nome+'</div><a href="'+(p.link||'#')+'" target="_blank" style="font-size:11px;color:#1a6be0;text-decoration:none;padding:3px 10px;border:1px solid #1a6be033;border-radius:5px;white-space:nowrap;">Abrir no ML ↗</a></div>'+statusHTML+principalHTML+freezeHTML+'<div><div style="font-size:11px;color:#777;margin-bottom:8px;">Ações recomendadas</div>'+acoesRows+'</div>';
-      });
-      window._expToggle=function(idx){
-        const cards=document.querySelectorAll('.exp-card');
-        const panel=document.getElementById('exp-detail-panel');
-        if(!panel)return;
-        const cur=parseInt(panel.dataset.idx||'-1');
-        cards.forEach(c=>c.style.borderColor='#242424');
-        if(cur===idx){panel.style.display='none';panel.dataset.idx='-1';return;}
-        panel.dataset.idx=idx;
-        panel.style.display='block';
-        panel.innerHTML=(window._expDetailsCache||[])[idx]||'';
-        if(cards[idx])cards[idx].style.borderColor='#e8432d';
-      };
-
-      const items = dashExperiencia.problemas.map((p, i) => {
-        const cor   = p.color === 'red' ? '#e8432d' : '#f77614';
-        const score = p.value || 0;
-        const dash  = ((score / 100) * circ).toFixed(1);
-        const label = p.color === 'red' ? 'Ruim' : 'Regular';
-        const nome  = (p.title || p.sku || '');
-        const nomeShort = nome.length > 40 ? nome.slice(0,40)+'\u2026' : nome;
-
-        // Detalhes — usa dados reais da API se existirem, senão usa actions
-        const detRows = (p.detalhes && p.detalhes.length)
-          ? p.detalhes.map(det => {
-              const qtd = det.quantidade ? ' <span style="color:'+cor+';font-weight:600;">'+det.quantidade+'x</span>' : '';
-              return '<div style="padding:9px 0;border-bottom:1px solid #1e1e1e;">'
-                + (det.tipo ? '<div style="font-size:11px;color:#666;font-family:Inter,sans-serif;">'+det.tipo+qtd+'</div>' : '')
-                + (det.descricao ? '<div style="font-size:11px;font-weight:600;color:#fff;font-family:Inter,sans-serif;margin:3px 0;">'+det.descricao+'</div>' : '')
-                + (det.comoMelhorar ? '<div style="font-size:11px;color:#2dce89;font-family:Inter,sans-serif;">\u2192 '+det.comoMelhorar+'</div>' : '')
-                + '</div>';
-            }).join('')
-          : (p.actions||[]).map(a =>
-              '<div style="padding:8px 0;border-bottom:1px solid #1e1e1e;font-size:11px;color:#888;font-family:Inter,sans-serif;">'+a+'</div>'
-            ).join('');
-
-        const cardHTML = '<div class="exp-card" onclick="window._expToggle('+i+')" '
-          + 'style="background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:10px;overflow:hidden;'
-          + 'display:flex;flex-direction:column;align-items:center;gap:0;text-align:center;cursor:pointer;transition:border-color .2s;">'
-          + '<div style="height:3px;width:100%;background:'+cor+';flex-shrink:0;"></div>'
-          + '<div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px;width:100%;">'
-          + '<svg width="64" height="64" viewBox="0 0 108 108">'
-          + '<circle cx="54" cy="54" r="42" fill="none" stroke="#1e1e1e" stroke-width="7"/>'
-          + '<circle cx="54" cy="54" r="42" fill="none" stroke="'+cor+'" stroke-width="7"'
-          + ' stroke-dasharray="'+dash+' '+circ.toFixed(1)+'" stroke-dashoffset="'+(circ*0.25).toFixed(1)+'" stroke-linecap="round"/>'
-          + '<text x="54" y="62" text-anchor="middle" fill="'+cor+'" font-size="22" font-weight="700" font-family="Inter,sans-serif">'+score+'</text>'
-          + '</svg>'
-          + '<div style="font-size:11px;font-weight:600;color:'+cor+';font-family:Inter,sans-serif;">'+label+'</div>'
-          + '<div style="font-size:11px;font-weight:600;color:#fff;line-height:1.4;font-family:Inter,sans-serif;">'+nomeShort+'</div>'
-          + (p.sku ? '<div style="font-size:11px;color:#444;font-family:Inter,sans-serif;">'+p.sku+'</div>' : '')
-          + '</div></div>';
-
-        const detailHTML = '<div class="exp-detail" style="display:none;grid-column:1/-1;background:#141414;border:1px solid #242424;border-radius:10px;padding:16px;margin-top:2px;">'
-          + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #1e1e1e;">'
-          + '<div style="font-size:12px;font-weight:600;color:#fff;font-family:Inter,sans-serif;">'+nome+'</div>'
-          + '<a href="'+p.link+'" target="_blank" style="font-size:11px;color:#1a6be0;text-decoration:none;padding:3px 10px;border:1px solid #1a6be033;border-radius:5px;font-family:Inter,sans-serif;white-space:nowrap;">Abrir no ML \u2197</a>'
-          + '</div>'
-          + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">'
-          + '<div><div style="font-size:11px;font-weight:500;color:#777;font-family:Inter,sans-serif;margin-bottom:8px;">Tipo de problema</div>'+detRows+'</div>'
-          + '<div><div style="font-size:11px;font-weight:500;color:#777;font-family:Inter,sans-serif;margin-bottom:8px;">A\u00e7\u00f5es recomendadas</div>'
-          + (p.actions||[]).map(a =>
-              '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#181818;border-radius:7px;margin-bottom:5px;">'
-              + '<div style="width:6px;height:6px;border-radius:50%;background:'+cor+';flex-shrink:0;"></div>'
-              + '<div style="font-size:11px;color:#ccc;font-family:Inter,sans-serif;">'+a+'</div>'
-              + '</div>'
-            ).join('')
-          + '</div></div></div>';
-
-        return cardHTML;
+      const previewRows = preview.map(p => {
+        const cor = p.color === 'red' ? '#e8432d' : '#f77614';
+        const nome = (p.title || p.sku || '');
+        const nomeShort = nome.length > 45 ? nome.slice(0,45)+'\u2026' : nome;
+        return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #1a1a1a;">'
+          + '<div style="width:6px;height:6px;border-radius:50%;background:'+cor+';flex-shrink:0;"></div>'
+          + '<div style="font-size:11px;color:#ccc;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+nomeShort+'</div>'
+          + '<div style="font-size:10px;font-weight:600;color:'+cor+';flex-shrink:0;">'+(p.value||0)+'</div>'
+          + '</div>';
       }).join('');
 
-      return '<div style="font-size:12px;font-weight:500;color:#ffffff;font-family:Inter,sans-serif;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;display:flex;align-items:center;justify-content:space-between;">'
+      return '<div onclick="window._diogotab=\'experiencia\';render();" style="cursor:pointer;">'
+        + '<div style="font-size:12px;font-weight:500;color:#ffffff;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;display:flex;align-items:center;justify-content:space-between;">'
         + 'Experi\u00eancia de compra \u00b7 Filial SP'
         + '<div style="display:flex;align-items:center;gap:6px;">'
-        + (probRed > 0 ? '<span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;font-family:Inter,sans-serif;background:rgba(232,67,45,.12);color:#e8432d;border:1px solid rgba(232,67,45,.25);">'+probRed+' ruim</span>' : '')
-        + (probReg > 0 ? '<span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;font-family:Inter,sans-serif;background:rgba(247,118,20,.12);color:#f77614;border:1px solid rgba(247,118,20,.25);">'+probReg+' regular</span>' : '')
+        + (probRed > 0 ? '<span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(232,67,45,.12);color:#e8432d;border:1px solid rgba(232,67,45,.25);">'+probRed+' ruim</span>' : '')
+        + (probReg > 0 ? '<span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(247,118,20,.12);color:#f77614;border:1px solid rgba(247,118,20,.25);">'+probReg+' regular</span>' : '')
+        + '<span style="font-size:10px;color:#444;">Ver tudo \u2192</span>'
         + '</div>'
         + '</div>'
-        + '<div style="display:flex;flex-wrap:wrap;gap:8px;">'
-        + items
-        + '</div>'
-        + '<div id="exp-detail-panel" data-idx="-1" style="display:none;background:linear-gradient(to top,#1e1e1e 0%,#000 100%);border:1px solid #2a2a2a;border-radius:10px;padding:16px;margin-top:8px;"></div>';
+        + (prob > 0
+            ? '<div>'+previewRows+(prob>3 ? '<div style="font-size:10px;color:#555;padding-top:8px;text-align:center;">+'+(prob-3)+' outros itens</div>' : '')+'</div>'
+            : '<div style="font-size:11px;color:#555;padding:8px 0;">Nenhum problema no momento \u2713</div>')
+        + '</div>';
     })()
     grid.appendChild(expCard);
   }
@@ -3277,7 +3335,7 @@ function render(){
             { label: "Dashboard", tab: "dashboard", subs: [] },
             { label: "Tarefas", tab: "tarefas", subs: [] },
             { label: "Equipe", tab: null, subs: [{label:"Concluídas",tab:"concluidas"},{label:"Conversas",tab:"conversas"}] },
-            { label: "Mercado Livre", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"}] },
+            { label: "Mercado Livre", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência de Compra",tab:"experiencia"}] },
             { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"}] },
           ];
 
@@ -3798,6 +3856,12 @@ function render(){
             }
             renderCancelamentos(cancelPanel);
 
+          }else if(window._diogotab==="experiencia"){
+            panel.style.maxHeight="none"; panel.style.overflowY="auto";
+            let expPageContainer = panel.querySelector(".exp-page-container");
+            if(!expPageContainer){ expPageContainer = document.createElement("div"); expPageContainer.className="exp-page-container"; panel.appendChild(expPageContainer); }
+            if(!dashExperiencia && !window._expPageLoading){ window._expPageLoading = true; fetchExperiencia().finally(()=>{ window._expPageLoading = false; }); }
+            renderExperienciaTab(expPageContainer);
           }else if(window._diogotab==="conferencia"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
             let confContainer = panel.querySelector(".conf-container");
