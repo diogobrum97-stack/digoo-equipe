@@ -1141,7 +1141,7 @@ function renderDashboard(panel, color) {
         const dashPrev = ((score/100)*circPrev).toFixed(1);
         const nome = (p.title || p.sku || '');
         const nomeShort = nome.length > 30 ? nome.slice(0,30)+'\u2026' : nome;
-        return '<div style="background:#141414;border:1px solid #242424;border-radius:8px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;">'
+        return '<div onclick="window._diogotab=\'experiencia\';render();" style="background:#141414;border:1px solid #242424;border-radius:8px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;cursor:pointer;">'
           + '<svg width="40" height="40" viewBox="0 0 52 52">'
           + '<circle cx="26" cy="26" r="20" fill="none" stroke="#1e1e1e" stroke-width="4"/>'
           + '<circle cx="26" cy="26" r="20" fill="none" stroke="'+cor+'" stroke-width="4" stroke-dasharray="'+dashPrev+' '+circPrev.toFixed(1)+'" stroke-dashoffset="'+(circPrev*0.25).toFixed(1)+'" stroke-linecap="round"/>'
@@ -1157,7 +1157,7 @@ function renderDashboard(panel, color) {
         + '<div style="display:flex;align-items:center;gap:6px;">'
         + (probRed > 0 ? '<span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(232,67,45,.12);color:#e8432d;border:1px solid rgba(232,67,45,.25);">'+probRed+' ruim</span>' : '')
         + (probReg > 0 ? '<span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(247,118,20,.12);color:#f77614;border:1px solid rgba(247,118,20,.25);">'+probReg+' regular</span>' : '')
-        + '<span style="font-size:10px;color:#444;">Ver tudo \u2192</span>'
+        + '<span onclick="window._diogotab=\'experiencia\';render();" style="font-size:10px;color:#888;font-weight:600;cursor:pointer;">Ver tudo \u2192</span>'
         + '</div>'
         + '</div>'
         + (prob > 0
