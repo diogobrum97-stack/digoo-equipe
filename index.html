@@ -686,7 +686,7 @@ function renderClonarTab(container) {
   container.innerHTML = "";
 
   const wrap = document.createElement("div");
-  wrap.style.cssText = "max-width:900px;";
+  wrap.style.cssText = "max-width:1100px;";
 
   // Título
   const header = document.createElement("div");
@@ -700,7 +700,7 @@ function renderClonarTab(container) {
   const temPreview = !!(clonarState.itemEncontrado && !clonarState.resultado);
   const row = document.createElement("div");
   row.style.cssText = temPreview
-    ? "display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:stretch;"
+    ? "display:grid;grid-template-columns:1fr 1fr;gap:36px;align-items:stretch;"
     : "display:grid;grid-template-columns:1fr;gap:16px;max-width:460px;";
   wrap.appendChild(row);
 
@@ -807,12 +807,12 @@ function renderClonarTab(container) {
             <div style="display:inline-block;padding:3px 10px;border-radius:12px;background:#1e1e1e;border:1px solid #333;color:#888;font-size:11px;font-weight:600;">${condicaoP}</div>
             <div style="display:inline-block;padding:3px 10px;border-radius:12px;background:#1e1e1e;border:1px solid #333;color:#888;font-size:11px;font-weight:600;">${listingTipoP}</div>
           </div>
-          <div style="padding-top:12px;border-top:1px solid #282828;display:flex;flex-direction:column;gap:6px;">
-            <div style="display:flex;justify-content:space-between;font-size:11px;"><span style="color:#666;">SKU</span><span style="color:#ccc;font-weight:600;">${skuAtual}</span></div>
-            <div style="display:flex;justify-content:space-between;font-size:11px;"><span style="color:#666;">Quantidade</span><span style="color:#ccc;font-weight:600;">${qtdAtual} unidades</span></div>
-            <div style="display:flex;justify-content:space-between;font-size:11px;"><span style="color:#666;">Categoria</span><span style="color:#ccc;font-weight:600;">${item.category_id}</span></div>
-            <div style="display:flex;justify-content:space-between;font-size:11px;"><span style="color:#666;">Fotos</span><span style="color:#ccc;font-weight:600;">${(item.pictures||[]).length} imagens</span></div>
-            <div style="display:flex;justify-content:space-between;font-size:11px;"><span style="color:#666;">Ficha técnica</span><span style="color:#ccc;font-weight:600;">${(item.attributes||[]).length} atributos</span></div>
+          <div style="padding-top:14px;border-top:1px solid #282828;display:grid;grid-template-columns:1fr 1fr;gap:14px 24px;">
+            <div><div style="font-size:10px;color:#666;margin-bottom:3px;">SKU</div><div style="font-size:12px;color:#fff;font-weight:600;">${skuAtual}</div></div>
+            <div><div style="font-size:10px;color:#666;margin-bottom:3px;">Quantidade</div><div style="font-size:12px;color:#fff;font-weight:600;">${qtdAtual} unidades</div></div>
+            <div><div style="font-size:10px;color:#666;margin-bottom:3px;">Categoria</div><div style="font-size:12px;color:#fff;font-weight:600;">${item.category_id}</div></div>
+            <div><div style="font-size:10px;color:#666;margin-bottom:3px;">Fotos</div><div style="font-size:12px;color:#fff;font-weight:600;">${(item.pictures||[]).length} imagens</div></div>
+            <div><div style="font-size:10px;color:#666;margin-bottom:3px;">Ficha técnica</div><div style="font-size:12px;color:#fff;font-weight:600;">${(item.attributes||[]).length} atributos</div></div>
           </div>
         </div>
       `;
