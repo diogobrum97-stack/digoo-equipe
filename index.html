@@ -860,8 +860,8 @@ function renderClonarTab(container) {
       clonarState.clonando = false;
       if (!data.ok) {
         let msg = data.error || "Erro ao clonar o anúncio.";
-        if (data.detalhes && data.detalhes.length) {
-          msg += "\n\nCampos faltando: " + data.detalhes.map(d => d.references?.join(", ") || d.message || d.code).join(" · ");
+        if (data.raw) {
+          msg += "\n\n" + JSON.stringify(data.raw, null, 2);
         }
         clonarState.erro = msg;
       } else {
