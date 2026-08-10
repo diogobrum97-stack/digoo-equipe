@@ -836,7 +836,7 @@ function renderPerguntasTab(container) {
         ${!p.requires_attention ? `
           <div style="font-size:10px;color:#666;margin-bottom:6px;">Resposta ${enviadoAuto || enviado ? "enviada" : "sugerida (editável)"}</div>
           <textarea id="pergunta-resp-${p.question_id}" ${enviadoAuto || enviado ? "disabled" : ""} style="width:100%;background:#111;border:1px solid ${enviadoAuto ? "#333" : "#f77614"};border-radius:6px;padding:10px 12px;color:${enviadoAuto ? "#888" : "#fff"};font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;resize:vertical;min-height:60px;margin-bottom:12px;">${p.suggested_answer}</textarea>
-          ${!enviadoAuto ? `<button id="pergunta-enviar-${p.question_id}" ${enviado ? "disabled" : ""} style="padding:9px 18px;border-radius:6px;background:${enviado ? "#1a2a1a" : "#f77614"};border:1px solid ${enviado ? "#2d5a2d" : "transparent"};color:${enviado ? "#2dce89" : "#fff"};font-size:12px;font-weight:600;cursor:${enviado ? "default" : "pointer"};">${enviado ? "Enviado ✓" : (enviandoAgora ? "Enviando..." : "Enviar resposta")}</button>` : ""}
+          ${!enviadoAuto ? `<button id="pergunta-enviar-${p.question_id}" ${(enviado || enviandoAgora) ? "disabled" : ""} style="padding:9px 18px;border-radius:6px;background:${enviado ? "#1a2a1a" : "#f77614"};border:1px solid ${enviado ? "#2d5a2d" : "transparent"};color:${enviado ? "#2dce89" : "#fff"};font-size:12px;font-weight:600;cursor:${(enviado || enviandoAgora) ? "default" : "pointer"};opacity:${enviandoAgora ? "0.6" : "1"};">${enviado ? "Enviado ✓" : (enviandoAgora ? "Enviando..." : "Enviar resposta")}</button>` : ""}
         ` : `
           <a href="https://www.mercadolivre.com.br/anuncio/${p.item_id}" target="_blank" style="display:inline-block;padding:9px 18px;border-radius:6px;background:#1a1a1a;border:1px solid #333;color:#ccc;font-size:12px;font-weight:600;text-decoration:none;">Responder no ML ↗</a>
         `}
@@ -846,18 +846,29 @@ function renderPerguntasTab(container) {
       const btnEnviar = card.querySelector(`#pergunta-enviar-${p.question_id}`);
       if (btnEnviar) {
         btnEnviar.onclick = async () => {
+          if (perguntasState.enviando[p.question_id] === "loading") return; // trava contra clique duplo
           const texto = card.querySelector(`#pergunta-resp-${p.question_id}`)?.value?.trim();
           if (!texto) return;
           perguntasState.enviando[p.question_id] = "loading";
           renderPerguntasTab(container);
-          const data = await enviarRespostaPergunta({ ...p, suggested_answer: texto });
-          if (data.ok) {
-            perguntasState.enviando[p.question_id] = "ok";
-          } else {
+          try {
+            const data = await enviarRespostaPergunta({ ...p, suggested_answer: texto });
+            if (data.ok) {
+              perguntasState.enviando[p.question_id] = "ok";
+              // Remove da lista pendente — já foi respondida, não fica mais UNANSWERED no ML
+              if (perguntasState.lista) {
+                perguntasState.lista = perguntasState.lista.filter(item => item.question_id !== p.question_id);
+              }
+            } else {
+              perguntasState.enviando[p.question_id] = "erro";
+              perguntasState.erro = (data.error || "Erro ao enviar resposta") + (data.raw ? "\n\n" + JSON.stringify(data.raw, null, 2) : "");
+            }
+          } catch (e) {
             perguntasState.enviando[p.question_id] = "erro";
-            perguntasState.erro = (data.error || "Erro ao enviar resposta") + (data.raw ? "\n\n" + JSON.stringify(data.raw, null, 2) : "");
+            perguntasState.erro = "Erro inesperado ao enviar: " + e.message;
+          } finally {
+            renderPerguntasTab(container);
           }
-          renderPerguntasTab(container);
         };
       }
     });
