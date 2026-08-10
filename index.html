@@ -7197,124 +7197,132 @@ async function renderConferencia(panel, color) {
       docList.appendChild(row);
     });
 
-    // Botão de upload
+    // Botão de upload — aceita múltiplos arquivos, processados um por vez
     const uploadRow = document.createElement("div");
     uploadRow.style.cssText = "padding:10px 16px;";
     const uploadBtn = document.createElement("button");
-    uploadBtn.textContent = `+ Anexar ${categoria === "servicos" ? "nota de serviço" : "guia de imposto"}`;
+    const labelPadrao = `+ Anexar ${categoria === "servicos" ? "notas de serviço" : "guias de imposto"}`;
+    uploadBtn.textContent = labelPadrao;
     uploadBtn.style.cssText = "background:none;border:0.5px dashed var(--border2);border-radius:7px;color:var(--text3);font-size:11px;padding:8px 16px;cursor:pointer;font-family:inherit;letter-spacing:1px;width:100%;text-align:center;";
     const fileInput = document.createElement("input");
-    fileInput.type = "file"; fileInput.accept = ".pdf"; fileInput.style.display = "none";
-    fileInput.addEventListener("change", async () => {
-      const file = fileInput.files[0]; if(!file) return;
-      uploadBtn.textContent = "⏳ Lendo documento..."; uploadBtn.disabled = true;
+    fileInput.type = "file"; fileInput.accept = ".pdf"; fileInput.multiple = true; fileInput.style.display = "none";
+
+    // Processa um único arquivo (extração + upload + salvar). Retorna true se salvou direto, false se caiu no formulário manual.
+    async function processarUmArquivo(file, idx, total) {
+      const prefixo = total > 1 ? `[${idx+1}/${total}] ` : "";
+      uploadBtn.textContent = `⏳ ${prefixo}Lendo ${file.name}...`;
+      const buf = await file.arrayBuffer();
+      const bytes = new Uint8Array(buf);
+      let binary = ""; bytes.forEach(b => binary += String.fromCharCode(b));
+      const base64pdf = btoa(binary);
+
+      let valor = 0, competencia = detectarCompetencia(file.name) || "";
       try {
-        // Ler PDF como base64
-        const buf = await file.arrayBuffer();
-        const bytes = new Uint8Array(buf);
-        let binary = ""; bytes.forEach(b => binary += String.fromCharCode(b));
-        const base64pdf = btoa(binary);
-
-        // Extrair valor e competência via backend
-        let valor = 0, competencia = detectarCompetencia(file.name) || "";
-        try {
-          uploadBtn.textContent = "⏳ Extraindo dados com IA...";
-          const extractResp = await fetch(`${VERCEL_BACKEND}/api/google?action=extractPdf`, {
-            method: "POST",
-            headers: {"Content-Type":"application/json"},
-            body: JSON.stringify({ base64: base64pdf, nome: file.name })
-          });
-          const extracted = await extractResp.json();
-          if(extracted.valor > 0) valor = extracted.valor;
-          if(extracted.competencia) competencia = extracted.competencia;
-          if(extracted.prestador) file._prestador = extracted.prestador;
-          if(extracted.numeroNF) file._numeroNF = extracted.numeroNF;
-          if(extracted.cnpj) file._cnpj = extracted.cnpj;
-        } catch(e) {
-          console.warn("Extração falhou:", e.message);
-        }
-
-        // Se IA não conseguiu, mostra formulário inline
-        if(!valor || valor <= 0 || !competencia) {
-          uploadBtn.textContent = `+ Anexar ${categoria === "servicos" ? "nota de serviço" : "guia de imposto"}`;
-          uploadBtn.disabled = false;
-
-          // Remove form anterior se existir
-          uploadRow.querySelector(".manual-form")?.remove();
-
-          const form = document.createElement("div");
-          form.className = "manual-form";
-          form.style.cssText = "margin-top:10px;background:var(--bg2);border:0.5px solid #f0b40055;border-radius:8px;padding:12px 14px;";
-          form.innerHTML = `
-            <div style="font-size:11px;color:#f0b400;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
-              <span>⚠</span> Não consegui extrair os dados automaticamente de <strong style="color:var(--text2);">${file.name}</strong>
-            </div>
-            <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
-              <div style="flex:1;min-width:100px;">
-                <div style="font-size:11px;color:var(--text3);letter-spacing:1px;margin-bottom:4px;">VALOR (R$)</div>
-                <input class="manual-valor" placeholder="ex: 1234,56" style="width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:5px;color:var(--text);font-size:12px;padding:6px 10px;font-family:inherit;outline:none;">
-              </div>
-              <div style="flex:1;min-width:100px;">
-                <div style="font-size:11px;color:var(--text3);letter-spacing:1px;margin-bottom:4px;">COMPETÊNCIA</div>
-                <input class="manual-comp" placeholder="ex: 06/2026" value="${competencia}" style="width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:5px;color:var(--text);font-size:12px;padding:6px 10px;font-family:inherit;outline:none;">
-              </div>
-              <button class="manual-ok" style="background:var(--accent);border:none;border-radius:5px;color:#000;font-size:11px;font-weight:700;letter-spacing:1px;padding:7px 14px;cursor:pointer;font-family:inherit;white-space:nowrap;">CONFIRMAR</button>
-              <button class="manual-cancel" style="background:none;border:0.5px solid var(--border2);border-radius:5px;color:var(--text3);font-size:11px;padding:7px 10px;cursor:pointer;font-family:inherit;">✕</button>
-            </div>
-          `;
-
-          form.querySelector(".manual-cancel").addEventListener("click", () => form.remove());
-          form.querySelector(".manual-ok").addEventListener("click", async () => {
-            const vStr = form.querySelector(".manual-valor").value;
-            const v = parseFloat(vStr.replace(",","."));
-            const c = form.querySelector(".manual-comp").value.trim();
-            if(!v || v <= 0) { form.querySelector(".manual-valor").style.borderColor="#e91e8c"; return; }
-            form.remove();
-            uploadBtn.textContent = "⏳ Enviando para o Drive..."; uploadBtn.disabled = true;
-            const driveResult = await uploadParaDrive(file, confMes, categoria);
-            await salvarDocFirebase(confMes, categoria, {
-              nome: file.name, valor: v, competencia: c,
-              driveId: driveResult.driveId||"", driveUrl: driveResult.driveUrl||"",
-              viewUrl: driveResult.viewUrl||driveResult.driveUrl||"",
-            });
-            uploadBtn.textContent = `+ Anexar ${categoria === "servicos" ? "nota de serviço" : "guia de imposto"}`;
-            uploadBtn.disabled = false;
-            renderConferencia(panel, color);
-          });
-
-          uploadRow.appendChild(form);
-          return;
-        }
-
-        // Upload no Drive (opcional — salva mesmo se falhar)
-        let driveId = "", driveUrl = "", viewUrl = "";
-        try {
-          uploadBtn.textContent = "⏳ Enviando para o Drive...";
-          const driveResult = await uploadParaDrive(file, confMes, categoria);
-          driveId = driveResult.driveId || "";
-          driveUrl = driveResult.driveUrl || "";
-          viewUrl = driveResult.viewUrl || driveResult.driveUrl || "";
-        } catch(e) {
-          console.warn("Upload Drive falhou, salvando sem link:", e.message);
-        }
-        // Salvar no Firebase
-        await salvarDocFirebase(confMes, categoria, {
-          nome: file.name,
-          valor,
-          competencia,
-          prestador: file._prestador || "",
-          numeroNF: file._numeroNF || "",
-          cnpj: file._cnpj || "",
-          driveId,
-          driveUrl,
-          viewUrl,
+        uploadBtn.textContent = `⏳ ${prefixo}Extraindo dados com IA...`;
+        const extractResp = await fetch(`${VERCEL_BACKEND}/api/google?action=extractPdf`, {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({ base64: base64pdf, nome: file.name })
         });
-        confDocs = {servicos:[], impostos:[]};
-        renderConferencia(panel, color);
+        const extracted = await extractResp.json();
+        if(extracted.valor > 0) valor = extracted.valor;
+        if(extracted.competencia) competencia = extracted.competencia;
+        if(extracted.prestador) file._prestador = extracted.prestador;
+        if(extracted.numeroNF) file._numeroNF = extracted.numeroNF;
+        if(extracted.cnpj) file._cnpj = extracted.cnpj;
       } catch(e) {
-        alert("Erro ao enviar: "+e.message);
-        uploadBtn.textContent = `+ Anexar ${categoria === "servicos" ? "nota de serviço" : "guia de imposto"}`;
+        console.warn("Extração falhou:", e.message);
+      }
+
+      if(!valor || valor <= 0 || !competencia) {
+        const form = document.createElement("div");
+        form.className = "manual-form";
+        form.style.cssText = "margin-top:10px;background:var(--bg2);border:0.5px solid #f0b40055;border-radius:8px;padding:12px 14px;";
+        form.innerHTML = `
+          <div style="font-size:11px;color:#f0b400;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+            <span>⚠</span> Não consegui extrair os dados automaticamente de <strong style="color:var(--text2);">${file.name}</strong>
+          </div>
+          <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
+            <div style="flex:1;min-width:100px;">
+              <div style="font-size:11px;color:var(--text3);letter-spacing:1px;margin-bottom:4px;">VALOR (R$)</div>
+              <input class="manual-valor" placeholder="ex: 1234,56" style="width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:5px;color:var(--text);font-size:12px;padding:6px 10px;font-family:inherit;outline:none;">
+            </div>
+            <div style="flex:1;min-width:100px;">
+              <div style="font-size:11px;color:var(--text3);letter-spacing:1px;margin-bottom:4px;">COMPETÊNCIA</div>
+              <input class="manual-comp" placeholder="ex: 06/2026" value="${competencia}" style="width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:5px;color:var(--text);font-size:12px;padding:6px 10px;font-family:inherit;outline:none;">
+            </div>
+            <button class="manual-ok" style="background:var(--accent);border:none;border-radius:5px;color:#000;font-size:11px;font-weight:700;letter-spacing:1px;padding:7px 14px;cursor:pointer;font-family:inherit;white-space:nowrap;">CONFIRMAR</button>
+            <button class="manual-cancel" style="background:none;border:0.5px solid var(--border2);border-radius:5px;color:var(--text3);font-size:11px;padding:7px 10px;cursor:pointer;font-family:inherit;">✕</button>
+          </div>
+        `;
+        form.querySelector(".manual-cancel").addEventListener("click", () => form.remove());
+        form.querySelector(".manual-ok").addEventListener("click", async () => {
+          const vStr = form.querySelector(".manual-valor").value;
+          const v = parseFloat(vStr.replace(",","."));
+          const c = form.querySelector(".manual-comp").value.trim();
+          if(!v || v <= 0) { form.querySelector(".manual-valor").style.borderColor="#e91e8c"; return; }
+          form.remove();
+          const driveResult = await uploadParaDrive(file, confMes, categoria);
+          await salvarDocFirebase(confMes, categoria, {
+            nome: file.name, valor: v, competencia: c,
+            driveId: driveResult.driveId||"", driveUrl: driveResult.driveUrl||"",
+            viewUrl: driveResult.viewUrl||driveResult.driveUrl||"",
+          });
+          renderConferencia(panel, color);
+        });
+        uploadRow.appendChild(form);
+        return false;
+      }
+
+      let driveId = "", driveUrl = "", viewUrl = "";
+      try {
+        uploadBtn.textContent = `⏳ ${prefixo}Enviando ${file.name} para o Drive...`;
+        const driveResult = await uploadParaDrive(file, confMes, categoria);
+        driveId = driveResult.driveId || "";
+        driveUrl = driveResult.driveUrl || "";
+        viewUrl = driveResult.viewUrl || driveResult.driveUrl || "";
+      } catch(e) {
+        console.warn("Upload Drive falhou, salvando sem link:", e.message);
+      }
+      await salvarDocFirebase(confMes, categoria, {
+        nome: file.name,
+        valor,
+        competencia,
+        prestador: file._prestador || "",
+        numeroNF: file._numeroNF || "",
+        cnpj: file._cnpj || "",
+        driveId,
+        driveUrl,
+        viewUrl,
+      });
+      return true;
+    }
+
+    fileInput.addEventListener("change", async () => {
+      const files = Array.from(fileInput.files || []);
+      if(files.length === 0) return;
+      uploadBtn.disabled = true;
+      let sucessos = 0, comProblema = 0;
+      try {
+        for(let i = 0; i < files.length; i++) {
+          try {
+            const ok = await processarUmArquivo(files[i], i, files.length);
+            if(ok) sucessos++; else comProblema++;
+          } catch(e) {
+            console.warn(`Erro no arquivo ${files[i].name}:`, e.message);
+            comProblema++;
+          }
+        }
+      } finally {
         uploadBtn.disabled = false;
+        uploadBtn.textContent = labelPadrao;
+        if(comProblema > 0) {
+          // Não re-renderiza — mantém os formulários manuais visíveis pro usuário preencher
+          setTimeout(() => alert(`${sucessos} anexado(s) automaticamente. ${comProblema} precisam de confirmação manual (formulário acima do botão de anexar).`), 200);
+        } else {
+          confDocs = {servicos:[], impostos:[]};
+          renderConferencia(panel, color);
+        }
       }
     });
     uploadBtn.addEventListener("click", () => fileInput.click());
