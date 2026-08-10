@@ -688,22 +688,45 @@ let perguntasState = { lista: null, carregando: false, erro: null, enviando: {},
 async function fetchPerguntas() {
   perguntasState.carregando = true;
   perguntasState.erro = null;
-  const token = state.ml_token_filial?.access_token;
-  if (!token) {
+
+  const contas = [
+    { key: "matriz", label: "Matriz RS", token: state.ml_token?.access_token },
+    { key: "filial", label: "Filial SP", token: state.ml_token_filial?.access_token },
+  ].filter(c => c.token);
+
+  if (contas.length === 0) {
     perguntasState.carregando = false;
-    perguntasState.erro = "Token da Filial não encontrado. Verifique a conexão ML.";
+    perguntasState.erro = "Nenhuma conta ML conectada. Verifique a conexão ML.";
     return;
   }
+
   try {
-    const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=buscar-perguntas&token=${token}`);
-    const data = await r.json();
+    const resultados = await Promise.all(contas.map(async (c) => {
+      try {
+        const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=buscar-perguntas&token=${c.token}`);
+        const data = await r.json();
+        if (!data.ok) return { conta: c.key, ok: false, erro: data.error };
+        return { conta: c.key, ok: true, perguntas: (data.perguntas || []).map(p => ({ ...p, conta: c.key, contaLabel: c.label })) };
+      } catch (e) {
+        return { conta: c.key, ok: false, erro: e.message };
+      }
+    }));
+
     perguntasState.carregando = false;
-    if (!data.ok) {
-      perguntasState.erro = data.error || "Erro ao buscar perguntas.";
-    } else {
-      const dispensadas = state.perguntas_dispensadas || {};
-      perguntasState.lista = (data.perguntas || []).filter(p => !dispensadas[p.question_id]);
-      perguntasState._fetchedAt = Date.now();
+    const falhas = resultados.filter(r => !r.ok);
+    const sucesso = resultados.filter(r => r.ok);
+
+    if (sucesso.length === 0) {
+      perguntasState.erro = "Erro ao buscar perguntas: " + falhas.map(f => f.erro).join(" · ");
+      return;
+    }
+
+    const dispensadas = state.perguntas_dispensadas || {};
+    const todasPerguntas = sucesso.flatMap(r => r.perguntas);
+    perguntasState.lista = todasPerguntas.filter(p => !dispensadas[p.question_id]);
+    perguntasState._fetchedAt = Date.now();
+    if (falhas.length > 0) {
+      perguntasState.erro = `Aviso: não foi possível buscar perguntas de ${falhas.map(f => f.conta === "matriz" ? "Matriz RS" : "Filial SP").join(", ")}.`;
     }
   } catch (e) {
     perguntasState.carregando = false;
@@ -712,8 +735,8 @@ async function fetchPerguntas() {
 }
 
 async function enviarRespostaPergunta(p) {
-  const token = state.ml_token_filial?.access_token;
-  if (!token) return { ok: false };
+  const token = p.conta === "matriz" ? state.ml_token?.access_token : state.ml_token_filial?.access_token;
+  if (!token) return { ok: false, error: "Token da conta não encontrado." };
   try {
     const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=responder-pergunta`, {
       method: "POST",
@@ -826,6 +849,7 @@ function renderPerguntasTab(container) {
           <div style="flex:1;min-width:0;">
             <div style="font-size:12px;font-weight:600;color:#fff;line-height:1.3;">${p.produto}</div>
           </div>
+          <div style="flex-shrink:0;padding:2px 8px;border-radius:10px;background:${p.conta === "matriz" ? "#2a1a00" : "#0d1a2a"};border:1px solid ${p.conta === "matriz" ? "#4a3010" : "#1e3a5a"};color:${p.conta === "matriz" ? "#f0a060" : "#5eb3f0"};font-size:9px;font-weight:600;white-space:nowrap;">${p.contaLabel || (p.conta === "matriz" ? "Matriz RS" : "Filial SP")}</div>
         </div>
 
         ${p.requires_attention
