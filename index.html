@@ -682,6 +682,146 @@ function extrairItemId(texto) {
   return t.toUpperCase();
 }
 
+let perguntasState = { lista: null, carregando: false, erro: null, enviando: {} };
+
+async function fetchPerguntas() {
+  perguntasState.carregando = true;
+  perguntasState.erro = null;
+  const token = state.ml_token_filial?.access_token;
+  if (!token) {
+    perguntasState.carregando = false;
+    perguntasState.erro = "Token da Filial não encontrado. Verifique a conexão ML.";
+    return;
+  }
+  try {
+    const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=buscar-perguntas&token=${token}`);
+    const data = await r.json();
+    perguntasState.carregando = false;
+    if (!data.ok) {
+      perguntasState.erro = data.error || "Erro ao buscar perguntas.";
+    } else {
+      perguntasState.lista = data.perguntas;
+    }
+  } catch (e) {
+    perguntasState.carregando = false;
+    perguntasState.erro = "Erro de conexão ao buscar perguntas.";
+  }
+}
+
+function renderPerguntasTab(container) {
+  container.innerHTML = "";
+
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "max-width:760px;";
+
+  const total = perguntasState.lista?.length || 0;
+  const atencao = (perguntasState.lista || []).filter(p => p.requires_attention).length;
+
+  const header = document.createElement("div");
+  header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;";
+  header.innerHTML = `
+    <div>
+      <div style="font-size:16px;font-weight:700;color:#fff;">Perguntas automáticas</div>
+      <div style="font-size:11px;color:#666;margin-top:2px;">${perguntasState.lista ? `${total} pendentes${atencao ? ` · ${atencao} requer${atencao>1?"em":""} atenção manual` : ""}` : "Respostas sugeridas com IA para perguntas pré-venda"}</div>
+    </div>
+    <button id="perguntas-btn-atualizar" style="background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:6px;padding:7px 14px;color:#ccc;font-size:11px;cursor:pointer;">${perguntasState.carregando ? "Buscando..." : "↻ Atualizar"}</button>
+  `;
+  wrap.appendChild(header);
+
+  if (perguntasState.erro) {
+    const errBox = document.createElement("div");
+    errBox.style.cssText = "background:#2a1000;border:1px solid #4a2010;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:11px;color:#f0a060;";
+    errBox.textContent = perguntasState.erro;
+    wrap.appendChild(errBox);
+  }
+
+  if (perguntasState.carregando && !perguntasState.lista) {
+    const loading = document.createElement("div");
+    loading.style.cssText = "padding:40px 0;text-align:center;font-size:12px;color:#555;";
+    loading.textContent = "Buscando perguntas pendentes...";
+    wrap.appendChild(loading);
+  } else if (perguntasState.lista && perguntasState.lista.length === 0) {
+    const empty = document.createElement("div");
+    empty.style.cssText = "padding:40px 0;text-align:center;font-size:12px;color:#555;";
+    empty.textContent = "Nenhuma pergunta pendente. Tudo em dia ✓";
+    wrap.appendChild(empty);
+  } else if (perguntasState.lista) {
+    perguntasState.lista.forEach((p) => {
+      const card = document.createElement("div");
+      card.style.cssText = "background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:10px;padding:16px;margin-bottom:14px;";
+
+      const enviado = perguntasState.enviando[p.question_id] === "ok";
+      const enviandoAgora = perguntasState.enviando[p.question_id] === "loading";
+
+      card.innerHTML = `
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+          ${p.thumbnail ? `<img src="${p.thumbnail}" style="width:36px;height:36px;border-radius:6px;object-fit:cover;background:#111;flex-shrink:0;">` : ""}
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:12px;font-weight:600;color:#fff;line-height:1.3;">${p.produto}</div>
+          </div>
+        </div>
+
+        ${p.requires_attention
+          ? `<div style="display:inline-block;padding:3px 10px;border-radius:12px;background:#2a1000;border:1px solid #4a2010;color:#f0a060;font-size:10px;font-weight:600;margin-bottom:12px;">⚠ requer atenção manual</div>`
+          : `<div style="display:inline-block;padding:3px 10px;border-radius:12px;background:#1a2a1a;border:1px solid #2d5a2d;color:#2dce89;font-size:10px;font-weight:600;margin-bottom:12px;">sugestão da IA</div>`
+        }
+
+        <div style="font-size:10px;color:#666;margin-bottom:6px;">Pergunta do comprador</div>
+        <div style="background:#111;border:1px solid #282828;border-radius:6px;padding:10px 12px;font-size:12px;color:#ccc;margin-bottom:14px;">${p.pergunta}</div>
+
+        ${!p.requires_attention ? `
+          <div style="font-size:10px;color:#666;margin-bottom:6px;">Resposta sugerida (editável)</div>
+          <textarea id="pergunta-resp-${p.question_id}" style="width:100%;background:#111;border:1px solid #f77614;border-radius:6px;padding:10px 12px;color:#fff;font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;resize:vertical;min-height:60px;margin-bottom:12px;">${p.suggested_answer}</textarea>
+          <button id="pergunta-enviar-${p.question_id}" ${enviado ? "disabled" : ""} style="padding:9px 18px;border-radius:6px;background:${enviado ? "#1a2a1a" : "#f77614"};border:1px solid ${enviado ? "#2d5a2d" : "transparent"};color:${enviado ? "#2dce89" : "#fff"};font-size:12px;font-weight:600;cursor:${enviado ? "default" : "pointer"};">${enviado ? "Enviado ✓" : (enviandoAgora ? "Enviando..." : "Enviar resposta")}</button>
+        ` : `
+          <a href="https://www.mercadolivre.com.br/anuncio/${p.item_id}" target="_blank" style="display:inline-block;padding:9px 18px;border-radius:6px;background:#1a1a1a;border:1px solid #333;color:#ccc;font-size:12px;font-weight:600;text-decoration:none;">Responder no ML ↗</a>
+        `}
+      `;
+      wrap.appendChild(card);
+
+      const btnEnviar = card.querySelector(`#pergunta-enviar-${p.question_id}`);
+      if (btnEnviar) {
+        btnEnviar.onclick = async () => {
+          const texto = card.querySelector(`#pergunta-resp-${p.question_id}`)?.value?.trim();
+          if (!texto) return;
+          perguntasState.enviando[p.question_id] = "loading";
+          renderPerguntasTab(container);
+          const token = state.ml_token_filial?.access_token;
+          try {
+            const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=responder-pergunta`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ question_id: p.question_id, texto, token }),
+            });
+            const data = await r.json();
+            perguntasState.enviando[p.question_id] = data.ok ? "ok" : "erro";
+          } catch (e) {
+            perguntasState.enviando[p.question_id] = "erro";
+          }
+          renderPerguntasTab(container);
+        };
+      }
+    });
+  } else {
+    const inicio = document.createElement("div");
+    inicio.style.cssText = "padding:40px 0;text-align:center;";
+    inicio.innerHTML = `<div style="font-size:12px;color:#555;margin-bottom:16px;">Clique em atualizar para buscar as perguntas pendentes.</div>`;
+    wrap.appendChild(inicio);
+  }
+
+  container.appendChild(wrap);
+
+  const btnAtualizar = container.querySelector("#perguntas-btn-atualizar");
+  if (btnAtualizar) btnAtualizar.onclick = async () => {
+    await fetchPerguntas();
+    renderPerguntasTab(container);
+  };
+
+  if (!perguntasState.lista && !perguntasState.carregando && !perguntasState.erro) {
+    fetchPerguntas().then(() => renderPerguntasTab(container));
+  }
+}
+
 function renderClonarTab(container) {
   container.innerHTML = "";
 
@@ -3624,7 +3764,7 @@ function render(){
             { label: "Dashboard", tab: "dashboard", subs: [] },
             { label: "Tarefas", tab: "tarefas", subs: [] },
             { label: "Equipe", tab: null, subs: [{label:"Concluídas",tab:"concluidas"},{label:"Conversas",tab:"conversas"}] },
-            { label: "Mercado Livre", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência de Compra",tab:"experiencia"},{label:"Clonar Anúncio",tab:"clonar"}] },
+            { label: "Mercado Livre", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência de Compra",tab:"experiencia"},{label:"Clonar Anúncio",tab:"clonar"},{label:"Perguntas",tab:"perguntas"}] },
             { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"}] },
           ];
 
@@ -4156,6 +4296,11 @@ function render(){
             let clonarContainer = panel.querySelector(".clonar-container");
             if(!clonarContainer){ clonarContainer = document.createElement("div"); clonarContainer.className="clonar-container"; panel.appendChild(clonarContainer); }
             renderClonarTab(clonarContainer);
+          }else if(window._diogotab==="perguntas"){
+            panel.style.maxHeight="none"; panel.style.overflowY="auto";
+            let perguntasContainer = panel.querySelector(".perguntas-container");
+            if(!perguntasContainer){ perguntasContainer = document.createElement("div"); perguntasContainer.className="perguntas-container"; panel.appendChild(perguntasContainer); }
+            renderPerguntasTab(perguntasContainer);
           }else if(window._diogotab==="conferencia"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
             let confContainer = panel.querySelector(".conf-container");
