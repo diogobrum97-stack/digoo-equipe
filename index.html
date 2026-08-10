@@ -707,9 +707,19 @@ function renderClonarTab(container) {
   const colEsq = document.createElement("div");
   row.appendChild(colEsq);
 
+  // Envelope único da coluna esquerda (mesma altura da direita quando há prévia)
+  const colEsqCard = document.createElement("div");
+  colEsqCard.style.cssText = temPreview
+    ? "background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:10px;padding:16px;height:100%;box-sizing:border-box;"
+    : "";
+  colEsq.appendChild(colEsqCard);
+  const alvoEsq = temPreview ? colEsqCard : colEsq;
+
   // Card de busca
   const buscaCard = document.createElement("div");
-  buscaCard.style.cssText = "background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:10px;padding:16px;margin-bottom:16px;";
+  buscaCard.style.cssText = temPreviewJaCalc
+    ? "padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid #282828;"
+    : "background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:10px;padding:16px;margin-bottom:16px;";
   buscaCard.innerHTML = `
     <div style="font-size:11px;color:#888;margin-bottom:8px;">ID ou link do anúncio de origem</div>
     <input id="clonar-input-id" type="text" placeholder="Ex: MLB4718893383 ou link do ML" value="${clonarState.itemBusca}"
@@ -721,13 +731,13 @@ function renderClonarTab(container) {
     </div>
     <button id="clonar-btn-buscar" style="width:100%;padding:10px;border-radius:6px;background:#f77614;border:none;color:#fff;font-size:12px;font-weight:600;cursor:pointer;">${clonarState.buscando ? "Buscando..." : "Buscar anúncio"}</button>
   `;
-  colEsq.appendChild(buscaCard);
+  alvoEsq.appendChild(buscaCard);
 
   if (clonarState.erro) {
     const errBox = document.createElement("div");
     errBox.style.cssText = "background:#2a1000;border:1px solid #4a2010;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:11px;color:#f0a060;white-space:pre-wrap;line-height:1.5;";
     errBox.textContent = clonarState.erro;
-    colEsq.appendChild(errBox);
+    alvoEsq.appendChild(errBox);
   }
 
   // Preview do item encontrado
@@ -736,7 +746,6 @@ function renderClonarTab(container) {
     const contaDestino = clonarState.contaOrigem === "matriz" ? "Filial SP" : "Matriz RS";
 
     const previewCard = document.createElement("div");
-    previewCard.style.cssText = "background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:10px;padding:16px;margin-bottom:16px;";
 
     const foto = item.pictures?.[0]?.source || "";
     previewCard.innerHTML = `
@@ -772,7 +781,7 @@ function renderClonarTab(container) {
 
       <button id="clonar-btn-confirmar" ${item.has_variations ? "disabled" : ""} style="width:100%;padding:11px;border-radius:6px;background:${item.has_variations ? "#333" : "#f77614"};border:none;color:${item.has_variations ? "#666" : "#fff"};font-size:12px;font-weight:600;cursor:${item.has_variations ? "not-allowed" : "pointer"};">${clonarState.clonando ? "Clonando..." : "Confirmar e clonar anúncio"}</button>
     `;
-    colEsq.appendChild(previewCard);
+    alvoEsq.appendChild(previewCard);
 
     // ── Coluna direita: prévia visual do anúncio clonado ──
     const colDir = document.createElement("div");
