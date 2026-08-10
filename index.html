@@ -667,7 +667,7 @@ async function fetchDashboard() {
 let expPageFiltro = "todos"; // todos | ruim | regular
 
 let clonarState = { itemBusca: "", contaOrigem: "matriz", itemEncontrado: null, buscando: false, clonando: false, resultado: null, erro: null, novoSku: "", novaQuantidade: "" };
-let loteState = { rodando: false, total: 0, itens: [] };
+let loteState = { rodando: false, fase: "idle", total: 0, itens: [] };
 
 function extrairItemId(texto) {
   if (!texto) return "";
@@ -692,14 +692,13 @@ function extrairMultiplosIds(texto) {
 }
 
 // Processa a clonagem de um lote de IDs, um por vez
-async function processarLoteClonagem(container) {
+async function buscarLoteClonagem(container) {
   const ids = extrairMultiplosIds(clonarState.itemBusca);
   if (ids.length === 0) return;
 
   const tokenOrigem = clonarState.contaOrigem === "matriz" ? state.ml_token?.access_token : state.ml_token_filial?.access_token;
-  const tokenDestino = clonarState.contaOrigem === "matriz" ? state.ml_token_filial?.access_token : state.ml_token?.access_token;
-  if (!tokenOrigem || !tokenDestino) {
-    clonarState.erro = "Token de uma das contas não encontrado.";
+  if (!tokenOrigem) {
+    clonarState.erro = "Token da conta de origem não encontrado.";
     renderClonarTab(container);
     return;
   }
@@ -707,8 +706,9 @@ async function processarLoteClonagem(container) {
   // Popula todos os cards desde já, com status "aguardando"
   loteState = {
     rodando: true,
+    fase: "busca",
     total: ids.length,
-    itens: ids.map(itemId => ({ itemId, status: "aguardando", titulo: "", foto: "", motivo: "", novoId: "", permalink: "" })),
+    itens: ids.map(itemId => ({ itemId, status: "aguardando", titulo: "", foto: "", categoria: "", sku: "", quantidade: "", preco: "", motivo: "", novoId: "", permalink: "", item: null })),
   };
   renderClonarTab(container);
 
@@ -729,20 +729,51 @@ async function processarLoteClonagem(container) {
       const item = dataBusca.item;
       it.titulo = item.title;
       it.foto = item.pictures?.[0]?.source || "";
+      it.categoria = item.category_id;
+      it.sku = item.sku || "";
+      it.quantidade = item.available_quantity;
+      it.preco = item.price;
+      it.item = item;
       if (item.has_variations) {
         it.status = "erro";
         it.motivo = "Tem variações — não suportado em lote";
-        renderClonarTab(container);
-        continue;
+      } else {
+        it.status = "encontrado";
       }
+    } catch (e) {
+      it.status = "erro";
+      it.motivo = "Erro de conexão: " + e.message;
+    }
+    renderClonarTab(container);
+  }
 
-      it.status = "clonando";
-      renderClonarTab(container);
+  loteState.rodando = false;
+  loteState.fase = "revisao";
+  renderClonarTab(container);
+}
 
+async function confirmarLoteClonagem(container) {
+  const tokenDestino = clonarState.contaOrigem === "matriz" ? state.ml_token_filial?.access_token : state.ml_token?.access_token;
+  if (!tokenDestino) {
+    clonarState.erro = "Token da conta de destino não encontrado.";
+    renderClonarTab(container);
+    return;
+  }
+
+  loteState.rodando = true;
+  loteState.fase = "clonando";
+  renderClonarTab(container);
+
+  const encontrados = loteState.itens.filter(it => it.status === "encontrado");
+  for (const it of encontrados) {
+    it.status = "clonando";
+    renderClonarTab(container);
+
+    try {
       const rClonar = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=clonar`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ item, tokenDestino }),
+        body: JSON.stringify({ item: it.item, tokenDestino }),
       });
       const dataClonar = await rClonar.json();
       if (!dataClonar.ok) {
@@ -763,6 +794,7 @@ async function processarLoteClonagem(container) {
   }
 
   loteState.rodando = false;
+  loteState.fase = "concluido";
   renderClonarTab(container);
 }
 
@@ -1088,11 +1120,25 @@ function renderClonarTab(container) {
     </div>
     <button id="clonar-btn-buscar" ${loteState.rodando ? "disabled" : ""} style="width:100%;padding:10px;border-radius:6px;background:${loteState.rodando ? "#333" : "#f77614"};border:none;color:${loteState.rodando ? "#888" : "#fff"};font-size:12px;font-weight:600;cursor:${loteState.rodando ? "default" : "pointer"};">${
       isLoteModo
-        ? (loteState.rodando ? `Processando ${(loteState.itens||[]).filter(it=>it.status==="sucesso"||it.status==="erro").length}/${loteState.total}...` : `Clonar todos (${idsDetectados.length})`)
+        ? (loteState.fase === "busca" ? `Buscando ${(loteState.itens||[]).filter(it=>it.status!=="aguardando").length}/${loteState.total}...` : `Buscar ${idsDetectados.length} anúncios`)
         : (clonarState.buscando ? "Buscando..." : "Buscar anúncio")
     }</button>
   `;
   alvoEsq.appendChild(buscaCard);
+
+  // Botão de confirmação — só aparece depois da prévia (fase revisão), fora do card de busca
+  if (isLoteModo && (loteState.fase === "revisao" || loteState.fase === "clonando")) {
+    const encontrados = (loteState.itens || []).filter(it => it.status === "encontrado" || it.status === "clonando" || it.status === "sucesso");
+    const confirmBtn = document.createElement("button");
+    const jaClonando = loteState.fase === "clonando";
+    confirmBtn.id = "clonar-btn-confirmar-lote";
+    confirmBtn.disabled = jaClonando;
+    confirmBtn.style.cssText = `width:100%;padding:11px;border-radius:6px;background:${jaClonando ? "#333" : "#2dce89"};border:none;color:${jaClonando ? "#888" : "#000"};font-size:12px;font-weight:700;cursor:${jaClonando ? "default" : "pointer"};margin-bottom:16px;`;
+    confirmBtn.textContent = jaClonando
+      ? `Clonando ${loteState.itens.filter(it=>it.status==="sucesso"||it.status==="erro").length}/${encontrados.length}...`
+      : `Confirmar e clonar ${loteState.itens.filter(it=>it.status==="encontrado").length} anúncios`;
+    if (loteState.itens.filter(it=>it.status==="encontrado").length > 0 || jaClonando) alvoEsq.appendChild(confirmBtn);
+  }
 
   if (clonarState.erro) {
     const errBox = document.createElement("div");
@@ -1101,7 +1147,7 @@ function renderClonarTab(container) {
     alvoEsq.appendChild(errBox);
   }
 
-  // ── Coluna direita: um card por anúncio, status ao vivo ──
+  // ── Coluna direita: um card por anúncio — prévia primeiro, depois status ao vivo ──
   if (isLoteModo) {
     const colDir = document.createElement("div");
     const loteWrap = document.createElement("div");
@@ -1110,34 +1156,46 @@ function renderClonarTab(container) {
     const itens = loteState.itens || [];
     const concluidos = itens.filter(it => it.status === "sucesso" || it.status === "erro").length;
     const sucessos = itens.filter(it => it.status === "sucesso").length;
+    const encontradosCount = itens.filter(it => it.status === "encontrado").length;
 
     const statusInfo = {
       aguardando: { label: "Na fila", cor: "#555", icone: "⋯" },
       buscando:   { label: "Buscando...", cor: "#f77614", icone: "⏳" },
+      encontrado: { label: "Pronto pra clonar", cor: "#5eb3f0", icone: "👁" },
       clonando:   { label: "Clonando...", cor: "#f77614", icone: "⏳" },
       sucesso:    { label: "Clonado", cor: "#2dce89", icone: "✓" },
       erro:       { label: "Erro", cor: "#e8432d", icone: "✕" },
     };
 
+    let tituloPainel = "Resultado do lote";
+    if (loteState.fase === "busca") tituloPainel = `Buscando ${itens.filter(it=>it.status!=="aguardando").length}/${loteState.total}...`;
+    else if (loteState.fase === "revisao") tituloPainel = `Prévia — ${encontradosCount} prontos pra clonar`;
+    else if (loteState.fase === "clonando") tituloPainel = `Clonando ${concluidos}/${loteState.total}...`;
+    else if (loteState.fase === "concluido") tituloPainel = `Concluído — ${sucessos} de ${loteState.total} clonados`;
+
     loteWrap.innerHTML = `
-      <div style="font-size:11px;color:#888;margin-bottom:12px;">${loteState.total === 0 ? "Resultado do lote" : (loteState.rodando ? `Processando ${concluidos}/${loteState.total}...` : `Concluído — ${sucessos} de ${loteState.total} clonados`)}</div>
-      ${loteState.total > 0 ? `<div style="height:4px;background:#111;border-radius:99px;overflow:hidden;margin-bottom:16px;"><div style="height:4px;background:#f77614;width:${(concluidos/loteState.total*100).toFixed(0)}%;transition:width .3s;"></div></div>` : ""}
+      <div style="font-size:11px;color:#888;margin-bottom:12px;">${tituloPainel}</div>
+      ${loteState.total > 0 && loteState.fase !== "revisao" ? `<div style="height:4px;background:#111;border-radius:99px;overflow:hidden;margin-bottom:16px;"><div style="height:4px;background:#f77614;width:${(concluidos/loteState.total*100).toFixed(0)}%;transition:width .3s;"></div></div>` : ""}
       <div style="max-height:460px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">
-        ${itens.length === 0 ? `<div style="font-size:11px;color:#555;text-align:center;padding:30px 0;">Cole os IDs à esquerda e clique em "Clonar todos".</div>` : itens.map(it => {
+        ${itens.length === 0 ? `<div style="font-size:11px;color:#555;text-align:center;padding:30px 0;">Cole os IDs à esquerda e clique em "Buscar".</div>` : itens.map(it => {
           const s = statusInfo[it.status] || statusInfo.aguardando;
+          const mostrarDetalhes = it.status === "encontrado";
           return `
-          <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;background:#111;border:1px solid #282828;border-radius:8px;">
-            ${it.foto ? `<img src="${it.foto}" style="width:32px;height:32px;border-radius:6px;object-fit:cover;flex-shrink:0;background:#1a1a1a;">` : `<div style="width:32px;height:32px;border-radius:6px;background:#1a1a1a;flex-shrink:0;"></div>`}
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;background:#111;border:1px solid ${it.status==='encontrado' ? '#1e3a5a' : '#282828'};border-radius:8px;">
+            ${it.foto ? `<img src="${it.foto}" style="width:36px;height:36px;border-radius:6px;object-fit:cover;flex-shrink:0;background:#1a1a1a;">` : `<div style="width:36px;height:36px;border-radius:6px;background:#1a1a1a;flex-shrink:0;"></div>`}
             <div style="flex:1;min-width:0;">
               <div style="font-size:11px;color:#ccc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${it.titulo || it.itemId}</div>
-              <div style="font-size:10px;color:${s.cor};margin-top:2px;line-height:1.4;">${s.icone} ${it.status === "erro" ? it.motivo : s.label}</div>
+              ${mostrarDetalhes
+                ? `<div style="font-size:10px;color:#666;margin-top:2px;">SKU ${it.sku || "—"} · ${it.quantidade} un · R$ ${Number(it.preco).toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>`
+                : `<div style="font-size:10px;color:${s.cor};margin-top:2px;line-height:1.4;">${s.icone} ${it.status === "erro" ? it.motivo : s.label}</div>`
+              }
             </div>
             ${it.status === "sucesso" ? `<a href="${it.permalink}" target="_blank" style="font-size:10px;color:#5eb3f0;text-decoration:none;white-space:nowrap;flex-shrink:0;">ver ↗</a>` : ""}
           </div>
           `;
         }).join("")}
       </div>
-      ${!loteState.rodando && loteState.total > 0 ? `<button id="clonar-lote-novo" style="width:100%;margin-top:12px;padding:9px;border-radius:6px;background:#1a1a1a;border:1px solid #333;color:#ccc;font-size:11px;font-weight:600;cursor:pointer;">Limpar e clonar outro lote</button>` : ""}
+      ${!loteState.rodando && loteState.fase === "concluido" ? `<button id="clonar-lote-novo" style="width:100%;margin-top:12px;padding:9px;border-radius:6px;background:#1a1a1a;border:1px solid #333;color:#ccc;font-size:11px;font-weight:600;cursor:pointer;">Limpar e clonar outro lote</button>` : ""}
     `;
     colDir.appendChild(loteWrap);
     row.appendChild(colDir);
@@ -1268,15 +1326,20 @@ function renderClonarTab(container) {
   const btnLoteNovo = container.querySelector("#clonar-lote-novo");
   if (btnLoteNovo) btnLoteNovo.onclick = () => {
     clonarState.itemBusca = "";
-    loteState = { rodando: false, atual: 0, total: 0, itemAtual: "", sucesso: [], erro: [] };
+    loteState = { rodando: false, fase: "idle", total: 0, itens: [] };
     renderClonarTab(container);
+  };
+
+  const btnConfirmarLote = container.querySelector("#clonar-btn-confirmar-lote");
+  if (btnConfirmarLote) btnConfirmarLote.onclick = async () => {
+    await confirmarLoteClonagem(container);
   };
 
   const btnBuscar = container.querySelector("#clonar-btn-buscar");
   if (btnBuscar) btnBuscar.onclick = async () => {
     const idsAgora = extrairMultiplosIds(clonarState.itemBusca);
     if (idsAgora.length > 1) {
-      await processarLoteClonagem(container);
+      await buscarLoteClonagem(container);
       return;
     }
     const itemId = extrairItemId(clonarState.itemBusca);
