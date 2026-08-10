@@ -730,7 +730,7 @@ function renderPerguntasTab(container) {
 
   if (perguntasState.erro) {
     const errBox = document.createElement("div");
-    errBox.style.cssText = "background:#2a1000;border:1px solid #4a2010;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:11px;color:#f0a060;";
+    errBox.style.cssText = "background:#2a1000;border:1px solid #4a2010;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:11px;color:#f0a060;white-space:pre-wrap;line-height:1.5;";
     errBox.textContent = perguntasState.erro;
     wrap.appendChild(errBox);
   }
@@ -794,9 +794,15 @@ function renderPerguntasTab(container) {
               body: JSON.stringify({ question_id: p.question_id, texto, token }),
             });
             const data = await r.json();
-            perguntasState.enviando[p.question_id] = data.ok ? "ok" : "erro";
+            if (data.ok) {
+              perguntasState.enviando[p.question_id] = "ok";
+            } else {
+              perguntasState.enviando[p.question_id] = "erro";
+              perguntasState.erro = (data.error || "Erro ao enviar resposta") + (data.raw ? "\n\n" + JSON.stringify(data.raw, null, 2) : "");
+            }
           } catch (e) {
             perguntasState.enviando[p.question_id] = "erro";
+            perguntasState.erro = "Erro de conexão: " + e.message;
           }
           renderPerguntasTab(container);
         };
