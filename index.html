@@ -7155,10 +7155,11 @@ async function renderConferencia(panel, color) {
       const badges = document.createElement("div");
       badges.style.cssText = "display:flex;gap:5px;flex-wrap:wrap;margin-top:5px;";
       const badgeItems = [];
-      if(categoria === "impostos" && (doc.prestador || tituloImposto)) badgeItems.push(tituloImposto ? (doc.prestador || tipoImp) : tipoImp);
-      if(doc.numeroNF) badgeItems.push(`nº ${doc.numeroNF}`);
-      if(doc.competencia) badgeItems.push(doc.competencia);
-      if(doc.cnpj) badgeItems.push(doc.cnpj);
+      if(categoria !== "impostos") {
+        if(doc.numeroNF) badgeItems.push(`nº ${doc.numeroNF}`);
+        if(doc.competencia) badgeItems.push(doc.competencia);
+        if(doc.cnpj) badgeItems.push(doc.cnpj);
+      }
       badgeItems.forEach(txt => {
         const b = document.createElement("span");
         b.style.cssText = "font-size:11px;font-weight:500;padding:2px 8px;border-radius:4px;background:var(--bg2);border:0.5px solid var(--border2);color:var(--text3);white-space:nowrap;";
