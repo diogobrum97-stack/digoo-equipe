@@ -1489,8 +1489,15 @@ function renderDashboard(panel, color) {
     window._sbarApply();
   };
 
+  window._goPerguntas = function() {
+    window._diogotab = 'perguntas';
+    render();
+  };
+
+  const perguntasCount = window._dashPerguntasCount;
+
   const statusBar = document.createElement("div");
-  statusBar.style.cssText = "grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;align-items:start;";
+  statusBar.style.cssText = "grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px;align-items:start;";
   statusBar.innerHTML = `
     <div id="sbar-card-tasks" onclick="window._sbarToggle('tasks')" style="background:linear-gradient(to top,#252525 0%,#0d0d0d 100%);border:1px solid #f77614;border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s;">
       <div style="padding:13px 16px;display:flex;align-items:center;gap:14px;">
@@ -1518,9 +1525,33 @@ function renderDashboard(panel, color) {
         <div style="padding:8px 14px 10px;">${estDrawerRows || '<div style="font-size:11px;color:#555;padding:6px 0;">Nenhum produto crítico ✓</div>'}</div>
       </div>
     </div>
+    <div id="sbar-card-perguntas" onclick="window._goPerguntas()" style="background:linear-gradient(to top,#252525 0%,#0d0d0d 100%);border:1px solid #f77614;border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s;">
+      <div style="padding:13px 16px;display:flex;align-items:center;gap:10px;">
+        <div style="font-size:10px;color:#555;white-space:nowrap;">Perguntas</div>
+        ${perguntasCount === null || perguntasCount === undefined
+          ? `<div style="font-size:11px;color:#555;">...</div>`
+          : perguntasCount > 0
+            ? `<div style="font-size:11px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">${perguntasCount}</div><div style="font-size:10px;color:#555;">pendente${perguntasCount>1?"s":""}</div>`
+            : `<div style="font-size:10px;color:#2dce89;">Em dia ✓</div>`
+        }
+        <div style="margin-left:auto;font-size:10px;color:#2e2e2e;">→</div>
+      </div>
+    </div>
   `;
   grid.appendChild(statusBar);
   window._sbarApply();
+
+  // Buscar contagem de perguntas (leve, sem IA) se ainda não carregada
+  if(window._dashPerguntasCount === undefined) {
+    window._dashPerguntasCount = null;
+    const tokenPerg = state.ml_token_filial?.access_token;
+    if(tokenPerg) {
+      fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=contar-perguntas&token=${tokenPerg}`)
+        .then(r => r.json())
+        .then(d => { window._dashPerguntasCount = d.ok ? d.total : null; render(); })
+        .catch(() => { window._dashPerguntasCount = null; });
+    }
+  }
 
   // Calendário Fiscal
   const fiscalCard = document.createElement("div");
