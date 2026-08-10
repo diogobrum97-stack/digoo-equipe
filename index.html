@@ -791,7 +791,7 @@ function renderPerguntasTab(container) {
             const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=responder-pergunta`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ question_id: p.question_id, texto, token }),
+              body: JSON.stringify({ question_id: p.question_id, texto, token, pergunta_texto: p.pergunta, produto: p.produto }),
             });
             const data = await r.json();
             if (data.ok) {
