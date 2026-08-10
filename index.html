@@ -682,7 +682,7 @@ function extrairItemId(texto) {
   return t.toUpperCase();
 }
 
-let perguntasState = { lista: null, carregando: false, erro: null, enviando: {} };
+let perguntasState = { lista: null, carregando: false, erro: null, enviando: {}, _fetchedAt: 0 };
 
 async function fetchPerguntas() {
   perguntasState.carregando = true;
@@ -701,12 +701,58 @@ async function fetchPerguntas() {
       perguntasState.erro = data.error || "Erro ao buscar perguntas.";
     } else {
       perguntasState.lista = data.perguntas;
+      perguntasState._fetchedAt = Date.now();
     }
   } catch (e) {
     perguntasState.carregando = false;
     perguntasState.erro = "Erro de conexão ao buscar perguntas.";
   }
 }
+
+async function enviarRespostaPergunta(p) {
+  const token = state.ml_token_filial?.access_token;
+  if (!token) return { ok: false };
+  try {
+    const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=responder-pergunta`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question_id: p.question_id, texto: p.suggested_answer, token, pergunta_texto: p.pergunta, produto: p.produto, item_id: p.item_id }),
+    });
+    return await r.json();
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+}
+
+// Verifica e envia automaticamente perguntas com conhecimento prévio confiável (modo automático)
+async function checarPerguntasAuto() {
+  if (!state.perguntas_auto) return;
+  const agora = Date.now();
+  if (!perguntasState.carregando && (!perguntasState.lista || (agora - (perguntasState._fetchedAt || 0)) > 150 * 1000)) {
+    await fetchPerguntas();
+  }
+  if (!perguntasState.lista) return;
+  const elegiveis = perguntasState.lista.filter(p =>
+    !p.requires_attention && p.has_knowledge && p.suggested_answer &&
+    perguntasState.enviando[p.question_id] !== "ok" && perguntasState.enviando[p.question_id] !== "loading"
+  );
+  for (const p of elegiveis) {
+    perguntasState.enviando[p.question_id] = "loading";
+    const data = await enviarRespostaPergunta(p);
+    perguntasState.enviando[p.question_id] = data.ok ? "ok-auto" : "erro";
+    if (data.ok) {
+      push(ref(db, "/perguntas_auto_log"), {
+        produto: p.produto, pergunta: p.pergunta, resposta: p.suggested_answer, ts: Date.now(),
+      });
+    }
+  }
+  if (elegiveis.length && window._diogotab === "perguntas") {
+    const cont = document.querySelector(".perguntas-container");
+    if (cont) renderPerguntasTab(cont);
+  }
+}
+setInterval(checarPerguntasAuto, 3 * 60 * 1000); // checa a cada 3 minutos
+setTimeout(checarPerguntasAuto, 8000);
 
 function renderPerguntasTab(container) {
   container.innerHTML = "";
@@ -716,9 +762,10 @@ function renderPerguntasTab(container) {
 
   const total = perguntasState.lista?.length || 0;
   const atencao = (perguntasState.lista || []).filter(p => p.requires_attention).length;
+  const modoAuto = !!state.perguntas_auto;
 
   const header = document.createElement("div");
-  header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;";
+  header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;";
   header.innerHTML = `
     <div>
       <div style="font-size:16px;font-weight:700;color:#fff;">Perguntas automáticas</div>
@@ -727,6 +774,17 @@ function renderPerguntasTab(container) {
     <button id="perguntas-btn-atualizar" style="background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:6px;padding:7px 14px;color:#ccc;font-size:11px;cursor:pointer;">${perguntasState.carregando ? "Buscando..." : "↻ Atualizar"}</button>
   `;
   wrap.appendChild(header);
+
+  const autoBar = document.createElement("div");
+  autoBar.style.cssText = `display:flex;align-items:center;justify-content:space-between;background:${modoAuto ? "linear-gradient(to top,#1a2a1a 0%,#000 100%)" : "linear-gradient(to top,#252525 0%,#000 100%)"};border:1px solid ${modoAuto ? "#2d5a2d" : "#333"};border-radius:10px;padding:12px 16px;margin-bottom:20px;`;
+  autoBar.innerHTML = `
+    <div>
+      <div style="font-size:12px;font-weight:600;color:${modoAuto ? "#2dce89" : "#fff"};">Modo automático ${modoAuto ? "ativado" : "desativado"}</div>
+      <div style="font-size:10px;color:#666;margin-top:2px;">Envia sozinho apenas perguntas com conhecimento já confirmado sobre o mesmo produto. O resto continua na fila manual.</div>
+    </div>
+    <button id="perguntas-btn-toggle-auto" style="background:${modoAuto ? "#c0392b" : "#f77614"};border:none;border-radius:6px;padding:8px 16px;color:#fff;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;">${modoAuto ? "Desativar" : "Ativar"}</button>
+  `;
+  wrap.appendChild(autoBar);
 
   if (perguntasState.erro) {
     const errBox = document.createElement("div");
@@ -751,6 +809,7 @@ function renderPerguntasTab(container) {
       card.style.cssText = "background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:10px;padding:16px;margin-bottom:14px;";
 
       const enviado = perguntasState.enviando[p.question_id] === "ok";
+      const enviadoAuto = perguntasState.enviando[p.question_id] === "ok-auto";
       const enviandoAgora = perguntasState.enviando[p.question_id] === "loading";
 
       card.innerHTML = `
@@ -763,16 +822,20 @@ function renderPerguntasTab(container) {
 
         ${p.requires_attention
           ? `<div style="display:inline-block;padding:3px 10px;border-radius:12px;background:#2a1000;border:1px solid #4a2010;color:#f0a060;font-size:10px;font-weight:600;margin-bottom:12px;">⚠ requer atenção manual</div>`
-          : `<div style="display:inline-block;padding:3px 10px;border-radius:12px;background:#1a2a1a;border:1px solid #2d5a2d;color:#2dce89;font-size:10px;font-weight:600;margin-bottom:12px;">sugestão da IA</div>`
+          : `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
+              <div style="display:inline-block;padding:3px 10px;border-radius:12px;background:#1a2a1a;border:1px solid #2d5a2d;color:#2dce89;font-size:10px;font-weight:600;">sugestão da IA</div>
+              ${p.has_knowledge ? `<div style="display:inline-block;padding:3px 10px;border-radius:12px;background:#0d1a2a;border:1px solid #1e3a5a;color:#5eb3f0;font-size:10px;font-weight:600;">baseada em respostas já dadas</div>` : ""}
+              ${enviadoAuto ? `<div style="display:inline-block;padding:3px 10px;border-radius:12px;background:#f7761422;border:1px solid #f7761455;color:#f77614;font-size:10px;font-weight:600;">✓ enviada automaticamente</div>` : ""}
+            </div>`
         }
 
         <div style="font-size:10px;color:#666;margin-bottom:6px;">Pergunta do comprador</div>
         <div style="background:#111;border:1px solid #282828;border-radius:6px;padding:10px 12px;font-size:12px;color:#ccc;margin-bottom:14px;">${p.pergunta}</div>
 
         ${!p.requires_attention ? `
-          <div style="font-size:10px;color:#666;margin-bottom:6px;">Resposta sugerida (editável)</div>
-          <textarea id="pergunta-resp-${p.question_id}" style="width:100%;background:#111;border:1px solid #f77614;border-radius:6px;padding:10px 12px;color:#fff;font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;resize:vertical;min-height:60px;margin-bottom:12px;">${p.suggested_answer}</textarea>
-          <button id="pergunta-enviar-${p.question_id}" ${enviado ? "disabled" : ""} style="padding:9px 18px;border-radius:6px;background:${enviado ? "#1a2a1a" : "#f77614"};border:1px solid ${enviado ? "#2d5a2d" : "transparent"};color:${enviado ? "#2dce89" : "#fff"};font-size:12px;font-weight:600;cursor:${enviado ? "default" : "pointer"};">${enviado ? "Enviado ✓" : (enviandoAgora ? "Enviando..." : "Enviar resposta")}</button>
+          <div style="font-size:10px;color:#666;margin-bottom:6px;">Resposta ${enviadoAuto || enviado ? "enviada" : "sugerida (editável)"}</div>
+          <textarea id="pergunta-resp-${p.question_id}" ${enviadoAuto || enviado ? "disabled" : ""} style="width:100%;background:#111;border:1px solid ${enviadoAuto ? "#333" : "#f77614"};border-radius:6px;padding:10px 12px;color:${enviadoAuto ? "#888" : "#fff"};font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;resize:vertical;min-height:60px;margin-bottom:12px;">${p.suggested_answer}</textarea>
+          ${!enviadoAuto ? `<button id="pergunta-enviar-${p.question_id}" ${enviado ? "disabled" : ""} style="padding:9px 18px;border-radius:6px;background:${enviado ? "#1a2a1a" : "#f77614"};border:1px solid ${enviado ? "#2d5a2d" : "transparent"};color:${enviado ? "#2dce89" : "#fff"};font-size:12px;font-weight:600;cursor:${enviado ? "default" : "pointer"};">${enviado ? "Enviado ✓" : (enviandoAgora ? "Enviando..." : "Enviar resposta")}</button>` : ""}
         ` : `
           <a href="https://www.mercadolivre.com.br/anuncio/${p.item_id}" target="_blank" style="display:inline-block;padding:9px 18px;border-radius:6px;background:#1a1a1a;border:1px solid #333;color:#ccc;font-size:12px;font-weight:600;text-decoration:none;">Responder no ML ↗</a>
         `}
@@ -786,23 +849,12 @@ function renderPerguntasTab(container) {
           if (!texto) return;
           perguntasState.enviando[p.question_id] = "loading";
           renderPerguntasTab(container);
-          const token = state.ml_token_filial?.access_token;
-          try {
-            const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=responder-pergunta`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ question_id: p.question_id, texto, token, pergunta_texto: p.pergunta, produto: p.produto, item_id: p.item_id }),
-            });
-            const data = await r.json();
-            if (data.ok) {
-              perguntasState.enviando[p.question_id] = "ok";
-            } else {
-              perguntasState.enviando[p.question_id] = "erro";
-              perguntasState.erro = (data.error || "Erro ao enviar resposta") + (data.raw ? "\n\n" + JSON.stringify(data.raw, null, 2) : "");
-            }
-          } catch (e) {
+          const data = await enviarRespostaPergunta({ ...p, suggested_answer: texto });
+          if (data.ok) {
+            perguntasState.enviando[p.question_id] = "ok";
+          } else {
             perguntasState.enviando[p.question_id] = "erro";
-            perguntasState.erro = "Erro de conexão: " + e.message;
+            perguntasState.erro = (data.error || "Erro ao enviar resposta") + (data.raw ? "\n\n" + JSON.stringify(data.raw, null, 2) : "");
           }
           renderPerguntasTab(container);
         };
@@ -821,6 +873,11 @@ function renderPerguntasTab(container) {
   if (btnAtualizar) btnAtualizar.onclick = async () => {
     await fetchPerguntas();
     renderPerguntasTab(container);
+  };
+
+  const btnToggleAuto = container.querySelector("#perguntas-btn-toggle-auto");
+  if (btnToggleAuto) btnToggleAuto.onclick = () => {
+    set(ref(db, "/perguntas_auto"), !state.perguntas_auto);
   };
 
   if (!perguntasState.lista && !perguntasState.carregando && !perguntasState.erro) {
