@@ -1553,9 +1553,10 @@ function renderDashboard(panel, color) {
         ${perguntasLista === null || perguntasLista === undefined
           ? `<div style="font-size:11px;color:#555;">${perguntasState.carregando ? "buscando..." : "..."}</div>`
           : perguntasTotal > 0
-            ? `<div style="display:flex;align-items:center;gap:8px;flex:1;">
-                <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#2dce89;"></div><div style="font-size:11px;font-weight:700;color:#2dce89;font-family:'Inter',sans-serif;">${perguntasSugeridas}</div></div>
-                ${perguntasAtencao > 0 ? `<div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#c0392b;"></div><div style="font-size:11px;font-weight:700;color:#c0392b;font-family:'Inter',sans-serif;">${perguntasAtencao}</div></div>` : ""}
+            ? `<div style="font-size:11px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">${perguntasTotal}</div>
+               <div style="display:flex;align-items:center;gap:10px;flex:1;">
+                ${perguntasSugeridas > 0 ? `<div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#2dce89;"></div><div style="font-size:10px;color:#2dce89;">${perguntasSugeridas} sugerida${perguntasSugeridas>1?"s":""}</div></div>` : ""}
+                ${perguntasAtencao > 0 ? `<div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#c0392b;"></div><div style="font-size:10px;color:#c0392b;">${perguntasAtencao} atenção</div></div>` : ""}
               </div>`
             : `<div style="font-size:10px;color:#2dce89;">Em dia ✓</div>`
         }
