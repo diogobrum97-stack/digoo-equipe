@@ -817,6 +817,7 @@ function renderPerguntasTab(container) {
       const enviado = perguntasState.enviando[p.question_id] === "ok";
       const enviadoAuto = perguntasState.enviando[p.question_id] === "ok-auto";
       const enviandoAgora = perguntasState.enviando[p.question_id] === "loading";
+      const itemInativo = perguntasState.enviando[p.question_id] === "inativo";
 
       card.innerHTML = `
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
@@ -838,7 +839,13 @@ function renderPerguntasTab(container) {
         <div style="font-size:10px;color:#666;margin-bottom:6px;">Pergunta do comprador</div>
         <div style="background:#111;border:1px solid #282828;border-radius:6px;padding:10px 12px;font-size:12px;color:#ccc;margin-bottom:14px;">${p.pergunta}</div>
 
-        ${!p.requires_attention ? `
+        ${itemInativo ? `
+          <div style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;background:#2a1000;border:1px solid #4a2010;border-radius:8px;margin-bottom:14px;">
+            <div style="font-size:13px;flex-shrink:0;">⚠️</div>
+            <div style="font-size:11px;color:#f0a060;line-height:1.4;">Esse anúncio está pausado ou inativo — o Mercado Livre não permite responder perguntas de anúncios inativos por aqui. Reative o anúncio ou responda direto pelo app do ML.</div>
+          </div>
+          <a href="https://www.mercadolivre.com.br/anuncio/${p.item_id}" target="_blank" style="display:inline-block;padding:9px 18px;border-radius:6px;background:#1a1a1a;border:1px solid #333;color:#ccc;font-size:12px;font-weight:600;text-decoration:none;">Abrir anúncio no ML ↗</a>
+        ` : !p.requires_attention ? `
           <div style="font-size:10px;color:#666;margin-bottom:6px;">Resposta ${enviadoAuto || enviado ? "enviada" : "sugerida (editável)"}</div>
           <textarea id="pergunta-resp-${p.question_id}" ${enviadoAuto || enviado ? "disabled" : ""} style="width:100%;background:#111;border:1px solid ${enviadoAuto ? "#333" : "#f77614"};border-radius:6px;padding:10px 12px;color:${enviadoAuto ? "#888" : "#fff"};font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;resize:vertical;min-height:60px;margin-bottom:12px;">${p.suggested_answer}</textarea>
           ${!enviadoAuto ? `<button id="pergunta-enviar-${p.question_id}" ${(enviado || enviandoAgora) ? "disabled" : ""} style="padding:9px 18px;border-radius:6px;background:${enviado ? "#1a2a1a" : "#f77614"};border:1px solid ${enviado ? "#2d5a2d" : "transparent"};color:${enviado ? "#2dce89" : "#fff"};font-size:12px;font-weight:600;cursor:${(enviado || enviandoAgora) ? "default" : "pointer"};opacity:${enviandoAgora ? "0.6" : "1"};">${enviado ? "Enviado ✓" : (enviandoAgora ? "Enviando..." : "Enviar resposta")}</button>` : ""}
@@ -864,6 +871,8 @@ function renderPerguntasTab(container) {
               if (perguntasState.lista) {
                 perguntasState.lista = perguntasState.lista.filter(item => item.question_id !== p.question_id);
               }
+            } else if (data.raw?.error === "not_active_item") {
+              perguntasState.enviando[p.question_id] = "inativo";
             } else {
               perguntasState.enviando[p.question_id] = "erro";
               perguntasState.erro = (data.error || "Erro ao enviar resposta") + (data.raw ? "\n\n" + JSON.stringify(data.raw, null, 2) : "");
