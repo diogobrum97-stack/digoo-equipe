@@ -755,6 +755,11 @@ async function checarPerguntasAuto() {
 setInterval(checarPerguntasAuto, 3 * 60 * 1000); // checa a cada 3 minutos
 setTimeout(checarPerguntasAuto, 8000);
 
+function refreshPerguntasUI() {
+  const c = document.querySelector(".perguntas-container");
+  if (c) renderPerguntasTab(c);
+}
+
 function renderPerguntasTab(container) {
   container.innerHTML = "";
 
@@ -850,7 +855,7 @@ function renderPerguntasTab(container) {
           const texto = card.querySelector(`#pergunta-resp-${p.question_id}`)?.value?.trim();
           if (!texto) return;
           perguntasState.enviando[p.question_id] = "loading";
-          renderPerguntasTab(container);
+          refreshPerguntasUI();
           try {
             const data = await enviarRespostaPergunta({ ...p, suggested_answer: texto });
             if (data.ok) {
@@ -867,7 +872,7 @@ function renderPerguntasTab(container) {
             perguntasState.enviando[p.question_id] = "erro";
             perguntasState.erro = "Erro inesperado ao enviar: " + e.message;
           } finally {
-            renderPerguntasTab(container);
+            refreshPerguntasUI();
           }
         };
       }
@@ -884,7 +889,7 @@ function renderPerguntasTab(container) {
   const btnAtualizar = container.querySelector("#perguntas-btn-atualizar");
   if (btnAtualizar) btnAtualizar.onclick = async () => {
     await fetchPerguntas();
-    renderPerguntasTab(container);
+    refreshPerguntasUI();
   };
 
   const btnToggleAuto = container.querySelector("#perguntas-btn-toggle-auto");
@@ -893,7 +898,7 @@ function renderPerguntasTab(container) {
   };
 
   if (!perguntasState.lista && !perguntasState.carregando && !perguntasState.erro) {
-    fetchPerguntas().then(() => renderPerguntasTab(container));
+    fetchPerguntas().then(() => refreshPerguntasUI());
   }
 }
 
