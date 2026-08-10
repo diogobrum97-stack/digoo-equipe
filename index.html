@@ -4040,7 +4040,7 @@ function render(){
               dashboard: "Dashboard",
               tarefas: "Tarefas",
               concluidas: "Equipe", conversas: "Equipe",
-              estoque: "ML", cancelamentos: "ML",
+              estoque: "ML", cancelamentos: "ML", experiencia: "ML", clonar: "ML", perguntas: "ML",
               conferencia: "Gestão", config: "Gestão",
             };
             const activeGroupLabel = tabToGroup[currentTab] || "Tarefas";
@@ -4054,7 +4054,7 @@ function render(){
               { label: "Dashboard", tab: "dashboard", subs: [] },
               { label: "Tarefas", tab: "tarefas", subs: [] },
               { label: "Equipe", tab: null, subs: [{label:"Concluídas",tab:"concluidas"},{label:"Conversas",tab:"conversas"}] },
-              { label: "ML", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"}] },
+              { label: "ML", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência",tab:"experiencia"},{label:"Clonar",tab:"clonar"},{label:"Perguntas",tab:"perguntas"}] },
               { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"}] },
               { label: "⚙", tab: "config", subs: [] },
             ];
