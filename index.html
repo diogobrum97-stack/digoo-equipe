@@ -7148,12 +7148,14 @@ async function renderConferencia(panel, color) {
       info.style.cssText = "flex:1;min-width:0;";
       const nome = document.createElement("div");
       nome.style.cssText = "font-size:12px;color:var(--text);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
-      nome.textContent = doc.prestador || doc.nome;
+      const tipoImp = categoria === "impostos" ? (doc.tipoImposto || detectarTipoImposto(doc.nome)) : "";
+      const tituloImposto = tipoImp && doc.uf ? `${tipoImp} ${doc.uf}` : (tipoImp || "");
+      nome.textContent = categoria === "impostos" && tituloImposto ? tituloImposto : (doc.prestador || doc.nome);
       nome.title = doc.nome;
       const badges = document.createElement("div");
       badges.style.cssText = "display:flex;gap:5px;flex-wrap:wrap;margin-top:5px;";
       const badgeItems = [];
-      if(categoria === "impostos") badgeItems.push(detectarTipoImposto(doc.nome));
+      if(categoria === "impostos" && (doc.prestador || tituloImposto)) badgeItems.push(tituloImposto ? (doc.prestador || tipoImp) : tipoImp);
       if(doc.numeroNF) badgeItems.push(`nº ${doc.numeroNF}`);
       if(doc.competencia) badgeItems.push(doc.competencia);
       if(doc.cnpj) badgeItems.push(doc.cnpj);
@@ -7230,6 +7232,8 @@ async function renderConferencia(panel, color) {
         if(extracted.prestador) file._prestador = extracted.prestador;
         if(extracted.numeroNF) file._numeroNF = extracted.numeroNF;
         if(extracted.cnpj) file._cnpj = extracted.cnpj;
+        if(extracted.tipoImposto) file._tipoImposto = extracted.tipoImposto;
+        if(extracted.uf) file._uf = extracted.uf;
       } catch(e) {
         console.warn("Extração falhou:", e.message);
       }
@@ -7291,6 +7295,8 @@ async function renderConferencia(panel, color) {
         prestador: file._prestador || "",
         numeroNF: file._numeroNF || "",
         cnpj: file._cnpj || "",
+        tipoImposto: file._tipoImposto || "",
+        uf: file._uf || "",
         driveId,
         driveUrl,
         viewUrl,
