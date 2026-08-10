@@ -1474,7 +1474,7 @@ function renderDashboard(panel, color) {
   };
   if(!window._sbarState) window._sbarState = {open: null};
   window._sbarApply = function() {
-    ['tasks','stock'].forEach(function(id) {
+    ['tasks','stock','perguntas'].forEach(function(id) {
       const isOpen = window._sbarState.open === id;
       const d = document.getElementById('sbar-drawer-'+id);
       const c = document.getElementById('sbar-card-'+id);
@@ -1493,8 +1493,30 @@ function renderDashboard(panel, color) {
     window._diogotab = 'perguntas';
     render();
   };
+  window._sbarNavPergunta = function(e) {
+    e.stopPropagation();
+    e.preventDefault();
+    setTimeout(function() {
+      window._diogotab = 'perguntas';
+      render();
+    }, 50);
+  };
 
-  const perguntasCount = window._dashPerguntasCount;
+  const perguntasLista = perguntasState.lista;
+  const perguntasTotal = perguntasLista?.length || 0;
+  const perguntasSugeridas = (perguntasLista || []).filter(p => !p.requires_attention).length;
+  const perguntasAtencao = (perguntasLista || []).filter(p => p.requires_attention).length;
+  const perguntasDrawerRows = (perguntasLista || []).slice(0, 6).map(p => {
+    const cor = p.requires_attention ? "#c0392b" : "#2dce89";
+    const nomeShort = (p.produto || "").length > 42 ? p.produto.slice(0,42)+"…" : (p.produto || "");
+    return `<div onclick="window._sbarNavPergunta(event)" style="display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border-radius:6px;margin-bottom:3px;cursor:pointer;border:1px solid transparent;transition:background .12s,border-color .12s;" onmouseover="this.style.background='#141414';this.style.borderColor='#2a2a2a';" onmouseout="this.style.background='';this.style.borderColor='transparent';">
+      <div style="width:6px;height:6px;border-radius:50%;background:${cor};flex-shrink:0;margin-top:4px;"></div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:10px;color:#666;margin-bottom:2px;">${nomeShort}</div>
+        <div style="font-size:11px;color:#ccc;line-height:1.4;">${p.pergunta}</div>
+      </div>
+    </div>`;
+  }).join("");
 
   const statusBar = document.createElement("div");
   statusBar.style.cssText = "grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px;align-items:start;";
@@ -1525,32 +1547,34 @@ function renderDashboard(panel, color) {
         <div style="padding:8px 14px 10px;">${estDrawerRows || '<div style="font-size:11px;color:#555;padding:6px 0;">Nenhum produto crítico ✓</div>'}</div>
       </div>
     </div>
-    <div id="sbar-card-perguntas" onclick="window._goPerguntas()" style="background:linear-gradient(to top,#252525 0%,#0d0d0d 100%);border:1px solid #f77614;border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s;">
+    <div id="sbar-card-perguntas" onclick="window._sbarToggle('perguntas')" style="background:linear-gradient(to top,#252525 0%,#0d0d0d 100%);border:1px solid #f77614;border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s;">
       <div style="padding:13px 16px;display:flex;align-items:center;gap:10px;">
         <div style="font-size:10px;color:#555;white-space:nowrap;">Perguntas</div>
-        ${perguntasCount === null || perguntasCount === undefined
-          ? `<div style="font-size:11px;color:#555;">...</div>`
-          : perguntasCount > 0
-            ? `<div style="font-size:11px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">${perguntasCount}</div><div style="font-size:10px;color:#555;">pendente${perguntasCount>1?"s":""}</div>`
+        ${perguntasLista === null || perguntasLista === undefined
+          ? `<div style="font-size:11px;color:#555;">${perguntasState.carregando ? "buscando..." : "..."}</div>`
+          : perguntasTotal > 0
+            ? `<div style="display:flex;align-items:center;gap:8px;flex:1;">
+                <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#2dce89;"></div><div style="font-size:11px;font-weight:700;color:#2dce89;font-family:'Inter',sans-serif;">${perguntasSugeridas}</div></div>
+                ${perguntasAtencao > 0 ? `<div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#c0392b;"></div><div style="font-size:11px;font-weight:700;color:#c0392b;font-family:'Inter',sans-serif;">${perguntasAtencao}</div></div>` : ""}
+              </div>`
             : `<div style="font-size:10px;color:#2dce89;">Em dia ✓</div>`
         }
-        <div style="margin-left:auto;font-size:10px;color:#2e2e2e;">→</div>
+        <div id="sbar-arr-perguntas" style="font-size:10px;color:#2e2e2e;transition:transform .2s,color .2s;">▾</div>
+      </div>
+      <div id="sbar-drawer-perguntas" style="max-height:0;overflow:hidden;transition:max-height .3s ease;border-top:0px solid #1a1a1a;">
+        <div style="padding:8px 14px 10px;">
+          ${perguntasDrawerRows || '<div style="font-size:11px;color:#555;padding:6px 0;">Nenhuma pergunta pendente ✓</div>'}
+          ${perguntasTotal > 6 ? `<div onclick="window._goPerguntas()" style="text-align:center;font-size:10px;color:#f77614;padding-top:8px;cursor:pointer;">Ver todas (${perguntasTotal}) →</div>` : (perguntasTotal > 0 ? `<div onclick="window._goPerguntas()" style="text-align:center;font-size:10px;color:#f77614;padding-top:8px;cursor:pointer;">Ir para aba Perguntas →</div>` : "")}
+        </div>
       </div>
     </div>
   `;
   grid.appendChild(statusBar);
   window._sbarApply();
 
-  // Buscar contagem de perguntas (leve, sem IA) se ainda não carregada
-  if(window._dashPerguntasCount === undefined) {
-    window._dashPerguntasCount = null;
-    const tokenPerg = state.ml_token_filial?.access_token;
-    if(tokenPerg) {
-      fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=contar-perguntas&token=${tokenPerg}`)
-        .then(r => r.json())
-        .then(d => { window._dashPerguntasCount = d.ok ? d.total : null; render(); })
-        .catch(() => { window._dashPerguntasCount = null; });
-    }
+  // Buscar perguntas (com sugestão de IA) uma vez por sessão, reaproveitado pela aba dedicada
+  if(perguntasState.lista === null && !perguntasState.carregando && !perguntasState.erro) {
+    fetchPerguntas().then(() => render());
   }
 
   // Calendário Fiscal
