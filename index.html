@@ -667,7 +667,7 @@ async function fetchDashboard() {
 let expPageFiltro = "todos"; // todos | ruim | regular
 
 let clonarState = { itemBusca: "", contaOrigem: "matriz", itemEncontrado: null, buscando: false, clonando: false, resultado: null, erro: null, novoSku: "", novaQuantidade: "" };
-let loteState = { rodando: false, atual: 0, total: 0, itemAtual: "", sucesso: [], erro: [] };
+let loteState = { rodando: false, total: 0, itens: [] };
 
 function extrairItemId(texto) {
   if (!texto) return "";
@@ -704,27 +704,40 @@ async function processarLoteClonagem(container) {
     return;
   }
 
-  loteState = { rodando: true, atual: 0, total: ids.length, itemAtual: "", sucesso: [], erro: [] };
+  // Popula todos os cards desde já, com status "aguardando"
+  loteState = {
+    rodando: true,
+    total: ids.length,
+    itens: ids.map(itemId => ({ itemId, status: "aguardando", titulo: "", foto: "", motivo: "", novoId: "", permalink: "" })),
+  };
   renderClonarTab(container);
 
   for (let i = 0; i < ids.length; i++) {
-    const itemId = ids[i];
-    loteState.atual = i + 1;
-    loteState.itemAtual = itemId;
+    const it = loteState.itens[i];
+    it.status = "buscando";
     renderClonarTab(container);
 
     try {
-      const rBusca = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=buscar-clone&item_id=${itemId}&token=${tokenOrigem}`);
+      const rBusca = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=buscar-clone&item_id=${it.itemId}&token=${tokenOrigem}`);
       const dataBusca = await rBusca.json();
       if (!dataBusca.ok) {
-        loteState.erro.push({ itemId, motivo: dataBusca.error || "Não encontrado" });
+        it.status = "erro";
+        it.motivo = dataBusca.error || "Não encontrado";
+        renderClonarTab(container);
         continue;
       }
       const item = dataBusca.item;
+      it.titulo = item.title;
+      it.foto = item.pictures?.[0]?.source || "";
       if (item.has_variations) {
-        loteState.erro.push({ itemId, motivo: "Tem variações — não suportado em lote", titulo: item.title });
+        it.status = "erro";
+        it.motivo = "Tem variações — não suportado em lote";
+        renderClonarTab(container);
         continue;
       }
+
+      it.status = "clonando";
+      renderClonarTab(container);
 
       const rClonar = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=clonar`, {
         method: "POST",
@@ -733,13 +746,18 @@ async function processarLoteClonagem(container) {
       });
       const dataClonar = await rClonar.json();
       if (!dataClonar.ok) {
-        loteState.erro.push({ itemId, motivo: dataClonar.error || "Erro ao clonar", titulo: item.title });
+        it.status = "erro";
+        it.motivo = dataClonar.error || "Erro ao clonar";
       } else {
-        loteState.sucesso.push({ itemId, novoId: dataClonar.item_id, permalink: dataClonar.permalink, titulo: item.title });
+        it.status = "sucesso";
+        it.novoId = dataClonar.item_id;
+        it.permalink = dataClonar.permalink;
       }
     } catch (e) {
-      loteState.erro.push({ itemId, motivo: "Erro de conexão: " + e.message });
+      it.status = "erro";
+      it.motivo = "Erro de conexão: " + e.message;
     }
+    renderClonarTab(container);
   }
 
   loteState.rodando = false;
@@ -1068,7 +1086,7 @@ function renderClonarTab(container) {
     </div>
     <button id="clonar-btn-buscar" ${loteState.rodando ? "disabled" : ""} style="width:100%;padding:10px;border-radius:6px;background:${loteState.rodando ? "#333" : "#f77614"};border:none;color:${loteState.rodando ? "#888" : "#fff"};font-size:12px;font-weight:600;cursor:${loteState.rodando ? "default" : "pointer"};">${
       isLoteModo
-        ? (loteState.rodando ? `Clonando ${loteState.atual}/${loteState.total}...` : `Clonar todos (${idsDetectados.length})`)
+        ? (loteState.rodando ? `Processando ${(loteState.itens||[]).filter(it=>it.status==="sucesso"||it.status==="erro").length}/${loteState.total}...` : `Clonar todos (${idsDetectados.length})`)
         : (clonarState.buscando ? "Buscando..." : "Buscar anúncio")
     }</button>
   `;
@@ -1081,32 +1099,41 @@ function renderClonarTab(container) {
     alvoEsq.appendChild(errBox);
   }
 
-  // ── Coluna direita: progresso/resultado do lote ──
+  // ── Coluna direita: um card por anúncio, status ao vivo ──
   if (isLoteModo) {
     const colDir = document.createElement("div");
     const loteWrap = document.createElement("div");
     loteWrap.style.cssText = "background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:10px;padding:16px;height:100%;box-sizing:border-box;";
-    const totalProcessado = loteState.sucesso.length + loteState.erro.length;
+
+    const itens = loteState.itens || [];
+    const concluidos = itens.filter(it => it.status === "sucesso" || it.status === "erro").length;
+    const sucessos = itens.filter(it => it.status === "sucesso").length;
+
+    const statusInfo = {
+      aguardando: { label: "Na fila", cor: "#555", icone: "⋯" },
+      buscando:   { label: "Buscando...", cor: "#f77614", icone: "⏳" },
+      clonando:   { label: "Clonando...", cor: "#f77614", icone: "⏳" },
+      sucesso:    { label: "Clonado", cor: "#2dce89", icone: "✓" },
+      erro:       { label: "Erro", cor: "#e8432d", icone: "✕" },
+    };
+
     loteWrap.innerHTML = `
-      <div style="font-size:11px;color:#888;margin-bottom:12px;">${loteState.rodando ? `Clonando ${loteState.atual}/${loteState.total}...` : (loteState.total > 0 ? `Concluído — ${loteState.sucesso.length} de ${loteState.total} clonados` : "Resultado do lote")}</div>
-      ${loteState.total > 0 ? `<div style="height:4px;background:#111;border-radius:99px;overflow:hidden;margin-bottom:16px;"><div style="height:4px;background:#f77614;width:${(totalProcessado/loteState.total*100).toFixed(0)}%;transition:width .3s;"></div></div>` : ""}
-      <div style="max-height:420px;overflow-y:auto;">
-        ${loteState.sucesso.map(s => `
-          <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#1a2a1a;border:1px solid #2d5a2d;border-radius:6px;margin-bottom:6px;">
-            <div style="font-size:12px;color:#2dce89;">✓</div>
-            <div style="flex:1;min-width:0;font-size:11px;color:#ccc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.titulo || s.itemId}</div>
-            <a href="${s.permalink}" target="_blank" style="font-size:10px;color:#5eb3f0;text-decoration:none;white-space:nowrap;">ver ↗</a>
-          </div>
-        `).join("")}
-        ${loteState.erro.map(e => `
-          <div style="display:flex;align-items:flex-start;gap:8px;padding:8px 10px;background:#2a1000;border:1px solid #4a2010;border-radius:6px;margin-bottom:6px;">
-            <div style="font-size:12px;color:#f0a060;">✕</div>
+      <div style="font-size:11px;color:#888;margin-bottom:12px;">${loteState.total === 0 ? "Resultado do lote" : (loteState.rodando ? `Processando ${concluidos}/${loteState.total}...` : `Concluído — ${sucessos} de ${loteState.total} clonados`)}</div>
+      ${loteState.total > 0 ? `<div style="height:4px;background:#111;border-radius:99px;overflow:hidden;margin-bottom:16px;"><div style="height:4px;background:#f77614;width:${(concluidos/loteState.total*100).toFixed(0)}%;transition:width .3s;"></div></div>` : ""}
+      <div style="max-height:460px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">
+        ${itens.length === 0 ? `<div style="font-size:11px;color:#555;text-align:center;padding:30px 0;">Cole os IDs à esquerda e clique em "Clonar todos".</div>` : itens.map(it => {
+          const s = statusInfo[it.status] || statusInfo.aguardando;
+          return `
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;background:#111;border:1px solid #282828;border-radius:8px;">
+            ${it.foto ? `<img src="${it.foto}" style="width:32px;height:32px;border-radius:6px;object-fit:cover;flex-shrink:0;background:#1a1a1a;">` : `<div style="width:32px;height:32px;border-radius:6px;background:#1a1a1a;flex-shrink:0;"></div>`}
             <div style="flex:1;min-width:0;">
-              <div style="font-size:11px;color:#ccc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.titulo || e.itemId}</div>
-              <div style="font-size:10px;color:#f0a060;margin-top:2px;">${e.motivo}</div>
+              <div style="font-size:11px;color:#ccc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${it.titulo || it.itemId}</div>
+              <div style="font-size:10px;color:${s.cor};margin-top:2px;">${s.icone} ${it.status === "erro" ? it.motivo : s.label}</div>
             </div>
+            ${it.status === "sucesso" ? `<a href="${it.permalink}" target="_blank" style="font-size:10px;color:#5eb3f0;text-decoration:none;white-space:nowrap;flex-shrink:0;">ver ↗</a>` : ""}
           </div>
-        `).join("")}
+          `;
+        }).join("")}
       </div>
       ${!loteState.rodando && loteState.total > 0 ? `<button id="clonar-lote-novo" style="width:100%;margin-top:12px;padding:9px;border-radius:6px;background:#1a1a1a;border:1px solid #333;color:#ccc;font-size:11px;font-weight:600;cursor:pointer;">Limpar e clonar outro lote</button>` : ""}
     `;
