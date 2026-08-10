@@ -747,7 +747,9 @@ async function processarLoteClonagem(container) {
       const dataClonar = await rClonar.json();
       if (!dataClonar.ok) {
         it.status = "erro";
-        it.motivo = dataClonar.error || "Erro ao clonar";
+        const causas = dataClonar.detalhes || dataClonar.raw?.cause || [];
+        const detalheEspecifico = causas.map(c => c.message).filter(Boolean).join(" · ");
+        it.motivo = detalheEspecifico || dataClonar.error || "Erro ao clonar";
       } else {
         it.status = "sucesso";
         it.novoId = dataClonar.item_id;
@@ -1128,7 +1130,7 @@ function renderClonarTab(container) {
             ${it.foto ? `<img src="${it.foto}" style="width:32px;height:32px;border-radius:6px;object-fit:cover;flex-shrink:0;background:#1a1a1a;">` : `<div style="width:32px;height:32px;border-radius:6px;background:#1a1a1a;flex-shrink:0;"></div>`}
             <div style="flex:1;min-width:0;">
               <div style="font-size:11px;color:#ccc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${it.titulo || it.itemId}</div>
-              <div style="font-size:10px;color:${s.cor};margin-top:2px;">${s.icone} ${it.status === "erro" ? it.motivo : s.label}</div>
+              <div style="font-size:10px;color:${s.cor};margin-top:2px;line-height:1.4;">${s.icone} ${it.status === "erro" ? it.motivo : s.label}</div>
             </div>
             ${it.status === "sucesso" ? `<a href="${it.permalink}" target="_blank" style="font-size:10px;color:#5eb3f0;text-decoration:none;white-space:nowrap;flex-shrink:0;">ver ↗</a>` : ""}
           </div>
