@@ -543,6 +543,7 @@ onValue(ref(db,"/"),snap=>{
     fetchEstoqueAutomatico();
   }
   if(!cmpSalvando)render();
+  if(document.getElementById("ideias-modal-overlay")) renderIdeiasLista();
 },()=>{syncDot.style.background="#e91e8c";});
 
 function addTask(member,text,prio,sender){
@@ -3946,6 +3947,14 @@ function render(){
           const spacerR = document.createElement("div");
           spacerR.style.cssText = "display:flex;justify-content:flex-end;flex-shrink:0;";
 
+          // Botão Ideias & Melhorias
+          const ideiasBtn = document.createElement("button");
+          ideiasBtn.style.cssText = "background:none;border:none;color:var(--text3);cursor:pointer;padding:8px 10px;border-radius:6px;display:flex;align-items:center;transition:color .15s;";
+          ideiasBtn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`;
+          ideiasBtn.title = "Ideias & Melhorias";
+          ideiasBtn.addEventListener("click", () => { window._openIdeiasModal(); });
+          spacerR.appendChild(ideiasBtn);
+
           // Botão engrenagem
           const gearBtn = document.createElement("button");
           gearBtn.style.cssText = `background:none;border:none;color:${currentTab==="config"?"var(--accent)":"var(--text3)"};cursor:pointer;padding:8px 10px;border-radius:6px;display:flex;align-items:center;transition:color .15s;`;
@@ -6599,6 +6608,118 @@ function tokenValido(t) {
 }
 
 // ── Modal de Bling expirado ───────────────────────────────────────────────
+// ── Ideias & Melhorias ──────────────────────────────────────────────────
+window._openIdeiasModal = function() {
+  const existente = document.getElementById("ideias-modal-overlay");
+  if (existente) { existente.remove(); return; }
+
+  const overlay = document.createElement("div");
+  overlay.id = "ideias-modal-overlay";
+  overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;";
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.remove(); });
+
+  const box = document.createElement("div");
+  box.style.cssText = "background:linear-gradient(to top,#1a1a1a 0%,#000 100%);border:1px solid #333;border-radius:14px;padding:24px;max-width:640px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.6);";
+  box.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+      <div style="font-size:16px;font-weight:700;color:#fff;">Ideias & Melhorias</div>
+      <button id="ideias-fechar" style="background:none;border:none;color:#666;font-size:20px;cursor:pointer;line-height:1;">×</button>
+    </div>
+    <div style="font-size:11px;color:#666;margin-bottom:18px;">Anote o que quiser implementar depois. A gente vai destravando aos poucos.</div>
+    <div style="display:flex;gap:8px;margin-bottom:22px;">
+      <input id="ideias-input" type="text" placeholder="Ex: adicionar filtro de data no relatório de vendas..." style="flex:1;background:#141414;border:1px solid #333;border-radius:8px;padding:10px 14px;color:#fff;font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
+      <button id="ideias-add" style="background:#f77614;border:none;border-radius:8px;padding:10px 18px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">+ Adicionar</button>
+    </div>
+    <div id="ideias-lista"></div>
+  `;
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+
+  document.getElementById("ideias-fechar").onclick = () => overlay.remove();
+
+  const inputEl = document.getElementById("ideias-input");
+  const addIdeia = () => {
+    const texto = inputEl.value.trim();
+    if (!texto) return;
+    push(ref(db, "/ideias"), { texto, status: "afazer", createdAt: Date.now() });
+    inputEl.value = "";
+  };
+  document.getElementById("ideias-add").onclick = addIdeia;
+  inputEl.addEventListener("keydown", (e) => { if (e.key === "Enter") addIdeia(); });
+
+  renderIdeiasLista();
+};
+
+function renderIdeiasLista() {
+  const listaEl = document.getElementById("ideias-lista");
+  if (!listaEl) return;
+  listaEl.innerHTML = "";
+
+  const ideias = state.ideias || {};
+  const entradas = Object.entries(ideias).sort((a, b) => (b[1].createdAt || 0) - (a[1].createdAt || 0));
+
+  const grupos = {
+    afazer: { titulo: "A FAZER", cor: "#f77614", itens: [] },
+    andamento: { titulo: "EM ANDAMENTO", cor: "#5e8ce6", itens: [] },
+    concluido: { titulo: "CONCLUÍDO", cor: "#2dce89", itens: [] },
+  };
+  entradas.forEach(([id, item]) => {
+    const status = grupos[item.status] ? item.status : "afazer";
+    grupos[status].itens.push({ id, ...item });
+  });
+
+  const fmtData = (ts) => {
+    if (!ts) return "";
+    const diffDias = Math.floor((Date.now() - ts) / 86400000);
+    if (diffDias === 0) return "Adicionado hoje";
+    if (diffDias === 1) return "Adicionado ontem";
+    return `Adicionado há ${diffDias} dias`;
+  };
+
+  ["afazer", "andamento", "concluido"].forEach((key) => {
+    const grupo = grupos[key];
+    if (grupo.itens.length === 0) return;
+
+    const secTitle = document.createElement("div");
+    secTitle.style.cssText = `font-size:11px;font-weight:700;color:${grupo.cor};margin-bottom:8px;margin-top:18px;letter-spacing:0.03em;`;
+    secTitle.textContent = grupo.titulo;
+    listaEl.appendChild(secTitle);
+
+    grupo.itens.forEach((item) => {
+      const row = document.createElement("div");
+      row.style.cssText = "display:flex;align-items:flex-start;gap:10px;background:#141414;border:1px solid #282828;border-radius:8px;padding:12px 14px;margin-bottom:6px;";
+      row.innerHTML = `
+        <div style="width:8px;height:8px;border-radius:50%;background:${grupo.cor};flex-shrink:0;margin-top:5px;"></div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12px;color:#eee;line-height:1.4;">${item.texto}</div>
+          <div style="font-size:10px;color:#666;margin-top:3px;">${fmtData(item.createdAt)}</div>
+        </div>
+        <div style="display:flex;gap:4px;flex-shrink:0;">
+          ${key !== "afazer" ? `<button data-move="afazer" data-id="${item.id}" title="Mover para A fazer" style="background:none;border:1px solid #333;border-radius:5px;color:#666;font-size:10px;padding:4px 7px;cursor:pointer;">A fazer</button>` : ""}
+          ${key !== "andamento" ? `<button data-move="andamento" data-id="${item.id}" title="Mover para Em andamento" style="background:none;border:1px solid #333;border-radius:5px;color:#666;font-size:10px;padding:4px 7px;cursor:pointer;">Andamento</button>` : ""}
+          ${key !== "concluido" ? `<button data-move="concluido" data-id="${item.id}" title="Mover para Concluído" style="background:none;border:1px solid #333;border-radius:5px;color:#666;font-size:10px;padding:4px 7px;cursor:pointer;">Concluído</button>` : ""}
+          <button data-del="${item.id}" title="Excluir" style="background:none;border:none;color:#555;font-size:13px;padding:4px 6px;cursor:pointer;">×</button>
+        </div>
+      `;
+      listaEl.appendChild(row);
+    });
+  });
+
+  if (entradas.length === 0) {
+    const empty = document.createElement("div");
+    empty.style.cssText = "text-align:center;padding:30px 0;font-size:12px;color:#555;";
+    empty.textContent = "Nenhuma ideia anotada ainda.";
+    listaEl.appendChild(empty);
+  }
+
+  listaEl.querySelectorAll("[data-move]").forEach((btn) => {
+    btn.onclick = () => update(ref(db, `/ideias/${btn.dataset.id}`), { status: btn.dataset.move, updatedAt: Date.now() });
+  });
+  listaEl.querySelectorAll("[data-del]").forEach((btn) => {
+    btn.onclick = () => remove(ref(db, `/ideias/${btn.dataset.del}`));
+  });
+}
+
 function checkBlingModal() {
   if(currentUser !== "Diogo") return; // só aparece pro Diogo
   const blingOk = tokenValido && tokenValido(state.bling_token);
