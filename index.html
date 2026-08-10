@@ -7135,11 +7135,16 @@ async function renderConferencia(panel, color) {
     secHeader.appendChild(secLeft); secHeader.appendChild(totalEl);
     body.appendChild(secHeader);
 
-    // Lista de documentos
+    // Lista de documentos — limita exibição inicial pra não virar página infinita
     const docList = document.createElement("div");
     docList.style.cssText = `border-top:0.5px solid var(--sep);`;
 
-    docs.forEach(doc => {
+    if(!window._confSecExpandida) window._confSecExpandida = {};
+    const LIMITE_VISIVEL = 4;
+    const expandido = window._confSecExpandida[categoria] || false;
+    const docsVisiveis = expandido ? docs : docs.slice(0, LIMITE_VISIVEL);
+
+    docsVisiveis.forEach(doc => {
       const row = document.createElement("div");
       row.style.cssText = "display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:0.5px solid var(--sep);";
       const dot = document.createElement("div");
@@ -7199,6 +7204,20 @@ async function renderConferencia(panel, color) {
       row.appendChild(dot); row.appendChild(info); row.appendChild(val); row.appendChild(actions);
       docList.appendChild(row);
     });
+
+    if(docs.length > LIMITE_VISIVEL) {
+      const toggleRow = document.createElement("div");
+      toggleRow.style.cssText = "padding:10px 16px;border-bottom:0.5px solid var(--sep);";
+      const toggleBtn = document.createElement("button");
+      toggleBtn.style.cssText = "background:none;border:none;color:var(--text3);font-size:11px;cursor:pointer;font-family:inherit;width:100%;text-align:center;padding:4px;";
+      toggleBtn.textContent = expandido ? "Ver menos ↑" : `Ver mais ${docs.length - LIMITE_VISIVEL} ↓`;
+      toggleBtn.addEventListener("click", () => {
+        window._confSecExpandida[categoria] = !expandido;
+        renderConferencia(panel, color);
+      });
+      toggleRow.appendChild(toggleBtn);
+      docList.appendChild(toggleRow);
+    }
 
     // Botão de upload — aceita múltiplos arquivos, processados um por vez
     const uploadRow = document.createElement("div");
