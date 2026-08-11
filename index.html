@@ -1776,7 +1776,7 @@ function renderDashboard(panel, color) {
   const tarefasUrgentes = ownTasks.filter(t => t.prio === "urgente" || t.prio === "superurgente");
   const tarefasImp = ownTasks.filter(t => t.prio === "importante");
   const tarefasDrawerRows = [...tarefasUrgentes, ...tarefasImp].slice(0,6).map(t => {
-    const cor = (t.prio==="urgente"||t.prio==="superurgente") ? "#c0392b" : "#f77614";
+    const cor = (t.prio==="urgente"||t.prio==="superurgente") ? "#e8432d" : "#f77614";
     const label = (t.prio==="urgente"||t.prio==="superurgente") ? "urgente" : "importante";
     return `<div onclick="window._sbarNavTask(event)" style="display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border-radius:6px;margin-bottom:3px;cursor:pointer;border:1px solid transparent;transition:background .12s,border-color .12s;" onmouseover="this.style.background='#141414';this.style.borderColor='#2a2a2a';this.querySelector('.tarr').style.opacity='1';this.querySelector('.tarr').style.color='#f77614';" onmouseout="this.style.background='';this.style.borderColor='transparent';this.querySelector('.tarr').style.opacity='0';this.querySelector('.tarr').style.color='#333';">
       <div style="width:6px;height:6px;border-radius:50%;background:${cor};flex-shrink:0;margin-top:4px;"></div>
@@ -1861,9 +1861,9 @@ function renderDashboard(panel, color) {
       <div style="padding:13px 16px;display:flex;align-items:center;gap:14px;">
         <div style="font-size:10px;color:#555;white-space:nowrap;">Tarefas</div>
         <div style="display:flex;align-items:center;gap:8px;flex:1;">
-          <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#c0392b;"></div><div style="font-size:11px;font-weight:700;color:#c0392b;font-family:'Inter',sans-serif;">${urgentes}</div></div>
+          <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#e8432d;"></div><div style="font-size:11px;font-weight:700;color:#e8432d;font-family:'Inter',sans-serif;">${urgentes}</div></div>
           <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#f77614;"></div><div style="font-size:11px;font-weight:700;color:#f77614;font-family:'Inter',sans-serif;">${importantes}</div></div>
-          <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#333;"></div><div style="font-size:11px;font-weight:700;color:#444;font-family:'Inter',sans-serif;">${normais}</div></div>
+          <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#f0c000;"></div><div style="font-size:11px;font-weight:700;color:#f0c000;font-family:'Inter',sans-serif;">${normais}</div></div>
         </div>
         <div id="sbar-arr-tasks" style="font-size:10px;color:#2e2e2e;transition:transform .2s,color .2s;">▾</div>
       </div>
