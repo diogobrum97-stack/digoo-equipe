@@ -952,7 +952,8 @@ async function processarBipagem(codigo, refreshFn) {
   const cod = String(codigo || "").trim();
   if (!cod || !pickingState.pedidoAtivo) return;
 
-  const linhas = pickingState.pedidoAtivo.itens_bipagem;
+  const pedido = pickingState.pedidoAtivo;
+  const linhas = pedido.itens_bipagem;
   const alvo = linhas.find(l =>
     l.quantidadeBipada < l.quantidadeNecessaria &&
     ((l.ean && l.ean === cod) || (l.sku && l.sku === cod))
@@ -965,6 +966,17 @@ async function processarBipagem(codigo, refreshFn) {
     pickingState.erro = "Produto errado — esse código não pertence a este pedido (ou já foi bipado o suficiente).";
   }
   pickingState.bipando = "";
+
+  // Registra CADA bipagem (certa ou errada) no histórico — importante pra
+  // auditar reclamação de quantidade errada depois, cruzando com câmera.
+  push(ref(db, `/picking_historico_bipagem/${pedido.order_id}`), {
+    codigo: cod,
+    sku: alvo?.sku || null,
+    nome: alvo?.nome || null,
+    acertou: !!alvo,
+    operador: pedido.operador,
+    ts: Date.now(),
+  });
 
   if (alvo && pedidoTotalmenteBipado()) {
     // Tudo separado — dispara a etiqueta automaticamente, igual o Bling fazia
@@ -1011,10 +1023,17 @@ async function finalizarPedidoPicking(refreshFn) {
     } catch (e) { /* se a impressão automática falhar, o PDF já abriu na aba mesmo assim */ }
 
     // Registra como concluído (histórico visível pro Diogo) e remove a trava
+    // — inclui a conferência final item a item (esperado x bipado), útil pra
+    // investigar reclamação de quantidade errada depois.
     await set(ref(db, `/picking_concluidos/${pedido.order_id}`), {
       titulo: pedido.itens[0]?.titulo || "",
       por: pedido.operador,
       ts: Date.now(),
+      itens_final: (pedido.itens_bipagem || []).map(l => ({
+        sku: l.sku, nome: l.nome, ean: l.ean || null,
+        quantidadeNecessaria: l.quantidadeNecessaria,
+        quantidadeBipada: l.quantidadeBipada,
+      })),
     });
     await remove(ref(db, `/picking_locks/${pedido.order_id}`));
 
@@ -1264,6 +1283,132 @@ function renderPickingTab(panel, quemSou, modoOperar) {
 
 // Tela de acompanhamento (visão do Diogo) — resumo do dia, o que está
 // rolando agora em tempo real, e histórico dos últimos concluídos.
+// Histórico de bipagem — filtro por dia, mostra horário da etiqueta (pra
+// cruzar com câmera) e o detalhe item a item de cada pedido já concluído,
+// útil pra investigar reclamação de quantidade errada.
+function renderPickingHistorico(panel) {
+  panel.innerHTML = "";
+  if (window._pickingHistFiltroData === undefined) window._pickingHistFiltroData = "";
+  if (window._pickingHistAberto === undefined) window._pickingHistAberto = null;
+
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "max-width:900px;";
+
+  const concluidos = state.picking_concluidos || {};
+  const todasEntradas = Object.entries(concluidos)
+    .filter(([, c]) => c && c.ts)
+    .sort((a, b) => (b[1].ts || 0) - (a[1].ts || 0));
+
+  // Filtro por dia (formato yyyy-mm-dd, igual input type=date)
+  const filtro = window._pickingHistFiltroData;
+  const entradasFiltradas = filtro
+    ? todasEntradas.filter(([, c]) => {
+        const d = new Date(c.ts);
+        const dStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+        return dStr === filtro;
+      })
+    : todasEntradas;
+
+  const header = document.createElement("div");
+  header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;";
+  header.innerHTML = `
+    <div>
+      <div style="font-size:14px;font-weight:700;color:#fff;">Histórico de bipagem</div>
+      <div style="font-size:11px;color:#666;margin-top:2px;">${entradasFiltradas.length} pedido${entradasFiltradas.length===1?"":"s"}${filtro ? " nesse dia" : " no total"}</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <input id="picking-hist-data" type="date" value="${filtro}" style="background:#141414;border:1px solid #333;border-radius:6px;padding:7px 10px;color:#ccc;font-size:11px;font-family:Inter,sans-serif;outline:none;">
+      ${filtro ? `<button id="picking-hist-limpar" style="background:none;border:1px solid #333;border-radius:6px;padding:7px 12px;color:#888;font-size:11px;cursor:pointer;">Limpar filtro</button>` : ""}
+    </div>
+  `;
+  wrap.appendChild(header);
+
+  const lista = document.createElement("div");
+  if (entradasFiltradas.length === 0) {
+    lista.innerHTML = `<div style="font-size:11px;color:#555;text-align:center;padding:30px 0;">Nenhum pedido bipado ${filtro ? "nesse dia" : "ainda"}.</div>`;
+  } else {
+    entradasFiltradas.forEach(([orderId, c]) => {
+      const aberto = window._pickingHistAberto === orderId;
+      const dataHora = new Date(c.ts).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+
+      const card = document.createElement("div");
+      card.style.cssText = "background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:10px;padding:14px 16px;margin-bottom:8px;cursor:pointer;";
+      card.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:12px;font-weight:600;color:#fff;">#${orderId} — ${c.titulo || "Pedido"}</div>
+            <div style="font-size:10px;color:#666;margin-top:3px;">Etiqueta gerada às ${dataHora} · por ${c.por}${c.viaExterno ? " (registrado manualmente)" : ""}</div>
+          </div>
+          <div style="font-size:10px;color:#888;flex-shrink:0;">${aberto ? "▲" : "▼"}</div>
+        </div>
+      `;
+      card.onclick = () => { window._pickingHistAberto = aberto ? null : orderId; renderPickingHistorico(panel); };
+      lista.appendChild(card);
+
+      if (aberto) {
+        const detalhe = document.createElement("div");
+        detalhe.style.cssText = "background:#111;border:1px solid #282828;border-radius:8px;padding:14px 16px;margin:-4px 0 12px;";
+
+        // Conferência final: esperado x bipado
+        if (c.itens_final && c.itens_final.length > 0) {
+          detalhe.innerHTML += `<div style="font-size:10px;color:#666;margin-bottom:8px;">CONFERÊNCIA FINAL</div>`;
+          c.itens_final.forEach(it => {
+            const bateu = it.quantidadeBipada >= it.quantidadeNecessaria;
+            detalhe.innerHTML += `
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #1e1e1e;">
+                <div style="font-size:11px;color:#ccc;">${it.nome || it.sku}</div>
+                <div style="font-size:11px;font-weight:700;color:${bateu ? "#2dce89" : "#e8432d"};">${it.quantidadeBipada}/${it.quantidadeNecessaria}</div>
+              </div>
+            `;
+          });
+        }
+
+        // Timeline de bipagem — carregado sob demanda
+        const timelineWrap = document.createElement("div");
+        timelineWrap.style.cssText = "margin-top:14px;";
+        timelineWrap.innerHTML = `<div style="font-size:10px;color:#666;margin-bottom:8px;">LINHA DO TEMPO DAS LEITURAS</div><div style="font-size:11px;color:#555;">Carregando...</div>`;
+        detalhe.appendChild(timelineWrap);
+        lista.appendChild(detalhe);
+
+        // Busca o histórico de bipagem desse pedido específico (evento a evento)
+        (async () => {
+          try {
+            const snap = await get(ref(db, `/picking_historico_bipagem/${orderId}`));
+            const val = snap.exists() ? snap.val() : {};
+            const eventos = Object.values(val).sort((a, b) => (a.ts || 0) - (b.ts || 0));
+            if (eventos.length === 0) {
+              timelineWrap.innerHTML = `<div style="font-size:10px;color:#666;margin-bottom:8px;">LINHA DO TEMPO DAS LEITURAS</div><div style="font-size:11px;color:#555;">Sem registro individual de leituras (pedido marcado manualmente, ou anterior a essa função).</div>`;
+              return;
+            }
+            let html = `<div style="font-size:10px;color:#666;margin-bottom:8px;">LINHA DO TEMPO DAS LEITURAS</div>`;
+            eventos.forEach(ev => {
+              const hora = new Date(ev.ts).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+              const cor = ev.acertou ? "#2dce89" : "#e8432d";
+              html += `
+                <div style="display:flex;align-items:center;gap:8px;padding:5px 0;">
+                  <div style="font-size:10px;color:#555;width:70px;flex-shrink:0;">${hora}</div>
+                  <div style="width:6px;height:6px;border-radius:50%;background:${cor};flex-shrink:0;"></div>
+                  <div style="font-size:11px;color:#ccc;">${ev.acertou ? (ev.nome || ev.sku) : `Código ${ev.codigo} — não pertence ao pedido`}</div>
+                </div>
+              `;
+            });
+            timelineWrap.innerHTML = html;
+          } catch (e) {
+            timelineWrap.innerHTML = `<div style="font-size:10px;color:#666;margin-bottom:8px;">LINHA DO TEMPO DAS LEITURAS</div><div style="font-size:11px;color:#e8432d;">Erro ao carregar: ${e.message}</div>`;
+          }
+        })();
+      }
+    });
+  }
+  wrap.appendChild(lista);
+  panel.appendChild(wrap);
+
+  const inputData = panel.querySelector("#picking-hist-data");
+  if (inputData) inputData.onchange = (e) => { window._pickingHistFiltroData = e.target.value; renderPickingHistorico(panel); };
+  const btnLimpar = panel.querySelector("#picking-hist-limpar");
+  if (btnLimpar) btnLimpar.onclick = () => { window._pickingHistFiltroData = ""; renderPickingHistorico(panel); };
+}
+
 function renderPickingAcompanhar(panel) {
   panel.innerHTML = "";
   const wrap = document.createElement("div");
@@ -1342,30 +1487,35 @@ function renderPickingDiogo(panel) {
   toggleBar.style.cssText = "display:flex;gap:8px;margin-bottom:16px;";
   const opAcompanhar = document.createElement("button");
   const opOperar = document.createElement("button");
-  const ativo = window._pickingModoDiogo === "acompanhar";
+  const opHistorico = document.createElement("button");
+  const modo = window._pickingModoDiogo;
   opAcompanhar.textContent = "Acompanhar";
   opOperar.textContent = "Operar eu mesmo →";
-  [opAcompanhar, opOperar].forEach(b => {
+  opHistorico.textContent = "Histórico de bipagem";
+  [opAcompanhar, opOperar, opHistorico].forEach((b, i) => {
     b.style.cssText = `padding:8px 16px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid #333;`;
+    const key = ["acompanhar", "operar", "historico"][i];
+    const isAtivo = modo === key;
+    b.style.background = isAtivo ? "#f77614" : "#1a1a1a";
+    b.style.color = isAtivo ? "#fff" : "#888";
+    b.style.borderColor = isAtivo ? "#f77614" : "#333";
   });
-  opAcompanhar.style.background = ativo ? "#f77614" : "#1a1a1a";
-  opAcompanhar.style.color = ativo ? "#fff" : "#888";
-  opAcompanhar.style.borderColor = ativo ? "#f77614" : "#333";
-  opOperar.style.background = !ativo ? "#f77614" : "#1a1a1a";
-  opOperar.style.color = !ativo ? "#fff" : "#888";
-  opOperar.style.borderColor = !ativo ? "#f77614" : "#333";
   opAcompanhar.onclick = () => { window._pickingModoDiogo = "acompanhar"; renderPickingDiogo(panel); };
   opOperar.onclick = () => { window._pickingModoDiogo = "operar"; renderPickingDiogo(panel); };
+  opHistorico.onclick = () => { window._pickingModoDiogo = "historico"; renderPickingDiogo(panel); };
   toggleBar.appendChild(opAcompanhar);
   toggleBar.appendChild(opOperar);
+  toggleBar.appendChild(opHistorico);
   wrap.appendChild(toggleBar);
 
   const conteudo = document.createElement("div");
   wrap.appendChild(conteudo);
   panel.appendChild(wrap);
 
-  if (window._pickingModoDiogo === "acompanhar") {
+  if (modo === "acompanhar") {
     renderPickingAcompanhar(conteudo);
+  } else if (modo === "historico") {
+    renderPickingHistorico(conteudo);
   } else {
     conteudo.className = "picking-diogo-operar-container";
     renderPickingTab(conteudo, "Diogo", true);
