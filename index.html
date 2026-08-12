@@ -6903,11 +6903,20 @@ window._openIdeiasModal = function() {
       <div style="font-size:16px;font-weight:700;color:#fff;">Ideias & Melhorias</div>
       <button id="ideias-fechar" style="background:none;border:none;color:#666;font-size:20px;cursor:pointer;line-height:1;">×</button>
     </div>
-    <div style="font-size:11px;color:#666;margin-bottom:18px;">Anote o que quiser implementar depois. A gente vai destravando aos poucos.</div>
+    <div style="font-size:11px;color:#666;margin-bottom:18px;">Anote o que quiser implementar depois — separado por onde vai entrar.</div>
     <div style="display:flex;gap:8px;margin-bottom:22px;">
       <input id="ideias-input" type="text" placeholder="Ex: adicionar filtro de data no relatório de vendas..." style="flex:1;background:#141414;border:1px solid #333;border-radius:8px;padding:10px 14px;color:#fff;font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
+      <select id="ideias-categoria" style="background:#141414;border:1px solid #333;border-radius:8px;padding:10px 12px;color:#ccc;font-size:12px;font-family:Inter,sans-serif;outline:none;">
+        <option value="Dashboard">Dashboard</option>
+        <option value="Tarefas">Tarefas</option>
+        <option value="Equipe">Equipe</option>
+        <option value="Mercado Livre" selected>Mercado Livre</option>
+        <option value="Gestão">Gestão</option>
+        <option value="Outro">Outro</option>
+      </select>
       <button id="ideias-add" style="background:#f77614;border:none;border-radius:8px;padding:10px 18px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">+ Adicionar</button>
     </div>
+    <div id="ideias-abas" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;"></div>
     <div id="ideias-lista"></div>
   `;
   overlay.appendChild(box);
@@ -6916,25 +6925,54 @@ window._openIdeiasModal = function() {
   document.getElementById("ideias-fechar").onclick = () => overlay.remove();
 
   const inputEl = document.getElementById("ideias-input");
+  const catEl = document.getElementById("ideias-categoria");
   const addIdeia = () => {
     const texto = inputEl.value.trim();
     if (!texto) return;
-    push(ref(db, "/ideias"), { texto, status: "afazer", createdAt: Date.now() });
+    push(ref(db, "/ideias"), { texto, categoria: catEl.value, status: "afazer", createdAt: Date.now() });
     inputEl.value = "";
   };
   document.getElementById("ideias-add").onclick = addIdeia;
   inputEl.addEventListener("keydown", (e) => { if (e.key === "Enter") addIdeia(); });
 
+  if (window._ideiasFiltroCategoria === undefined) window._ideiasFiltroCategoria = "Todas";
   renderIdeiasLista();
 };
 
+const IDEIAS_CATEGORIAS = ["Dashboard", "Tarefas", "Equipe", "Mercado Livre", "Gestão", "Outro"];
+
 function renderIdeiasLista() {
   const listaEl = document.getElementById("ideias-lista");
+  const abasEl = document.getElementById("ideias-abas");
   if (!listaEl) return;
   listaEl.innerHTML = "";
 
   const ideias = state.ideias || {};
-  const entradas = Object.entries(ideias).sort((a, b) => (b[1].createdAt || 0) - (a[1].createdAt || 0));
+  const todasEntradas = Object.entries(ideias).sort((a, b) => (b[1].createdAt || 0) - (a[1].createdAt || 0));
+
+  // ── Abas de categoria ──
+  if (abasEl) {
+    abasEl.innerHTML = "";
+    const contagens = { Todas: todasEntradas.length };
+    IDEIAS_CATEGORIAS.forEach(c => { contagens[c] = todasEntradas.filter(([,it]) => (it.categoria || "Outro") === c).length; });
+    ["Todas", ...IDEIAS_CATEGORIAS].forEach(cat => {
+      if (cat !== "Todas" && contagens[cat] === 0) return;
+      const ativo = window._ideiasFiltroCategoria === cat;
+      const tab = document.createElement("button");
+      tab.style.cssText = `background:${ativo ? "#f77614" : "#141414"};border:1px solid ${ativo ? "#f77614" : "#333"};border-radius:15px;padding:6px 14px;color:${ativo ? "#fff" : "#888"};font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap;`;
+      tab.textContent = `${cat} ${contagens[cat]}`;
+      tab.onclick = () => { window._ideiasFiltroCategoria = cat; renderIdeiasLista(); };
+      abasEl.appendChild(tab);
+    });
+  }
+
+  const filtro = window._ideiasFiltroCategoria || "Todas";
+  const entradas = filtro === "Todas" ? todasEntradas : todasEntradas.filter(([,it]) => (it.categoria || "Outro") === filtro);
+
+  const corCategoria = {
+    "Dashboard": "#f0c000", "Tarefas": "#e8432d", "Equipe": "#5e8ce6",
+    "Mercado Livre": "#5eb3f0", "Gestão": "#2dce89", "Outro": "#888",
+  };
 
   const grupos = {
     afazer: { titulo: "A FAZER", cor: "#f77614", itens: [] },
@@ -6966,9 +7004,12 @@ function renderIdeiasLista() {
     grupo.itens.forEach((item) => {
       const row = document.createElement("div");
       row.style.cssText = "display:flex;align-items:flex-start;gap:10px;background:#141414;border:1px solid #282828;border-radius:8px;padding:12px 14px;margin-bottom:6px;";
+      const catItem = item.categoria || "Outro";
+      const corCat = corCategoria[catItem] || "#888";
       row.innerHTML = `
         <div style="width:8px;height:8px;border-radius:50%;background:${grupo.cor};flex-shrink:0;margin-top:5px;"></div>
         <div style="flex:1;min-width:0;">
+          <div style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:9px;font-weight:600;background:${corCat}22;color:${corCat};border:1px solid ${corCat}44;margin-bottom:5px;">${catItem}</div>
           <div style="font-size:12px;color:#eee;line-height:1.4;">${item.texto}</div>
           <div style="font-size:10px;color:#666;margin-top:3px;">${fmtData(item.createdAt)}</div>
         </div>
@@ -6986,7 +7027,7 @@ function renderIdeiasLista() {
   if (entradas.length === 0) {
     const empty = document.createElement("div");
     empty.style.cssText = "text-align:center;padding:30px 0;font-size:12px;color:#555;";
-    empty.textContent = "Nenhuma ideia anotada ainda.";
+    empty.textContent = filtro === "Todas" ? "Nenhuma ideia anotada ainda." : `Nenhuma ideia em "${filtro}" ainda.`;
     listaEl.appendChild(empty);
   }
 
