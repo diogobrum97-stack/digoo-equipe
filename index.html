@@ -1155,11 +1155,8 @@ function renderPickingTab(panel, quemSou, modoOperar) {
       const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=picking-fila&token=${token}&debug=1`);
       const data = await r.json();
       const d = data.debug || {};
-      let msg = `ok: ${data.ok}\nerro: ${data.error || "-"}\nPedidos pagos (15 dias): ${d.totalPedidosEncontrados ?? "?"}\nConsultados com envio: ${d.totalComEnvioConsultado ?? "?"}\n\n`;
-      (d.statusEncontrados || []).forEach(s => {
-        msg += `#${s.order_id} — status: ${s.shipment_status} / substatus: ${s.shipment_substatus} / logistic_type: ${s.logistic_type} / mode: ${s.mode}\n`;
-      });
-      if (!d.statusEncontrados || d.statusEncontrados.length === 0) msg += "Nenhum pedido pago encontrado nos últimos 15 dias.";
+      let msg = `ok: ${data.ok}\nerro: ${data.error || "-"}\nPedidos pagos (15 dias): ${d.totalPedidosEncontrados ?? "?"}\nConsultados com envio: ${d.totalComEnvioConsultado ?? "?"}\nready_to_ship + não Full: ${(d.statusEncontrados || []).length}\n\n`;
+      msg += JSON.stringify(d.statusEncontrados || [], null, 2);
       pickingState.diagnostico = msg;
       console.log("Diagnóstico picking:", data);
     } catch (e) {
