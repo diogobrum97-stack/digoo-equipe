@@ -7008,10 +7008,11 @@ function renderIdeiasLista() {
       row.style.cssText = "display:flex;align-items:flex-start;gap:10px;background:#141414;border:1px solid #282828;border-radius:8px;padding:12px 14px;margin-bottom:6px;";
       const catItem = item.categoria || "Outro";
       const corCat = corCategoria[catItem] || "#888";
+      const opcoesCategoria = IDEIAS_CATEGORIAS.map(c => `<option value="${c}" ${c===catItem?"selected":""}>${c}</option>`).join("");
       row.innerHTML = `
         <div style="width:8px;height:8px;border-radius:50%;background:${grupo.cor};flex-shrink:0;margin-top:5px;"></div>
         <div style="flex:1;min-width:0;">
-          <div style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:9px;font-weight:600;background:${corCat}22;color:${corCat};border:1px solid ${corCat}44;margin-bottom:5px;">${catItem}</div>
+          <select data-catedit="${item.id}" style="display:inline-block;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:600;background:${corCat}22;color:${corCat};border:1px solid ${corCat}44;margin-bottom:5px;font-family:Inter,sans-serif;cursor:pointer;outline:none;">${opcoesCategoria}</select>
           <div style="font-size:12px;color:#eee;line-height:1.4;">${item.texto}</div>
           <div style="font-size:10px;color:#666;margin-top:3px;">${fmtData(item.createdAt)}</div>
         </div>
@@ -7038,6 +7039,9 @@ function renderIdeiasLista() {
   });
   listaEl.querySelectorAll("[data-del]").forEach((btn) => {
     btn.onclick = () => remove(ref(db, `/ideias/${btn.dataset.del}`));
+  });
+  listaEl.querySelectorAll("[data-catedit]").forEach((sel) => {
+    sel.onchange = () => update(ref(db, `/ideias/${sel.dataset.catedit}`), { categoria: sel.value, updatedAt: Date.now() });
   });
 }
 
