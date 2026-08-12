@@ -4602,6 +4602,10 @@ function render(){
     container.style.margin = "";
     container.style.width = "";
   }
+  // Picking & Packing precisa da tela cheia — remove o limite de 1280px do grid geral
+  if (window._brunotab === "picking" || window._diogotab === "picking") {
+    container.style.maxWidth = "100%";
+  }
   const pendingMembers=MEMBERS.filter(m=>!m.locked&&Object.values(state.tasks||{}).some(t=>t!=null&&t.member===m.name&&!t.done));
   if(pendingMembers.length>0)startFaviconCycle(pendingMembers.map(m=>themeColor(m.name)));else stopFaviconFlash();
   const lbl=document.getElementById("user-label");if(lbl)lbl.textContent=currentUser?`logado como ${currentUser} · trocar`:"";
