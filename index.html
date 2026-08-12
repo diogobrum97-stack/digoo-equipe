@@ -4267,6 +4267,7 @@ function render(){
               { label: "Equipe", tab: null, subs: [{label:"Concluídas",tab:"concluidas"},{label:"Conversas",tab:"conversas"}] },
               { label: "ML", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência",tab:"experiencia"},{label:"Clonar",tab:"clonar"},{label:"Perguntas",tab:"perguntas"}] },
               { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"}] },
+              { label: "📝", tab: null, subs: [], acao: "ideias" },
               { label: "⚙", tab: "config", subs: [] },
             ];
 
@@ -4276,6 +4277,7 @@ function render(){
               chip.style.cssText = `padding:6px 14px;border-radius:99px;font-size:11px;font-weight:600;letter-spacing:0.5px;white-space:nowrap;cursor:pointer;flex-shrink:0;transition:all .15s;background:${isActive?"#5e72e4":"#1a1a1a"};color:${isActive?"#fff":"#666"};border:0.5px solid ${isActive?"transparent":"#222"};font-family:inherit;`;
               chip.textContent = group.label;
               chip.addEventListener("click", () => {
+                if(group.acao === "ideias") { window._openIdeiasModal(); return; }
                 window._activeNavGroup = group.label;
                 if(group.tab) { window._diogotab = group.tab; }
                 // Se tem sub-abas, só mostra os sub-chips sem navegar
