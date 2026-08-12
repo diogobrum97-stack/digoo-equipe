@@ -1280,14 +1280,14 @@ function renderPickingAcompanhar(panel) {
   const resumo = document.createElement("div");
   resumo.style.cssText = "display:flex;gap:24px;background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:10px;padding:16px 20px;margin-bottom:16px;";
   resumo.innerHTML = `
-    <div><div style="font-size:20px;font-weight:700;color:#2dce89;font-family:Inter,sans-serif;">${concluidosHoje.length}</div><div style="font-size:10px;color:#888;margin-top:2px;">embalados hoje</div></div>
-    <div><div style="font-size:20px;font-weight:700;color:#f77614;font-family:Inter,sans-serif;">${filaTotal}</div><div style="font-size:10px;color:#888;margin-top:2px;">na fila</div></div>
+    <div><div style="font-size:20px;font-weight:700;color:#2dce89;font-family:Inter,sans-serif;">${concluidosHoje.length}</div><div style="font-size:10px;color:#ffffff;margin-top:2px;">embalados hoje</div></div>
+    <div><div style="font-size:20px;font-weight:700;color:#f77614;font-family:Inter,sans-serif;">${filaTotal}</div><div style="font-size:10px;color:#ffffff;margin-top:2px;">na fila</div></div>
   `;
   wrap.appendChild(resumo);
 
   const aoVivo = document.createElement("div");
   aoVivo.style.cssText = "margin-bottom:16px;";
-  aoVivo.innerHTML = `<div style="font-size:11px;color:#666;margin-bottom:8px;">AGORA, EM TEMPO REAL</div>`;
+  aoVivo.innerHTML = `<div style="font-size:11px;color:#ffffff;margin-bottom:8px;">AGORA, EM TEMPO REAL</div>`;
   if (locksAtivos.length === 0) {
     aoVivo.innerHTML += `<div style="font-size:11px;color:#555;padding:12px;background:#141414;border:1px solid #282828;border-radius:8px;">Ninguém separando pedidos no momento.</div>`;
   } else {
@@ -1308,7 +1308,7 @@ function renderPickingAcompanhar(panel) {
   wrap.appendChild(aoVivo);
 
   const hist = document.createElement("div");
-  hist.innerHTML = `<div style="font-size:11px;color:#666;margin-bottom:8px;">ÚLTIMOS CONCLUÍDOS HOJE</div>`;
+  hist.innerHTML = `<div style="font-size:11px;color:#ffffff;margin-bottom:8px;">ÚLTIMOS CONCLUÍDOS HOJE</div>`;
   if (concluidosHoje.length === 0) {
     hist.innerHTML += `<div style="font-size:11px;color:#555;">Nenhum pedido concluído ainda hoje.</div>`;
   } else {
