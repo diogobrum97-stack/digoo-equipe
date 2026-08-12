@@ -843,12 +843,15 @@ async function fetchPickingFila() {
 async function buscarProdutoBling(sku) {
   if (!sku) return null;
   try {
-    const r = await fetch(`${VERCEL_BACKEND}/api/bling-produtos?picking=1&sku=${encodeURIComponent(sku)}`);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s — se travar, segue sem esse EAN
+    const r = await fetch(`${VERCEL_BACKEND}/api/bling-produtos?picking=1&sku=${encodeURIComponent(sku)}`, { signal: controller.signal });
+    clearTimeout(timeoutId);
     const data = await r.json();
     if (!data.ok || !data.encontrado) return null;
     return data;
   } catch (e) {
-    return null;
+    return null; // timeout, erro de rede, ou Bling fora do ar — não trava o picking, só segue sem esse dado
   }
 }
 
@@ -894,11 +897,18 @@ async function abrirPedidoPicking(pedido, quemAbriu, refreshFn) {
     // ignorados na exibição, caso alguém feche a aba sem terminar)
     await set(ref(db, `/picking_locks/${pedido.order_id}`), { por: quemAbriu, ts: Date.now() });
 
-    const itens = await montarItensParaBipar(pedido);
+    // Limite geral de 40s pra abrir o pedido — se travar em algum lugar
+    // (Bling lento, muitos componentes de kit, etc.), mostra erro em vez de
+    // ficar preso na tela pra sempre.
+    const itens = await Promise.race([
+      montarItensParaBipar(pedido),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("Demorou demais consultando o Bling. Tente de novo.")), 40000)),
+    ]);
     pickingState.pedidoAtivo = { ...pedido, itens_bipagem: itens, operador: quemAbriu };
     pickingState.bipando = "";
   } catch (e) {
     pickingState.erro = "Erro ao abrir o pedido: " + e.message;
+    await remove(ref(db, `/picking_locks/${pedido.order_id}`)).catch(() => {});
   }
   pickingState.abrindoPedido = false;
   refreshFn();
