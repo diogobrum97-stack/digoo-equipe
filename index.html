@@ -1067,7 +1067,7 @@ function renderPickingTab(panel, quemSou, modoOperar) {
   };
 
   const wrap = document.createElement("div");
-  wrap.style.cssText = "max-width:1040px;font-family:Inter,sans-serif;";
+  wrap.style.cssText = "width:100%;font-family:Inter,sans-serif;";
 
   if (!pickingState.fila && !pickingState.carregando && !pickingState.erro) {
     fetchPickingFila().then(refreshPickingUI);
