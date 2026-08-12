@@ -888,10 +888,20 @@ async function montarItensParaBipar(pedido) {
 
 // Abre um pedido da fila: trava no Firebase (pra outra pessoa não pegar o mesmo),
 // expande os itens (incluindo kits), e deixa pronto pra bipar.
+// Refresh "à prova de re-render externo" — sempre busca o container ATUAL na
+// página, em vez de confiar numa referência guardada antes de um await (que
+// pode já ter sido substituída se o app se re-renderizou sozinho nesse meio tempo).
+function refreshPickingUI() {
+  const brunoC = document.querySelector(".picking-bruno-container");
+  if (brunoC) { renderPickingTab(brunoC, "Bruno", true); return; }
+  const diogoOperarC = document.querySelector(".picking-diogo-operar-container");
+  if (diogoOperarC) { renderPickingTab(diogoOperarC, "Diogo", true); return; }
+}
+
 async function abrirPedidoPicking(pedido, quemAbriu, refreshFn) {
   if (pickingState.abrindoPedido) return;
   pickingState.abrindoPedido = true;
-  refreshFn();
+  refreshPickingUI();
   try {
     // Trava o pedido pro operador atual, com timestamp (locks muito antigos são
     // ignorados na exibição, caso alguém feche a aba sem terminar)
@@ -911,7 +921,7 @@ async function abrirPedidoPicking(pedido, quemAbriu, refreshFn) {
     await remove(ref(db, `/picking_locks/${pedido.order_id}`)).catch(() => {});
   }
   pickingState.abrindoPedido = false;
-  refreshFn();
+  refreshPickingUI();
 }
 
 function fecharPedidoPicking(refreshFn) {
@@ -954,7 +964,7 @@ function pedidoTotalmenteBipado() {
 async function finalizarPedidoPicking(refreshFn) {
   if (!pickingState.pedidoAtivo || pickingState.processandoEtiqueta) return;
   pickingState.processandoEtiqueta = true;
-  refreshFn();
+  refreshPickingUI();
 
   const pedido = pickingState.pedidoAtivo;
   const token = state.ml_token?.access_token;
@@ -965,7 +975,7 @@ async function finalizarPedidoPicking(refreshFn) {
     if (!data.ok) {
       pickingState.erro = data.error || "Erro ao gerar a etiqueta.";
       pickingState.processandoEtiqueta = false;
-      refreshFn();
+      refreshPickingUI();
       return;
     }
 
@@ -998,7 +1008,7 @@ async function finalizarPedidoPicking(refreshFn) {
     pickingState.erro = "Erro ao finalizar: " + e.message;
   }
   pickingState.processandoEtiqueta = false;
-  refreshFn();
+  refreshPickingUI();
 }
 
 // Registra um pedido como concluído SEM passar pela bipagem — usado quando
@@ -1018,7 +1028,7 @@ async function marcarPedidoFeitoExterno(pedido, quemSou, refreshFn) {
   } catch (e) {
     pickingState.erro = "Erro ao registrar: " + e.message;
   }
-  refreshFn();
+  refreshPickingUI();
 }
 
 // Renderiza a tela de Picking & Packing dentro de um panel.
@@ -1041,7 +1051,7 @@ function renderPickingTab(panel, quemSou, modoOperar) {
   wrap.style.cssText = "max-width:1040px;";
 
   if (!pickingState.fila && !pickingState.carregando && !pickingState.erro) {
-    fetchPickingFila().then(refresh);
+    fetchPickingFila().then(refreshPickingUI);
   }
 
   const header = document.createElement("div");
@@ -1194,14 +1204,14 @@ function renderPickingTab(panel, quemSou, modoOperar) {
   panel.appendChild(wrap);
 
   const btnAtualizar = panel.querySelector("#picking-btn-atualizar");
-  if (btnAtualizar) btnAtualizar.onclick = async () => { await fetchPickingFila(); refresh(); };
+  if (btnAtualizar) btnAtualizar.onclick = async () => { await fetchPickingFila(); refreshPickingUI(); };
 
   const btnDiag = panel.querySelector("#picking-btn-diagnostico");
   if (btnDiag) btnDiag.onclick = async () => {
     const token = state.ml_token?.access_token;
-    if (!token) { pickingState.diagnostico = "Token da Matriz não encontrado."; refresh(); return; }
+    if (!token) { pickingState.diagnostico = "Token da Matriz não encontrado."; refreshPickingUI(); return; }
     pickingState.diagnostico = "Consultando...";
-    refresh();
+    refreshPickingUI();
     try {
       const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=picking-fila&token=${token}&debug=1`);
       const data = await r.json();
@@ -1213,7 +1223,7 @@ function renderPickingTab(panel, quemSou, modoOperar) {
     } catch (e) {
       pickingState.diagnostico = "Erro no diagnóstico: " + e.message;
     }
-    refresh();
+    refreshPickingUI();
   };
 
   if (pickingState.diagnostico) {
@@ -1338,6 +1348,7 @@ function renderPickingDiogo(panel) {
   if (window._pickingModoDiogo === "acompanhar") {
     renderPickingAcompanhar(conteudo);
   } else {
+    conteudo.className = "picking-diogo-operar-container";
     renderPickingTab(conteudo, "Diogo", true);
   }
 }
@@ -5325,7 +5336,9 @@ function render(){
               card.style.gridColumn="1 / -1";
               panel.style.maxHeight="80vh";
               panel.style.overflowY="auto";
-              renderPickingTab(panel, "Bruno", true);
+              let brunoPickingContainer = panel.querySelector(".picking-bruno-container");
+              if(!brunoPickingContainer){ brunoPickingContainer = document.createElement("div"); brunoPickingContainer.className="picking-bruno-container"; panel.appendChild(brunoPickingContainer); }
+              renderPickingTab(brunoPickingContainer, "Bruno", true);
               card.appendChild(panel);
               container.appendChild(card);
               return;
