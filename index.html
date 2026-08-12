@@ -814,10 +814,10 @@ let pickingState = {
 async function fetchPickingFila() {
   pickingState.carregando = true;
   pickingState.erro = null;
-  const token = state.ml_token_filial?.access_token;
+  const token = state.ml_token?.access_token;
   if (!token) {
     pickingState.carregando = false;
-    pickingState.erro = "Token da Filial não encontrado. Verifique a conexão ML.";
+    pickingState.erro = "Token da Matriz não encontrado. Verifique a conexão ML.";
     return;
   }
   try {
@@ -944,7 +944,7 @@ async function finalizarPedidoPicking(refreshFn) {
   refreshFn();
 
   const pedido = pickingState.pedidoAtivo;
-  const token = state.ml_token_filial?.access_token;
+  const token = state.ml_token?.access_token;
 
   try {
     const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=picking-etiqueta&token=${token}&shipment_ids=${pedido.shipment_id}`);
