@@ -935,7 +935,8 @@ function fecharPedidoPicking(refreshFn) {
 
 // Processa um código bipado — compara com EAN (se tiver) ou SKU de cada linha ainda incompleta.
 // Aceita bater com EAN OU SKU pra não travar o operador se o EAN do Bling não vier preenchido.
-function processarBipagem(codigo, refreshFn) {
+// Quando o último item bater, já gera e imprime a etiqueta sozinho — sem precisar clicar em nada.
+async function processarBipagem(codigo, refreshFn) {
   const cod = String(codigo || "").trim();
   if (!cod || !pickingState.pedidoAtivo) return;
 
@@ -952,7 +953,13 @@ function processarBipagem(codigo, refreshFn) {
     pickingState.erro = "Produto errado — esse código não pertence a este pedido (ou já foi bipado o suficiente).";
   }
   pickingState.bipando = "";
-  refreshFn();
+
+  if (alvo && pedidoTotalmenteBipado()) {
+    // Tudo separado — dispara a etiqueta automaticamente, igual o Bling fazia
+    await finalizarPedidoPicking(refreshFn);
+    return;
+  }
+  refreshPickingUI();
 }
 
 function pedidoTotalmenteBipado() {
