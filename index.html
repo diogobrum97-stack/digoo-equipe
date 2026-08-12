@@ -1018,7 +1018,10 @@ function renderPickingTab(panel, quemSou, modoOperar) {
       <div style="font-size:16px;font-weight:700;color:#fff;">Picking & Packing</div>
       <div style="font-size:11px;color:#666;margin-top:2px;">${pickingState.fila ? `${pickingState.fila.length} pedidos prontos pra separar` : "Carregando fila..."}</div>
     </div>
-    <button id="picking-btn-atualizar" style="background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:6px;padding:7px 14px;color:#ccc;font-size:11px;cursor:pointer;">${pickingState.carregando ? "Buscando..." : "↻ Atualizar"}</button>
+    <div style="display:flex;gap:8px;">
+      <button id="picking-btn-diagnostico" style="background:none;border:1px solid #333;border-radius:6px;padding:7px 14px;color:#666;font-size:11px;cursor:pointer;">🔍 Diagnóstico</button>
+      <button id="picking-btn-atualizar" style="background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:6px;padding:7px 14px;color:#ccc;font-size:11px;cursor:pointer;">${pickingState.carregando ? "Buscando..." : "↻ Atualizar"}</button>
+    </div>
   `;
   wrap.appendChild(header);
 
@@ -1141,6 +1144,28 @@ function renderPickingTab(panel, quemSou, modoOperar) {
 
   const btnAtualizar = panel.querySelector("#picking-btn-atualizar");
   if (btnAtualizar) btnAtualizar.onclick = async () => { await fetchPickingFila(); refresh(); };
+
+  const btnDiag = panel.querySelector("#picking-btn-diagnostico");
+  if (btnDiag) btnDiag.onclick = async () => {
+    const token = state.ml_token?.access_token;
+    if (!token) { alert("Token da Matriz não encontrado."); return; }
+    btnDiag.textContent = "Consultando...";
+    try {
+      const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=picking-fila&token=${token}&debug=1`);
+      const data = await r.json();
+      const d = data.debug || {};
+      let msg = `Pedidos pagos (15 dias): ${d.totalPedidosEncontrados ?? "?"}\nConsultados com envio: ${d.totalComEnvioConsultado ?? "?"}\n\n`;
+      (d.statusEncontrados || []).forEach(s => {
+        msg += `#${s.order_id} — status: ${s.shipment_status} / substatus: ${s.shipment_substatus} / logistic_type: ${s.logistic_type} / mode: ${s.mode}\n`;
+      });
+      if (!d.statusEncontrados || d.statusEncontrados.length === 0) msg += "Nenhum pedido pago encontrado nos últimos 15 dias.";
+      alert(msg);
+      console.log("Diagnóstico picking:", data);
+    } catch (e) {
+      alert("Erro no diagnóstico: " + e.message);
+    }
+    btnDiag.textContent = "🔍 Diagnóstico";
+  };
 
   // Mantém o foco no campo de bipagem sempre que ele existir — leitor de
   // código de barras funciona como teclado, precisa do campo em foco.
