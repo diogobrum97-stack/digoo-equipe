@@ -800,6 +800,471 @@ async function confirmarLoteClonagem(container) {
 
 let perguntasState = { lista: null, carregando: false, erro: null, enviando: {}, _fetchedAt: 0 };
 
+// ═══════════════ Picking & Packing ═══════════════
+let pickingState = {
+  fila: null,          // lista de pedidos pendentes de envio
+  carregando: false,
+  erro: null,
+  pedidoAtivo: null,   // pedido que está aberto na tela agora (com itens já expandidos)
+  abrindoPedido: false,
+  bipando: "",         // texto atual do campo de bipagem
+  processandoEtiqueta: false,
+};
+
+async function fetchPickingFila() {
+  pickingState.carregando = true;
+  pickingState.erro = null;
+  const token = state.ml_token_filial?.access_token;
+  if (!token) {
+    pickingState.carregando = false;
+    pickingState.erro = "Token da Filial não encontrado. Verifique a conexão ML.";
+    return;
+  }
+  try {
+    const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=picking-fila&token=${token}`);
+    const data = await r.json();
+    pickingState.carregando = false;
+    if (!data.ok) {
+      pickingState.erro = data.error || "Erro ao buscar fila de pedidos.";
+    } else {
+      pickingState.fila = data.fila;
+    }
+  } catch (e) {
+    pickingState.carregando = false;
+    pickingState.erro = "Erro de conexão ao buscar a fila.";
+  }
+}
+
+// Busca EAN/kit de um SKU no Bling. Retorna null se não achar ou der erro
+// (nesse caso o item cai pra modo "sem EAN confirmado" e aceita bipar o SKU também).
+async function buscarProdutoBling(sku) {
+  if (!sku) return null;
+  try {
+    const r = await fetch(`${VERCEL_BACKEND}/api/bling-produtos?picking=1&sku=${encodeURIComponent(sku)}`);
+    const data = await r.json();
+    if (!data.ok || !data.encontrado) return null;
+    return data;
+  } catch (e) {
+    return null;
+  }
+}
+
+// Monta a lista de itens FÍSICOS a bipar pra um pedido — expande kits em componentes.
+// Cada linha final tem: sku, nome, ean (pode vir vazio), quantidadeNecessaria, quantidadeBipada.
+async function montarItensParaBipar(pedido) {
+  const linhas = [];
+  for (const item of pedido.itens) {
+    const info = await buscarProdutoBling(item.sku);
+    if (info && info.isKit && info.componentes.length > 0) {
+      info.componentes.forEach(c => {
+        linhas.push({
+          sku: c.sku || "",
+          nome: c.nome || c.sku || "componente sem nome",
+          ean: c.ean || "",
+          quantidadeNecessaria: (c.quantidade || 1) * item.quantidade,
+          quantidadeBipada: 0,
+          deKit: item.sku,
+        });
+      });
+    } else {
+      linhas.push({
+        sku: item.sku,
+        nome: item.titulo,
+        ean: info?.ean || "",
+        quantidadeNecessaria: item.quantidade,
+        quantidadeBipada: 0,
+        deKit: null,
+      });
+    }
+  }
+  return linhas;
+}
+
+// Abre um pedido da fila: trava no Firebase (pra outra pessoa não pegar o mesmo),
+// expande os itens (incluindo kits), e deixa pronto pra bipar.
+async function abrirPedidoPicking(pedido, quemAbriu, refreshFn) {
+  if (pickingState.abrindoPedido) return;
+  pickingState.abrindoPedido = true;
+  refreshFn();
+  try {
+    // Trava o pedido pro operador atual, com timestamp (locks muito antigos são
+    // ignorados na exibição, caso alguém feche a aba sem terminar)
+    await set(ref(db, `/picking_locks/${pedido.order_id}`), { por: quemAbriu, ts: Date.now() });
+
+    const itens = await montarItensParaBipar(pedido);
+    pickingState.pedidoAtivo = { ...pedido, itens_bipagem: itens, operador: quemAbriu };
+    pickingState.bipando = "";
+  } catch (e) {
+    pickingState.erro = "Erro ao abrir o pedido: " + e.message;
+  }
+  pickingState.abrindoPedido = false;
+  refreshFn();
+}
+
+function fecharPedidoPicking(refreshFn) {
+  if (pickingState.pedidoAtivo) {
+    remove(ref(db, `/picking_locks/${pickingState.pedidoAtivo.order_id}`));
+  }
+  pickingState.pedidoAtivo = null;
+  pickingState.bipando = "";
+  refreshFn();
+}
+
+// Processa um código bipado — compara com EAN (se tiver) ou SKU de cada linha ainda incompleta.
+// Aceita bater com EAN OU SKU pra não travar o operador se o EAN do Bling não vier preenchido.
+function processarBipagem(codigo, refreshFn) {
+  const cod = String(codigo || "").trim();
+  if (!cod || !pickingState.pedidoAtivo) return;
+
+  const linhas = pickingState.pedidoAtivo.itens_bipagem;
+  const alvo = linhas.find(l =>
+    l.quantidadeBipada < l.quantidadeNecessaria &&
+    ((l.ean && l.ean === cod) || (l.sku && l.sku === cod))
+  );
+
+  if (alvo) {
+    alvo.quantidadeBipada += 1;
+    pickingState.erro = null;
+  } else {
+    pickingState.erro = "Produto errado — esse código não pertence a este pedido (ou já foi bipado o suficiente).";
+  }
+  pickingState.bipando = "";
+  refreshFn();
+}
+
+function pedidoTotalmenteBipado() {
+  if (!pickingState.pedidoAtivo) return false;
+  return pickingState.pedidoAtivo.itens_bipagem.every(l => l.quantidadeBipada >= l.quantidadeNecessaria);
+}
+
+// Gera a etiqueta, salva o registro de concluído, remove a trava, e tira o pedido da fila local.
+async function finalizarPedidoPicking(refreshFn) {
+  if (!pickingState.pedidoAtivo || pickingState.processandoEtiqueta) return;
+  pickingState.processandoEtiqueta = true;
+  refreshFn();
+
+  const pedido = pickingState.pedidoAtivo;
+  const token = state.ml_token_filial?.access_token;
+
+  try {
+    const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=picking-etiqueta&token=${token}&shipment_ids=${pedido.shipment_id}`);
+    const data = await r.json();
+    if (!data.ok) {
+      pickingState.erro = data.error || "Erro ao gerar a etiqueta.";
+      pickingState.processandoEtiqueta = false;
+      refreshFn();
+      return;
+    }
+
+    // Abre o PDF numa aba nova já pronta pra imprimir
+    try {
+      const byteChars = atob(data.pdf_base64);
+      const byteNumbers = new Array(byteChars.length);
+      for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const win = window.open(url, "_blank");
+      if (win) { win.onload = () => { try { win.print(); } catch (e) {} }; }
+    } catch (e) { /* se a impressão automática falhar, o PDF já abriu na aba mesmo assim */ }
+
+    // Registra como concluído (histórico visível pro Diogo) e remove a trava
+    await set(ref(db, `/picking_concluidos/${pedido.order_id}`), {
+      titulo: pedido.itens[0]?.titulo || "",
+      por: pedido.operador,
+      ts: Date.now(),
+    });
+    await remove(ref(db, `/picking_locks/${pedido.order_id}`));
+
+    // Some da fila local sem precisar buscar tudo de novo
+    if (pickingState.fila) {
+      pickingState.fila = pickingState.fila.filter(p => p.order_id !== pedido.order_id);
+    }
+    pickingState.pedidoAtivo = null;
+  } catch (e) {
+    pickingState.erro = "Erro ao finalizar: " + e.message;
+  }
+  pickingState.processandoEtiqueta = false;
+  refreshFn();
+}
+
+// Renderiza a tela de Picking & Packing dentro de um panel.
+// quemSou = "Bruno" ou "Diogo" (define quem fica dono da trava ao abrir um pedido).
+// modoOperar = true mostra a tela operacional (fila + bipagem).
+function renderPickingTab(panel, quemSou, modoOperar) {
+  panel.innerHTML = "";
+  const refresh = () => renderPickingTab(panel, quemSou, modoOperar);
+
+  const locks = state.picking_locks || {};
+  const agora = Date.now();
+  const lockValido = (orderId) => {
+    const l = locks[orderId];
+    if (!l) return null;
+    if (agora - (l.ts || 0) > 20 * 60 * 1000) return null; // trava de +20min sem atividade é ignorada
+    return l;
+  };
+
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "max-width:1040px;";
+
+  if (!pickingState.fila && !pickingState.carregando && !pickingState.erro) {
+    fetchPickingFila().then(refresh);
+  }
+
+  const header = document.createElement("div");
+  header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;";
+  header.innerHTML = `
+    <div>
+      <div style="font-size:16px;font-weight:700;color:#fff;">Picking & Packing</div>
+      <div style="font-size:11px;color:#666;margin-top:2px;">${pickingState.fila ? `${pickingState.fila.length} pedidos prontos pra separar` : "Carregando fila..."}</div>
+    </div>
+    <button id="picking-btn-atualizar" style="background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:6px;padding:7px 14px;color:#ccc;font-size:11px;cursor:pointer;">${pickingState.carregando ? "Buscando..." : "↻ Atualizar"}</button>
+  `;
+  wrap.appendChild(header);
+
+  if (pickingState.erro) {
+    const errBox = document.createElement("div");
+    errBox.style.cssText = "background:#2a1000;border:1px solid #4a2010;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:11px;color:#f0a060;white-space:pre-wrap;line-height:1.5;";
+    errBox.textContent = pickingState.erro;
+    wrap.appendChild(errBox);
+  }
+
+  const row = document.createElement("div");
+  row.style.cssText = "display:grid;grid-template-columns:280px 1fr;gap:16px;align-items:start;";
+  wrap.appendChild(row);
+
+  // ── Coluna esquerda: fila ──
+  const colFila = document.createElement("div");
+  colFila.style.cssText = "background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:10px;padding:14px;";
+  const filaLista = pickingState.fila || [];
+  colFila.innerHTML = `<div style="font-size:11px;color:#888;margin-bottom:10px;">FILA · ${filaLista.length} pedidos</div>`;
+  const filaBody = document.createElement("div");
+  filaBody.style.cssText = "display:flex;flex-direction:column;gap:8px;max-height:600px;overflow-y:auto;";
+
+  if (filaLista.length === 0 && !pickingState.carregando) {
+    filaBody.innerHTML = `<div style="font-size:11px;color:#555;text-align:center;padding:20px 0;">Nenhum pedido pendente ✓</div>`;
+  }
+
+  filaLista.forEach(pedido => {
+    const ativo = pickingState.pedidoAtivo?.order_id === pedido.order_id;
+    const lock = lockValido(pedido.order_id);
+    const travadoPorOutro = lock && lock.por !== quemSou;
+    const nomeItem = pedido.itens[0]?.titulo || "Pedido";
+    const card = document.createElement("div");
+    card.style.cssText = `padding:10px 12px;border-radius:8px;cursor:${(travadoPorOutro || !modoOperar) ? "not-allowed" : "pointer"};background:${ativo ? "#f77614" : "#111"};border:1px solid ${ativo ? "#f77614" : "#282828"};opacity:${travadoPorOutro ? "0.5" : "1"};`;
+    card.innerHTML = `
+      <div style="font-size:11px;font-weight:700;color:${ativo ? "#fff" : "#ccc"};">#${pedido.order_id}</div>
+      <div style="font-size:10px;color:${ativo ? "#fff" : "#777"};margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nomeItem}</div>
+      <div style="font-size:9px;color:${ativo ? "#fff" : "#555"};margin-top:5px;">${travadoPorOutro ? `● sendo separado por ${lock.por}` : (ativo ? "● separando agora" : "na fila")}</div>
+    `;
+    if (!travadoPorOutro && modoOperar) {
+      card.onclick = () => { if (!ativo) abrirPedidoPicking(pedido, quemSou, refresh); };
+    }
+    filaBody.appendChild(card);
+  });
+  colFila.appendChild(filaBody);
+  row.appendChild(colFila);
+
+  // ── Coluna direita: detalhe do pedido ativo, ou instrução ──
+  const colDetalhe = document.createElement("div");
+  colDetalhe.style.cssText = "background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:10px;padding:18px;min-height:300px;";
+
+  if (pickingState.abrindoPedido) {
+    colDetalhe.innerHTML = `<div style="font-size:12px;color:#555;text-align:center;padding:60px 0;">Abrindo pedido e consultando o Bling...</div>`;
+  } else if (!pickingState.pedidoAtivo) {
+    colDetalhe.innerHTML = `<div style="font-size:12px;color:#555;text-align:center;padding:60px 0;">Clique num pedido da fila pra começar a separar.</div>`;
+  } else {
+    const pedido = pickingState.pedidoAtivo;
+    const temKit = pedido.itens_bipagem.some(l => l.deKit);
+    const todosBipados = pedidoTotalmenteBipado();
+
+    const cabecalho = document.createElement("div");
+    cabecalho.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;";
+    cabecalho.innerHTML = `
+      <div>
+        <div style="font-size:15px;font-weight:700;color:#fff;">Pedido #${pedido.order_id}</div>
+        <div style="font-size:11px;color:#888;margin-top:2px;">${pedido.itens[0]?.titulo || ""}</div>
+      </div>
+      ${temKit ? `<div style="padding:4px 10px;border-radius:11px;background:#0d1a2a;border:1px solid #1e3a5a;color:#5eb3f0;font-size:10px;font-weight:600;">📦 KIT</div>` : ""}
+    `;
+    colDetalhe.appendChild(cabecalho);
+
+    const btnFechar = document.createElement("button");
+    btnFechar.textContent = "← Voltar pra fila";
+    btnFechar.style.cssText = "background:none;border:none;color:#666;font-size:11px;cursor:pointer;margin-bottom:14px;padding:0;";
+    btnFechar.onclick = () => fecharPedidoPicking(refresh);
+    colDetalhe.appendChild(btnFechar);
+
+    const listaItens = document.createElement("div");
+    listaItens.style.cssText = "margin-bottom:16px;";
+    pedido.itens_bipagem.forEach(l => {
+      const completo = l.quantidadeBipada >= l.quantidadeNecessaria;
+      const linha = document.createElement("div");
+      linha.style.cssText = `display:flex;align-items:center;gap:10px;padding:10px 12px;background:#111;border:1px solid ${completo ? "#2d5a2d" : "#282828"};border-radius:8px;margin-bottom:6px;`;
+      linha.innerHTML = `
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12px;color:#fff;">${l.nome}</div>
+          <div style="font-size:10px;color:#666;margin-top:2px;">${l.sku}${l.ean ? ` · EAN ${l.ean}` : " · sem EAN cadastrado, bipa pelo SKU"}</div>
+        </div>
+        <div style="font-size:11px;font-weight:700;color:${completo ? "#2dce89" : "#f77614"};flex-shrink:0;">${l.quantidadeBipada}/${l.quantidadeNecessaria}</div>
+        ${completo ? `<div style="width:24px;height:24px;border-radius:50%;background:#2dce89;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span style="color:#000;font-size:12px;font-weight:700;">✓</span></div>` : `<div style="width:24px;height:24px;border-radius:50%;border:2px solid #444;flex-shrink:0;"></div>`}
+      `;
+      listaItens.appendChild(linha);
+    });
+    colDetalhe.appendChild(listaItens);
+
+    if (!todosBipados) {
+      const bipInput = document.createElement("input");
+      bipInput.id = "picking-input-bip";
+      bipInput.type = "text";
+      bipInput.placeholder = "Bipar código de barras...";
+      bipInput.autocomplete = "off";
+      bipInput.style.cssText = "width:100%;background:#0d0d0d;border:2px solid #f77614;border-radius:8px;padding:12px 14px;color:#fff;font-size:13px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;margin-bottom:12px;";
+      bipInput.value = pickingState.bipando;
+      bipInput.oninput = (e) => { pickingState.bipando = e.target.value; };
+      bipInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") { e.preventDefault(); processarBipagem(bipInput.value, refresh); }
+      });
+      colDetalhe.appendChild(bipInput);
+    } else {
+      const btnFinalizar = document.createElement("button");
+      btnFinalizar.disabled = pickingState.processandoEtiqueta;
+      btnFinalizar.style.cssText = `width:100%;padding:14px;border-radius:8px;background:${pickingState.processandoEtiqueta ? "#333" : "#f77614"};border:none;color:#fff;font-size:13px;font-weight:700;cursor:${pickingState.processandoEtiqueta ? "default" : "pointer"};`;
+      btnFinalizar.textContent = pickingState.processandoEtiqueta ? "Gerando etiqueta..." : "🖨 Tudo separado — gerar e imprimir etiqueta";
+      btnFinalizar.onclick = () => finalizarPedidoPicking(refresh);
+      colDetalhe.appendChild(btnFinalizar);
+    }
+  }
+  row.appendChild(colDetalhe);
+
+  panel.appendChild(wrap);
+
+  const btnAtualizar = panel.querySelector("#picking-btn-atualizar");
+  if (btnAtualizar) btnAtualizar.onclick = async () => { await fetchPickingFila(); refresh(); };
+
+  // Mantém o foco no campo de bipagem sempre que ele existir — leitor de
+  // código de barras funciona como teclado, precisa do campo em foco.
+  const bipInputAtivo = panel.querySelector("#picking-input-bip");
+  if (bipInputAtivo) {
+    bipInputAtivo.focus();
+    const posCursor = bipInputAtivo.value.length;
+    bipInputAtivo.setSelectionRange(posCursor, posCursor);
+  }
+}
+
+// Tela de acompanhamento (visão do Diogo) — resumo do dia, o que está
+// rolando agora em tempo real, e histórico dos últimos concluídos.
+function renderPickingAcompanhar(panel) {
+  panel.innerHTML = "";
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "max-width:640px;";
+
+  const concluidosHoje = Object.entries(state.picking_concluidos || {})
+    .filter(([, c]) => c && new Date(c.ts).toDateString() === new Date().toDateString())
+    .sort((a, b) => (b[1].ts || 0) - (a[1].ts || 0));
+
+  const filaTotal = pickingState.fila?.length ?? "...";
+  const locksAtivos = Object.entries(state.picking_locks || {})
+    .filter(([, l]) => l && (Date.now() - (l.ts || 0)) < 20 * 60 * 1000);
+
+  const resumo = document.createElement("div");
+  resumo.style.cssText = "display:flex;gap:24px;background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:10px;padding:16px 20px;margin-bottom:16px;";
+  resumo.innerHTML = `
+    <div><div style="font-size:20px;font-weight:700;color:#2dce89;font-family:'IBM Plex Mono',monospace;">${concluidosHoje.length}</div><div style="font-size:10px;color:#888;margin-top:2px;">embalados hoje</div></div>
+    <div><div style="font-size:20px;font-weight:700;color:#f77614;font-family:'IBM Plex Mono',monospace;">${filaTotal}</div><div style="font-size:10px;color:#888;margin-top:2px;">na fila</div></div>
+  `;
+  wrap.appendChild(resumo);
+
+  const aoVivo = document.createElement("div");
+  aoVivo.style.cssText = "margin-bottom:16px;";
+  aoVivo.innerHTML = `<div style="font-size:11px;color:#666;margin-bottom:8px;">AGORA, EM TEMPO REAL</div>`;
+  if (locksAtivos.length === 0) {
+    aoVivo.innerHTML += `<div style="font-size:11px;color:#555;padding:12px;background:#141414;border:1px solid #282828;border-radius:8px;">Ninguém separando pedidos no momento.</div>`;
+  } else {
+    locksAtivos.forEach(([orderId, lock]) => {
+      const pedidoInfo = pickingState.fila?.find(p => String(p.order_id) === String(orderId));
+      const linha = document.createElement("div");
+      linha.style.cssText = "display:flex;align-items:center;gap:8px;padding:10px 12px;background:#111;border:1px solid #1e3a5a;border-radius:8px;margin-bottom:6px;";
+      linha.innerHTML = `
+        <div style="width:8px;height:8px;border-radius:50%;background:#2dce89;flex-shrink:0;"></div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12px;color:#fff;font-weight:600;">${lock.por} está separando</div>
+          <div style="font-size:10px;color:#888;margin-top:2px;">Pedido #${orderId}${pedidoInfo ? " · " + (pedidoInfo.itens[0]?.titulo || "") : ""}</div>
+        </div>
+      `;
+      aoVivo.appendChild(linha);
+    });
+  }
+  wrap.appendChild(aoVivo);
+
+  const hist = document.createElement("div");
+  hist.innerHTML = `<div style="font-size:11px;color:#666;margin-bottom:8px;">ÚLTIMOS CONCLUÍDOS HOJE</div>`;
+  if (concluidosHoje.length === 0) {
+    hist.innerHTML += `<div style="font-size:11px;color:#555;">Nenhum pedido concluído ainda hoje.</div>`;
+  } else {
+    concluidosHoje.slice(0, 8).forEach(([orderId, c]) => {
+      const hora = new Date(c.ts).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+      const linha = document.createElement("div");
+      linha.style.cssText = "padding:9px 12px;background:#111;border:1px solid #282828;border-radius:7px;margin-bottom:5px;";
+      linha.innerHTML = `<div style="font-size:11px;color:#ccc;">#${orderId} · ${c.titulo}</div><div style="font-size:10px;color:#2dce89;margin-top:2px;">✓ etiqueta impressa às ${hora} por ${c.por}</div>`;
+      hist.appendChild(linha);
+    });
+  }
+  wrap.appendChild(hist);
+
+  panel.appendChild(wrap);
+
+  if (!pickingState.fila && !pickingState.carregando) {
+    fetchPickingFila().then(() => renderPickingAcompanhar(panel));
+  }
+}
+
+// Wrapper usado no card do Diogo — alterna entre "Acompanhar" (monitor,
+// sem operar nada) e "Operar eu mesmo" (mesma tela operacional do Bruno).
+function renderPickingDiogo(panel) {
+  panel.innerHTML = "";
+  if (window._pickingModoDiogo === undefined) window._pickingModoDiogo = "acompanhar";
+
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "max-width:1040px;";
+
+  const toggleBar = document.createElement("div");
+  toggleBar.style.cssText = "display:flex;gap:8px;margin-bottom:16px;";
+  const opAcompanhar = document.createElement("button");
+  const opOperar = document.createElement("button");
+  const ativo = window._pickingModoDiogo === "acompanhar";
+  opAcompanhar.textContent = "Acompanhar";
+  opOperar.textContent = "Operar eu mesmo →";
+  [opAcompanhar, opOperar].forEach(b => {
+    b.style.cssText = `padding:8px 16px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid #333;`;
+  });
+  opAcompanhar.style.background = ativo ? "#f77614" : "#1a1a1a";
+  opAcompanhar.style.color = ativo ? "#fff" : "#888";
+  opAcompanhar.style.borderColor = ativo ? "#f77614" : "#333";
+  opOperar.style.background = !ativo ? "#f77614" : "#1a1a1a";
+  opOperar.style.color = !ativo ? "#fff" : "#888";
+  opOperar.style.borderColor = !ativo ? "#f77614" : "#333";
+  opAcompanhar.onclick = () => { window._pickingModoDiogo = "acompanhar"; renderPickingDiogo(panel); };
+  opOperar.onclick = () => { window._pickingModoDiogo = "operar"; renderPickingDiogo(panel); };
+  toggleBar.appendChild(opAcompanhar);
+  toggleBar.appendChild(opOperar);
+  wrap.appendChild(toggleBar);
+
+  const conteudo = document.createElement("div");
+  wrap.appendChild(conteudo);
+  panel.appendChild(wrap);
+
+  if (window._pickingModoDiogo === "acompanhar") {
+    renderPickingAcompanhar(conteudo);
+  } else {
+    renderPickingTab(conteudo, "Diogo", true);
+  }
+}
+
+
+
+
+
 async function fetchPerguntas() {
   perguntasState.carregando = true;
   perguntasState.erro = null;
@@ -4162,7 +4627,7 @@ function render(){
             { label: "Dashboard", tab: "dashboard", subs: [] },
             { label: "Tarefas", tab: "tarefas", subs: [] },
             { label: "Equipe", tab: null, subs: [{label:"Concluídas",tab:"concluidas"},{label:"Conversas",tab:"conversas"}] },
-            { label: "Mercado Livre", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência de Compra",tab:"experiencia"},{label:"Clonar Anúncio",tab:"clonar"},{label:"Perguntas",tab:"perguntas"}] },
+            { label: "Mercado Livre", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência de Compra",tab:"experiencia"},{label:"Clonar Anúncio",tab:"clonar"},{label:"Perguntas",tab:"perguntas"},{label:"Picking & Packing",tab:"picking"}] },
             { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"}] },
           ];
 
@@ -4251,7 +4716,7 @@ function render(){
               dashboard: "Dashboard",
               tarefas: "Tarefas",
               concluidas: "Equipe", conversas: "Equipe",
-              estoque: "ML", cancelamentos: "ML", experiencia: "ML", clonar: "ML", perguntas: "ML",
+              estoque: "ML", cancelamentos: "ML", experiencia: "ML", clonar: "ML", perguntas: "ML", picking: "ML",
               conferencia: "Gestão", config: "Gestão",
             };
             const activeGroupLabel = tabToGroup[currentTab] || "Tarefas";
@@ -4265,7 +4730,7 @@ function render(){
               { label: "Dashboard", tab: "dashboard", subs: [] },
               { label: "Tarefas", tab: "tarefas", subs: [] },
               { label: "Equipe", tab: null, subs: [{label:"Concluídas",tab:"concluidas"},{label:"Conversas",tab:"conversas"}] },
-              { label: "ML", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência",tab:"experiencia"},{label:"Clonar",tab:"clonar"},{label:"Perguntas",tab:"perguntas"}] },
+              { label: "ML", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência",tab:"experiencia"},{label:"Clonar",tab:"clonar"},{label:"Perguntas",tab:"perguntas"},{label:"Picking",tab:"picking"}] },
               { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"}] },
               { label: "📝", tab: null, subs: [], acao: "ideias" },
               { label: "⚙", tab: "config", subs: [] },
@@ -4709,6 +5174,11 @@ function render(){
             let perguntasContainer = panel.querySelector(".perguntas-container");
             if(!perguntasContainer){ perguntasContainer = document.createElement("div"); perguntasContainer.className="perguntas-container"; panel.appendChild(perguntasContainer); }
             renderPerguntasTab(perguntasContainer);
+          }else if(window._diogotab==="picking"){
+            panel.style.maxHeight="none"; panel.style.overflowY="auto";
+            let pickingContainer = panel.querySelector(".picking-container");
+            if(!pickingContainer){ pickingContainer = document.createElement("div"); pickingContainer.className="picking-container"; panel.appendChild(pickingContainer); }
+            renderPickingDiogo(pickingContainer);
           }else if(window._diogotab==="conferencia"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
             let confContainer = panel.querySelector(".conf-container");
@@ -4754,10 +5224,10 @@ function render(){
           if(member.name==="Bruno"){
             if(!window._brunotab) window._brunotab="tarefas";
             const brunoTabs = document.createElement("div"); brunoTabs.className="tabs";
-            ["tarefas","cancelamentos"].forEach(tab=>{
+            ["tarefas","cancelamentos","picking"].forEach(tab=>{
               const btn=document.createElement("button");
               btn.className="tab-btn"+(window._brunotab===tab?" active":"");
-              btn.textContent=tab==="tarefas"?"Tarefas":"NFs pra Cancelar";
+              btn.textContent=tab==="tarefas"?"Tarefas":(tab==="cancelamentos"?"NFs pra Cancelar":"Picking & Packing");
               btn.addEventListener("click",()=>{ window._brunotab=tab; render(); });
               brunoTabs.appendChild(btn);
             });
@@ -4767,6 +5237,14 @@ function render(){
               panel.style.maxHeight="75vh";
               panel.style.overflowY="auto";
               renderCancelamentosBruno(panel);
+              card.appendChild(panel);
+              container.appendChild(card);
+              return;
+            } else if(window._brunotab==="picking"){
+              card.style.gridColumn="1 / -1";
+              panel.style.maxHeight="80vh";
+              panel.style.overflowY="auto";
+              renderPickingTab(panel, "Bruno", true);
               card.appendChild(panel);
               container.appendChild(card);
               return;
