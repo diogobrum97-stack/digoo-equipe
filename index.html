@@ -827,7 +827,10 @@ async function fetchPickingFila() {
     if (!data.ok) {
       pickingState.erro = data.error || "Erro ao buscar fila de pedidos.";
     } else {
-      pickingState.fila = data.fila;
+      // Não mostra de novo pedidos que a gente já processou por aqui — mesmo
+      // que o ML ainda mostre pendente até o pacote ser despachado fisicamente.
+      const jaConcluidos = state.picking_concluidos || {};
+      pickingState.fila = (data.fila || []).filter(p => !jaConcluidos[p.order_id]);
     }
   } catch (e) {
     pickingState.carregando = false;
