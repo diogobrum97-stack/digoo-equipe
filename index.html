@@ -1053,12 +1053,17 @@ function renderPickingTab(panel, quemSou, modoOperar) {
     const lock = lockValido(pedido.order_id);
     const travadoPorOutro = lock && lock.por !== quemSou;
     const nomeItem = pedido.itens[0]?.titulo || "Pedido";
+    const etiquetaImpressa = pedido.substatus === "printed";
     const card = document.createElement("div");
     card.style.cssText = `padding:10px 12px;border-radius:8px;cursor:${(travadoPorOutro || !modoOperar) ? "not-allowed" : "pointer"};background:${ativo ? "#f77614" : "#111"};border:1px solid ${ativo ? "#f77614" : "#282828"};opacity:${travadoPorOutro ? "0.5" : "1"};`;
     card.innerHTML = `
       <div style="font-size:11px;font-weight:700;color:${ativo ? "#fff" : "#ccc"};">#${pedido.order_id}</div>
       <div style="font-size:10px;color:${ativo ? "#fff" : "#777"};margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nomeItem}</div>
-      <div style="font-size:9px;color:${ativo ? "#fff" : "#555"};margin-top:5px;">${travadoPorOutro ? `● sendo separado por ${lock.por}` : (ativo ? "● separando agora" : "na fila")}</div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;">
+        <div style="display:inline-block;padding:2px 7px;border-radius:9px;font-size:8px;font-weight:700;background:${ativo ? "rgba(255,255,255,0.25)" : "#2a1000"};color:${ativo ? "#fff" : "#f0a060"};">📅 Enviar hoje</div>
+        <div style="display:inline-block;padding:2px 7px;border-radius:9px;font-size:8px;font-weight:700;background:${ativo ? "rgba(255,255,255,0.25)" : (etiquetaImpressa ? "#1a2a1a" : "#0d1a2a")};color:${ativo ? "#fff" : (etiquetaImpressa ? "#2dce89" : "#5eb3f0")};">${etiquetaImpressa ? "🏷 Etiqueta impressa" : "🏷 Pronta pra imprimir"}</div>
+      </div>
+      <div style="font-size:9px;color:${ativo ? "#fff" : "#555"};margin-top:6px;">${travadoPorOutro ? `● sendo separado por ${lock.por}` : (ativo ? "● separando agora" : "na fila")}</div>
     `;
     if (!travadoPorOutro && modoOperar) {
       card.onclick = () => { if (!ativo) abrirPedidoPicking(pedido, quemSou, refresh); };
