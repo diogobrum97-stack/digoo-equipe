@@ -1148,24 +1148,32 @@ function renderPickingTab(panel, quemSou, modoOperar) {
   const btnDiag = panel.querySelector("#picking-btn-diagnostico");
   if (btnDiag) btnDiag.onclick = async () => {
     const token = state.ml_token?.access_token;
-    if (!token) { alert("Token da Matriz não encontrado."); return; }
-    btnDiag.textContent = "Consultando...";
+    if (!token) { pickingState.diagnostico = "Token da Matriz não encontrado."; refresh(); return; }
+    pickingState.diagnostico = "Consultando...";
+    refresh();
     try {
       const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=picking-fila&token=${token}&debug=1`);
       const data = await r.json();
       const d = data.debug || {};
-      let msg = `Pedidos pagos (15 dias): ${d.totalPedidosEncontrados ?? "?"}\nConsultados com envio: ${d.totalComEnvioConsultado ?? "?"}\n\n`;
+      let msg = `ok: ${data.ok}\nerro: ${data.error || "-"}\nPedidos pagos (15 dias): ${d.totalPedidosEncontrados ?? "?"}\nConsultados com envio: ${d.totalComEnvioConsultado ?? "?"}\n\n`;
       (d.statusEncontrados || []).forEach(s => {
         msg += `#${s.order_id} — status: ${s.shipment_status} / substatus: ${s.shipment_substatus} / logistic_type: ${s.logistic_type} / mode: ${s.mode}\n`;
       });
       if (!d.statusEncontrados || d.statusEncontrados.length === 0) msg += "Nenhum pedido pago encontrado nos últimos 15 dias.";
-      alert(msg);
+      pickingState.diagnostico = msg;
       console.log("Diagnóstico picking:", data);
     } catch (e) {
-      alert("Erro no diagnóstico: " + e.message);
+      pickingState.diagnostico = "Erro no diagnóstico: " + e.message;
     }
-    btnDiag.textContent = "🔍 Diagnóstico";
+    refresh();
   };
+
+  if (pickingState.diagnostico) {
+    const diagBox = document.createElement("div");
+    diagBox.style.cssText = "background:#0d1a2a;border:1px solid #1e3a5a;border-radius:8px;padding:12px 14px;margin-top:16px;font-size:11px;color:#9ecbf0;white-space:pre-wrap;line-height:1.6;font-family:'IBM Plex Mono',monospace;max-height:300px;overflow-y:auto;";
+    diagBox.textContent = pickingState.diagnostico;
+    panel.appendChild(diagBox);
+  }
 
   // Mantém o foco no campo de bipagem sempre que ele existir — leitor de
   // código de barras funciona como teclado, precisa do campo em foco.
