@@ -1067,7 +1067,7 @@ function renderPickingTab(panel, quemSou, modoOperar) {
   };
 
   const wrap = document.createElement("div");
-  wrap.style.cssText = "max-width:1040px;";
+  wrap.style.cssText = "max-width:1040px;font-family:Inter,sans-serif;";
 
   if (!pickingState.fila && !pickingState.carregando && !pickingState.erro) {
     fetchPickingFila().then(refreshPickingUI);
@@ -1247,7 +1247,7 @@ function renderPickingTab(panel, quemSou, modoOperar) {
 
   if (pickingState.diagnostico) {
     const diagBox = document.createElement("div");
-    diagBox.style.cssText = "background:#0d1a2a;border:1px solid #1e3a5a;border-radius:8px;padding:12px 14px;margin-top:16px;font-size:11px;color:#9ecbf0;white-space:pre-wrap;line-height:1.6;font-family:'IBM Plex Mono',monospace;max-height:300px;overflow-y:auto;";
+    diagBox.style.cssText = "background:#0d1a2a;border:1px solid #1e3a5a;border-radius:8px;padding:12px 14px;margin-top:16px;font-size:11px;color:#9ecbf0;white-space:pre-wrap;line-height:1.6;font-family:Inter,sans-serif;max-height:300px;overflow-y:auto;";
     diagBox.textContent = pickingState.diagnostico;
     panel.appendChild(diagBox);
   }
@@ -1267,7 +1267,7 @@ function renderPickingTab(panel, quemSou, modoOperar) {
 function renderPickingAcompanhar(panel) {
   panel.innerHTML = "";
   const wrap = document.createElement("div");
-  wrap.style.cssText = "max-width:640px;";
+  wrap.style.cssText = "max-width:640px;font-family:Inter,sans-serif;";
 
   const concluidosHoje = Object.entries(state.picking_concluidos || {})
     .filter(([, c]) => c && new Date(c.ts).toDateString() === new Date().toDateString())
@@ -1280,8 +1280,8 @@ function renderPickingAcompanhar(panel) {
   const resumo = document.createElement("div");
   resumo.style.cssText = "display:flex;gap:24px;background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:10px;padding:16px 20px;margin-bottom:16px;";
   resumo.innerHTML = `
-    <div><div style="font-size:20px;font-weight:700;color:#2dce89;font-family:'IBM Plex Mono',monospace;">${concluidosHoje.length}</div><div style="font-size:10px;color:#888;margin-top:2px;">embalados hoje</div></div>
-    <div><div style="font-size:20px;font-weight:700;color:#f77614;font-family:'IBM Plex Mono',monospace;">${filaTotal}</div><div style="font-size:10px;color:#888;margin-top:2px;">na fila</div></div>
+    <div><div style="font-size:20px;font-weight:700;color:#2dce89;font-family:Inter,sans-serif;">${concluidosHoje.length}</div><div style="font-size:10px;color:#888;margin-top:2px;">embalados hoje</div></div>
+    <div><div style="font-size:20px;font-weight:700;color:#f77614;font-family:Inter,sans-serif;">${filaTotal}</div><div style="font-size:10px;color:#888;margin-top:2px;">na fila</div></div>
   `;
   wrap.appendChild(resumo);
 
@@ -1336,7 +1336,7 @@ function renderPickingDiogo(panel) {
   if (window._pickingModoDiogo === undefined) window._pickingModoDiogo = "acompanhar";
 
   const wrap = document.createElement("div");
-  wrap.style.cssText = "max-width:1040px;";
+  wrap.style.cssText = "max-width:1040px;font-family:Inter,sans-serif;";
 
   const toggleBar = document.createElement("div");
   toggleBar.style.cssText = "display:flex;gap:8px;margin-bottom:16px;";
