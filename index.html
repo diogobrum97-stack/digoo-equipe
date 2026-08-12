@@ -991,6 +991,26 @@ async function finalizarPedidoPicking(refreshFn) {
   refreshFn();
 }
 
+// Registra um pedido como concluído SEM passar pela bipagem — usado quando
+// o Bruno/Diogo já imprimiu e despachou direto no site do ML, e só precisa
+// sincronizar o histórico do nosso sistema (não mexe em nada no ML).
+async function marcarPedidoFeitoExterno(pedido, quemSou, refreshFn) {
+  try {
+    await set(ref(db, `/picking_concluidos/${pedido.order_id}`), {
+      titulo: pedido.itens[0]?.titulo || "",
+      por: quemSou,
+      ts: Date.now(),
+      viaExterno: true,
+    });
+    if (pickingState.fila) {
+      pickingState.fila = pickingState.fila.filter(p => p.order_id !== pedido.order_id);
+    }
+  } catch (e) {
+    pickingState.erro = "Erro ao registrar: " + e.message;
+  }
+  refreshFn();
+}
+
 // Renderiza a tela de Picking & Packing dentro de um panel.
 // quemSou = "Bruno" ou "Diogo" (define quem fica dono da trava ao abrir um pedido).
 // modoOperar = true mostra a tela operacional (fila + bipagem).
@@ -1057,8 +1077,9 @@ function renderPickingTab(panel, quemSou, modoOperar) {
     const travadoPorOutro = lock && lock.por !== quemSou;
     const nomeItem = pedido.itens[0]?.titulo || "Pedido";
     const etiquetaImpressa = pedido.substatus === "printed";
+    const clicavel = !travadoPorOutro && modoOperar && !etiquetaImpressa;
     const card = document.createElement("div");
-    card.style.cssText = `padding:10px 12px;border-radius:8px;cursor:${(travadoPorOutro || !modoOperar) ? "not-allowed" : "pointer"};background:${ativo ? "#f77614" : "#111"};border:1px solid ${ativo ? "#f77614" : "#282828"};opacity:${travadoPorOutro ? "0.5" : "1"};`;
+    card.style.cssText = `padding:10px 12px;border-radius:8px;cursor:${clicavel ? "pointer" : "default"};background:${ativo ? "#f77614" : "#111"};border:1px solid ${ativo ? "#f77614" : "#282828"};opacity:${travadoPorOutro ? "0.5" : "1"};`;
     card.innerHTML = `
       <div style="font-size:11px;font-weight:700;color:${ativo ? "#fff" : "#ccc"};">#${pedido.order_id}</div>
       <div style="font-size:10px;color:${ativo ? "#fff" : "#777"};margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nomeItem}</div>
@@ -1067,11 +1088,23 @@ function renderPickingTab(panel, quemSou, modoOperar) {
         <div style="display:inline-block;padding:2px 7px;border-radius:9px;font-size:8px;font-weight:700;background:${ativo ? "rgba(255,255,255,0.25)" : (etiquetaImpressa ? "#1a2a1a" : "#0d1a2a")};color:${ativo ? "#fff" : (etiquetaImpressa ? "#2dce89" : "#5eb3f0")};">${etiquetaImpressa ? "Etiqueta impressa" : "Etiqueta pronta para imprimir"}</div>
       </div>
       <div style="font-size:9px;color:${ativo ? "#fff" : "#555"};margin-top:6px;">${travadoPorOutro ? `● sendo separado por ${lock.por}` : (ativo ? "● separando agora" : "na fila")}</div>
+      ${etiquetaImpressa && modoOperar ? `<button data-marcar-feito="${pedido.order_id}" style="width:100%;margin-top:8px;padding:6px;border-radius:6px;background:#1a2a1a;border:1px solid #2d5a2d;color:#2dce89;font-size:9px;font-weight:600;cursor:pointer;">Marcar como já feito</button>` : ""}
     `;
-    if (!travadoPorOutro && modoOperar) {
+    if (clicavel) {
       card.onclick = () => { if (!ativo) abrirPedidoPicking(pedido, quemSou, refresh); };
     }
     filaBody.appendChild(card);
+    if (etiquetaImpressa && modoOperar) {
+      const btnMarcar = card.querySelector(`[data-marcar-feito="${pedido.order_id}"]`);
+      if (btnMarcar) {
+        btnMarcar.onclick = (e) => {
+          e.stopPropagation();
+          btnMarcar.disabled = true;
+          btnMarcar.textContent = "Registrando...";
+          marcarPedidoFeitoExterno(pedido, quemSou, refresh);
+        };
+      }
+    }
   });
   colFila.appendChild(filaBody);
   row.appendChild(colFila);
