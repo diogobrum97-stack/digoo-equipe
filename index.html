@@ -848,6 +848,10 @@ async function buscarProdutoBling(sku) {
     const r = await fetch(`${VERCEL_BACKEND}/api/bling-produtos?picking=1&sku=${encodeURIComponent(sku)}`, { signal: controller.signal });
     clearTimeout(timeoutId);
     const data = await r.json();
+    // Token do Bling expirado (ou não conectado) — sinaliza diferente de "sem EAN mesmo"
+    if (r.status === 401 || (data.erro && /expirad|conectad/i.test(data.erro))) {
+      return { tokenExpirado: true };
+    }
     if (!data.ok || !data.encontrado) return null;
     return data;
   } catch (e) {
@@ -857,10 +861,15 @@ async function buscarProdutoBling(sku) {
 
 // Monta a lista de itens FÍSICOS a bipar pra um pedido — expande kits em componentes.
 // Cada linha final tem: sku, nome, ean (pode vir vazio), quantidadeNecessaria, quantidadeBipada.
+// Se detectar token do Bling expirado, marca no pickingState pra avisar na tela.
 async function montarItensParaBipar(pedido) {
   const linhas = [];
+  pickingState.blingTokenExpirado = false;
   for (const item of pedido.itens) {
     const info = await buscarProdutoBling(item.sku);
+    if (info && info.tokenExpirado) {
+      pickingState.blingTokenExpirado = true;
+    }
     if (info && info.isKit && info.componentes.length > 0) {
       info.componentes.forEach(c => {
         linhas.push({
@@ -1197,6 +1206,16 @@ function renderPickingTab(panel, quemSou, modoOperar) {
     btnFechar.onclick = () => fecharPedidoPicking(refresh);
     colDetalhe.appendChild(btnFechar);
 
+    if (pickingState.blingTokenExpirado) {
+      const avisoBling = document.createElement("div");
+      avisoBling.style.cssText = "display:flex;align-items:center;justify-content:space-between;gap:12px;background:#2a1000;border:1px solid #4a2010;border-radius:8px;padding:10px 14px;margin-bottom:14px;flex-wrap:wrap;";
+      avisoBling.innerHTML = `
+        <div style="font-size:11px;color:#f0a060;line-height:1.4;">O Bling está desconectado ou o token expirou — não foi possível buscar EAN/kit desse pedido. Os itens abaixo caíram pra bipagem por SKU, sem conferência automática de kit.</div>
+        <button id="picking-btn-reconectar-bling" style="background:#5e72e4;border:none;border-radius:6px;padding:7px 14px;color:#000;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">Reconectar Bling</button>
+      `;
+      colDetalhe.appendChild(avisoBling);
+    }
+
     const listaItens = document.createElement("div");
     listaItens.style.cssText = "margin-bottom:16px;";
     pedido.itens_bipagem.forEach(l => {
@@ -1243,6 +1262,11 @@ function renderPickingTab(panel, quemSou, modoOperar) {
 
   const btnAtualizar = panel.querySelector("#picking-btn-atualizar");
   if (btnAtualizar) btnAtualizar.onclick = async () => { await fetchPickingFila(); refreshPickingUI(); };
+
+  const btnReconectarBling = panel.querySelector("#picking-btn-reconectar-bling");
+  if (btnReconectarBling) btnReconectarBling.onclick = () => {
+    window.open("https://digoo-backend.vercel.app/api/bling-auth", "_blank");
+  };
 
   const btnDiag = panel.querySelector("#picking-btn-diagnostico");
   if (btnDiag) btnDiag.onclick = async () => {
