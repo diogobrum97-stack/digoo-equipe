@@ -1019,7 +1019,9 @@ async function finalizarPedidoPicking(refreshFn) {
       return;
     }
 
-    // Abre o PDF numa aba nova já pronta pra imprimir
+    // Baixa o PDF como arquivo de verdade (não só abre em aba) — é assim que
+    // o AutoPrint consegue detectar e imprimir sozinho, do mesmo jeito que já
+    // funciona com o Bling. Sem aba nova, então o Tab Closer nem precisa agir.
     try {
       const byteChars = atob(data.pdf_base64);
       const byteNumbers = new Array(byteChars.length);
@@ -1027,9 +1029,14 @@ async function finalizarPedidoPicking(refreshFn) {
       const byteArray = new Uint8Array(byteNumbers);
       const blob = new Blob([byteArray], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
-      const win = window.open(url, "_blank");
-      if (win) { win.onload = () => { try { win.print(); } catch (e) {} }; }
-    } catch (e) { /* se a impressão automática falhar, o PDF já abriu na aba mesmo assim */ }
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `etiqueta_${pedido.order_id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    } catch (e) { /* se o download falhar por algum motivo, a etiqueta ainda foi gerada no ML normalmente */ }
 
     // Registra como concluído (histórico visível pro Diogo) e remove a trava
     // — inclui a conferência final item a item (esperado x bipado), útil pra
