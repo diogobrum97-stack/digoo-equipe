@@ -4825,9 +4825,11 @@ function render(){
     }
     if(brunoEmPicking && member.name==="Bruno") {
       card.classList.add("card-fullscreen");
+      card.style.cssText += "position:fixed;inset:0;z-index:1000;border-radius:0;overflow:hidden;margin:0;height:100vh;width:100vw;box-sizing:border-box;display:flex;flex-direction:column;";
     }
     if(diogoEmPickingOperar && member.name==="Diogo") {
       card.classList.add("card-fullscreen");
+      card.style.cssText += "position:fixed;inset:0;z-index:1000;border-radius:0;overflow:hidden;margin:0;height:100vh;width:100vw;box-sizing:border-box;display:flex;flex-direction:column;";
     }
 
     const header=document.createElement("div");header.className="card-header";header.style.background=hbg;
@@ -4904,7 +4906,7 @@ function render(){
 
     if(isOpen){
       const panel=document.createElement("div");panel.className="panel open";
-      if(diogoCardFullscreen) { panel.style.flex="1"; panel.style.overflowY="auto"; panel.style.maxHeight="none"; }
+      if(diogoCardFullscreen || brunoEmPicking || diogoEmPickingOperar) { panel.style.flex="1"; panel.style.overflowY="auto"; panel.style.maxHeight="none"; }
 
       if(member.locked&&!diogoPinUnlocked){
         panel.innerHTML=`<div class="pin-wrap"><div class="pin-icon">◈</div><p>Digite o PIN para acessar</p><input class="pin-input" type="password" inputmode="numeric" autocomplete="new-password" name="digoo-pin-${Date.now()}" data-lpignore="true" data-form-type="other" maxlength="10" placeholder="••••••" id="pin-field" readonly><div style="font-size:11px;color:#e91e8c;margin-top:8px;letter-spacing:1px;display:none" id="pin-err">PIN incorreto</div><button class="pin-btn" style="background:${color};color:#000" id="pin-btn">ENTRAR</button></div>`;
