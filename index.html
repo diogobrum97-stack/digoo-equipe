@@ -4809,7 +4809,8 @@ function render(){
     if(currentUser === "Diogo" && member.name !== "Diogo" && !window._showEquipe) return;
     if(diogIsFullAuto && member.name !== "Diogo") return;
     const brunoEmCancelamentos = openCard==="Bruno" && window._brunotab==="cancelamentos";
-    if(brunoEmCancelamentos && member.name !== "Bruno") return;
+    const brunoEmPicking = openCard==="Bruno" && window._brunotab==="picking";
+    if((brunoEmCancelamentos || brunoEmPicking) && member.name !== "Bruno") return;
 
 
 
@@ -4818,6 +4819,9 @@ function render(){
     card.style.borderColor=isOpen?color+"88":(hasPending||isFlashing)?color:"var(--border)";
     if(diogIsFullAuto && member.name==="Diogo") card.style.gridColumn="1 / -1";
     if(diogoCardFullscreen && member.name==="Diogo") {
+      card.classList.add("card-fullscreen");
+    }
+    if(brunoEmPicking && member.name==="Bruno") {
       card.classList.add("card-fullscreen");
     }
 
@@ -5538,7 +5542,8 @@ function render(){
               return;
             } else if(window._brunotab==="picking"){
               card.style.gridColumn="1 / -1";
-              panel.style.maxHeight="80vh";
+              panel.style.flex="1";
+              panel.style.maxHeight="none";
               panel.style.overflowY="auto";
               let brunoPickingContainer = panel.querySelector(".picking-bruno-container");
               if(!brunoPickingContainer){ brunoPickingContainer = document.createElement("div"); brunoPickingContainer.className="picking-bruno-container"; panel.appendChild(brunoPickingContainer); }
