@@ -1531,9 +1531,9 @@ function renderPickingDiogo(panel) {
     b.style.color = isAtivo ? "#fff" : "#888";
     b.style.borderColor = isAtivo ? "#f77614" : "#333";
   });
-  opAcompanhar.onclick = () => { window._pickingModoDiogo = "acompanhar"; renderPickingDiogo(panel); };
-  opOperar.onclick = () => { window._pickingModoDiogo = "operar"; renderPickingDiogo(panel); };
-  opHistorico.onclick = () => { window._pickingModoDiogo = "historico"; renderPickingDiogo(panel); };
+  opAcompanhar.onclick = () => { window._pickingModoDiogo = "acompanhar"; render(); };
+  opOperar.onclick = () => { window._pickingModoDiogo = "operar"; render(); };
+  opHistorico.onclick = () => { window._pickingModoDiogo = "historico"; render(); };
   toggleBar.appendChild(opAcompanhar);
   toggleBar.appendChild(opOperar);
   toggleBar.appendChild(opHistorico);
@@ -4810,7 +4810,9 @@ function render(){
     if(diogIsFullAuto && member.name !== "Diogo") return;
     const brunoEmCancelamentos = openCard==="Bruno" && window._brunotab==="cancelamentos";
     const brunoEmPicking = openCard==="Bruno" && window._brunotab==="picking";
+    const diogoEmPickingOperar = openCard==="Diogo" && diogoPinOk && window._diogotab==="picking" && window._pickingModoDiogo==="operar";
     if((brunoEmCancelamentos || brunoEmPicking) && member.name !== "Bruno") return;
+    if(diogoEmPickingOperar && member.name !== "Diogo") return;
 
 
 
@@ -4822,6 +4824,9 @@ function render(){
       card.classList.add("card-fullscreen");
     }
     if(brunoEmPicking && member.name==="Bruno") {
+      card.classList.add("card-fullscreen");
+    }
+    if(diogoEmPickingOperar && member.name==="Diogo") {
       card.classList.add("card-fullscreen");
     }
 
@@ -5476,6 +5481,7 @@ function render(){
             renderPerguntasTab(perguntasContainer);
           }else if(window._diogotab==="picking"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
+            if(window._pickingModoDiogo==="operar") panel.style.flex="1";
             let pickingContainer = panel.querySelector(".picking-container");
             if(!pickingContainer){ pickingContainer = document.createElement("div"); pickingContainer.className="picking-container"; panel.appendChild(pickingContainer); }
             renderPickingDiogo(pickingContainer);
