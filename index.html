@@ -844,7 +844,7 @@ async function buscarProdutoBling(sku) {
   if (!sku) return null;
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s — se travar, segue sem esse EAN
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s — kits com vários componentes demoram mais (pausa proposital contra rate limit do Bling)
     const r = await fetch(`${VERCEL_BACKEND}/api/bling-produtos?picking=1&sku=${encodeURIComponent(sku)}`, { signal: controller.signal });
     clearTimeout(timeoutId);
     const data = await r.json();
@@ -933,7 +933,7 @@ async function abrirPedidoPicking(pedido, quemAbriu, refreshFn) {
     // ficar preso na tela pra sempre.
     const itens = await Promise.race([
       montarItensParaBipar(pedido),
-      new Promise((_, reject) => setTimeout(() => reject(new Error("Demorou demais consultando o Bling. Tente de novo.")), 40000)),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("Demorou demais consultando o Bling. Tente de novo.")), 90000)),
     ]);
     pickingState.pedidoAtivo = { ...pedido, itens_bipagem: itens, operador: quemAbriu };
     pickingState.bipando = "";
