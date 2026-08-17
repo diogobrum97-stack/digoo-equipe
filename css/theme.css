@@ -35,8 +35,8 @@ body {
 
 /* ── Variáveis — modo claro ──────────────────────────────────────────── */
 body.light {
-  --bg: #f0f0f0; --bg2: #f7f7f7; --bg3: #efefef;
-  --border: #e2e2e2; --border2: #d0d0d0;
+  --bg: #e8e8e8; --bg2: #f2f2f2; --bg3: #f7f7f7;
+  --border: #d8d8d8; --border2: #cacaca;
   --text: #111111; --text2: #555555; --text3: #999999; --sub: #777777;
   --done: #aaa; --sep: rgba(0,0,0,0.07);
   --c-d: #11cdef; --hbg-d: rgba(17,205,239,0.08);
