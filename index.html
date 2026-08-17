@@ -328,7 +328,7 @@ function setupIdentityScreen() {
 
   const screen = document.getElementById("identity-screen");
   screen.innerHTML = "";
-  screen.style.cssText = "position:fixed;inset:0;background:#000;display:flex;flex-direction:"+(_isMobile?"column":"row")+";height:100%;width:100%;z-index:99999;font-family:Inter,sans-serif;overflow:hidden;align-items:stretch;";
+  screen.style.cssText = `position:fixed;inset:0;background:${T.isLight?"#f2f2f2":"#000"};display:flex;flex-direction:`+(_isMobile?"column":"row")+";height:100%;width:100%;z-index:99999;font-family:Inter,sans-serif;overflow:hidden;align-items:stretch;";
 
   function loginAs(name) {
     currentUser = name;
@@ -383,9 +383,9 @@ function setupIdentityScreen() {
         +'<span style="font-size:9px;padding:2px 7px;border-radius:3px;font-weight:600;background:rgba(255,255,255,.06);color:#666;border:1px solid #1e1e1e;font-family:Inter,sans-serif;">ADMIN</span>'
       +'</div>'
       +'<div style="display:flex;align-items:center;gap:8px;margin:4px 0;">'
-        +'<div style="flex:1;height:1px;background:#111;"></div>'
+        +`<div style="flex:1;height:1px;background:${T.sep};"></div>`
         +'<div style="font-size:10px;color:#1e1e1e;font-family:Inter,sans-serif;">equipe</div>'
-        +'<div style="flex:1;height:1px;background:#111;"></div>'
+        +`<div style="flex:1;height:1px;background:${T.sep};"></div>`
       +'</div>'
       +'<div id="ov-bruno" style="border-left:2px solid #5e72e4;padding:12px 16px;background:#080808;border-radius:0 9px 9px 0;display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:4px;">'
         +'<div><div style="font-size:12px;font-weight:600;color:#777;font-family:Inter,sans-serif;">Bruno</div>'
@@ -421,12 +421,12 @@ function setupIdentityScreen() {
     inner.innerHTML =
       '<div id="pk-back" style="font-size:11px;color:#333;cursor:pointer;margin-bottom:20px;font-family:Inter,sans-serif;text-align:left;width:100%;">← voltar</div>'
       +'<div style="display:flex;flex-direction:column;align-items:center;width:100%;margin-bottom:16px;gap:6px;">'
-        +'<div style="width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:1px solid #333;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;">DG</div>'
+        +`<div style="width:40px;height:40px;border-radius:50%;background:${T.bg3};border:1px solid ${T.border};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:${T.text};">DG</div>`
         +'<div style="font-size:14px;font-weight:700;color:#fff;font-family:Inter,sans-serif;">Diogo</div>'
         +'<div style="font-size:11px;color:#444;font-family:Inter,sans-serif;">Digite seu PIN</div>'
       +'</div>'
       +'<div id="pk-dots" style="display:flex;gap:10px;margin-bottom:16px;justify-content:center;width:100%;">'
-        +[0,1,2,3,4,5].map(()=>'<div class="pkd" style="width:10px;height:10px;border-radius:50%;background:#1e1e1e;border:1px solid #333;transition:all .1s;"></div>').join("")
+        +[0,1,2,3,4,5].map(()=>`<div class="pkd" style="width:10px;height:10px;border-radius:50%;background:${T.bg3};border:1px solid ${T.border};transition:all .1s;"></div>`).join("")
       +'</div>'
       +'<div id="pk-err" style="font-size:11px;color:#e91e8c;min-height:16px;margin-bottom:10px;font-family:Inter,sans-serif;text-align:center;width:100%;"></div>'
       +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;width:100%;">'+keys+'</div>';
@@ -481,12 +481,12 @@ function setupIdentityScreen() {
     const r = document.createElement("div");
     r.style.cssText = _isMobile ? "flex:1;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 20px;overflow-y:auto;gap:16px;box-sizing:border-box;" : "flex:0 0 30%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 40px;height:100vh;overflow-y:auto;gap:16px;";
     r.innerHTML =
-      '<div style="width:52px;height:52px;border-radius:50%;background:#111;border:1px solid #222;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;">'+initials+'</div>'
+      `<div style="width:52px;height:52px;border-radius:50%;background:${T.bg3};border:1px solid ${T.border};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:${T.text};">`+initials+`</div>`
       +'<div style="text-align:center;">'
         +'<div style="font-size:16px;font-weight:700;color:#fff;font-family:Inter,sans-serif;">Bem-vindo, '+savedUser+'</div>'
         +'<div style="font-size:11px;color:#333;margin-top:4px;font-family:Inter,sans-serif;">Entrando automaticamente...</div>'
       +'</div>'
-      +'<div style="width:120px;height:2px;background:#1a1a1a;border-radius:2px;overflow:hidden;">'
+      +`<div style="width:120px;height:2px;background:${T.border};border-radius:2px;overflow:hidden;">'
         +'<div id="ov-bar" style="height:100%;width:0%;background:#fff;border-radius:2px;transition:width 1.1s ease-out;"></div>'
       +'</div>'
       +'<div style="font-size:10px;color:#1e1e1e;font-family:Inter,sans-serif;">N\u00e3o \u00e9 voc\u00ea? <span id="ov-trocar" style="color:#333;cursor:pointer;text-decoration:underline;">Trocar</span></div>';
@@ -1143,8 +1143,8 @@ function renderPickingTab(panel, quemSou, modoOperar) {
       <div style="font-size:11px;color:#666;margin-top:2px;">${pickingState.fila ? `${pickingState.fila.length} pedidos prontos pra separar` : "Carregando fila..."}</div>
     </div>
     <div style="display:flex;gap:8px;">
-      <button id="picking-btn-diagnostico" style="background:none;border:1px solid #333;border-radius:6px;padding:7px 14px;color:#666;font-size:11px;cursor:pointer;">🔍 Diagnóstico</button>
-      <button id="picking-btn-atualizar" style="background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:6px;padding:7px 14px;color:#ccc;font-size:11px;cursor:pointer;">${pickingState.carregando ? "Buscando..." : "↻ Atualizar"}</button>
+      <button id="picking-btn-diagnostico" style="background:none;border:1px solid ${T.border};border-radius:6px;padding:7px 14px;color:#666;font-size:11px;cursor:pointer;">🔍 Diagnóstico</button>
+      <button id="picking-btn-atualizar" style="background:${T.bg3};border:1px solid ${T.border};border-radius:6px;padding:7px 14px;color:${T.text2};font-size:11px;cursor:pointer;">${pickingState.carregando ? "Buscando..." : "↻ Atualizar"}</button>
     </div>
   `;
   wrap.appendChild(header);
@@ -1162,7 +1162,7 @@ function renderPickingTab(panel, quemSou, modoOperar) {
 
   // ── Coluna esquerda: fila ──
   const colFila = document.createElement("div");
-  colFila.style.cssText = "background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:10px;padding:14px;";
+  colFila.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:14px;box-shadow:${T.isLight?"0 1px 4px rgba(0,0,0,0.06)":"none"};`;
   const filaLista = pickingState.fila || [];
   colFila.innerHTML = `<div style="font-size:11px;color:#888;margin-bottom:10px;">FILA · ${filaLista.length} pedidos</div>`;
   const filaBody = document.createElement("div");
@@ -1212,7 +1212,7 @@ function renderPickingTab(panel, quemSou, modoOperar) {
 
   // ── Coluna direita: detalhe do pedido ativo, ou instrução ──
   const colDetalhe = document.createElement("div");
-  colDetalhe.style.cssText = "background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:10px;padding:18px;min-height:300px;";
+  colDetalhe.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:18px;min-height:300px;box-shadow:${T.isLight?"0 1px 4px rgba(0,0,0,0.06)":"none"};`;
 
   if (pickingState.abrindoPedido) {
     colDetalhe.innerHTML = `<div style="font-size:12px;color:#555;text-align:center;padding:60px 0;">Abrindo pedido e consultando o Bling...</div>`;
@@ -1376,7 +1376,7 @@ function renderPickingHistorico(panel) {
     </div>
     <div style="display:flex;gap:8px;align-items:center;">
       <input id="picking-hist-data" type="date" value="${filtro}" style="background:${T.bg3};border:1px solid ${T.border};border-radius:6px;padding:7px 10px;color:${T.text2};font-size:11px;font-family:Inter,sans-serif;outline:none;">
-      ${filtro ? `<button id="picking-hist-limpar" style="background:none;border:1px solid #333;border-radius:6px;padding:7px 12px;color:#888;font-size:11px;cursor:pointer;">Limpar filtro</button>` : ""}
+      ${filtro ? `<button id="picking-hist-limpar" style="background:none;border:1px solid ${T.border};border-radius:6px;padding:7px 12px;color:#888;font-size:11px;cursor:pointer;">Limpar filtro</button>` : ""}
     </div>
   `;
   wrap.appendChild(header);
@@ -1390,7 +1390,7 @@ function renderPickingHistorico(panel) {
       const dataHora = new Date(c.ts).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
       const card = document.createElement("div");
-      card.style.cssText = "background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:10px;padding:14px 16px;margin-bottom:8px;cursor:pointer;";
+      card.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:14px 16px;margin-bottom:8px;cursor:pointer;`;
       card.innerHTML = `
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
           <div style="flex:1;min-width:0;">
@@ -1414,7 +1414,7 @@ function renderPickingHistorico(panel) {
             const bateu = it.quantidadeBipada >= it.quantidadeNecessaria;
             detalhe.innerHTML += `
               <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #1e1e1e;">
-                <div style="font-size:11px;color:#ccc;">${it.nome || it.sku}</div>
+                <div style="font-size:11px;color:${T.text2};">${it.nome || it.sku}</div>
                 <div style="font-size:11px;font-weight:700;color:${bateu ? "#2dce89" : "#e8432d"};">${it.quantidadeBipada}/${it.quantidadeNecessaria}</div>
               </div>
             `;
@@ -1446,7 +1446,7 @@ function renderPickingHistorico(panel) {
                 <div style="display:flex;align-items:center;gap:8px;padding:5px 0;">
                   <div style="font-size:10px;color:#555;width:70px;flex-shrink:0;">${hora}</div>
                   <div style="width:6px;height:6px;border-radius:50%;background:${cor};flex-shrink:0;"></div>
-                  <div style="font-size:11px;color:#ccc;">${ev.acertou ? (ev.nome || ev.sku) : `Código ${ev.codigo} — não pertence ao pedido`}</div>
+                  <div style="font-size:11px;color:${T.text2};">${ev.acertou ? (ev.nome || ev.sku) : `Código ${ev.codigo} — não pertence ao pedido`}</div>
                 </div>
               `;
             });
@@ -1481,7 +1481,7 @@ function renderPickingAcompanhar(panel) {
     .filter(([, l]) => l && (Date.now() - (l.ts || 0)) < 20 * 60 * 1000);
 
   const resumo = document.createElement("div");
-  resumo.style.cssText = "display:flex;gap:24px;background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:10px;padding:16px 20px;margin-bottom:16px;";
+  resumo.style.cssText = `display:flex;gap:24px;background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:16px 20px;margin-bottom:16px;`;
   resumo.innerHTML = `
     <div><div style="font-size:20px;font-weight:700;color:#2dce89;font-family:Inter,sans-serif;">${concluidosHoje.length}</div><div style="font-size:10px;color:#ffffff;margin-top:2px;">embalados hoje</div></div>
     <div><div style="font-size:20px;font-weight:700;color:#ffffff;font-family:Inter,sans-serif;">${filaTotal}</div><div style="font-size:10px;color:#ffffff;margin-top:2px;">na fila</div></div>
@@ -1497,7 +1497,7 @@ function renderPickingAcompanhar(panel) {
     locksAtivos.forEach(([orderId, lock]) => {
       const pedidoInfo = pickingState.fila?.find(p => String(p.order_id) === String(orderId));
       const linha = document.createElement("div");
-      linha.style.cssText = "display:flex;align-items:center;gap:8px;padding:10px 12px;background:${T.infoBg};border:1px solid ${T.infoBor};border-radius:8px;margin-bottom:6px;";
+      linha.style.cssText = `display:flex;align-items:center;gap:8px;padding:10px 12px;background:${T.infoBg};border:1px solid ${T.infoBor};border-radius:8px;margin-bottom:6px;`;
       linha.innerHTML = `
         <div style="width:8px;height:8px;border-radius:50%;background:#2dce89;flex-shrink:0;"></div>
         <div style="flex:1;min-width:0;">
@@ -1519,7 +1519,7 @@ function renderPickingAcompanhar(panel) {
       const hora = new Date(c.ts).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
       const linha = document.createElement("div");
       linha.style.cssText = "padding:9px 12px;background:"+T.bg+";border:1px solid "+T.border+";border-radius:7px;margin-bottom:5px;";
-      linha.innerHTML = `<div style="font-size:11px;color:#ccc;">#${orderId} · ${c.titulo}</div><div style="font-size:10px;color:#2dce89;margin-top:2px;">✓ etiqueta impressa às ${hora} por ${c.por}</div>`;
+      linha.innerHTML = `<div style="font-size:11px;color:${T.text2};">#${orderId} · ${c.titulo}</div><div style="font-size:10px;color:#2dce89;margin-top:2px;">✓ etiqueta impressa às ${hora} por ${c.por}</div>`;
       hist.appendChild(linha);
     });
   }
@@ -1550,7 +1550,7 @@ function renderPickingFullscreenOverlay() {
   if (!overlay) {
     overlay = document.createElement("div");
     overlay.id = "picking-fullscreen-overlay";
-    overlay.style.cssText = "position:fixed;inset:0;z-index:99999;background:#000;display:flex;flex-direction:column;box-sizing:border-box;";
+    overlay.style.cssText = `position:fixed;inset:0;z-index:99999;background:${T.isLight?"#f2f2f2":"#000"};display:flex;flex-direction:column;box-sizing:border-box;`;
     document.body.appendChild(overlay);
   }
 
@@ -1590,7 +1590,7 @@ function renderPickingDiogo(panel) {
   opOperar.textContent = "Operar eu mesmo →";
   opHistorico.textContent = "Histórico de bipagem";
   [opAcompanhar, opOperar, opHistorico].forEach((b, i) => {
-    b.style.cssText = `padding:8px 16px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid #333;`;
+    b.style.cssText = `padding:8px 16px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid ${T.border};`;
     const key = ["acompanhar", "operar", "historico"][i];
     const isAtivo = modo === key;
     b.style.background = isAtivo ? "#ffffff" : "#1a1a1a";
@@ -1740,12 +1740,12 @@ function renderPerguntasTab(container) {
       <div style="font-size:16px;font-weight:700;color:#fff;">Perguntas automáticas</div>
       <div style="font-size:11px;color:#666;margin-top:2px;">${perguntasState.lista ? `${total} pendentes${atencao ? ` · ${atencao} requer${atencao>1?"em":""} atenção manual` : ""}` : "Respostas sugeridas com IA para perguntas pré-venda"}</div>
     </div>
-    <button id="perguntas-btn-atualizar" style="background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:6px;padding:7px 14px;color:#ccc;font-size:11px;cursor:pointer;">${perguntasState.carregando ? "Buscando..." : "↻ Atualizar"}</button>
+    <button id="perguntas-btn-atualizar" style="background:${T.bg3};border:1px solid ${T.border};border-radius:6px;padding:7px 14px;color:${T.text2};font-size:11px;cursor:pointer;">${perguntasState.carregando ? "Buscando..." : "↻ Atualizar"}</button>
   `;
   wrap.appendChild(header);
 
   const autoBar = document.createElement("div");
-  autoBar.style.cssText = `display:flex;align-items:center;justify-content:space-between;background:${modoAuto ? "linear-gradient(to top,#1a2a1a 0%,#000 100%)" : "linear-gradient(to top,#252525 0%,#000 100%)"};border:1px solid ${modoAuto ? "#2d5a2d" : "#333"};border-radius:10px;padding:12px 16px;margin-bottom:20px;`;
+  autoBar.style.cssText = `display:flex;align-items:center;justify-content:space-between;background:${modoAuto ? "${T.isLight?"#f0fdf4":"linear-gradient(to top,#1a2a1a 0%,#000 100%)"}" : "${T.isLight?"#ffffff":"linear-gradient(to top,#252525 0%,#000 100%)"}"};border:1px solid ${modoAuto ? "#2d5a2d" : "#333"};border-radius:10px;padding:12px 16px;margin-bottom:20px;`;
   autoBar.innerHTML = `
     <div>
       <div style="font-size:12px;font-weight:600;color:${modoAuto ? "#2dce89" : "#fff"};">Modo automático ${modoAuto ? "ativado" : "desativado"}</div>
@@ -1775,7 +1775,7 @@ function renderPerguntasTab(container) {
   } else if (perguntasState.lista) {
     perguntasState.lista.forEach((p) => {
       const card = document.createElement("div");
-      card.style.cssText = "background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:10px;padding:16px;margin-bottom:14px;";
+      card.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:16px;margin-bottom:14px;`;
 
       const enviado = perguntasState.enviando[p.question_id] === "ok";
       const enviadoAuto = perguntasState.enviando[p.question_id] === "ok-auto";
@@ -1784,7 +1784,7 @@ function renderPerguntasTab(container) {
 
       card.innerHTML = `
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
-          ${p.thumbnail ? `<img src="${p.thumbnail}" style="width:36px;height:36px;border-radius:6px;object-fit:cover;background:#111;flex-shrink:0;">` : ""}
+          ${p.thumbnail ? `<img src="${p.thumbnail}" style="width:36px;height:36px;border-radius:6px;object-fit:cover;background:${T.bg};flex-shrink:0;">` : ""}
           <div style="flex:1;min-width:0;">
             <div style="font-size:12px;font-weight:600;color:#fff;line-height:1.3;">${p.produto}</div>
           </div>
@@ -1810,7 +1810,7 @@ function renderPerguntasTab(container) {
           </div>
           <div style="display:flex;gap:8px;">
             <a href="https://www.mercadolivre.com.br/anuncio/${p.item_id}" target="_blank" style="display:inline-block;padding:9px 18px;border-radius:6px;background:${T.bg2};border:1px solid ${T.border};color:${T.text2};font-size:12px;font-weight:600;text-decoration:none;">Abrir anúncio no ML ↗</a>
-            <button id="pergunta-dispensar-${p.question_id}" style="padding:9px 18px;border-radius:6px;background:none;border:1px solid #333;color:#666;font-size:12px;font-weight:600;cursor:pointer;">Dispensar</button>
+            <button id="pergunta-dispensar-${p.question_id}" style="padding:9px 18px;border-radius:6px;background:none;border:1px solid ${T.border};color:#666;font-size:12px;font-weight:600;cursor:pointer;">Dispensar</button>
           </div>
         ` : !p.requires_attention ? `
           <div style="font-size:10px;color:#666;margin-bottom:6px;">Resposta ${enviadoAuto || enviado ? "enviada" : "sugerida (editável)"}</div>
@@ -1819,7 +1819,7 @@ function renderPerguntasTab(container) {
         ` : `
           <div style="display:flex;gap:8px;">
             <a href="https://www.mercadolivre.com.br/anuncio/${p.item_id}" target="_blank" style="display:inline-block;padding:9px 18px;border-radius:6px;background:${T.bg2};border:1px solid ${T.border};color:${T.text2};font-size:12px;font-weight:600;text-decoration:none;">Responder no ML ↗</a>
-            <button id="pergunta-dispensar-${p.question_id}" style="padding:9px 18px;border-radius:6px;background:none;border:1px solid #333;color:#666;font-size:12px;font-weight:600;cursor:pointer;">Dispensar</button>
+            <button id="pergunta-dispensar-${p.question_id}" style="padding:9px 18px;border-radius:6px;background:none;border:1px solid ${T.border};color:#666;font-size:12px;font-weight:600;cursor:pointer;">Dispensar</button>
           </div>
         `}
       `;
@@ -1923,7 +1923,7 @@ function renderClonarTab(container) {
   // Envelope único da coluna esquerda (mesma altura da direita quando há prévia)
   const colEsqCard = document.createElement("div");
   colEsqCard.style.cssText = temColunaDireita
-    ? "background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:10px;padding:16px;height:100%;box-sizing:border-box;"
+    ? "background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:16px;height:100%;box-sizing:border-box;"
     : "";
   colEsq.appendChild(colEsqCard);
   const alvoEsq = temColunaDireita ? colEsqCard : colEsq;
@@ -1932,7 +1932,7 @@ function renderClonarTab(container) {
   const buscaCard = document.createElement("div");
   buscaCard.style.cssText = temColunaDireita
     ? "padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid #282828;"
-    : "background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:10px;padding:16px;margin-bottom:16px;";
+    : "background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:16px;margin-bottom:16px;";
   buscaCard.innerHTML = `
     <div style="font-size:11px;color:#888;margin-bottom:8px;">ID(s) ou link(s) do(s) anúncio(s) de origem</div>
     <textarea id="clonar-input-id" rows="3" placeholder="Ex: MLB4718893383${"\n"}Cole vários, um por linha, pra clonar em lote" style="width:100%;background:${T.bg};border:1px solid ${T.border};border-radius:6px;padding:9px 12px;color:${T.text};font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;margin-bottom:12px;resize:vertical;">${clonarState.itemBusca}</textarea>
@@ -1975,7 +1975,7 @@ function renderClonarTab(container) {
   if (isLoteModo) {
     const colDir = document.createElement("div");
     const loteWrap = document.createElement("div");
-    loteWrap.style.cssText = "background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:10px;padding:16px;height:100%;box-sizing:border-box;";
+    loteWrap.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:16px;height:100%;box-sizing:border-box;`;
 
     const itens = loteState.itens || [];
     const concluidos = itens.filter(it => it.status === "sucesso" || it.status === "erro").length;
@@ -2005,10 +2005,10 @@ function renderClonarTab(container) {
           const s = statusInfo[it.status] || statusInfo.aguardando;
           const mostrarDetalhes = it.status === "encontrado";
           return `
-          <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;background:#111;border:1px solid ${it.status==='encontrado' ? '#1e3a5a' : '#282828'};border-radius:8px;">
-            ${it.foto ? `<img src="${it.foto}" style="width:36px;height:36px;border-radius:6px;object-fit:cover;flex-shrink:0;background:#1a1a1a;">` : `<div style="width:36px;height:36px;border-radius:6px;background:#1a1a1a;flex-shrink:0;"></div>`}
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;background:${T.bg};border:1px solid ${it.status==='encontrado' ? T.infoBor : T.border};border-radius:8px;">
+            ${it.foto ? `<img src="${it.foto}" style="width:36px;height:36px;border-radius:6px;object-fit:cover;flex-shrink:0;background:${T.bg2};">` : `<div style="width:36px;height:36px;border-radius:6px;background:${T.bg2};flex-shrink:0;"></div>`}
             <div style="flex:1;min-width:0;">
-              <div style="font-size:11px;color:#ccc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${it.titulo || it.itemId}</div>
+              <div style="font-size:11px;color:${T.text2};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${it.titulo || it.itemId}</div>
               ${mostrarDetalhes
                 ? `<div style="font-size:10px;color:#666;margin-top:2px;">SKU ${it.sku || "—"} · ${it.quantidade} un · R$ ${Number(it.preco).toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>`
                 : `<div style="font-size:10px;color:${s.cor};margin-top:2px;line-height:1.4;">${s.icone} ${it.status === "erro" ? it.motivo : s.label}</div>`
@@ -2035,7 +2035,7 @@ function renderClonarTab(container) {
     const foto = item.pictures?.[0]?.source || "";
     previewCard.innerHTML = `
       <div style="display:flex;gap:12px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid #282828;">
-        ${foto ? `<img src="${foto}" style="width:64px;height:64px;border-radius:8px;object-fit:cover;flex-shrink:0;background:#111;">` : ""}
+        ${foto ? `<img src="${foto}" style="width:64px;height:64px;border-radius:8px;object-fit:cover;flex-shrink:0;background:${T.bg};">` : ""}
         <div style="flex:1;min-width:0;">
           <div style="font-size:12px;font-weight:600;color:#fff;line-height:1.4;">${item.title}</div>
           <div style="font-size:11px;color:#666;margin-top:4px;">Categoria ${item.category_id} · ${item.condition === "new" ? "Novo" : item.condition}</div>
@@ -2047,11 +2047,11 @@ function renderClonarTab(container) {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
         <div>
           <div style="font-size:10px;color:#666;margin-bottom:5px;">SKU</div>
-          <input id="clonar-input-sku" type="text" value="${item.sku || ""}" style="width:100%;background:#111;border:1px solid #333;border-radius:6px;padding:8px 10px;color:#fff;font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
+          <input id="clonar-input-sku" type="text" value="${item.sku || ""}" style="width:100%;background:${T.bg};border:1px solid ${T.border};border-radius:6px;padding:8px 10px;color:${T.text};font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
         </div>
         <div>
           <div style="font-size:10px;color:#666;margin-bottom:5px;">Quantidade</div>
-          <input id="clonar-input-qtd" type="number" value="${item.available_quantity}" style="width:100%;background:#111;border:1px solid #333;border-radius:6px;padding:8px 10px;color:#fff;font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
+          <input id="clonar-input-qtd" type="number" value="${item.available_quantity}" style="width:100%;background:${T.bg};border:1px solid ${T.border};border-radius:6px;padding:8px 10px;color:${T.text};font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
         </div>
       </div>
       <div style="margin-bottom:16px;">
@@ -2059,7 +2059,7 @@ function renderClonarTab(container) {
         <div style="font-size:16px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">R$ ${Number(item.price).toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
       </div>
 
-      <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#1e1e1e;border-radius:6px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:${T.bg3};border-radius:6px;margin-bottom:16px;">
         <div style="font-size:11px;color:#888;">Clonando para</div>
         <div style="font-size:12px;font-weight:600;color:#ffffff;">${contaDestino}</div>
       </div>
@@ -2071,7 +2071,7 @@ function renderClonarTab(container) {
     // ── Coluna direita: prévia visual do anúncio clonado ──
     const colDir = document.createElement("div");
     const listingWrap = document.createElement("div");
-    listingWrap.style.cssText = "background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:10px;padding:16px;height:100%;box-sizing:border-box;";
+    listingWrap.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:16px;height:100%;box-sizing:border-box;`;
     const listingTitle = document.createElement("div");
     listingTitle.style.cssText = "font-size:11px;color:#888;margin-bottom:12px;";
     listingTitle.textContent = "Prévia do anúncio clonado";
@@ -2089,17 +2089,17 @@ function renderClonarTab(container) {
       const condicaoP = item.condition === "new" ? "Novo" : item.condition;
       const listingTipoP = item.listing_type_id === "gold_special" ? "Clássico" : (item.listing_type_id || "—");
       previewEl.innerHTML = `
-        <div style="background:#111;border:1px solid #282828;border-radius:10px;padding:16px;">
+        <div style="background:${T.bg};border:1px solid ${T.border};border-radius:10px;padding:16px;">
           <div style="display:inline-block;padding:3px 10px;border-radius:13px;background:#ffffff;color:#000;font-size:11px;font-weight:600;margin-bottom:14px;">${contaDestinoP}</div>
-          <div style="width:100%;aspect-ratio:1;border-radius:8px;overflow:hidden;background:#222;margin-bottom:14px;display:flex;align-items:center;justify-content:center;">
+          <div style="width:100%;aspect-ratio:1;border-radius:8px;overflow:hidden;background:${T.bg3};margin-bottom:14px;display:flex;align-items:center;justify-content:center;">
             ${fotoP ? `<img src="${fotoP}" style="width:100%;height:100%;object-fit:cover;">` : `<div style="font-size:11px;color:#555;">Sem imagem</div>`}
           </div>
           <div style="font-size:13px;font-weight:700;color:#fff;line-height:1.4;margin-bottom:10px;">${item.title}</div>
           <div style="font-size:22px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;margin-bottom:10px;">R$ ${Number(item.price).toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
           <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
             <div style="display:inline-block;padding:3px 10px;border-radius:12px;background:${T.okBg};border:1px solid ${T.okBor};color:#2dce89;font-size:11px;font-weight:600;">Frete grátis</div>
-            <div style="display:inline-block;padding:3px 10px;border-radius:12px;background:#1e1e1e;border:1px solid #333;color:#888;font-size:11px;font-weight:600;">${condicaoP}</div>
-            <div style="display:inline-block;padding:3px 10px;border-radius:12px;background:#1e1e1e;border:1px solid #333;color:#888;font-size:11px;font-weight:600;">${listingTipoP}</div>
+            <div style="display:inline-block;padding:3px 10px;border-radius:12px;background:${T.bg3};border:1px solid ${T.border};color:${T.text3};font-size:11px;font-weight:600;">${condicaoP}</div>
+            <div style="display:inline-block;padding:3px 10px;border-radius:12px;background:${T.bg3};border:1px solid ${T.border};color:${T.text3};font-size:11px;font-weight:600;">${listingTipoP}</div>
           </div>
           <div style="padding-top:14px;border-top:1px solid #282828;display:grid;grid-template-columns:1fr 1fr;gap:14px 24px;">
             <div><div style="font-size:10px;color:#666;margin-bottom:3px;">SKU</div><div style="font-size:12px;color:#fff;font-weight:600;">${skuAtual}</div></div>
@@ -2119,7 +2119,7 @@ function renderClonarTab(container) {
   if (clonarState.resultado) {
     const res = clonarState.resultado;
     const resCard = document.createElement("div");
-    resCard.style.cssText = "background:linear-gradient(to top,#1a2a1a 0%,#000 100%);border:1px solid #2d5a2d;border-radius:10px;padding:16px;margin-bottom:16px;text-align:center;";
+    resCard.style.cssText = `background:${T.okBg};border:1px solid ${T.okBor};border-radius:10px;padding:16px;margin-bottom:16px;text-align:center;`;
     resCard.innerHTML = `
       <div style="font-size:13px;font-weight:700;color:#2dce89;margin-bottom:6px;">Anúncio clonado com sucesso ✓</div>
       <div style="font-size:11px;color:#888;margin-bottom:14px;">${res.item_id}</div>
@@ -2278,7 +2278,7 @@ function renderExperienciaTab(container) {
       <div style="font-size:16px;font-weight:700;color:#fff;">Experiência de compra</div>
       <div style="font-size:11px;color:#666;margin-top:2px;">${dashExperiencia.total || 0} anúncios ativos · ${todosProblemas.length} com problema</div>
     </div>
-    <button onclick="window._expRefresh()" style="background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:6px;padding:7px 14px;color:#ccc;font-size:11px;cursor:pointer;">↻ Atualizar</button>
+    <button onclick="window._expRefresh()" style="background:${T.bg3};border:1px solid ${T.border};border-radius:6px;padding:7px 14px;color:${T.text2};font-size:11px;cursor:pointer;">↻ Atualizar</button>
   `;
   container.appendChild(header);
 
@@ -2298,7 +2298,7 @@ function renderExperienciaTab(container) {
   filtros.forEach(f => {
     const btn = document.createElement("button");
     const ativo = expPageFiltro === f.key;
-    btn.style.cssText = `background:${ativo?f.cor:'linear-gradient(to top,#252525 0%,#000 100%)'};border:1px solid ${ativo?f.cor:'#333'};border-radius:6px;padding:7px 14px;color:${ativo?'#fff':'#888'};font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;`;
+    btn.style.cssText = `background:${ativo?f.cor:'${T.isLight?"#ffffff":"linear-gradient(to top,#252525 0%,#000 100%)"}'};border:1px solid ${ativo?f.cor:'#333'};border-radius:6px;padding:7px 14px;color:${ativo?'#fff':'#888'};font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;`;
     btn.textContent = f.label;
     btn.onclick = () => { expPageFiltro = f.key; renderExperienciaTab(container); };
     filterBar.appendChild(btn);
@@ -2328,7 +2328,7 @@ function renderExperienciaTab(container) {
     const nome = p.title || p.sku || '';
     const nomeShort = nome.length > 40 ? nome.slice(0,40)+'…' : nome;
 
-    const acoesRows = (p.actions||[]).map(a=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#1e1e1e;border-radius:6px;margin-bottom:5px;"><div style="width:6px;height:6px;border-radius:50%;background:${cor};flex-shrink:0;"></div><div style="font-size:11px;color:#ccc;">${a}</div></div>`).join('') || '<div style="font-size:11px;color:#555;">Nenhuma recomendação disponível.</div>';
+    const acoesRows = (p.actions||[]).map(a=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:${T.bg3};border-radius:6px;margin-bottom:5px;"><div style="width:6px;height:6px;border-radius:50%;background:${cor};flex-shrink:0;"></div><div style="font-size:11px;color:${T.text2};">${a}</div></div>`).join('') || '<div style="font-size:11px;color:${T.text3};">Nenhuma recomendação disponível.</div>';
     const principalHTML = p.principalAcao ? `<div style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:${cor}1a;border:1px solid ${cor}44;border-radius:7px;margin-bottom:12px;"><div style="font-size:10px;color:${cor};font-weight:700;text-transform:uppercase;flex-shrink:0;">Prioridade</div><div style="font-size:12px;color:#fff;font-weight:600;">${p.principalAcao}</div></div>` : '';
     const freezeHTML = p.freeze ? `<div style="display:flex;align-items:flex-start;gap:8px;padding:9px 12px;background:#2a1000;border:1px solid #4a2010;border-radius:7px;margin-bottom:12px;"><div style="font-size:13px;flex-shrink:0;">⚠️</div><div style="font-size:11px;color:#f0a060;line-height:1.4;">${p.freeze}</div></div>` : '';
     const statusHTML = p.status && p.status !== 'active' ? `<div style="display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;background:#c0392b22;color:#c0392b;margin-bottom:10px;">Anúncio ${p.status==='paused'?'pausado':'em moderação'}</div>` : '';
@@ -2337,7 +2337,7 @@ function renderExperienciaTab(container) {
 
     const card = document.createElement("div");
     card.className = "exp-page-card";
-    card.style.cssText = `background:linear-gradient(to top,#252525 0%,#000 100%);border-top:1px solid #333;border-bottom:1px solid #333;border-right:1px solid #333;border-left:3px solid ${cor};border-radius:10px;overflow:hidden;display:flex;flex-direction:column;align-items:center;gap:0;text-align:center;cursor:pointer;transition:border-color .2s;`;
+    card.style.cssText = `background:${T.card};border-top:1px solid ${T.border};border-bottom:1px solid ${T.border};border-right:1px solid ${T.border};border-left:3px solid ${cor};border-radius:10px;overflow:hidden;display:flex;flex-direction:column;align-items:center;gap:0;text-align:center;cursor:pointer;transition:border-color .2s;`;
     card.innerHTML = `
       <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px;width:100%;">
         <svg width="64" height="64" viewBox="0 0 108 108">
@@ -2359,7 +2359,7 @@ function renderExperienciaTab(container) {
   const detailPanel = document.createElement("div");
   detailPanel.id = "exp-page-detail-panel";
   detailPanel.dataset.idx = "-1";
-  detailPanel.style.cssText = "display:none;background:linear-gradient(to top,#1e1e1e 0%,#000 100%);border:1px solid #2a2a2a;border-radius:10px;padding:16px;margin-top:12px;";
+  detailPanel.style.cssText = `display:none;background:${T.bg2};border:1px solid ${T.border};border-radius:10px;padding:16px;margin-top:12px;`;
   container.appendChild(detailPanel);
 
   window._expPageToggle = function(idx, cont) {
@@ -2463,7 +2463,7 @@ function renderDashboard(panel, color) {
 
     return `
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;align-items:start;">
-        <div id="vdc-0" onclick="window._vdcActivate(0)" style="background:${T.isLight?"#ffffff":"linear-gradient(to top,#252525 0%,#000 100%)"};border-radius:10px;overflow:hidden;border:1px solid ${T.border2};cursor:pointer;transition:border-color .2s;">
+        <div id="vdc-0" onclick="window._vdcActivate(0)" style="background:${T.isLight?"#ffffff":"${T.isLight?"#ffffff":"linear-gradient(to top,#252525 0%,#000 100%)"}"};border-radius:10px;overflow:hidden;border:1px solid ${T.border2};cursor:pointer;transition:border-color .2s;">
           <div id="vdc-top-0" style="height:3px;background:#ffffff;"></div>
           <div style="padding:12px 14px 13px;">
             <div style="font-size:10px;color:${T.text2};margin-bottom:6px;">Hoje</div>
@@ -2475,12 +2475,12 @@ function renderDashboard(panel, color) {
             <div style="padding:8px 14px 12px;border-top:1px solid ${T.sep};">${listRows}</div>
           </div>
         </div>
-        <div id="vdc-1" onclick="window._vdcActivate(1)" style="background:${T.isLight?"#ffffff":"linear-gradient(to top,#252525 0%,#000 100%)"};border-radius:10px;overflow:hidden;border:1px solid ${T.border2};cursor:pointer;transition:border-color .2s;">
+        <div id="vdc-1" onclick="window._vdcActivate(1)" style="background:${T.isLight?"#ffffff":"${T.isLight?"#ffffff":"linear-gradient(to top,#252525 0%,#000 100%)"}"};border-radius:10px;overflow:hidden;border:1px solid ${T.border2};cursor:pointer;transition:border-color .2s;">
           <div id="vdc-top-1" style="height:3px;background:#ffffff;"></div>
           <div style="padding:12px 14px 13px;">
             <div style="font-size:10px;color:${T.text2};margin-bottom:6px;">Projeção</div>
             <div style="font-size:26px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">${fmt(d.projecaoDia)}</div>
-            <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;display:inline-block;background:#222;color:#888;margin-top:8px;">${percDia}% DO DIA</div>
+            <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;display:inline-block;background:${T.bg3};color:${T.text3};margin-top:8px;">${percDia}% DO DIA</div>
             <div style="display:flex;align-items:center;gap:10px;margin-top:12px;height:22px;">
               <svg width="22" height="22" viewBox="0 0 36 36" style="flex-shrink:0;">
                 <circle cx="18" cy="18" r="14" fill="none" stroke="${T.border2}" stroke-width="3"/>
@@ -2493,7 +2493,7 @@ function renderDashboard(panel, color) {
             <div style="padding:8px 14px 12px;border-top:1px solid ${T.sep};">${projRows}</div>
           </div>
         </div>
-        <div id="vdc-2" onclick="window._vdcActivate(2)" style="background:${T.isLight?"#ffffff":"linear-gradient(to top,#252525 0%,#000 100%)"};border-radius:10px;overflow:hidden;border:1px solid ${T.border2};cursor:pointer;transition:border-color .2s;">
+        <div id="vdc-2" onclick="window._vdcActivate(2)" style="background:${T.isLight?"#ffffff":"${T.isLight?"#ffffff":"linear-gradient(to top,#252525 0%,#000 100%)"}"};border-radius:10px;overflow:hidden;border:1px solid ${T.border2};cursor:pointer;transition:border-color .2s;">
           <div id="vdc-top-2" style="height:3px;background:#ffffff;"></div>
           <div style="padding:12px 14px 13px;">
             <div style="font-size:10px;color:${T.text2};margin-bottom:6px;">Mês atual</div>
@@ -2557,7 +2557,7 @@ function renderDashboard(panel, color) {
     <div style="margin-bottom:10px;">
       <div style="font-size:11px;font-weight:500;color:${T.text};font-family:'Inter',sans-serif;margin-bottom:10px;">Vendas Mercado Livre</div>
       <div style="display:inline-flex;background:${T.bg3};border-radius:8px;padding:3px;gap:2px;border:1px solid ${T.border};">
-        <div id="dash-aba-filial" onclick="window._vendasAba='filial';window.renderVendasAba();" style="padding:6px 18px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;font-family:'Inter',sans-serif;color:#ffffff;background:var(--bg2);border:1px solid #333;white-space:nowrap;">Filial SP</div>
+        <div id="dash-aba-filial" onclick="window._vendasAba='filial';window.renderVendasAba();" style="padding:6px 18px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;font-family:'Inter',sans-serif;color:#ffffff;background:var(--bg2);border:1px solid ${T.border};white-space:nowrap;">Filial SP</div>
         <div id="dash-aba-matriz" onclick="window._vendasAba='matriz';window.renderVendasAba();" style="padding:6px 18px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;font-family:'Inter',sans-serif;color:#444;background:transparent;white-space:nowrap;">${dashData.matriz ? "Matriz RS" : "Matriz (desconectado)"}</div>
       </div>
     </div>
@@ -2605,7 +2605,7 @@ function renderDashboard(panel, color) {
     return `<div onclick="window._sbarNavTask(event)" style="display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border-radius:6px;margin-bottom:3px;cursor:pointer;border:1px solid transparent;transition:background .12s,border-color .12s;" onmouseover="this.style.background='#141414';this.style.borderColor='#2a2a2a';this.querySelector('.tarr').style.opacity='1';this.querySelector('.tarr').style.color='#ffffff';" onmouseout="this.style.background='';this.style.borderColor='transparent';this.querySelector('.tarr').style.opacity='0';this.querySelector('.tarr').style.color='#333';">
       <div style="width:6px;height:6px;border-radius:50%;background:${cor};flex-shrink:0;margin-top:4px;"></div>
       <div style="font-size:11px;color:#888;flex:1;line-height:1.4;">${t.text||t.title||"—"}</div>
-      <div style="font-size:9px;color:#555;background:#222;border-radius:4px;padding:2px 6px;white-space:nowrap;flex-shrink:0;">${label}</div>
+      <div style="font-size:9px;color:#555;background:${T.bg3};border-radius:4px;padding:2px 6px;white-space:nowrap;flex-shrink:0;">${label}</div>
       <div class="tarr" style="font-size:10px;color:#333;opacity:0;transition:opacity .12s,color .12s;flex-shrink:0;">→</div>
     </div>`;
   }).join("");
@@ -2618,7 +2618,7 @@ function renderDashboard(panel, color) {
     return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #181818;">
       <div style="width:6px;height:6px;border-radius:50%;background:${cor};flex-shrink:0;"></div>
       <div style="font-size:10px;color:#777;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.sku}</div>
-      <div style="width:40px;height:2px;background:#222;border-radius:2px;flex-shrink:0;"><div style="height:2px;border-radius:2px;background:${cor};width:${pct}%;"></div></div>
+      <div style="width:40px;height:2px;background:${T.border2};border-radius:2px;flex-shrink:0;"><div style="height:2px;border-radius:2px;background:${cor};width:${pct}%;"></div></div>
       <div style="font-size:10px;font-weight:700;color:#fff;background:${cor};border-radius:4px;padding:2px 7px;font-family:'Inter',sans-serif;flex-shrink:0;">${dias}d</div>
     </div>`;
   }).join("");
@@ -2673,7 +2673,7 @@ function renderDashboard(panel, color) {
       <div style="width:6px;height:6px;border-radius:50%;background:${cor};flex-shrink:0;margin-top:4px;"></div>
       <div style="flex:1;min-width:0;">
         <div style="font-size:10px;color:#666;margin-bottom:2px;">${nomeShort}</div>
-        <div style="font-size:11px;color:#ccc;line-height:1.4;">${p.pergunta}</div>
+        <div style="font-size:11px;color:${T.text2};line-height:1.4;">${p.pergunta}</div>
       </div>
     </div>`;
   }).join("");
@@ -2681,7 +2681,7 @@ function renderDashboard(panel, color) {
   const statusBar = document.createElement("div");
   statusBar.style.cssText = "grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px;align-items:start;";
   statusBar.innerHTML = `
-    <div id="sbar-card-tasks" onclick="window._sbarToggle('tasks')" style="background:linear-gradient(to top,#252525 0%,#0d0d0d 100%);border:1px solid #ffffff;border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s;">
+    <div id="sbar-card-tasks" onclick="window._sbarToggle('tasks')" style="background:${T.card};border:1px solid ${T.border};border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s;box-shadow:${T.isLight?"0 1px 4px rgba(0,0,0,0.08)":"none"};">
       <div style="padding:13px 16px;display:flex;align-items:center;gap:14px;">
         <div style="font-size:10px;color:#555;white-space:nowrap;">Tarefas</div>
         <div style="display:flex;align-items:center;gap:8px;flex:1;">
@@ -2695,7 +2695,7 @@ function renderDashboard(panel, color) {
         <div style="padding:8px 14px 10px;">${tarefasDrawerRows || '<div style="font-size:11px;color:#555;padding:6px 0;">Nenhuma tarefa pendente ✓</div>'}</div>
       </div>
     </div>
-    <div id="sbar-card-stock" onclick="window._sbarToggle('stock')" style="background:linear-gradient(to top,#252525 0%,#0d0d0d 100%);border:1px solid #ffffff;border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s;">
+    <div id="sbar-card-stock" onclick="window._sbarToggle('stock')" style="background:${T.card};border:1px solid ${T.border};border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s;box-shadow:${T.isLight?"0 1px 4px rgba(0,0,0,0.08)":"none"};">
       <div style="padding:13px 16px;display:flex;align-items:center;gap:10px;">
         <div style="font-size:10px;color:#555;white-space:nowrap;">Estoque Full · SP</div>
         <div style="font-size:11px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">${fmtFull(valorTotal)}</div>
@@ -2707,7 +2707,7 @@ function renderDashboard(panel, color) {
         <div style="padding:8px 14px 10px;">${estDrawerRows || '<div style="font-size:11px;color:#555;padding:6px 0;">Nenhum produto crítico ✓</div>'}</div>
       </div>
     </div>
-    <div id="sbar-card-perguntas" onclick="window._sbarToggle('perguntas')" style="background:linear-gradient(to top,#252525 0%,#0d0d0d 100%);border:1px solid #ffffff;border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s;">
+    <div id="sbar-card-perguntas" onclick="window._sbarToggle('perguntas')" style="background:${T.card};border:1px solid ${T.border};border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s;box-shadow:${T.isLight?"0 1px 4px rgba(0,0,0,0.08)":"none"};">
       <div style="padding:13px 16px;display:flex;align-items:center;gap:10px;">
         <div style="font-size:10px;color:#555;white-space:nowrap;">Perguntas</div>
         ${perguntasLista === null || perguntasLista === undefined
@@ -2740,7 +2740,7 @@ function renderDashboard(panel, color) {
 
   // Calendário Fiscal
   const fiscalCard = document.createElement("div");
-  fiscalCard.style.cssText = "background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:14px;padding:16px;grid-column:1/-1;";
+  fiscalCard.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:14px;padding:16px;grid-column:1/-1;box-shadow:${T.isLight?"0 1px 4px rgba(0,0,0,0.06)":"none"};`;
   const hoje2 = new Date();
   const mes2 = hoje2.getMonth();
   const ano2 = hoje2.getFullYear();
@@ -2770,7 +2770,7 @@ function renderDashboard(panel, color) {
   // ── Experiência de compra — antes do calendário fiscal ──
   if(dashExperiencia?.problemas?.length > 0) {
     const expCard = document.createElement("div");
-    expCard.style.cssText = "background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:14px;padding:16px;grid-column:1/-1;margin-top:14px;";
+    expCard.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:14px;padding:16px;grid-column:1/-1;box-shadow:${T.isLight?"0 1px 4px rgba(0,0,0,0.06)":"none"};margin-top:14px;`;
     window._goExperiencia = function(){ window._diogotab = 'experiencia'; render(); };
     expCard.innerHTML = (() => {
       const prob  = dashExperiencia.problemas.length;
@@ -2786,13 +2786,13 @@ function renderDashboard(panel, color) {
         const dashPrev = ((score/100)*circPrev).toFixed(1);
         const nome = (p.title || p.sku || '');
         const nomeShort = nome.length > 30 ? nome.slice(0,30)+'\u2026' : nome;
-        return '<div onclick="window._goExperiencia()" style="background:#141414;border-top:1px solid #242424;border-bottom:1px solid #242424;border-right:1px solid #242424;border-left:3px solid '+cor+';border-radius:8px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;cursor:pointer;">'
+        return `<div onclick="window._goExperiencia()" style="background:${T.bg3};border-top:1px solid ${T.border};border-bottom:1px solid ${T.border};border-right:1px solid ${T.border};border-left:3px solid `+cor+`;border-radius:8px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;cursor:pointer;">`
           + '<svg width="40" height="40" viewBox="0 0 52 52">'
           + '<circle cx="26" cy="26" r="20" fill="none" stroke="#1e1e1e" stroke-width="4"/>'
           + '<circle cx="26" cy="26" r="20" fill="none" stroke="'+cor+'" stroke-width="4" stroke-dasharray="'+dashPrev+' '+circPrev.toFixed(1)+'" stroke-dashoffset="'+(circPrev*0.25).toFixed(1)+'" stroke-linecap="round"/>'
           + '<text x="26" y="31" text-anchor="middle" fill="'+cor+'" font-size="13" font-weight="700" font-family="Inter,sans-serif">'+score+'</text>'
           + '</svg>'
-          + '<div style="font-size:10px;color:#ccc;line-height:1.3;">'+nomeShort+'</div>'
+          + '<div style="font-size:10px;color:${T.text2};line-height:1.3;">'+nomeShort+'</div>'
           + '</div>';
       }).join('');
 
@@ -2819,7 +2819,7 @@ function renderDashboard(panel, color) {
   topCard.innerHTML = `
     <div style="font-size:11px;font-weight:500;color:#888;font-family:'Inter',sans-serif;margin-bottom:14px;">Top 10 produtos · mês atual</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
-      ${dashData.top10mes.map((p,i) => `<div style="display:flex;align-items:center;gap:10px;padding:9px 10px;background:var(--bg2);border-radius:8px;"><div style="font-size:11px;font-weight:700;color:${i===0?"#f0b400":"#ccc"};width:14px;text-align:center;flex-shrink:0;">${i+1}</div><div style="flex:1;min-width:0;"><div style="font-size:11px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.sku||"—"}</div><div style="background:var(--bg3);border-radius:99px;height:2px;margin-top:4px;"><div style="height:2px;border-radius:99px;background:${i===0?"#f0b400":"#5e72e4"};width:${Math.round((p.revenue/maxRevenue)*100)}%;"></div></div></div><div style="text-align:right;flex-shrink:0;min-width:52px;"><div style="font-size:11px;color:#bbb;">${p.qty} un</div><div style="font-size:11px;font-weight:600;color:#ccc;">${fmt(p.revenue||0)}</div></div></div>`).join("")}
+      ${dashData.top10mes.map((p,i) => `<div style="display:flex;align-items:center;gap:10px;padding:9px 10px;background:var(--bg2);border-radius:8px;"><div style="font-size:11px;font-weight:700;color:${i===0?"#f0b400":"#ccc"};width:14px;text-align:center;flex-shrink:0;">${i+1}</div><div style="flex:1;min-width:0;"><div style="font-size:11px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.sku||"—"}</div><div style="background:var(--bg3);border-radius:99px;height:2px;margin-top:4px;"><div style="height:2px;border-radius:99px;background:${i===0?"#f0b400":"#5e72e4"};width:${Math.round((p.revenue/maxRevenue)*100)}%;"></div></div></div><div style="text-align:right;flex-shrink:0;min-width:52px;"><div style="font-size:11px;color:#bbb;">${p.qty} un</div><div style="font-size:11px;font-weight:600;color:${T.text2};">${fmt(p.revenue||0)}</div></div></div>`).join("")}
     </div>
   `;
   grid.appendChild(topCard);
@@ -2885,10 +2885,10 @@ function renderCalFiscal() {
   panel.style.fontFamily = "'Inter', sans-serif";
   panel.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:0.5px solid #1a1a1a;">
-      <div style="font-size:11px;font-weight:600;letter-spacing:2px;color:#ccc;text-transform:uppercase;">Calendário Fiscal</div>
+      <div style="font-size:11px;font-weight:600;letter-spacing:2px;color:${T.text2};text-transform:uppercase;">Calendário Fiscal</div>
       <div style="display:flex;align-items:center;gap:8px;">
         <button onclick="calMesOffset--;renderCalFiscal()" style="background:none;border:none;color:#999;font-size:13px;cursor:pointer;padding:2px 5px;">‹</button>
-        <div style="font-size:11px;color:#ccc;">${MESES[mes].slice(0,3)} ${ano}</div>
+        <div style="font-size:11px;color:${T.text2};">${MESES[mes].slice(0,3)} ${ano}</div>
         <button onclick="calMesOffset++;renderCalFiscal()" style="background:none;border:none;color:#999;font-size:13px;cursor:pointer;padding:2px 5px;">›</button>
       </div>
     </div>
@@ -3649,7 +3649,7 @@ function renderCalcIpiPanel(container, task){
       const card = document.createElement("div");
       card.style.cssText = "flex:1;min-width:130px;background:var(--bg);border-radius:8px;overflow:hidden;";
       card.innerHTML = `
-        <div style="background:#000;padding:6px;text-align:center;font-size:11px;font-weight:600;color:#fff;">${(aliq*100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}%</div>
+        <div style="background:${T.bg};padding:6px;text-align:center;font-size:11px;font-weight:600;color:${T.text};">${(aliq*100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}%</div>
         <div style="padding:7px;text-align:center;border-top:1px solid var(--sep);">
           <div style="font-size:11px;color:var(--text3);">BASE</div>
           <div style="font-size:12px;color:var(--text);">R$ ${d.base.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
@@ -3973,7 +3973,7 @@ function renderVendasTab(panel, color) {
     {label:"TICKET MÉDIO",value:`R$ ${vendasData.summary.avgTicket.toLocaleString("pt-BR",{minimumFractionDigits:2})}`,color:"#a78bfa"},
   ].forEach(s=>{
     const card=document.createElement("div");
-    card.style.cssText=`background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:8px;padding:12px;text-align:center;border-top:2px solid ${s.color};`;
+    card.style.cssText=`background:${T.card};border:1px solid ${T.border};border-radius:8px;padding:12px;text-align:center;border-top:2px solid ${s.color};`;
     card.innerHTML=`<div style="font-size:8px;color:var(--text3);letter-spacing:2px;margin-bottom:6px;">${s.label}</div><div style="font-size:18px;font-family:'Bebas Neue',sans-serif;letter-spacing:2px;color:${s.color};">${s.value}</div>`;
     summaryGrid.appendChild(card);
   });
@@ -4349,7 +4349,7 @@ function renderFinanceiroTab(panel,color){
 
   // Card de total
   const totalCard=document.createElement("div");
-  totalCard.style.cssText=`background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:8px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;`;
+  totalCard.style.cssText=`background:${T.isLight?"#ffffff":"linear-gradient(to top,#252525 0%,#000 100%)"};border:1px solid #333;border-radius:8px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;`;
   const totalLabel=document.createElement("div");
   totalLabel.innerHTML=`<div style="font-size:11px;color:var(--text3);letter-spacing:2px;margin-bottom:4px">CUSTO DE DEVOLUÇÕES</div><div style="font-size:11px;color:var(--text3);letter-spacing:1px">${finData.count} devoluções concluídas</div>`;
   const totalValue=document.createElement("div");
@@ -6431,7 +6431,7 @@ function renderFilialSP(panel, color) {
     { label:"TOTAL NO FULL", value: (totalAptas+totalTransf).toLocaleString("pt-BR"), color:"#7F77DD", sub:"aptas + transferência" },
   ].forEach(s => {
     const card = document.createElement("div");
-    card.style.cssText = `background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:8px;padding:14px 16px;border-top:2px solid ${s.color};`;
+    card.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:8px;padding:14px 16px;border-top:2px solid ${s.color};`;
     card.innerHTML = `<div style="font-size:11px;color:var(--text3);letter-spacing:2px;margin-bottom:8px;text-transform:uppercase;">${s.label}</div><div style="font-size:24px;font-weight:600;color:${s.color};text-shadow:0 0 16px ${s.color}66;">${s.value}</div><div style="font-size:11px;color:var(--text3);margin-top:4px;">${s.sub}</div>`;
     resumo.appendChild(card);
   });
@@ -6608,7 +6608,7 @@ function renderMatrizRS(panel, color) {
     { label:"CUSTO MÉDIO/UN", value:`R$ ${custoMedio.toLocaleString("pt-BR",{minimumFractionDigits:2})}`, color:"#7F77DD", sub:"ponderado" },
   ].forEach(s => {
     const card = document.createElement("div");
-    card.style.cssText = `background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:8px;padding:14px 16px;border-top:2px solid ${s.color};`;
+    card.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:8px;padding:14px 16px;border-top:2px solid ${s.color};`;
     card.innerHTML = `<div style="font-size:11px;color:var(--text3);letter-spacing:2px;margin-bottom:8px;text-transform:uppercase;">${s.label}</div><div style="font-size:24px;font-weight:600;color:${s.color};text-shadow:0 0 16px ${s.color}66;">${s.value}</div><div style="font-size:11px;color:var(--text3);margin-top:4px;">${s.sub}</div>`;
     resumo.appendChild(card);
   });
@@ -7528,7 +7528,7 @@ function renderConfig(panel, color) {
 
 function criarSecaoConfig(titulo, color) {
   const wrap = document.createElement("div");
-  wrap.style.cssText = "background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:8px;padding:14px 16px;margin-bottom:12px;";
+  wrap.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:8px;padding:14px 16px;margin-bottom:12px;`;
   const header = document.createElement("div");
   header.style.cssText = "font-size:11px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;";
   header.textContent = titulo;
@@ -7757,7 +7757,7 @@ window._openIdeiasModal = function() {
   overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.remove(); });
 
   const box = document.createElement("div");
-  box.style.cssText = "background:linear-gradient(to top,#1a1a1a 0%,#000 100%);border:1px solid #333;border-radius:14px;padding:24px;max-width:640px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.6);";
+  box.style.cssText = `background:${T.bg2};border:1px solid ${T.border};border-radius:14px;padding:24px;max-width:640px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,${T.isLight?0.15:0.6});`;
   box.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
       <div style="font-size:16px;font-weight:700;color:#fff;">Ideias & Melhorias</div>
@@ -7765,8 +7765,8 @@ window._openIdeiasModal = function() {
     </div>
     <div style="font-size:11px;color:#666;margin-bottom:18px;">Anote o que quiser implementar depois — separado por onde vai entrar.</div>
     <div style="display:flex;gap:8px;margin-bottom:22px;">
-      <input id="ideias-input" type="text" placeholder="Ex: adicionar filtro de data no relatório de vendas..." style="flex:1;background:#141414;border:1px solid #333;border-radius:8px;padding:10px 14px;color:#fff;font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
-      <select id="ideias-categoria" style="background:#141414;border:1px solid #333;border-radius:8px;padding:10px 12px;color:#ccc;font-size:12px;font-family:Inter,sans-serif;outline:none;">
+      <input id="ideias-input" type="text" placeholder="Ex: adicionar filtro de data no relatório de vendas..." style="flex:1;background:${T.bg3};border:1px solid ${T.border};border-radius:8px;padding:10px 14px;color:${T.text};font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
+      <select id="ideias-categoria" style="background:${T.bg3};border:1px solid ${T.border};border-radius:8px;padding:10px 12px;color:${T.text2};font-size:12px;font-family:Inter,sans-serif;outline:none;">
         <option value="Dashboard">Dashboard</option>
         <option value="Tarefas">Tarefas</option>
         <option value="Equipe">Equipe</option>
@@ -7863,7 +7863,7 @@ function renderIdeiasLista() {
 
     grupo.itens.forEach((item) => {
       const row = document.createElement("div");
-      row.style.cssText = "display:flex;align-items:flex-start;gap:10px;background:#141414;border:1px solid #282828;border-radius:8px;padding:12px 14px;margin-bottom:6px;";
+      row.style.cssText = "display:flex;align-items:flex-start;gap:10px;background:#141414;border:1px solid ${T.border};border-radius:8px;padding:12px 14px;margin-bottom:6px;";
       const catItem = item.categoria || "Outro";
       const corCat = corCategoria[catItem] || "#888";
       const opcoesCategoria = IDEIAS_CATEGORIAS.map(c => `<option value="${c}" ${c===catItem?"selected":""}>${c}</option>`).join("");
@@ -7875,9 +7875,9 @@ function renderIdeiasLista() {
           <div style="font-size:10px;color:#666;margin-top:3px;">${fmtData(item.createdAt)}</div>
         </div>
         <div style="display:flex;gap:4px;flex-shrink:0;">
-          ${key !== "afazer" ? `<button data-move="afazer" data-id="${item.id}" title="Mover para A fazer" style="background:none;border:1px solid #333;border-radius:5px;color:#666;font-size:10px;padding:4px 7px;cursor:pointer;">A fazer</button>` : ""}
-          ${key !== "andamento" ? `<button data-move="andamento" data-id="${item.id}" title="Mover para Em andamento" style="background:none;border:1px solid #333;border-radius:5px;color:#666;font-size:10px;padding:4px 7px;cursor:pointer;">Andamento</button>` : ""}
-          ${key !== "concluido" ? `<button data-move="concluido" data-id="${item.id}" title="Mover para Concluído" style="background:none;border:1px solid #333;border-radius:5px;color:#666;font-size:10px;padding:4px 7px;cursor:pointer;">Concluído</button>` : ""}
+          ${key !== "afazer" ? `<button data-move="afazer" data-id="${item.id}" title="Mover para A fazer" style="background:none;border:1px solid ${T.border};border-radius:5px;color:#666;font-size:10px;padding:4px 7px;cursor:pointer;">A fazer</button>` : ""}
+          ${key !== "andamento" ? `<button data-move="andamento" data-id="${item.id}" title="Mover para Em andamento" style="background:none;border:1px solid ${T.border};border-radius:5px;color:#666;font-size:10px;padding:4px 7px;cursor:pointer;">Andamento</button>` : ""}
+          ${key !== "concluido" ? `<button data-move="concluido" data-id="${item.id}" title="Mover para Concluído" style="background:none;border:1px solid ${T.border};border-radius:5px;color:#666;font-size:10px;padding:4px 7px;cursor:pointer;">Concluído</button>` : ""}
           <button data-del="${item.id}" title="Excluir" style="background:none;border:none;color:#555;font-size:13px;padding:4px 6px;cursor:pointer;">×</button>
         </div>
       `;
@@ -7963,7 +7963,7 @@ function notifRefreshFalhou(conta) {
     <div style="font-size:11px;color:#aaa;margin-bottom:12px;line-height:1.5;">O refresh automático falhou. Reconecte manualmente abrindo o link no browser certo.</div>
     <div style="display:flex;gap:8px;">
       <button onclick="window.open('${VERCEL_BACKEND}/api/ml-auth?conta=${conta}','_blank')" style="flex:1;background:#e91e8c;border:none;border-radius:5px;color:#fff;font-size:11px;font-weight:700;letter-spacing:1px;padding:6px;cursor:pointer;font-family:inherit;">RECONECTAR</button>
-      <button onclick="document.getElementById('${id}').remove()" style="background:none;border:1px solid #333;border-radius:5px;color:#666;font-size:11px;padding:6px 10px;cursor:pointer;font-family:inherit;">✕</button>
+      <button onclick="document.getElementById('${id}').remove()" style="background:none;border:1px solid ${T.border};border-radius:5px;color:#666;font-size:11px;padding:6px 10px;cursor:pointer;font-family:inherit;">✕</button>
     </div>
   `;
   document.body.appendChild(notif);
@@ -8175,7 +8175,7 @@ async function renderConferencia(panel, color) {
 
   function sumCard(label, valor, cor, count) {
     const c = document.createElement("div");
-    c.style.cssText = `background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:12px;padding:16px;position:relative;overflow:hidden;`;
+    c.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:12px;padding:16px;position:relative;overflow:hidden;`;
     const hat = document.createElement("div");
     hat.style.cssText = `position:absolute;top:0;left:0;right:0;height:3px;background:${cor};`;
     const lbl = document.createElement("div");
