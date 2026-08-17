@@ -2461,7 +2461,7 @@ function renderDashboard(panel, color) {
 
     return `
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;align-items:start;">
-        <div id="vdc-0" onclick="window._vdcActivate(0)" style="background:${T.isLight?"#ffffff":"linear-gradient(to top,#252525 0%,#000 100%)"};border-radius:10px;overflow:hidden;border:1px solid ${T.border2};cursor:pointer;transition:border-color .2s;">
+        <div id="vdc-0" onclick="window._vdcActivate(0)" style="background:${T.card};border-radius:10px;overflow:hidden;border:1px solid ${T.border};cursor:pointer;transition:border-color .2s;box-shadow:${T.cardShadow};">
           <div id="vdc-top-0" style="height:3px;background:#ffffff;"></div>
           <div style="padding:12px 14px 13px;">
             <div style="font-size:10px;color:${T.text2};margin-bottom:6px;">Hoje</div>
@@ -2473,7 +2473,7 @@ function renderDashboard(panel, color) {
             <div style="padding:8px 14px 12px;border-top:1px solid ${T.sep};">${listRows}</div>
           </div>
         </div>
-        <div id="vdc-1" onclick="window._vdcActivate(1)" style="background:${T.isLight?"#ffffff":"linear-gradient(to top,#252525 0%,#000 100%)"};border-radius:10px;overflow:hidden;border:1px solid ${T.border2};cursor:pointer;transition:border-color .2s;">
+        <div id="vdc-1" onclick="window._vdcActivate(1)" style="background:${T.card};border-radius:10px;overflow:hidden;border:1px solid ${T.border};cursor:pointer;transition:border-color .2s;box-shadow:${T.cardShadow};">
           <div id="vdc-top-1" style="height:3px;background:#ffffff;"></div>
           <div style="padding:12px 14px 13px;">
             <div style="font-size:10px;color:${T.text2};margin-bottom:6px;">Projeção</div>
@@ -2491,7 +2491,7 @@ function renderDashboard(panel, color) {
             <div style="padding:8px 14px 12px;border-top:1px solid ${T.sep};">${projRows}</div>
           </div>
         </div>
-        <div id="vdc-2" onclick="window._vdcActivate(2)" style="background:${T.isLight?"#ffffff":"linear-gradient(to top,#252525 0%,#000 100%)"};border-radius:10px;overflow:hidden;border:1px solid ${T.border2};cursor:pointer;transition:border-color .2s;">
+        <div id="vdc-2" onclick="window._vdcActivate(2)" style="background:${T.card};border-radius:10px;overflow:hidden;border:1px solid ${T.border};cursor:pointer;transition:border-color .2s;box-shadow:${T.cardShadow};">
           <div id="vdc-top-2" style="height:3px;background:#ffffff;"></div>
           <div style="padding:12px 14px 13px;">
             <div style="font-size:10px;color:${T.text2};margin-bottom:6px;">Mês atual</div>
