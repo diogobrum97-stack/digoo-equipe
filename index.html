@@ -1743,10 +1743,10 @@ function renderPerguntasTab(container) {
   wrap.appendChild(header);
 
   const autoBar = document.createElement("div");
-  autoBar.style.cssText = `display:flex;align-items:center;justify-content:space-between;background:${modoAuto ? (T.isLight?"#f0fdf4":"linear-gradient(to top,#1a2a1a 0%,#000 100%)") : (T.isLight?"#ffffff":"linear-gradient(to top,#252525 0%,#000 100%)")};border:1px solid ${modoAuto ? "#2d5a2d" : "#333"};border-radius:10px;padding:12px 16px;margin-bottom:20px;`;
+  autoBar.style.cssText = `display:flex;align-items:center;justify-content:space-between;background:${modoAuto ? (T.isLight?"#f0fdf4":"linear-gradient(to top,#1a2a1a 0%,#000 100%)") : (T.isLight?"#ffffff":"linear-gradient(to top,#252525 0%,#000 100%)")};border:1px solid ${modoAuto ? T.okBor : T.border};border-radius:10px;padding:12px 16px;margin-bottom:20px;`;
   autoBar.innerHTML = `
     <div>
-      <div style="font-size:12px;font-weight:600;color:${modoAuto ? "#2dce89" : "#fff"};">Modo automático ${modoAuto ? "ativado" : "desativado"}</div>
+      <div style="font-size:12px;font-weight:600;color:${modoAuto ? "#2dce89" : T.text};">Modo automático ${modoAuto ? "ativado" : "desativado"}</div>
       <div style="font-size:10px;color:#666;margin-top:2px;">Envia sozinho apenas perguntas com conhecimento já confirmado sobre o mesmo produto. O resto continua na fila manual.</div>
     </div>
     <button id="perguntas-btn-toggle-auto" style="background:${modoAuto ? "#c0392b" : "#ffffff"};border:none;border-radius:6px;padding:8px 16px;color:${modoAuto ? "#fff" : "#000"};font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;">${modoAuto ? "Desativar" : "Ativar"}</button>
@@ -2465,7 +2465,7 @@ function renderDashboard(panel, color) {
           <div id="vdc-top-0" style="height:3px;background:#ffffff;"></div>
           <div style="padding:12px 14px 13px;">
             <div style="font-size:10px;color:${T.text2};margin-bottom:6px;">Hoje</div>
-            <div style="font-size:26px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">${fmtFull(d.fatHoje)}</div>
+            <div style="font-size:26px;font-weight:700;color:${T.text};font-family:'IBM Plex Mono',monospace;">${fmtFull(d.fatHoje)}</div>
             <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;display:inline-block;background:#ffffff;color:#000;margin-top:8px;">↑ EM TEMPO REAL</div>
             <div id="vdc-bars-0" style="display:flex;align-items:flex-end;gap:3px;height:22px;margin-top:12px;transition:opacity .25s;opacity:1;">${miniBars}</div>
           </div>
@@ -2477,7 +2477,7 @@ function renderDashboard(panel, color) {
           <div id="vdc-top-1" style="height:3px;background:#ffffff;"></div>
           <div style="padding:12px 14px 13px;">
             <div style="font-size:10px;color:${T.text2};margin-bottom:6px;">Projeção</div>
-            <div style="font-size:26px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">${fmt(d.projecaoDia)}</div>
+            <div style="font-size:26px;font-weight:700;color:${T.text};font-family:'IBM Plex Mono',monospace;">${fmt(d.projecaoDia)}</div>
             <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;display:inline-block;background:${T.bg3};color:${T.text3};margin-top:8px;">${percDia}% DO DIA</div>
             <div style="display:flex;align-items:center;gap:10px;margin-top:12px;height:22px;">
               <svg width="22" height="22" viewBox="0 0 36 36" style="flex-shrink:0;">
@@ -2495,7 +2495,7 @@ function renderDashboard(panel, color) {
           <div id="vdc-top-2" style="height:3px;background:#ffffff;"></div>
           <div style="padding:12px 14px 13px;">
             <div style="font-size:10px;color:${T.text2};margin-bottom:6px;">Mês atual</div>
-            <div style="font-size:26px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">${fmt(d.fatMes)}</div>
+            <div style="font-size:26px;font-weight:700;color:${T.text};font-family:'IBM Plex Mono',monospace;">${fmt(d.fatMes)}</div>
             <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;display:inline-block;background:#ffffff;color:#000;margin-top:8px;">${d.pedidosMes} PEDIDOS</div>
             <div style="margin-top:12px;height:22px;">
               <svg width="100%" height="22" viewBox="0 0 200 22" preserveAspectRatio="none">
@@ -2696,7 +2696,7 @@ function renderDashboard(panel, color) {
     <div id="sbar-card-stock" onclick="window._sbarToggle('stock')" style="background:${T.card};border:1px solid ${T.border};border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s;box-shadow:${T.isLight?"0 1px 4px rgba(0,0,0,0.08)":"none"};">
       <div style="padding:13px 16px;display:flex;align-items:center;gap:10px;">
         <div style="font-size:10px;color:#555;white-space:nowrap;">Estoque Full · SP</div>
-        <div style="font-size:11px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">${fmtFull(valorTotal)}</div>
+        <div style="font-size:11px;font-weight:700;color:${T.text};font-family:'IBM Plex Mono',monospace;">${fmtFull(valorTotal)}</div>
         <div style="font-size:10px;color:#555;">${unidadesTotal} un</div>
         ${alertasCount > 0 ? `<div style="margin-left:auto;display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#c0392b;"></div><div style="font-size:10px;color:#c0392b;">${alertasCount} alertas</div></div>` : `<div style="margin-left:auto;font-size:10px;color:#2dce89;">OK ✓</div>`}
         <div id="sbar-arr-stock" style="font-size:10px;color:#2e2e2e;margin-left:8px;transition:transform .2s,color .2s;">▾</div>
@@ -2755,12 +2755,12 @@ function renderDashboard(panel, color) {
     else if(e.tipo !== "difal") fiscal_agrupado.push(e);
   });
   fiscalCard.innerHTML = `
-    <div style="font-size:11px;font-weight:500;color:#888;font-family:'Inter',sans-serif;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;">Calendário fiscal</div>
+    <div style="font-size:11px;font-weight:500;color:${T.text3};font-family:'Inter',sans-serif;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid ${T.sep};">Calendário fiscal</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
       ${fiscal_agrupado.slice(0,6).map(e => {
         const cor = e.diff <= 5 ? "#e91e8c" : e.diff <= 14 ? "#f0b400" : "#bbb";
         const dotCor = coresFiscal[e.tipo] || "#bbb";
-        return `<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#181818;border:1px solid #242424;border-radius:10px;"><div style="width:7px;height:7px;border-radius:50%;background:${dotCor};flex-shrink:0;"></div><div style="flex:1;"><div style="font-size:11px;font-weight:600;color:#fff;">${e.nome}</div><div style="font-size:11px;color:#888;margin-top:2px;">Ref. ${String(mes2).padStart(2,"0")}/${ano2}</div></div><div style="font-size:14px;font-weight:700;color:${cor};font-family:'Inter',sans-serif;">em ${e.diff}d</div></div>`;
+        return `<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:${T.bg3};border:1px solid ${T.border};border-radius:10px;"><div style="width:7px;height:7px;border-radius:50%;background:${dotCor};flex-shrink:0;"></div><div style="flex:1;"><div style="font-size:11px;font-weight:600;color:${T.text};">${e.nome}</div><div style="font-size:11px;color:${T.text3};margin-top:2px;">Ref. ${String(mes2).padStart(2,"0")}/${ano2}</div></div><div style="font-size:14px;font-weight:700;color:${cor};font-family:'Inter',sans-serif;">em ${e.diff}d</div></div>`;
       }).join("")}
     </div>
   `;
@@ -2786,7 +2786,7 @@ function renderDashboard(panel, color) {
         const nomeShort = nome.length > 30 ? nome.slice(0,30)+'\u2026' : nome;
         return `<div onclick="window._goExperiencia()" style="background:${T.bg3};border-top:1px solid ${T.border};border-bottom:1px solid ${T.border};border-right:1px solid ${T.border};border-left:3px solid `+cor+`;border-radius:8px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;cursor:pointer;">`
           + '<svg width="40" height="40" viewBox="0 0 52 52">'
-          + '<circle cx="26" cy="26" r="20" fill="none" stroke="#1e1e1e" stroke-width="4"/>'
+          + `<circle cx="26" cy="26" r="20" fill="none" stroke="${T.border2}" stroke-width="4"/>`
           + '<circle cx="26" cy="26" r="20" fill="none" stroke="'+cor+'" stroke-width="4" stroke-dasharray="'+dashPrev+' '+circPrev.toFixed(1)+'" stroke-dashoffset="'+(circPrev*0.25).toFixed(1)+'" stroke-linecap="round"/>'
           + '<text x="26" y="31" text-anchor="middle" fill="'+cor+'" font-size="13" font-weight="700" font-family="Inter,sans-serif">'+score+'</text>'
           + '</svg>'
@@ -2795,17 +2795,17 @@ function renderDashboard(panel, color) {
       }).join('');
 
       return '<div onclick="window._goExperiencia()" style="cursor:pointer;">'
-        + '<div style="font-size:12px;font-weight:500;color:#ffffff;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #282828;display:flex;align-items:center;justify-content:space-between;">'
+        + '<div style="font-size:12px;font-weight:500;color:${T.text};margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid ${T.sep};display:flex;align-items:center;justify-content:space-between;">'
         + 'Experi\u00eancia de compra \u00b7 Filial SP'
         + '<div style="display:flex;align-items:center;gap:6px;">'
         + (probRed > 0 ? '<span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(232,67,45,.12);color:#e8432d;border:1px solid rgba(232,67,45,.25);">'+probRed+' ruim</span>' : '')
-        + (probReg > 0 ? '<span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(255,255,255,0.08);color:#ffffff;border:1px solid rgba(255,255,255,0.25);">'+probReg+' regular</span>' : '')
-        + '<span onclick="window._goExperiencia()" style="font-size:10px;color:#888;font-weight:600;cursor:pointer;">Ver tudo \u2192</span>'
+        + (probReg > 0 ? `<span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:${T.isLight?'rgba(0,0,0,0.06)':'rgba(255,255,255,0.08)'};color:${T.text2};border:1px solid ${T.border};">` +probReg+ ' regular</span>' : '')
+        + '<span onclick="window._goExperiencia()" style="font-size:10px;color:${T.text3};font-weight:600;cursor:pointer;">Ver tudo \u2192</span>'
         + '</div>'
         + '</div>'
         + (prob > 0
-            ? '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">'+previewRows+'</div>'+(prob>3 ? '<div style="font-size:10px;color:#555;padding-top:8px;text-align:center;">+'+(prob-3)+' outros itens</div>' : '')
-            : '<div style="font-size:11px;color:#555;padding:8px 0;">Nenhum problema no momento \u2713</div>')
+            ? '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">'+previewRows+'</div>'+(prob>3 ? '<div style="font-size:10px;color:${T.text3};padding-top:8px;text-align:center;">+'+(prob-3)+' outros itens</div>' : '')
+            : '<div style="font-size:11px;color:${T.text3};padding:8px 0;">Nenhum problema no momento \u2713</div>')
         + '</div>';
     })()
     grid.appendChild(expCard);
