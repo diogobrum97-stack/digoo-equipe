@@ -31,8 +31,8 @@ body {
   background: var(--bg); color: var(--text);
 }
 body.light {
-  --bg: #eeeeee; --bg2: #f8f8f8; --bg3: #ffffff;
-  --border: #e8e8e8; --border2: #d8d8d8;
+  --bg: #f0f0f0; --bg2: #f7f7f7; --bg3: #efefef;
+  --border: #e2e2e2; --border2: #d0d0d0;
   --text: #111111; --text2: #555555; --text3: #999999; --sub: #777777;
   --done: #aaa; --sep: rgba(0,0,0,0.07);
   --c-d: #11cdef; --hbg-d: rgba(17,205,239,0.08);
@@ -50,9 +50,9 @@ body.light [data-member="Bruno"] .member-name { color: #5e72e4; }
 body.light [data-member="Larissa"] .member-name { color: #e91e8c; }
 
 /* Modo claro — cards: fundo branco, sombra suave, sem gradiente */
-body.light .card-bg { background: #ffffff; border-color: #e8e8e8; }
+body.light .card-bg { background: #ffffff; border-color: #e0e0e0; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
 body.light .member-panel { background: #ffffff; border: 0.5px solid #e0e0e0; border-radius: 10px; }
-body.light .card { background: #ffffff !important; border-color: #e8e8e8; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+body.light .card { background: #ffffff !important; border-color: #e0e0e0; box-shadow: 0 1px 6px rgba(0,0,0,0.08); }
 body.light .card::before { background: #e0e0e0; }
 
 /* Modo claro — elementos inline com fundo hardcoded escuro */
