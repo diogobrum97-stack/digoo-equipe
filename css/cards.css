@@ -5,6 +5,7 @@
 
 /* ── Card fullscreen ─────────────────────────────────────────────────── */
 .card.card-fullscreen { position: fixed; inset: 0; z-index: 1000; border-radius: 0; overflow: hidden; margin: 0; height: 100vh; width: 100vw; box-sizing: border-box; display: flex; flex-direction: column; background: var(--bg); }
+body.light .card.card-fullscreen { background: #e8e8e8 !important; }
 .card.card-fullscreen .panel.open { flex: 1; overflow-y: auto; max-height: none; display: block; }
 
 /* ── Card expandido ──────────────────────────────────────────────────── */
