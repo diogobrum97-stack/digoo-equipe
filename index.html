@@ -222,7 +222,7 @@ function themeHbg(name) {
 }
 function themePrio(p) {
   const light = document.body.classList.contains("light");
-  return ({superurgente:"#e8432d",urgente:"#e8432d",importante:"#f77614",normal:"#f0c000"})[p]||"#aaa";
+  return ({superurgente:"#e8432d",urgente:"#e8432d",importante:"#ffffff",normal:"#f0c000"})[p]||"#aaa";
 }
 
 window.toggleTheme = function() {
@@ -1153,15 +1153,15 @@ function renderPickingTab(panel, quemSou, modoOperar) {
     const etiquetaImpressa = pedido.substatus === "printed";
     const clicavel = !travadoPorOutro && modoOperar && !etiquetaImpressa;
     const card = document.createElement("div");
-    card.style.cssText = `padding:10px 12px;border-radius:8px;cursor:${clicavel ? "pointer" : "default"};background:${ativo ? "#f77614" : "#111"};border:1px solid ${ativo ? "#f77614" : "#282828"};opacity:${travadoPorOutro ? "0.5" : "1"};`;
+    card.style.cssText = `padding:10px 12px;border-radius:8px;cursor:${clicavel ? "pointer" : "default"};background:${ativo ? "#ffffff" : "#111"};border:1px solid ${ativo ? "#ffffff" : "#282828"};opacity:${travadoPorOutro ? "0.5" : "1"};`;
     card.innerHTML = `
-      <div style="font-size:11px;font-weight:700;color:${ativo ? "#fff" : "#ccc"};">#${pedido.order_id}</div>
-      <div style="font-size:10px;color:${ativo ? "#fff" : "#777"};margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nomeItem}</div>
+      <div style="font-size:11px;font-weight:700;color:${ativo ? "#000" : "#ccc"};">#${pedido.order_id}</div>
+      <div style="font-size:10px;color:${ativo ? "#000" : "#777"};margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nomeItem}</div>
       <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;">
-        <div style="display:inline-block;padding:2px 7px;border-radius:9px;font-size:8px;font-weight:700;background:${ativo ? "rgba(255,255,255,0.25)" : "#2a1000"};color:${ativo ? "#fff" : "#f0a060"};">Enviar hoje</div>
-        <div style="display:inline-block;padding:2px 7px;border-radius:9px;font-size:8px;font-weight:700;background:${ativo ? "rgba(255,255,255,0.25)" : (etiquetaImpressa ? "#1a2a1a" : "#0d1a2a")};color:${ativo ? "#fff" : (etiquetaImpressa ? "#2dce89" : "#5eb3f0")};">${etiquetaImpressa ? "Etiqueta impressa" : "Etiqueta pronta para imprimir"}</div>
+        <div style="display:inline-block;padding:2px 7px;border-radius:9px;font-size:8px;font-weight:700;background:${ativo ? "rgba(255,255,255,0.25)" : "#2a1000"};color:${ativo ? "#000" : "#f0a060"};">Enviar hoje</div>
+        <div style="display:inline-block;padding:2px 7px;border-radius:9px;font-size:8px;font-weight:700;background:${ativo ? "rgba(255,255,255,0.25)" : (etiquetaImpressa ? "#1a2a1a" : "#0d1a2a")};color:${ativo ? "#000" : (etiquetaImpressa ? "#2dce89" : "#5eb3f0")};">${etiquetaImpressa ? "Etiqueta impressa" : "Etiqueta pronta para imprimir"}</div>
       </div>
-      <div style="font-size:9px;color:${ativo ? "#fff" : "#555"};margin-top:6px;">${travadoPorOutro ? `● sendo separado por ${lock.por}` : (ativo ? "● separando agora" : "na fila")}</div>
+      <div style="font-size:9px;color:${ativo ? "#000" : "#555"};margin-top:6px;">${travadoPorOutro ? `● sendo separado por ${lock.por}` : (ativo ? "● separando agora" : "na fila")}</div>
       ${etiquetaImpressa && modoOperar ? `<button data-marcar-feito="${pedido.order_id}" style="width:100%;margin-top:8px;padding:6px;border-radius:6px;background:#1a2a1a;border:1px solid #2d5a2d;color:#2dce89;font-size:9px;font-weight:600;cursor:pointer;">Marcar como já feito</button>` : ""}
     `;
     if (clicavel) {
@@ -1234,7 +1234,7 @@ function renderPickingTab(panel, quemSou, modoOperar) {
           <div style="font-size:12px;color:#fff;">${l.nome}</div>
           <div style="font-size:10px;color:#666;margin-top:2px;">${l.sku}${l.ean ? ` · EAN ${l.ean}` : " · sem EAN cadastrado, bipa pelo SKU"}</div>
         </div>
-        <div style="font-size:11px;font-weight:700;color:${completo ? "#2dce89" : "#f77614"};flex-shrink:0;">${l.quantidadeBipada}/${l.quantidadeNecessaria}</div>
+        <div style="font-size:11px;font-weight:700;color:${completo ? "#2dce89" : "#ffffff"};flex-shrink:0;">${l.quantidadeBipada}/${l.quantidadeNecessaria}</div>
         ${completo ? `<div style="width:24px;height:24px;border-radius:50%;background:#2dce89;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span style="color:#000;font-size:12px;font-weight:700;">✓</span></div>` : `<div style="width:24px;height:24px;border-radius:50%;border:2px solid #444;flex-shrink:0;"></div>`}
       `;
       listaItens.appendChild(linha);
@@ -1247,7 +1247,7 @@ function renderPickingTab(panel, quemSou, modoOperar) {
       bipInput.type = "text";
       bipInput.placeholder = "Bipar código de barras...";
       bipInput.autocomplete = "off";
-      bipInput.style.cssText = "width:100%;background:#0d0d0d;border:2px solid #f77614;border-radius:8px;padding:12px 14px;color:#fff;font-size:13px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;margin-bottom:12px;";
+      bipInput.style.cssText = "width:100%;background:#0d0d0d;border:2px solid #ffffff;border-radius:8px;padding:12px 14px;color:#fff;font-size:13px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;margin-bottom:12px;";
       bipInput.value = pickingState.bipando;
       bipInput.oninput = (e) => { pickingState.bipando = e.target.value; };
       bipInput.addEventListener("keydown", (e) => {
@@ -1257,7 +1257,7 @@ function renderPickingTab(panel, quemSou, modoOperar) {
     } else {
       const btnFinalizar = document.createElement("button");
       btnFinalizar.disabled = pickingState.processandoEtiqueta;
-      btnFinalizar.style.cssText = `width:100%;padding:14px;border-radius:8px;background:${pickingState.processandoEtiqueta ? "#333" : "#f77614"};border:none;color:#fff;font-size:13px;font-weight:700;cursor:${pickingState.processandoEtiqueta ? "default" : "pointer"};`;
+      btnFinalizar.style.cssText = `width:100%;padding:14px;border-radius:8px;background:${pickingState.processandoEtiqueta ? "#333" : "#ffffff"};border:none;color:${pickingState.processandoEtiqueta ? "#888" : "#000"};font-size:13px;font-weight:700;cursor:${pickingState.processandoEtiqueta ? "default" : "pointer"};`;
       btnFinalizar.textContent = pickingState.processandoEtiqueta ? "Gerando etiqueta..." : "🖨 Tudo separado — gerar e imprimir etiqueta";
       btnFinalizar.onclick = () => finalizarPedidoPicking(refresh);
       colDetalhe.appendChild(btnFinalizar);
@@ -1457,7 +1457,7 @@ function renderPickingAcompanhar(panel) {
   resumo.style.cssText = "display:flex;gap:24px;background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:10px;padding:16px 20px;margin-bottom:16px;";
   resumo.innerHTML = `
     <div><div style="font-size:20px;font-weight:700;color:#2dce89;font-family:Inter,sans-serif;">${concluidosHoje.length}</div><div style="font-size:10px;color:#ffffff;margin-top:2px;">embalados hoje</div></div>
-    <div><div style="font-size:20px;font-weight:700;color:#f77614;font-family:Inter,sans-serif;">${filaTotal}</div><div style="font-size:10px;color:#ffffff;margin-top:2px;">na fila</div></div>
+    <div><div style="font-size:20px;font-weight:700;color:#ffffff;font-family:Inter,sans-serif;">${filaTotal}</div><div style="font-size:10px;color:#ffffff;margin-top:2px;">na fila</div></div>
   `;
   wrap.appendChild(resumo);
 
@@ -1566,9 +1566,9 @@ function renderPickingDiogo(panel) {
     b.style.cssText = `padding:8px 16px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid #333;`;
     const key = ["acompanhar", "operar", "historico"][i];
     const isAtivo = modo === key;
-    b.style.background = isAtivo ? "#f77614" : "#1a1a1a";
+    b.style.background = isAtivo ? "#ffffff" : "#1a1a1a";
     b.style.color = isAtivo ? "#fff" : "#888";
-    b.style.borderColor = isAtivo ? "#f77614" : "#333";
+    b.style.borderColor = isAtivo ? "#ffffff" : "#333";
   });
   opAcompanhar.onclick = () => { window._pickingModoDiogo = "acompanhar"; render(); };
   opOperar.onclick = () => { window._pickingModoDiogo = "operar"; render(); };
@@ -1724,7 +1724,7 @@ function renderPerguntasTab(container) {
       <div style="font-size:12px;font-weight:600;color:${modoAuto ? "#2dce89" : "#fff"};">Modo automático ${modoAuto ? "ativado" : "desativado"}</div>
       <div style="font-size:10px;color:#666;margin-top:2px;">Envia sozinho apenas perguntas com conhecimento já confirmado sobre o mesmo produto. O resto continua na fila manual.</div>
     </div>
-    <button id="perguntas-btn-toggle-auto" style="background:${modoAuto ? "#c0392b" : "#f77614"};border:none;border-radius:6px;padding:8px 16px;color:#fff;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;">${modoAuto ? "Desativar" : "Ativar"}</button>
+    <button id="perguntas-btn-toggle-auto" style="background:${modoAuto ? "#c0392b" : "#ffffff"};border:none;border-radius:6px;padding:8px 16px;color:${modoAuto ? "#fff" : "#000"};font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;">${modoAuto ? "Desativar" : "Ativar"}</button>
   `;
   wrap.appendChild(autoBar);
 
@@ -1769,7 +1769,7 @@ function renderPerguntasTab(container) {
           : `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
               <div style="display:inline-block;padding:3px 10px;border-radius:12px;background:#1a2a1a;border:1px solid #2d5a2d;color:#2dce89;font-size:10px;font-weight:600;">sugestão da IA</div>
               ${p.has_knowledge ? `<div style="display:inline-block;padding:3px 10px;border-radius:12px;background:#0d1a2a;border:1px solid #1e3a5a;color:#5eb3f0;font-size:10px;font-weight:600;">baseada em respostas já dadas</div>` : ""}
-              ${enviadoAuto ? `<div style="display:inline-block;padding:3px 10px;border-radius:12px;background:#f7761422;border:1px solid #f7761455;color:#f77614;font-size:10px;font-weight:600;">✓ enviada automaticamente</div>` : ""}
+              ${enviadoAuto ? `<div style="display:inline-block;padding:3px 10px;border-radius:12px;background:#ffffff22;border:1px solid #ffffff55;color:#ffffff;font-size:10px;font-weight:600;">✓ enviada automaticamente</div>` : ""}
             </div>`
         }
 
@@ -1787,8 +1787,8 @@ function renderPerguntasTab(container) {
           </div>
         ` : !p.requires_attention ? `
           <div style="font-size:10px;color:#666;margin-bottom:6px;">Resposta ${enviadoAuto || enviado ? "enviada" : "sugerida (editável)"}</div>
-          <textarea id="pergunta-resp-${p.question_id}" ${enviadoAuto || enviado ? "disabled" : ""} style="width:100%;background:#111;border:1px solid ${enviadoAuto ? "#333" : "#f77614"};border-radius:6px;padding:10px 12px;color:${enviadoAuto ? "#888" : "#fff"};font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;resize:vertical;min-height:60px;margin-bottom:12px;">${p.suggested_answer}</textarea>
-          ${!enviadoAuto ? `<button id="pergunta-enviar-${p.question_id}" ${(enviado || enviandoAgora) ? "disabled" : ""} style="padding:9px 18px;border-radius:6px;background:${enviado ? "#1a2a1a" : "#f77614"};border:1px solid ${enviado ? "#2d5a2d" : "transparent"};color:${enviado ? "#2dce89" : "#fff"};font-size:12px;font-weight:600;cursor:${(enviado || enviandoAgora) ? "default" : "pointer"};opacity:${enviandoAgora ? "0.6" : "1"};">${enviado ? "Enviado ✓" : (enviandoAgora ? "Enviando..." : "Enviar resposta")}</button>` : ""}
+          <textarea id="pergunta-resp-${p.question_id}" ${enviadoAuto || enviado ? "disabled" : ""} style="width:100%;background:#111;border:1px solid ${enviadoAuto ? "#333" : "#ffffff"};border-radius:6px;padding:10px 12px;color:${enviadoAuto ? "#888" : "#fff"};font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;resize:vertical;min-height:60px;margin-bottom:12px;">${p.suggested_answer}</textarea>
+          ${!enviadoAuto ? `<button id="pergunta-enviar-${p.question_id}" ${(enviado || enviandoAgora) ? "disabled" : ""} style="padding:9px 18px;border-radius:6px;background:${enviado ? "#1a2a1a" : "#ffffff"};border:1px solid ${enviado ? "#2d5a2d" : "transparent"};color:${enviado ? "#2dce89" : "#000"};font-size:12px;font-weight:600;cursor:${(enviado || enviandoAgora) ? "default" : "pointer"};opacity:${enviandoAgora ? "0.6" : "1"};">${enviado ? "Enviado ✓" : (enviandoAgora ? "Enviando..." : "Enviar resposta")}</button>` : ""}
         ` : `
           <div style="display:flex;gap:8px;">
             <a href="https://www.mercadolivre.com.br/anuncio/${p.item_id}" target="_blank" style="display:inline-block;padding:9px 18px;border-radius:6px;background:#1a1a1a;border:1px solid #333;color:#ccc;font-size:12px;font-weight:600;text-decoration:none;">Responder no ML ↗</a>
@@ -1909,13 +1909,13 @@ function renderClonarTab(container) {
   buscaCard.innerHTML = `
     <div style="font-size:11px;color:#888;margin-bottom:8px;">ID(s) ou link(s) do(s) anúncio(s) de origem</div>
     <textarea id="clonar-input-id" rows="3" placeholder="Ex: MLB4718893383${"\n"}Cole vários, um por linha, pra clonar em lote" style="width:100%;background:#111;border:1px solid #333;border-radius:6px;padding:9px 12px;color:#fff;font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;margin-bottom:12px;resize:vertical;">${clonarState.itemBusca}</textarea>
-    ${isLoteModo ? `<div style="font-size:11px;color:#f77614;margin-bottom:12px;">${idsDetectados.length} anúncios detectados — modo lote (SKU, preço e quantidade iguais ao original)</div>` : ""}
+    ${isLoteModo ? `<div style="font-size:11px;color:#ffffff;margin-bottom:12px;">${idsDetectados.length} anúncios detectados — modo lote (SKU, preço e quantidade iguais ao original)</div>` : ""}
     <div style="font-size:11px;color:#888;margin-bottom:8px;">Conta de origem</div>
     <div style="display:flex;gap:8px;margin-bottom:14px;">
-      <button id="clonar-origem-matriz" style="flex:1;padding:9px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid ${clonarState.contaOrigem==='matriz'?'#f77614':'#333'};background:${clonarState.contaOrigem==='matriz'?'#f77614':'#111'};color:${clonarState.contaOrigem==='matriz'?'#fff':'#888'};">Matriz RS</button>
-      <button id="clonar-origem-filial" style="flex:1;padding:9px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid ${clonarState.contaOrigem==='filial'?'#f77614':'#333'};background:${clonarState.contaOrigem==='filial'?'#f77614':'#111'};color:${clonarState.contaOrigem==='filial'?'#fff':'#888'};">Filial SP</button>
+      <button id="clonar-origem-matriz" style="flex:1;padding:9px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid ${clonarState.contaOrigem==='matriz'?'#ffffff':'#333'};background:${clonarState.contaOrigem==='matriz'?'#ffffff':'#111'};color:${clonarState.contaOrigem==='matriz'?'#000':'#888'};">Matriz RS</button>
+      <button id="clonar-origem-filial" style="flex:1;padding:9px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid ${clonarState.contaOrigem==='filial'?'#ffffff':'#333'};background:${clonarState.contaOrigem==='filial'?'#ffffff':'#111'};color:${clonarState.contaOrigem==='filial'?'#000':'#888'};">Filial SP</button>
     </div>
-    <button id="clonar-btn-buscar" ${loteState.rodando ? "disabled" : ""} style="width:100%;padding:10px;border-radius:6px;background:${loteState.rodando ? "#333" : "#f77614"};border:none;color:${loteState.rodando ? "#888" : "#fff"};font-size:12px;font-weight:600;cursor:${loteState.rodando ? "default" : "pointer"};">${
+    <button id="clonar-btn-buscar" ${loteState.rodando ? "disabled" : ""} style="width:100%;padding:10px;border-radius:6px;background:${loteState.rodando ? "#333" : "#ffffff"};border:none;color:${loteState.rodando ? "#888" : "#000"};font-size:12px;font-weight:600;cursor:${loteState.rodando ? "default" : "pointer"};">${
       isLoteModo
         ? (loteState.fase === "busca" ? `Buscando ${(loteState.itens||[]).filter(it=>it.status!=="aguardando").length}/${loteState.total}...` : `Buscar ${idsDetectados.length} anúncios`)
         : (clonarState.buscando ? "Buscando..." : "Buscar anúncio")
@@ -1957,9 +1957,9 @@ function renderClonarTab(container) {
 
     const statusInfo = {
       aguardando: { label: "Na fila", cor: "#555", icone: "⋯" },
-      buscando:   { label: "Buscando...", cor: "#f77614", icone: "⏳" },
+      buscando:   { label: "Buscando...", cor: "#ffffff", icone: "⏳" },
       encontrado: { label: "Pronto pra clonar", cor: "#5eb3f0", icone: "👁" },
-      clonando:   { label: "Clonando...", cor: "#f77614", icone: "⏳" },
+      clonando:   { label: "Clonando...", cor: "#ffffff", icone: "⏳" },
       sucesso:    { label: "Clonado", cor: "#2dce89", icone: "✓" },
       erro:       { label: "Erro", cor: "#e8432d", icone: "✕" },
     };
@@ -1972,7 +1972,7 @@ function renderClonarTab(container) {
 
     loteWrap.innerHTML = `
       <div style="font-size:11px;color:#888;margin-bottom:12px;">${tituloPainel}</div>
-      ${loteState.total > 0 && loteState.fase !== "revisao" ? `<div style="height:4px;background:#111;border-radius:99px;overflow:hidden;margin-bottom:16px;"><div style="height:4px;background:#f77614;width:${(concluidos/loteState.total*100).toFixed(0)}%;transition:width .3s;"></div></div>` : ""}
+      ${loteState.total > 0 && loteState.fase !== "revisao" ? `<div style="height:4px;background:#111;border-radius:99px;overflow:hidden;margin-bottom:16px;"><div style="height:4px;background:#ffffff;width:${(concluidos/loteState.total*100).toFixed(0)}%;transition:width .3s;"></div></div>` : ""}
       <div style="max-height:460px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">
         ${itens.length === 0 ? `<div style="font-size:11px;color:#555;text-align:center;padding:30px 0;">Cole os IDs à esquerda e clique em "Buscar".</div>` : itens.map(it => {
           const s = statusInfo[it.status] || statusInfo.aguardando;
@@ -2034,10 +2034,10 @@ function renderClonarTab(container) {
 
       <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#1e1e1e;border-radius:6px;margin-bottom:16px;">
         <div style="font-size:11px;color:#888;">Clonando para</div>
-        <div style="font-size:12px;font-weight:600;color:#f77614;">${contaDestino}</div>
+        <div style="font-size:12px;font-weight:600;color:#ffffff;">${contaDestino}</div>
       </div>
 
-      <button id="clonar-btn-confirmar" ${item.has_variations ? "disabled" : ""} style="width:100%;padding:11px;border-radius:6px;background:${item.has_variations ? "#333" : "#f77614"};border:none;color:${item.has_variations ? "#666" : "#fff"};font-size:12px;font-weight:600;cursor:${item.has_variations ? "not-allowed" : "pointer"};">${clonarState.clonando ? "Clonando..." : "Confirmar e clonar anúncio"}</button>
+      <button id="clonar-btn-confirmar" ${item.has_variations ? "disabled" : ""} style="width:100%;padding:11px;border-radius:6px;background:${item.has_variations ? "#333" : "#ffffff"};border:none;color:${item.has_variations ? "#666" : "#000"};font-size:12px;font-weight:600;cursor:${item.has_variations ? "not-allowed" : "pointer"};">${clonarState.clonando ? "Clonando..." : "Confirmar e clonar anúncio"}</button>
     `;
     alvoEsq.appendChild(previewCard);
 
@@ -2063,7 +2063,7 @@ function renderClonarTab(container) {
       const listingTipoP = item.listing_type_id === "gold_special" ? "Clássico" : (item.listing_type_id || "—");
       previewEl.innerHTML = `
         <div style="background:#111;border:1px solid #282828;border-radius:10px;padding:16px;">
-          <div style="display:inline-block;padding:3px 10px;border-radius:13px;background:#f77614;color:#fff;font-size:11px;font-weight:600;margin-bottom:14px;">${contaDestinoP}</div>
+          <div style="display:inline-block;padding:3px 10px;border-radius:13px;background:#ffffff;color:#000;font-size:11px;font-weight:600;margin-bottom:14px;">${contaDestinoP}</div>
           <div style="width:100%;aspect-ratio:1;border-radius:8px;overflow:hidden;background:#222;margin-bottom:14px;display:flex;align-items:center;justify-content:center;">
             ${fotoP ? `<img src="${fotoP}" style="width:100%;height:100%;object-fit:cover;">` : `<div style="font-size:11px;color:#555;">Sem imagem</div>`}
           </div>
@@ -2096,7 +2096,7 @@ function renderClonarTab(container) {
     resCard.innerHTML = `
       <div style="font-size:13px;font-weight:700;color:#2dce89;margin-bottom:6px;">Anúncio clonado com sucesso ✓</div>
       <div style="font-size:11px;color:#888;margin-bottom:14px;">${res.item_id}</div>
-      <a href="${res.permalink}" target="_blank" style="display:inline-block;padding:9px 18px;background:#f77614;border-radius:6px;color:#fff;font-size:12px;font-weight:600;text-decoration:none;">Abrir anúncio no ML ↗</a>
+      <a href="${res.permalink}" target="_blank" style="display:inline-block;padding:9px 18px;background:#ffffff;border-radius:6px;color:#000;font-size:12px;font-weight:600;text-decoration:none;">Abrir anúncio no ML ↗</a>
       <div style="margin-top:14px;">
         <button id="clonar-btn-novo" style="background:none;border:none;color:#666;font-size:11px;cursor:pointer;text-decoration:underline;">Clonar outro anúncio</button>
       </div>
@@ -2266,7 +2266,7 @@ function renderExperienciaTab(container) {
   const filtros = [
     {key:"todos", label:`Todos (${todosProblemas.length})`, cor:"#888"},
     {key:"ruim", label:`Ruim (${ruins.length})`, cor:"#e8432d"},
-    {key:"regular", label:`Regular (${regulares.length})`, cor:"#f77614"},
+    {key:"regular", label:`Regular (${regulares.length})`, cor:"#ffffff"},
   ];
   filtros.forEach(f => {
     const btn = document.createElement("button");
@@ -2294,7 +2294,7 @@ function renderExperienciaTab(container) {
   window._expPageDetailsCache = [];
 
   listaFiltrada.forEach((p, i) => {
-    const cor = p.color === 'red' ? '#e8432d' : '#f77614';
+    const cor = p.color === 'red' ? '#e8432d' : '#ffffff';
     const score = p.value || 0;
     const dash = ((score/100)*circ).toFixed(1);
     const label = p.level || (p.color === 'red' ? 'Ruim' : 'Regular');
@@ -2345,7 +2345,7 @@ function renderExperienciaTab(container) {
     panel.dataset.idx = idx;
     panel.style.display = 'block';
     panel.innerHTML = window._expPageDetailsCache[idx] || '';
-    const corAtual = listaFiltrada[idx].color === 'red' ? '#e8432d' : '#f77614';
+    const corAtual = listaFiltrada[idx].color === 'red' ? '#e8432d' : '#ffffff';
     if(cards[idx]) { cards[idx].style.borderLeftColor = corAtual; }
   };
 }
@@ -2395,7 +2395,7 @@ function renderDashboard(panel, color) {
 
   const header = document.createElement("div");
   header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;";
-  header.innerHTML = `<div><div style="font-size:20px;font-weight:700;color:#fff;letter-spacing:-0.3px;">${saudacao}, Diogo 👋</div><div style="font-size:11px;color:#666;margin-top:3px;font-family:'Inter',sans-serif;">${dias[now.getDay()]} · ${now.getDate()} ${meses[now.getMonth()]} ${now.getFullYear()}</div></div><div style="display:flex;align-items:center;gap:10px;"><div style="font-size:11px;font-weight:600;color:#f77614;">${dashData.hora}</div><button onclick="dashData=null;fetchDashboard();" style="background:none;border:none;color:#444;font-size:16px;cursor:pointer;padding:4px;line-height:1;transition:color .15s;" onmouseover="this.style.color='#aaa'" onmouseout="this.style.color='#444'" title="Atualizar">↻</button></div>`;
+  header.innerHTML = `<div><div style="font-size:20px;font-weight:700;color:#fff;letter-spacing:-0.3px;">${saudacao}, Diogo 👋</div><div style="font-size:11px;color:#666;margin-top:3px;font-family:'Inter',sans-serif;">${dias[now.getDay()]} · ${now.getDate()} ${meses[now.getMonth()]} ${now.getFullYear()}</div></div><div style="display:flex;align-items:center;gap:10px;"><div style="font-size:11px;font-weight:600;color:#ffffff;">${dashData.hora}</div><button onclick="dashData=null;fetchDashboard();" style="background:none;border:none;color:#444;font-size:16px;cursor:pointer;padding:4px;line-height:1;transition:color .15s;" onmouseover="this.style.color='#aaa'" onmouseout="this.style.color='#444'" title="Atualizar">↻</button></div>`;
   wrap.appendChild(header);
 
   const grid = document.createElement("div");
@@ -2409,15 +2409,15 @@ function renderDashboard(panel, color) {
     const top5 = d.top5hoje || [];
     const maxRev = top5[0]?.revenue || 1;
     const miniBars = [100, 65, 47, 30, 18].map(h =>
-      `<div style="flex:1;height:${h}%;border-radius:2px 2px 0 0;background:#f77614;opacity:.2;"></div>`
+      `<div style="flex:1;height:${h}%;border-radius:2px 2px 0 0;background:#ffffff;opacity:.2;"></div>`
     ).join('');
     const listRows = top5.map((p,i) => `
       <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #1a1a1a;">
         <div style="font-size:9px;color:#888;width:10px;flex-shrink:0;">${i+1}</div>
         <div style="font-size:10px;color:#fff;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.sku||"—"}</div>
         <div style="font-size:9px;color:#888;flex-shrink:0;">${p.qty} un</div>
-        <div style="width:32px;height:2px;background:#222;border-radius:2px;flex-shrink:0;"><div style="height:2px;border-radius:2px;background:#f77614;width:${i===0?100:Math.round((p.revenue/maxRev)*100)}%;"></div></div>
-        <div style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;font-family:'Inter',sans-serif;background:#f77614;color:#fff;flex-shrink:0;">${fmt(p.revenue||0)}</div>
+        <div style="width:32px;height:2px;background:#222;border-radius:2px;flex-shrink:0;"><div style="height:2px;border-radius:2px;background:#ffffff;width:${i===0?100:Math.round((p.revenue/maxRev)*100)}%;"></div></div>
+        <div style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;font-family:'Inter',sans-serif;background:#ffffff;color:#000;flex-shrink:0;">${fmt(p.revenue||0)}</div>
       </div>`).join('');
     const ticketMedio = d.pedidosMes > 0 ? fmt(d.fatMes / d.pedidosMes) : 'R$ 0';
     const rowStyle = 'display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1a1a1a;';
@@ -2430,18 +2430,18 @@ function renderDashboard(panel, color) {
       <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;"><div style="${lStyle}">Faturado hoje</div><div style="${vStyle}">${fmtFull(d.fatHoje)}</div></div>`;
 
     const mesRows = `
-      <div style="${rowStyle}"><div style="${lStyle}">Pedidos no mês</div><div style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;background:#f77614;color:#fff;">${d.pedidosMes} PEDIDOS</div></div>
+      <div style="${rowStyle}"><div style="${lStyle}">Pedidos no mês</div><div style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;background:#ffffff;color:#000;">${d.pedidosMes} PEDIDOS</div></div>
       <div style="${rowStyle}"><div style="${lStyle}">Ticket médio</div><div style="${vStyle}">${ticketMedio}</div></div>
       <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;"><div style="${lStyle}">Faturamento mês</div><div style="${vStyle}">${fmt(d.fatMes)}</div></div>`;
 
     return `
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;align-items:start;">
         <div id="vdc-0" onclick="window._vdcActivate(0)" style="background:linear-gradient(to top,#252525 0%,#000 100%);border-radius:10px;overflow:hidden;border:1px solid #333;cursor:pointer;transition:border-color .2s;">
-          <div id="vdc-top-0" style="height:3px;background:#f77614;"></div>
+          <div id="vdc-top-0" style="height:3px;background:#ffffff;"></div>
           <div style="padding:12px 14px 13px;">
             <div style="font-size:10px;color:#ffffff;margin-bottom:6px;">Hoje</div>
             <div style="font-size:26px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">${fmtFull(d.fatHoje)}</div>
-            <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;display:inline-block;background:#f77614;color:#fff;margin-top:8px;">↑ EM TEMPO REAL</div>
+            <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;display:inline-block;background:#ffffff;color:#000;margin-top:8px;">↑ EM TEMPO REAL</div>
             <div id="vdc-bars-0" style="display:flex;align-items:flex-end;gap:3px;height:22px;margin-top:12px;transition:opacity .25s;opacity:1;">${miniBars}</div>
           </div>
           <div id="vdc-list-0" style="display:none;overflow:hidden;">
@@ -2449,7 +2449,7 @@ function renderDashboard(panel, color) {
           </div>
         </div>
         <div id="vdc-1" onclick="window._vdcActivate(1)" style="background:linear-gradient(to top,#252525 0%,#000 100%);border-radius:10px;overflow:hidden;border:1px solid #333;cursor:pointer;transition:border-color .2s;">
-          <div id="vdc-top-1" style="height:3px;background:#f77614;"></div>
+          <div id="vdc-top-1" style="height:3px;background:#ffffff;"></div>
           <div style="padding:12px 14px 13px;">
             <div style="font-size:10px;color:#ffffff;margin-bottom:6px;">Projeção</div>
             <div style="font-size:26px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">${fmt(d.projecaoDia)}</div>
@@ -2457,9 +2457,9 @@ function renderDashboard(panel, color) {
             <div style="display:flex;align-items:center;gap:10px;margin-top:12px;height:22px;">
               <svg width="22" height="22" viewBox="0 0 36 36" style="flex-shrink:0;">
                 <circle cx="18" cy="18" r="14" fill="none" stroke="#222" stroke-width="3"/>
-                <circle cx="18" cy="18" r="14" fill="none" stroke="#f77614" stroke-width="3" stroke-opacity="0.4" stroke-dasharray="${(percDia*0.879).toFixed(1)} 87.9" stroke-dashoffset="21.975" stroke-linecap="round"/>
+                <circle cx="18" cy="18" r="14" fill="none" stroke="#ffffff" stroke-width="3" stroke-opacity="0.4" stroke-dasharray="${(percDia*0.879).toFixed(1)} 87.9" stroke-dashoffset="21.975" stroke-linecap="round"/>
               </svg>
-              <div style="font-size:10px;color:#555;line-height:1.4;">falta <span style="color:#f77614;font-weight:600;">${100-percDia}%</span> pra meta</div>
+              <div style="font-size:10px;color:#555;line-height:1.4;">falta <span style="color:#ffffff;font-weight:600;">${100-percDia}%</span> pra meta</div>
             </div>
           </div>
           <div id="vdc-list-1" style="display:none;overflow:hidden;">
@@ -2467,15 +2467,15 @@ function renderDashboard(panel, color) {
           </div>
         </div>
         <div id="vdc-2" onclick="window._vdcActivate(2)" style="background:linear-gradient(to top,#252525 0%,#000 100%);border-radius:10px;overflow:hidden;border:1px solid #333;cursor:pointer;transition:border-color .2s;">
-          <div id="vdc-top-2" style="height:3px;background:#f77614;"></div>
+          <div id="vdc-top-2" style="height:3px;background:#ffffff;"></div>
           <div style="padding:12px 14px 13px;">
             <div style="font-size:10px;color:#ffffff;margin-bottom:6px;">Mês atual</div>
             <div style="font-size:26px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">${fmt(d.fatMes)}</div>
-            <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;display:inline-block;background:#f77614;color:#fff;margin-top:8px;">${d.pedidosMes} PEDIDOS</div>
+            <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;display:inline-block;background:#ffffff;color:#000;margin-top:8px;">${d.pedidosMes} PEDIDOS</div>
             <div style="margin-top:12px;height:22px;">
               <svg width="100%" height="22" viewBox="0 0 200 22" preserveAspectRatio="none">
-                <polyline points="0,19 30,16 60,15 90,11 120,8 150,6 180,4 200,2" fill="none" stroke="#f77614" stroke-width="1.5" stroke-opacity="0.4" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="200" cy="2" r="2.5" fill="#f77614" opacity="0.6"/>
+                <polyline points="0,19 30,16 60,15 90,11 120,8 150,6 180,4 200,2" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-opacity="0.4" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="200" cy="2" r="2.5" fill="#ffffff" opacity="0.6"/>
               </svg>
             </div>
           </div>
@@ -2484,7 +2484,7 @@ function renderDashboard(panel, color) {
           </div>
         </div>
       </div>
-      <div style="background:#1e1e1e;border-radius:99px;height:3px;margin-bottom:8px;overflow:hidden;"><div style="height:3px;border-radius:99px;background:linear-gradient(90deg,#c0392b,#f77614);width:${percDia}%;transition:width .4s;"></div></div>
+      <div style="background:#1e1e1e;border-radius:99px;height:3px;margin-bottom:8px;overflow:hidden;"><div style="height:3px;border-radius:99px;background:linear-gradient(90deg,#c0392b,#ffffff);width:${percDia}%;transition:width .4s;"></div></div>
     `;
   }
 
@@ -2516,12 +2516,12 @@ function renderDashboard(panel, color) {
     if(!tabFilial || !tabMatriz || !body) return;
     const _vendasAba = window._vendasAba || 'filial';
     if(_vendasAba === 'filial') {
-      tabFilial.style.cssText = "padding:6px 16px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;color:#fff;background:#f77614;border:1px solid #f77614;transition:all .2s;white-space:nowrap;font-family:'Inter',sans-serif;";
+      tabFilial.style.cssText = "padding:6px 16px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;color:#000;background:#ffffff;border:1px solid #ffffff;transition:all .2s;white-space:nowrap;font-family:'Inter',sans-serif;";
       tabMatriz.style.cssText = "padding:6px 16px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;color:#444;background:transparent;transition:all .2s;white-space:nowrap;font-family:'Inter',sans-serif;";
       body.innerHTML = vendasTabContent({fatHoje:dashData.fatHoje, projecaoDia:dashData.projecaoDia, fatMes:dashData.fatMes, pedidosMes:dashData.pedidosMes, top5hoje:dashData.top5hoje}, dashData.percDia); setTimeout(function(){ if(window._vdcApply) window._vdcApply(); }, 0);
     } else {
       tabFilial.style.cssText = "padding:6px 16px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;color:#444;background:transparent;transition:all .2s;white-space:nowrap;font-family:'Inter',sans-serif;";
-      tabMatriz.style.cssText = "padding:6px 16px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;color:#fff;background:#f77614;border:1px solid #f77614;transition:all .2s;white-space:nowrap;font-family:'Inter',sans-serif;";
+      tabMatriz.style.cssText = "padding:6px 16px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;color:#000;background:#ffffff;border:1px solid #ffffff;transition:all .2s;white-space:nowrap;font-family:'Inter',sans-serif;";
       body.innerHTML = vendasTabContent(dashData.matriz, dashData.percDia); setTimeout(function(){ if(window._vdcApply) window._vdcApply(); }, 0);
     }
   }
@@ -2573,9 +2573,9 @@ function renderDashboard(panel, color) {
   const tarefasUrgentes = ownTasks.filter(t => t.prio === "urgente" || t.prio === "superurgente");
   const tarefasImp = ownTasks.filter(t => t.prio === "importante");
   const tarefasDrawerRows = [...tarefasUrgentes, ...tarefasImp].slice(0,6).map(t => {
-    const cor = (t.prio==="urgente"||t.prio==="superurgente") ? "#e8432d" : "#f77614";
+    const cor = (t.prio==="urgente"||t.prio==="superurgente") ? "#e8432d" : "#ffffff";
     const label = (t.prio==="urgente"||t.prio==="superurgente") ? "urgente" : "importante";
-    return `<div onclick="window._sbarNavTask(event)" style="display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border-radius:6px;margin-bottom:3px;cursor:pointer;border:1px solid transparent;transition:background .12s,border-color .12s;" onmouseover="this.style.background='#141414';this.style.borderColor='#2a2a2a';this.querySelector('.tarr').style.opacity='1';this.querySelector('.tarr').style.color='#f77614';" onmouseout="this.style.background='';this.style.borderColor='transparent';this.querySelector('.tarr').style.opacity='0';this.querySelector('.tarr').style.color='#333';">
+    return `<div onclick="window._sbarNavTask(event)" style="display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border-radius:6px;margin-bottom:3px;cursor:pointer;border:1px solid transparent;transition:background .12s,border-color .12s;" onmouseover="this.style.background='#141414';this.style.borderColor='#2a2a2a';this.querySelector('.tarr').style.opacity='1';this.querySelector('.tarr').style.color='#ffffff';" onmouseout="this.style.background='';this.style.borderColor='transparent';this.querySelector('.tarr').style.opacity='0';this.querySelector('.tarr').style.color='#333';">
       <div style="width:6px;height:6px;border-radius:50%;background:${cor};flex-shrink:0;margin-top:4px;"></div>
       <div style="font-size:11px;color:#888;flex:1;line-height:1.4;">${t.text||t.title||"—"}</div>
       <div style="font-size:9px;color:#555;background:#222;border-radius:4px;padding:2px 6px;white-space:nowrap;flex-shrink:0;">${label}</div>
@@ -2613,8 +2613,8 @@ function renderDashboard(panel, color) {
       const c = document.getElementById('sbar-card-'+id);
       const a = document.getElementById('sbar-arr-'+id);
       if(d) { d.style.maxHeight = isOpen ? '280px' : '0px'; d.style.borderTopWidth = isOpen ? '1px' : '0px'; }
-      if(c) c.style.borderColor = isOpen ? '#f77614' : '#222';
-      if(a) { a.style.transform = isOpen ? 'rotate(180deg)' : ''; a.style.color = isOpen ? '#f77614' : '#2e2e2e'; }
+      if(c) c.style.borderColor = isOpen ? '#ffffff' : '#222';
+      if(a) { a.style.transform = isOpen ? 'rotate(180deg)' : ''; a.style.color = isOpen ? '#ffffff' : '#2e2e2e'; }
     });
   };
   window._sbarToggle = function(id) {
@@ -2654,12 +2654,12 @@ function renderDashboard(panel, color) {
   const statusBar = document.createElement("div");
   statusBar.style.cssText = "grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px;align-items:start;";
   statusBar.innerHTML = `
-    <div id="sbar-card-tasks" onclick="window._sbarToggle('tasks')" style="background:linear-gradient(to top,#252525 0%,#0d0d0d 100%);border:1px solid #f77614;border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s;">
+    <div id="sbar-card-tasks" onclick="window._sbarToggle('tasks')" style="background:linear-gradient(to top,#252525 0%,#0d0d0d 100%);border:1px solid #ffffff;border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s;">
       <div style="padding:13px 16px;display:flex;align-items:center;gap:14px;">
         <div style="font-size:10px;color:#555;white-space:nowrap;">Tarefas</div>
         <div style="display:flex;align-items:center;gap:8px;flex:1;">
           <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#e8432d;"></div><div style="font-size:11px;font-weight:700;color:#e8432d;font-family:'Inter',sans-serif;">${urgentes}</div></div>
-          <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#f77614;"></div><div style="font-size:11px;font-weight:700;color:#f77614;font-family:'Inter',sans-serif;">${importantes}</div></div>
+          <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#ffffff;"></div><div style="font-size:11px;font-weight:700;color:#ffffff;font-family:'Inter',sans-serif;">${importantes}</div></div>
           <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#f0c000;"></div><div style="font-size:11px;font-weight:700;color:#f0c000;font-family:'Inter',sans-serif;">${normais}</div></div>
         </div>
         <div id="sbar-arr-tasks" style="font-size:10px;color:#2e2e2e;transition:transform .2s,color .2s;">▾</div>
@@ -2668,7 +2668,7 @@ function renderDashboard(panel, color) {
         <div style="padding:8px 14px 10px;">${tarefasDrawerRows || '<div style="font-size:11px;color:#555;padding:6px 0;">Nenhuma tarefa pendente ✓</div>'}</div>
       </div>
     </div>
-    <div id="sbar-card-stock" onclick="window._sbarToggle('stock')" style="background:linear-gradient(to top,#252525 0%,#0d0d0d 100%);border:1px solid #f77614;border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s;">
+    <div id="sbar-card-stock" onclick="window._sbarToggle('stock')" style="background:linear-gradient(to top,#252525 0%,#0d0d0d 100%);border:1px solid #ffffff;border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s;">
       <div style="padding:13px 16px;display:flex;align-items:center;gap:10px;">
         <div style="font-size:10px;color:#555;white-space:nowrap;">Estoque Full · SP</div>
         <div style="font-size:11px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">${fmtFull(valorTotal)}</div>
@@ -2680,7 +2680,7 @@ function renderDashboard(panel, color) {
         <div style="padding:8px 14px 10px;">${estDrawerRows || '<div style="font-size:11px;color:#555;padding:6px 0;">Nenhum produto crítico ✓</div>'}</div>
       </div>
     </div>
-    <div id="sbar-card-perguntas" onclick="window._sbarToggle('perguntas')" style="background:linear-gradient(to top,#252525 0%,#0d0d0d 100%);border:1px solid #f77614;border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s;">
+    <div id="sbar-card-perguntas" onclick="window._sbarToggle('perguntas')" style="background:linear-gradient(to top,#252525 0%,#0d0d0d 100%);border:1px solid #ffffff;border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s;">
       <div style="padding:13px 16px;display:flex;align-items:center;gap:10px;">
         <div style="font-size:10px;color:#555;white-space:nowrap;">Perguntas</div>
         ${perguntasLista === null || perguntasLista === undefined
@@ -2698,7 +2698,7 @@ function renderDashboard(panel, color) {
       <div id="sbar-drawer-perguntas" style="max-height:0;overflow:hidden;transition:max-height .3s ease;border-top:0px solid #1a1a1a;">
         <div style="padding:8px 14px 10px;">
           ${perguntasDrawerRows || '<div style="font-size:11px;color:#555;padding:6px 0;">Nenhuma pergunta pendente ✓</div>'}
-          ${perguntasTotal > 6 ? `<div onclick="window._goPerguntas()" style="text-align:center;font-size:10px;color:#f77614;padding-top:8px;cursor:pointer;">Ver todas (${perguntasTotal}) →</div>` : (perguntasTotal > 0 ? `<div onclick="window._goPerguntas()" style="text-align:center;font-size:10px;color:#f77614;padding-top:8px;cursor:pointer;">Ir para aba Perguntas →</div>` : "")}
+          ${perguntasTotal > 6 ? `<div onclick="window._goPerguntas()" style="text-align:center;font-size:10px;color:#ffffff;padding-top:8px;cursor:pointer;">Ver todas (${perguntasTotal}) →</div>` : (perguntasTotal > 0 ? `<div onclick="window._goPerguntas()" style="text-align:center;font-size:10px;color:#ffffff;padding-top:8px;cursor:pointer;">Ir para aba Perguntas →</div>` : "")}
         </div>
       </div>
     </div>
@@ -2754,7 +2754,7 @@ function renderDashboard(panel, color) {
 
       const circPrev = 2 * Math.PI * 20;
       const previewRows = preview.map(p => {
-        const cor = p.color === 'red' ? '#e8432d' : '#f77614';
+        const cor = p.color === 'red' ? '#e8432d' : '#ffffff';
         const score = p.value || 0;
         const dashPrev = ((score/100)*circPrev).toFixed(1);
         const nome = (p.title || p.sku || '');
@@ -2774,7 +2774,7 @@ function renderDashboard(panel, color) {
         + 'Experi\u00eancia de compra \u00b7 Filial SP'
         + '<div style="display:flex;align-items:center;gap:6px;">'
         + (probRed > 0 ? '<span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(232,67,45,.12);color:#e8432d;border:1px solid rgba(232,67,45,.25);">'+probRed+' ruim</span>' : '')
-        + (probReg > 0 ? '<span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(247,118,20,.12);color:#f77614;border:1px solid rgba(247,118,20,.25);">'+probReg+' regular</span>' : '')
+        + (probReg > 0 ? '<span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(255,255,255,0.08);color:#ffffff;border:1px solid rgba(255,255,255,0.25);">'+probReg+' regular</span>' : '')
         + '<span onclick="window._goExperiencia()" style="font-size:10px;color:#888;font-weight:600;cursor:pointer;">Ver tudo \u2192</span>'
         + '</div>'
         + '</div>'
@@ -7747,7 +7747,7 @@ window._openIdeiasModal = function() {
         <option value="Gestão">Gestão</option>
         <option value="Outro">Outro</option>
       </select>
-      <button id="ideias-add" style="background:#f77614;border:none;border-radius:8px;padding:10px 18px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">+ Adicionar</button>
+      <button id="ideias-add" style="background:#ffffff;border:none;border-radius:8px;padding:10px 18px;color:#000;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">+ Adicionar</button>
     </div>
     <div id="ideias-abas" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;"></div>
     <div id="ideias-lista"></div>
@@ -7792,7 +7792,7 @@ function renderIdeiasLista() {
       if (cat !== "Todas" && contagens[cat] === 0) return;
       const ativo = window._ideiasFiltroCategoria === cat;
       const tab = document.createElement("button");
-      tab.style.cssText = `background:${ativo ? "#f77614" : "#141414"};border:1px solid ${ativo ? "#f77614" : "#333"};border-radius:15px;padding:6px 14px;color:${ativo ? "#fff" : "#888"};font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap;`;
+      tab.style.cssText = `background:${ativo ? "#ffffff" : "#141414"};border:1px solid ${ativo ? "#ffffff" : "#333"};border-radius:15px;padding:6px 14px;color:${ativo ? "#000" : "#888"};font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap;`;
       tab.textContent = `${cat} ${contagens[cat]}`;
       tab.onclick = () => { window._ideiasFiltroCategoria = cat; renderIdeiasLista(); };
       abasEl.appendChild(tab);
@@ -7808,7 +7808,7 @@ function renderIdeiasLista() {
   };
 
   const grupos = {
-    afazer: { titulo: "A FAZER", cor: "#f77614", itens: [] },
+    afazer: { titulo: "A FAZER", cor: "#ffffff", itens: [] },
     andamento: { titulo: "EM ANDAMENTO", cor: "#5e8ce6", itens: [] },
     concluido: { titulo: "CONCLUÍDO", cor: "#2dce89", itens: [] },
   };
@@ -8158,15 +8158,15 @@ async function renderConferencia(panel, color) {
     val.style.cssText = `font-size:18px;font-weight:700;color:#fff;letter-spacing:-0.5px;`;
     val.textContent = "R$ "+valor.toLocaleString("pt-BR",{minimumFractionDigits:2});
     const cnt = document.createElement("div");
-    cnt.style.cssText = "display:inline-block;font-size:10px;font-weight:600;color:#fff;background:#f77614;border-radius:5px;padding:2px 8px;margin-top:8px;";
+    cnt.style.cssText = "display:inline-block;font-size:10px;font-weight:600;color:#fff;background:#ffffff;border-radius:5px;padding:2px 8px;margin-top:8px;";
     cnt.textContent = count;
     c.appendChild(hat); c.appendChild(lbl); c.appendChild(val); c.appendChild(cnt);
     return c;
   }
 
-  summary.appendChild(sumCard("Total do mês", totalGeral, "#f77614", `${servicosFiltrados.length + impostosFiltrados.length} documentos`));
-  summary.appendChild(sumCard("Serviços", totalServicos, "#f77614", `${servicosFiltrados.length} notas`));
-  summary.appendChild(sumCard("Impostos", totalImpostos, "#f77614", `${impostosFiltrados.length} guias`));
+  summary.appendChild(sumCard("Total do mês", totalGeral, "#ffffff", `${servicosFiltrados.length + impostosFiltrados.length} documentos`));
+  summary.appendChild(sumCard("Serviços", totalServicos, "#ffffff", `${servicosFiltrados.length} notas`));
+  summary.appendChild(sumCard("Impostos", totalImpostos, "#ffffff", `${impostosFiltrados.length} guias`));
   panel.appendChild(summary);
 
   // Filtros dinâmicos de tipo de imposto
@@ -8183,7 +8183,7 @@ async function renderConferencia(panel, color) {
       const btn = document.createElement("button");
       btn.textContent = tipo;
       const ativo = confFiltroTipo === tipo;
-      btn.style.cssText = `background:${ativo?"#f77614":"none"};border:0.5px solid ${ativo?"#f77614":"#f7761444"};border-radius:99px;color:${ativo?"#fff":"#f77614"};font-size:11px;font-weight:${ativo?"700":"400"};letter-spacing:1px;padding:4px 12px;cursor:pointer;font-family:inherit;`;
+      btn.style.cssText = `background:${ativo?"#ffffff":"none"};border:0.5px solid ${ativo?"#ffffff":"#ffffff44"};border-radius:99px;color:${ativo?"#000":"#ffffff"};font-size:11px;font-weight:${ativo?"700":"400"};letter-spacing:1px;padding:4px 12px;cursor:pointer;font-family:inherit;`;
       btn.addEventListener("click", () => { confFiltroTipo = tipo; renderConferencia(panel, color); });
       filtrosWrap.appendChild(btn);
     });
@@ -8588,7 +8588,7 @@ Digoo Brasil`;
     panel._actBar = actBar;
   }
 
-  renderSecao("Notas de Serviço", servicosFiltrados, "#f77614", "Notas de Serviço", "servicos");
+  renderSecao("Notas de Serviço", servicosFiltrados, "#ffffff", "Notas de Serviço", "servicos");
   renderSecao("Impostos", impostosFiltrados, "#e8432d", "Impostos", "impostos");
 
   if(panel._actBar) panel.appendChild(panel._actBar);
@@ -8599,3 +8599,4 @@ Digoo Brasil`;
   <script src="claude-chat.js"></script>
 </body>
 </html>
+
