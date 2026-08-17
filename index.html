@@ -1743,7 +1743,7 @@ function renderPerguntasTab(container) {
   wrap.appendChild(header);
 
   const autoBar = document.createElement("div");
-  autoBar.style.cssText = `display:flex;align-items:center;justify-content:space-between;background:${modoAuto ? "${T.isLight?"#f0fdf4":"linear-gradient(to top,#1a2a1a 0%,#000 100%)"}" : "${T.isLight?"#ffffff":"linear-gradient(to top,#252525 0%,#000 100%)"}"};border:1px solid ${modoAuto ? "#2d5a2d" : "#333"};border-radius:10px;padding:12px 16px;margin-bottom:20px;`;
+  autoBar.style.cssText = `display:flex;align-items:center;justify-content:space-between;background:${modoAuto ? (T.isLight?"#f0fdf4":"linear-gradient(to top,#1a2a1a 0%,#000 100%)") : (T.isLight?"#ffffff":"linear-gradient(to top,#252525 0%,#000 100%)")};border:1px solid ${modoAuto ? "#2d5a2d" : "#333"};border-radius:10px;padding:12px 16px;margin-bottom:20px;`;
   autoBar.innerHTML = `
     <div>
       <div style="font-size:12px;font-weight:600;color:${modoAuto ? "#2dce89" : "#fff"};">Modo automático ${modoAuto ? "ativado" : "desativado"}</div>
@@ -2461,7 +2461,7 @@ function renderDashboard(panel, color) {
 
     return `
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;align-items:start;">
-        <div id="vdc-0" onclick="window._vdcActivate(0)" style="background:${T.isLight?"#ffffff":"${T.isLight?"#ffffff":"linear-gradient(to top,#252525 0%,#000 100%)"}"};border-radius:10px;overflow:hidden;border:1px solid ${T.border2};cursor:pointer;transition:border-color .2s;">
+        <div id="vdc-0" onclick="window._vdcActivate(0)" style="background:${T.isLight?"#ffffff":"linear-gradient(to top,#252525 0%,#000 100%)"};border-radius:10px;overflow:hidden;border:1px solid ${T.border2};cursor:pointer;transition:border-color .2s;">
           <div id="vdc-top-0" style="height:3px;background:#ffffff;"></div>
           <div style="padding:12px 14px 13px;">
             <div style="font-size:10px;color:${T.text2};margin-bottom:6px;">Hoje</div>
@@ -2473,7 +2473,7 @@ function renderDashboard(panel, color) {
             <div style="padding:8px 14px 12px;border-top:1px solid ${T.sep};">${listRows}</div>
           </div>
         </div>
-        <div id="vdc-1" onclick="window._vdcActivate(1)" style="background:${T.isLight?"#ffffff":"${T.isLight?"#ffffff":"linear-gradient(to top,#252525 0%,#000 100%)"}"};border-radius:10px;overflow:hidden;border:1px solid ${T.border2};cursor:pointer;transition:border-color .2s;">
+        <div id="vdc-1" onclick="window._vdcActivate(1)" style="background:${T.isLight?"#ffffff":"linear-gradient(to top,#252525 0%,#000 100%)"};border-radius:10px;overflow:hidden;border:1px solid ${T.border2};cursor:pointer;transition:border-color .2s;">
           <div id="vdc-top-1" style="height:3px;background:#ffffff;"></div>
           <div style="padding:12px 14px 13px;">
             <div style="font-size:10px;color:${T.text2};margin-bottom:6px;">Projeção</div>
@@ -2491,7 +2491,7 @@ function renderDashboard(panel, color) {
             <div style="padding:8px 14px 12px;border-top:1px solid ${T.sep};">${projRows}</div>
           </div>
         </div>
-        <div id="vdc-2" onclick="window._vdcActivate(2)" style="background:${T.isLight?"#ffffff":"${T.isLight?"#ffffff":"linear-gradient(to top,#252525 0%,#000 100%)"}"};border-radius:10px;overflow:hidden;border:1px solid ${T.border2};cursor:pointer;transition:border-color .2s;">
+        <div id="vdc-2" onclick="window._vdcActivate(2)" style="background:${T.isLight?"#ffffff":"linear-gradient(to top,#252525 0%,#000 100%)"};border-radius:10px;overflow:hidden;border:1px solid ${T.border2};cursor:pointer;transition:border-color .2s;">
           <div id="vdc-top-2" style="height:3px;background:#ffffff;"></div>
           <div style="padding:12px 14px 13px;">
             <div style="font-size:10px;color:${T.text2};margin-bottom:6px;">Mês atual</div>
