@@ -1,0 +1,66 @@
+/* ── Fontes ───────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Bebas+Neue&display=swap');
+
+@font-face {
+  font-family: 'Digoo';
+  src: url('../DIGOO.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* ── Reset ────────────────────────────────────────────────────────────── */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Variáveis — modo escuro (padrão) ────────────────────────────────── */
+body {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  padding: 20px 28px 60px;
+  min-height: 100vh;
+  transition: background 0.3s, color 0.3s;
+
+  --bg: #000000; --bg2: #080808; --bg3: #161616;
+  --border: #1e1e1e; --border2: #282828;
+  --text: #ffffff; --text2: #bbbbbb; --text3: #888888; --sub: #666666;
+  --done: #666; --sep: rgba(255,255,255,0.06);
+  --c-d: #ffffff; --hbg-d: rgba(255,255,255,0.06);
+  --c-b: #ffffff; --hbg-b: rgba(255,255,255,0.06);
+  --c-l: #ffffff; --hbg-l: rgba(255,255,255,0.06);
+  --pu: #c0392b; --pi: #ffffff; --pn: #2dce89;
+  background: var(--bg); color: var(--text);
+}
+
+/* ── Variáveis — modo claro ──────────────────────────────────────────── */
+body.light {
+  --bg: #f0f0f0; --bg2: #f7f7f7; --bg3: #efefef;
+  --border: #e2e2e2; --border2: #d0d0d0;
+  --text: #111111; --text2: #555555; --text3: #999999; --sub: #777777;
+  --done: #aaa; --sep: rgba(0,0,0,0.07);
+  --c-d: #11cdef; --hbg-d: rgba(17,205,239,0.08);
+  --c-b: #5e72e4; --hbg-b: rgba(94,114,228,0.08);
+  --c-l: #e91e8c; --hbg-l: rgba(233,30,140,0.08);
+  --pu: #e91e8c; --pi: #f0b400; --pn: #2dce89;
+  background: var(--bg); color: var(--text);
+}
+
+/* ── Animações globais ───────────────────────────────────────────────── */
+@keyframes pulse       { 0%,100%{opacity:1} 50%{opacity:.4} }
+@keyframes siren       { 0%,100%{opacity:1} 50%{opacity:0.15} }
+@keyframes atrasoBlink { 0%,100%{opacity:1} 50%{opacity:0.25} }
+@keyframes spin        { to { transform: rotate(360deg); } }
+@keyframes shake       { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }
+@keyframes cardFlash   { 0%,100% { box-shadow: none; } 50% { box-shadow: 0 0 40px var(--c), 0 0 80px var(--c); border-color: var(--c) !important; } }
+@keyframes borderPulse { 0%,100% { border-color: #2a2a2a; } 50% { border-color: #fff; } }
+
+/* ── Scrollbar ───────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* ── Utilitários ─────────────────────────────────────────────────────── */
+.spinning { animation: spin 1s linear infinite; display: inline-block; }
+.shake    { animation: shake 0.35s ease; }
+footer    { margin-top: 40px; text-align: center; font-size: 10px; color: #787878; letter-spacing: 0; text-transform: uppercase; }
+#user-label { cursor: pointer; color: #787878; }

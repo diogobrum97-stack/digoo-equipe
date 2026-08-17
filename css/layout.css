@@ -1,0 +1,20 @@
+/* ── Layout principal ────────────────────────────────────────────────── */
+header { text-align: center; margin-bottom: 24px; }
+
+h1 { font-family: 'Digoo', 'Bebas Neue', sans-serif; font-size: 44px; letter-spacing: 0; color: var(--text); }
+
+.sub { font-size: 10px; letter-spacing: 0; color: #9a9a9a; margin-bottom: 6px; text-transform: uppercase; font-weight: 400; }
+
+.grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; max-width: 1280px; margin: 0 auto; align-items: start; }
+
+@media(max-width:700px) { .grid { grid-template-columns: 1fr; } }
+
+/* ── Toggle dark/light ───────────────────────────────────────────────── */
+.toggle-wrap  { display: flex; justify-content: flex-end; max-width: 1280px; margin: 0 auto 16px; }
+.toggle-track { width: 48px; height: 26px; border-radius: 13px; background: var(--border2); border: 1px solid var(--border2); cursor: pointer; position: relative; transition: background 0.3s, border-color 0.3s; flex-shrink: 0; }
+.toggle-thumb { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #777; transition: transform 0.25s cubic-bezier(.4,0,.2,1), background 0.25s; display: flex; align-items: center; justify-content: center; font-size: 11px; line-height: 1; }
+body.light .toggle-track { background: #e0ddd5; border-color: #ccc; }
+body.light .toggle-thumb { transform: translateX(22px); background: #fff; }
+
+/* ── Sync dot ─────────────────────────────────────────────────────────── */
+.sync { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--pn); margin-left: 10px; vertical-align: middle; box-shadow: 0 0 8px var(--pn); animation: pulse 2s infinite; }
