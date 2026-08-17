@@ -8163,8 +8163,8 @@ async function renderConferencia(panel, color) {
     : confDocs.impostos;
 
   // Totais
-  const totalServicos = servicosFiltrados.reduce((s,d) => s+(d.valor||0), 0);
-  const totalImpostos = impostosFiltrados.reduce((s,d) => s+(d.valor||0), 0);
+  const totalServicos = servicosFiltrados.reduce((s,d) => s+Number(d.valor||0), 0);
+  const totalImpostos = impostosFiltrados.reduce((s,d) => s+Number(d.valor||0), 0);
   const totalGeral = totalServicos + totalImpostos;
 
   // Cards de resumo
@@ -8180,18 +8180,18 @@ async function renderConferencia(panel, color) {
     lbl.style.cssText = "font-size:8px;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;margin-bottom:8px;font-weight:500;";
     lbl.textContent = label;
     const val = document.createElement("div");
-    val.style.cssText = `font-size:18px;font-weight:700;color:#fff;letter-spacing:-0.5px;`;
+    val.style.cssText = `font-size:18px;font-weight:700;color:${T.text};letter-spacing:-0.5px;font-family:'IBM Plex Mono',monospace;`;
     val.textContent = "R$ "+valor.toLocaleString("pt-BR",{minimumFractionDigits:2});
     const cnt = document.createElement("div");
-    cnt.style.cssText = "display:inline-block;font-size:10px;font-weight:600;color:#fff;background:#ffffff;border-radius:5px;padding:2px 8px;margin-top:8px;";
+    cnt.style.cssText = `display:inline-block;font-size:10px;font-weight:600;color:${T.text2};background:${T.bg3};border:1px solid ${T.border};border-radius:5px;padding:2px 8px;margin-top:8px;`;
     cnt.textContent = count;
     c.appendChild(hat); c.appendChild(lbl); c.appendChild(val); c.appendChild(cnt);
     return c;
   }
 
-  summary.appendChild(sumCard("Total do mês", totalGeral, "#ffffff", `${servicosFiltrados.length + impostosFiltrados.length} documentos`));
-  summary.appendChild(sumCard("Serviços", totalServicos, "#ffffff", `${servicosFiltrados.length} notas`));
-  summary.appendChild(sumCard("Impostos", totalImpostos, "#ffffff", `${impostosFiltrados.length} guias`));
+  summary.appendChild(sumCard("Total do mês", totalGeral, T.isLight?"#111111":"#ffffff", `${servicosFiltrados.length + impostosFiltrados.length} documentos`));
+  summary.appendChild(sumCard("Serviços", totalServicos, T.isLight?"#111111":"#ffffff", `${servicosFiltrados.length} notas`));
+  summary.appendChild(sumCard("Impostos", totalImpostos, T.isLight?"#111111":"#ffffff", `${impostosFiltrados.length} guias`));
   panel.appendChild(summary);
 
   // Filtros dinâmicos de tipo de imposto
@@ -8208,7 +8208,7 @@ async function renderConferencia(panel, color) {
       const btn = document.createElement("button");
       btn.textContent = tipo;
       const ativo = confFiltroTipo === tipo;
-      btn.style.cssText = `background:${ativo?"#ffffff":"none"};border:0.5px solid ${ativo?"#ffffff":"#ffffff44"};border-radius:99px;color:${ativo?"#000":"#ffffff"};font-size:11px;font-weight:${ativo?"700":"400"};letter-spacing:1px;padding:4px 12px;cursor:pointer;font-family:inherit;`;
+      btn.style.cssText = `background:${ativo?T.text:"none"};border:0.5px solid ${ativo?T.text:T.border2};border-radius:99px;color:${ativo?T.bg:T.text3};font-size:11px;font-weight:${ativo?"700":"400"};letter-spacing:1px;padding:4px 12px;cursor:pointer;font-family:inherit;`;
       btn.addEventListener("click", () => { confFiltroTipo = tipo; renderConferencia(panel, color); });
       filtrosWrap.appendChild(btn);
     });
@@ -8541,8 +8541,8 @@ async function renderConferencia(panel, color) {
         const [ano, mes] = confMes.split("-");
         const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
         const nomeMes = `${MESES[parseInt(mes)-1]} ${ano}`;
-        const totalServicos = confDocs.servicos.reduce((s,d)=>s+(d.valor||0),0);
-        const totalImpostos = confDocs.impostos.reduce((s,d)=>s+(d.valor||0),0);
+        const totalServicos = confDocs.servicos.reduce((s,d)=>s+Number(d.valor||0),0);
+        const totalImpostos = confDocs.impostos.reduce((s,d)=>s+Number(d.valor||0),0);
         const totalGeral = totalServicos + totalImpostos;
 
         let corpo = `Olá Leonardo,
