@@ -2473,7 +2473,7 @@ function renderDashboard(panel, color) {
           <div style="padding:12px 14px 13px;">
             <div style="font-size:10px;color:${T.text2};margin-bottom:6px;">Projeção</div>
             <div style="font-size:26px;font-weight:700;color:${T.text};font-family:'IBM Plex Mono',monospace;">${fmt(d.projecaoDia)}</div>
-            <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;display:inline-block;background:${T.bg3};color:${T.text3};margin-top:8px;">${percDia}% DO DIA</div>
+            <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;display:inline-block;background:${T.isLight?"#8b5cf6":"#333"};color:${T.isLight?"#fff":T.text3};margin-top:8px;">${percDia}% DO DIA</div>
             <div style="display:flex;align-items:center;gap:10px;margin-top:12px;height:22px;">
               <svg width="22" height="22" viewBox="0 0 36 36" style="flex-shrink:0;">
                 <circle cx="18" cy="18" r="14" fill="none" stroke="${T.border2}" stroke-width="3"/>
