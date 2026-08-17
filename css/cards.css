@@ -1,0 +1,66 @@
+/* ── Card base ────────────────────────────────────────────────────────── */
+.card { border-radius: 10px; border: 1px solid #333; overflow: hidden; transition: border-color 0.3s, box-shadow 0.3s; background: linear-gradient(to top, #252525 0%, #000 100%); position: relative; }
+.card::before { content: ''; display: block; height: 3px; width: 100%; background: #222222; flex-shrink: 0; }
+.card.flashing { animation: cardFlash 0.9s ease-in-out infinite; }
+
+/* ── Card fullscreen ─────────────────────────────────────────────────── */
+.card.card-fullscreen { position: fixed; inset: 0; z-index: 1000; border-radius: 0; overflow: hidden; margin: 0; height: 100vh; width: 100vw; box-sizing: border-box; display: flex; flex-direction: column; background: var(--bg); }
+.card.card-fullscreen .panel.open { flex: 1; overflow-y: auto; max-height: none; display: block; }
+
+/* ── Card expandido ──────────────────────────────────────────────────── */
+.card.card-expanded { grid-column: 1 / -1; height: calc(100vh - 140px); display: flex; flex-direction: column; }
+.card.card-expanded .panel.open { flex: 1; overflow-y: auto; max-height: none; }
+
+/* ── Card drag ───────────────────────────────────────────────────────── */
+.card-dragover { border-color: var(--accent) !important; opacity: 0.7; }
+
+/* ── Modo claro — cards ──────────────────────────────────────────────── */
+body.light .card          { background: #ffffff !important; border-color: #e0e0e0; box-shadow: 0 1px 6px rgba(0,0,0,0.08); }
+body.light .card::before  { background: #111111; }
+body.light .card-bg       { background: #ffffff; border-color: #e0e0e0; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+body.light .member-panel  { background: #ffffff; border: 0.5px solid #e0e0e0; border-radius: 10px; }
+
+/* ── Card header ─────────────────────────────────────────────────────── */
+.card-header { padding: 16px 14px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--sep); cursor: pointer; transition: filter 0.15s; user-select: none; background: transparent; }
+.card-header:hover { filter: brightness(1.08); }
+body.light .card-header { border-bottom: 1px solid var(--sep); }
+
+/* ── Avatar ──────────────────────────────────────────────────────────── */
+.avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; letter-spacing: 1px; flex-shrink: 0; }
+.id-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; letter-spacing: 1px; flex-shrink: 0; font-family: 'IBM Plex Mono', monospace; }
+
+/* ── Member name ─────────────────────────────────────────────────────── */
+.member-name { font-family: 'Digoo', 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 0; text-transform: uppercase; }
+body.light .member-name { color: #111; }
+body.light [data-member="Diogo"]   .member-name { color: #222; }
+body.light [data-member="Bruno"]   .member-name { color: #5e72e4; }
+body.light [data-member="Larissa"] .member-name { color: #e91e8c; }
+
+/* ── Dots / chevron ──────────────────────────────────────────────────── */
+.dots { display: flex; gap: 5px; margin-top: 4px; min-height: 8px; align-items: center; }
+.dot  { width: 7px; height: 7px; border-radius: 50%; }
+.chevron      { margin-left: auto; font-size: 11px; color: #9a9a9a; transition: transform 0.2s; }
+.chevron.open { transform: rotate(180deg); }
+.unread-dot   { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── Panel ───────────────────────────────────────────────────────────── */
+.panel      { background: transparent; padding: 16px; display: none; border-top: 1px solid var(--sep); }
+.panel.open { display: block; }
+
+/* ── Card tabs ───────────────────────────────────────────────────────── */
+.card-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--sep); margin-bottom: 14px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.card-tabs::-webkit-scrollbar { display: none; }
+.card-tab { padding: 8px 12px; background: none; border: none; font-family: inherit; font-size: 10px; letter-spacing: 0; text-transform: uppercase; cursor: pointer; color: #8e8e8e; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; font-weight: 500; }
+.card-tab.active { color: var(--text); border-bottom-color: var(--text); }
+
+/* ── Corner btn ─────────────────────────────────────────────────────── */
+.corner-btn { display: block; margin-top: 12px; margin-left: auto; background: none; border: 1px solid var(--border); border-radius: 50%; width: 22px; height: 22px; font-size: 14px; cursor: pointer; transition: all 0.15s; touch-action: manipulation; font-family: inherit; line-height: 20px; text-align: center; padding: 0; color: var(--text2); }
+.corner-btn:hover { border-color: var(--border2); color: var(--text2); }
+
+/* ── Mobile ──────────────────────────────────────────────────────────── */
+@media(max-width:768px) {
+  .card-header { padding: 24px 20px; gap: 14px; }
+  .member-name { font-size: 32px; letter-spacing: 4px; }
+  .card-header .avatar, .card-header [class*="avatar"] { width: 48px; height: 48px; font-size: 16px; }
+  .grid { padding: 0 4px; }
+}
