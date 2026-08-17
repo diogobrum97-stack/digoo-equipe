@@ -2679,7 +2679,7 @@ function renderDashboard(panel, color) {
   const statusBar = document.createElement("div");
   statusBar.style.cssText = "grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px;align-items:start;";
   statusBar.innerHTML = `
-    <div id="sbar-card-tasks" onclick="window._sbarToggle('tasks')" style="background:${T.card};border:1px solid ${T.border};border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s;box-shadow:${T.cardShadow};">
+    <div id="sbar-card-tasks" onclick="window._sbarToggle('tasks')" style="background:${T.isLight?"linear-gradient(to bottom,#ffffff 0%,#cccccc 100%)":"linear-gradient(to top,#252525 0%,#000 100%)"};border:1px solid ${T.border};border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s;">
       <div style="padding:13px 16px;display:flex;align-items:center;gap:14px;">
         <div style="font-size:10px;color:#555;white-space:nowrap;">Tarefas</div>
         <div style="display:flex;align-items:center;gap:8px;flex:1;">
@@ -2693,7 +2693,7 @@ function renderDashboard(panel, color) {
         <div style="padding:8px 14px 10px;">${tarefasDrawerRows || '<div style="font-size:11px;color:#555;padding:6px 0;">Nenhuma tarefa pendente ✓</div>'}</div>
       </div>
     </div>
-    <div id="sbar-card-stock" onclick="window._sbarToggle('stock')" style="background:${T.card};border:1px solid ${T.border};border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s;box-shadow:${T.cardShadow};">
+    <div id="sbar-card-stock" onclick="window._sbarToggle('stock')" style="background:${T.isLight?"linear-gradient(to bottom,#ffffff 0%,#cccccc 100%)":"linear-gradient(to top,#252525 0%,#000 100%)"};border:1px solid ${T.border};border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s;">
       <div style="padding:13px 16px;display:flex;align-items:center;gap:10px;">
         <div style="font-size:10px;color:#555;white-space:nowrap;">Estoque Full · SP</div>
         <div style="font-size:11px;font-weight:700;color:${T.text};font-family:'IBM Plex Mono',monospace;">${fmtFull(valorTotal)}</div>
@@ -2705,7 +2705,7 @@ function renderDashboard(panel, color) {
         <div style="padding:8px 14px 10px;">${estDrawerRows || '<div style="font-size:11px;color:#555;padding:6px 0;">Nenhum produto crítico ✓</div>'}</div>
       </div>
     </div>
-    <div id="sbar-card-perguntas" onclick="window._sbarToggle('perguntas')" style="background:${T.card};border:1px solid ${T.border};border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s;box-shadow:${T.cardShadow};">
+    <div id="sbar-card-perguntas" onclick="window._sbarToggle('perguntas')" style="background:${T.isLight?"linear-gradient(to bottom,#ffffff 0%,#cccccc 100%)":"linear-gradient(to top,#252525 0%,#000 100%)"};border:1px solid ${T.border};border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s;">
       <div style="padding:13px 16px;display:flex;align-items:center;gap:10px;">
         <div style="font-size:10px;color:#555;white-space:nowrap;">Perguntas</div>
         ${perguntasLista === null || perguntasLista === undefined
