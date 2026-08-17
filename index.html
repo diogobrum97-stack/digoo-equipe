@@ -2465,7 +2465,7 @@ function renderDashboard(panel, color) {
     return `
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;align-items:start;">
         <div id="vdc-0" onclick="window._vdcActivate(0)" style="background:${T.isLight?"#ffffff":"linear-gradient(to top,#252525 0%,#000 100%)"};border-radius:10px;overflow:hidden;border:1px solid ${T.border};box-shadow:${T.cardShadow};cursor:pointer;transition:border-color .2s;">
-          <div id="vdc-top-0" style="height:3px;background:${T.isLight?"#111111":"#ffffff"};"></div>
+          <div id="vdc-top-0" style="height:3px;background:${T.isLight?"#3b82f6":"#ffffff"};"></div>
           <div style="padding:12px 14px 13px;">
             <div style="font-size:10px;color:${T.text2};margin-bottom:6px;">Hoje</div>
             <div style="font-size:26px;font-weight:700;color:${T.text};font-family:'IBM Plex Mono',monospace;">${fmtFull(d.fatHoje)}</div>
@@ -2477,7 +2477,7 @@ function renderDashboard(panel, color) {
           </div>
         </div>
         <div id="vdc-1" onclick="window._vdcActivate(1)" style="background:${T.isLight?"#ffffff":"linear-gradient(to top,#252525 0%,#000 100%)"};border-radius:10px;overflow:hidden;border:1px solid ${T.border};box-shadow:${T.cardShadow};cursor:pointer;transition:border-color .2s;">
-          <div id="vdc-top-1" style="height:3px;background:${T.isLight?"#111111":"#ffffff"};"></div>
+          <div id="vdc-top-1" style="height:3px;background:${T.isLight?"#8b5cf6":"#ffffff"};"></div>
           <div style="padding:12px 14px 13px;">
             <div style="font-size:10px;color:${T.text2};margin-bottom:6px;">Projeção</div>
             <div style="font-size:26px;font-weight:700;color:${T.text};font-family:'IBM Plex Mono',monospace;">${fmt(d.projecaoDia)}</div>
@@ -2495,7 +2495,7 @@ function renderDashboard(panel, color) {
           </div>
         </div>
         <div id="vdc-2" onclick="window._vdcActivate(2)" style="background:${T.isLight?"#ffffff":"linear-gradient(to top,#252525 0%,#000 100%)"};border-radius:10px;overflow:hidden;border:1px solid ${T.border};box-shadow:${T.cardShadow};cursor:pointer;transition:border-color .2s;">
-          <div id="vdc-top-2" style="height:3px;background:${T.isLight?"#111111":"#ffffff"};"></div>
+          <div id="vdc-top-2" style="height:3px;background:${T.isLight?"#10b981":"#ffffff"};"></div>
           <div style="padding:12px 14px 13px;">
             <div style="font-size:10px;color:${T.text2};margin-bottom:6px;">Mês atual</div>
             <div style="font-size:26px;font-weight:700;color:${T.text};font-family:'IBM Plex Mono',monospace;">${fmt(d.fatMes)}</div>
