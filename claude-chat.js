@@ -68,7 +68,7 @@
     const s = document.createElement('style');
     s.id = 'cc-style';
     s.textContent = `
-      #cc-fab { position:fixed;bottom:24px;right:24px;width:46px;height:46px;border-radius:50%;background:var(--bg3);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:9990;box-shadow:0 2px 12px rgba(0,0,0,0.15);transition:border-color .2s; }
+      #cc-fab { position:fixed;bottom:24px;right:24px;width:46px;height:46px;border-radius:50%;background:var(--bg3);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:9990;box-shadow:0 1px 6px rgba(0,0,0,0.08);transition:border-color .2s; }
       #cc-fab:hover { border-color:var(--text3); }
       #cc-panel { position:fixed;bottom:80px;right:24px;width:320px;max-height:460px;background:var(--bg2);border:1px solid var(--border2);border-radius:16px;z-index:9989;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,0.15);font-family:'Inter',sans-serif; }
       #cc-msgs { flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px; }
