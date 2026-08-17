@@ -8268,7 +8268,7 @@ async function renderConferencia(panel, color) {
     countEl.textContent = `${docs.length} documentos`;
     const totalEl = document.createElement("div");
     totalEl.style.cssText = `font-size:13px;font-weight:600;color:${cor};`;
-    totalEl.textContent = "R$ "+docs.reduce((s,d)=>s+(d.valor||0),0).toLocaleString("pt-BR",{minimumFractionDigits:2});
+    totalEl.textContent = "R$ "+docs.reduce((s,d)=>s+Number(d.valor||0),0).toLocaleString("pt-BR",{minimumFractionDigits:2});
     secLeft.appendChild(pillEl); secLeft.appendChild(countEl);
     secHeader.appendChild(secLeft); secHeader.appendChild(totalEl);
     body.appendChild(secHeader);
@@ -8312,7 +8312,7 @@ async function renderConferencia(panel, color) {
       info.appendChild(nome); info.appendChild(badges);
       const val = document.createElement("div");
       val.style.cssText = "font-size:12px;font-weight:600;color:var(--text3);white-space:nowrap;";
-      val.textContent = "R$ "+(doc.valor||0).toLocaleString("pt-BR",{minimumFractionDigits:2});
+      val.textContent = "R$ "+Number(doc.valor||0).toLocaleString("pt-BR",{minimumFractionDigits:2});
       const actions = document.createElement("div");
       actions.style.cssText = "display:flex;gap:5px;";
       const btnVer = document.createElement("button");
