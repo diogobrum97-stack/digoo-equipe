@@ -2455,25 +2455,25 @@ function renderDashboard(panel, color) {
       <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;"><div style="${lStyle}">Faturado hoje</div><div style="${vStyle}">${fmtFull(d.fatHoje)}</div></div>`;
 
     const mesRows = `
-      <div style="${rowStyle}"><div style="${lStyle}">Pedidos no mês</div><div style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;background:#ffffff;color:#000;">${d.pedidosMes} PEDIDOS</div></div>
+      <div style="${rowStyle}"><div style="${lStyle}">Pedidos no mês</div><div style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;background:#111111;color:#ffffff;">${d.pedidosMes} PEDIDOS</div></div>
       <div style="${rowStyle}"><div style="${lStyle}">Ticket médio</div><div style="${vStyle}">${ticketMedio}</div></div>
       <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;"><div style="${lStyle}">Faturamento mês</div><div style="${vStyle}">${fmt(d.fatMes)}</div></div>`;
 
     return `
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;align-items:start;">
-        <div id="vdc-0" onclick="window._vdcActivate(0)" style="background:${T.card};border-radius:10px;overflow:hidden;border:1px solid ${T.border};cursor:pointer;transition:border-color .2s;box-shadow:${T.cardShadow};">
+        <div id="vdc-0" onclick="window._vdcActivate(0)" style="background:${T.isLight?"#f2f2f2":"linear-gradient(to top,#252525 0%,#000 100%)"};border-radius:10px;overflow:hidden;border:1px solid ${T.border};cursor:pointer;transition:border-color .2s;">
           <div id="vdc-top-0" style="height:3px;background:#ffffff;"></div>
           <div style="padding:12px 14px 13px;">
             <div style="font-size:10px;color:${T.text2};margin-bottom:6px;">Hoje</div>
             <div style="font-size:26px;font-weight:700;color:${T.text};font-family:'IBM Plex Mono',monospace;">${fmtFull(d.fatHoje)}</div>
-            <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;display:inline-block;background:#ffffff;color:#000;margin-top:8px;">↑ EM TEMPO REAL</div>
+            <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;display:inline-block;background:#111111;color:#ffffff;margin-top:8px;">↑ EM TEMPO REAL</div>
             <div id="vdc-bars-0" style="display:flex;align-items:flex-end;gap:3px;height:22px;margin-top:12px;transition:opacity .25s;opacity:1;">${miniBars}</div>
           </div>
           <div id="vdc-list-0" style="display:none;overflow:hidden;">
             <div style="padding:8px 14px 12px;border-top:1px solid ${T.sep};">${listRows}</div>
           </div>
         </div>
-        <div id="vdc-1" onclick="window._vdcActivate(1)" style="background:${T.card};border-radius:10px;overflow:hidden;border:1px solid ${T.border};cursor:pointer;transition:border-color .2s;box-shadow:${T.cardShadow};">
+        <div id="vdc-1" onclick="window._vdcActivate(1)" style="background:${T.isLight?"#f2f2f2":"linear-gradient(to top,#252525 0%,#000 100%)"};border-radius:10px;overflow:hidden;border:1px solid ${T.border};cursor:pointer;transition:border-color .2s;">
           <div id="vdc-top-1" style="height:3px;background:#ffffff;"></div>
           <div style="padding:12px 14px 13px;">
             <div style="font-size:10px;color:${T.text2};margin-bottom:6px;">Projeção</div>
@@ -2491,7 +2491,7 @@ function renderDashboard(panel, color) {
             <div style="padding:8px 14px 12px;border-top:1px solid ${T.sep};">${projRows}</div>
           </div>
         </div>
-        <div id="vdc-2" onclick="window._vdcActivate(2)" style="background:${T.card};border-radius:10px;overflow:hidden;border:1px solid ${T.border};cursor:pointer;transition:border-color .2s;box-shadow:${T.cardShadow};">
+        <div id="vdc-2" onclick="window._vdcActivate(2)" style="background:${T.isLight?"#f2f2f2":"linear-gradient(to top,#252525 0%,#000 100%)"};border-radius:10px;overflow:hidden;border:1px solid ${T.border};cursor:pointer;transition:border-color .2s;">
           <div id="vdc-top-2" style="height:3px;background:#ffffff;"></div>
           <div style="padding:12px 14px 13px;">
             <div style="font-size:10px;color:${T.text2};margin-bottom:6px;">Mês atual</div>
