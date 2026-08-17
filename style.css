@@ -31,10 +31,10 @@ body {
   background: var(--bg); color: var(--text);
 }
 body.light {
-  --bg: #ebebeb; --bg2: #dcdcdc; --bg3: #ffffff;
-  --border: #e0e0e0; --border2: #d0d0d0;
-  --text: #111111; --text2: #444444; --text3: #aaaaaa; --sub: #555555;
-  --done: #999; --sep: rgba(0,0,0,0.08);
+  --bg: #f2f2f2; --bg2: #f8f8f8; --bg3: #ffffff;
+  --border: #e8e8e8; --border2: #d8d8d8;
+  --text: #111111; --text2: #555555; --text3: #999999; --sub: #777777;
+  --done: #aaa; --sep: rgba(0,0,0,0.07);
   --c-d: #11cdef; --hbg-d: rgba(17,205,239,0.08);
   --c-b: #5e72e4; --hbg-b: rgba(94,114,228,0.08);
   --c-l: #e91e8c; --hbg-l: rgba(233,30,140,0.08);
@@ -42,20 +42,31 @@ body.light {
   background: var(--bg); color: var(--text);
 }
 
-/* Modo claro — cards de membro mais vivos */
-body.light .card-header { border-bottom: 1px solid #e0e0e0; }
+/* Modo claro — cards de membro */
+body.light .card-header { border-bottom: 1px solid var(--sep); }
 body.light .member-name { color: #111; }
 body.light [data-member="Diogo"] .member-name { color: #222; }
 body.light [data-member="Bruno"] .member-name { color: #5e72e4; }
 body.light [data-member="Larissa"] .member-name { color: #e91e8c; }
 
-/* Modo claro — cards de tarefa */
-body.light .card-bg { background: #f7f7f7; border-color: #e5e5e5; }
-
-/* Modo claro — inner panel branco */
-body.light .member-panel { background: #ffffff; border: 0.5px solid #dddddd; border-radius: 10px; }
-body.light .card { background: linear-gradient(180deg, #ffffff 0%, #f0f0f0 100%); border-color: #e0e0e0; }
+/* Modo claro — cards: fundo branco, sombra suave, sem gradiente */
+body.light .card-bg { background: #ffffff; border-color: #e8e8e8; }
+body.light .member-panel { background: #ffffff; border: 0.5px solid #e0e0e0; border-radius: 10px; }
+body.light .card { background: #ffffff; border-color: #e8e8e8; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
 body.light .card::before { background: #e0e0e0; }
+
+/* Modo claro — elementos inline com fundo hardcoded escuro */
+body.light .ml-card { background: #ffffff; border-color: #e8e8e8; }
+body.light .input-box { background: #f8f8f8; border-color: #e0e0e0; }
+body.light .task-msg-form { background: #f8f8f8; border-color: #e0e0e0; }
+body.light .pin-input { background: #f8f8f8; border-color: #d8d8d8; }
+body.light #identity-screen { background: #f2f2f2; }
+body.light #ml-modal { background: #f2f2f2; }
+body.light #ml-fullscreen { background: #f2f2f2; }
+body.light #ml-modal-header,
+body.light #ml-fullscreen-header { background: #ffffff; border-bottom-color: #e8e8e8; }
+body.light .alert-row { background: #ffffff; }
+body.light .chat-bubble.assistant { background: #f0f0f0; border-color: #e0e0e0; }
 
 .toggle-wrap { display: flex; justify-content: flex-end; max-width: 1280px; margin: 0 auto 16px; }
 .toggle-track { width: 48px; height: 26px; border-radius: 13px; background: var(--border2); border: 1px solid var(--border2); cursor: pointer; position: relative; transition: background 0.3s, border-color 0.3s; flex-shrink: 0; }

@@ -224,6 +224,33 @@ function themePrio(p) {
   const light = document.body.classList.contains("light");
   return ({superurgente:"#e8432d",urgente:"#e8432d",importante:"#ffffff",normal:"#f0c000"})[p]||"#aaa";
 }
+// Utilitário de cores para elementos inline (dark vs light)
+function tv(dark, light) {
+  return document.body.classList.contains("light") ? light : dark;
+}
+// Atalhos semânticos
+const T = {
+  get isLight() { return document.body.classList.contains("light"); },
+  get bg()      { return T.isLight ? "#ffffff" : "#111111"; },
+  get bg2()     { return T.isLight ? "#f8f8f8" : "#0d0d0d"; },
+  get bg3()     { return T.isLight ? "#f2f2f2" : "#141414"; },
+  get card()    { return T.isLight ? "#ffffff" : "#111111"; },
+  get border()  { return T.isLight ? "#e8e8e8" : "#282828"; },
+  get border2() { return T.isLight ? "#d0d0d0" : "#333333"; },
+  get text()    { return T.isLight ? "#111111" : "#ffffff"; },
+  get text2()   { return T.isLight ? "#555555" : "#cccccc"; },
+  get text3()   { return T.isLight ? "#999999" : "#777777"; },
+  get sep()     { return T.isLight ? "rgba(0,0,0,0.07)" : "rgba(255,255,255,0.06)"; },
+  get errBg()   { return T.isLight ? "#fff5f5" : "#2a1000"; },
+  get errBor()  { return T.isLight ? "#fca5a5" : "#4a2010"; },
+  get errText() { return T.isLight ? "#b91c1c" : "#f0a060"; },
+  get infoBg()  { return T.isLight ? "#eff6ff" : "#0d1a2a"; },
+  get infoBor() { return T.isLight ? "#bfdbfe" : "#1e3a5a"; },
+  get infoTxt() { return T.isLight ? "#1d4ed8" : "#5eb3f0"; },
+  get okBg()    { return T.isLight ? "#f0fdf4" : "#1a2a1a"; },
+  get okBor()   { return T.isLight ? "#86efac" : "#2d5a2d"; },
+  get okTxt()   { return T.isLight ? "#15803d" : "#2dce89"; },
+};
 
 window.toggleTheme = function() {
   const isLight = document.body.classList.toggle("light");
@@ -1124,7 +1151,7 @@ function renderPickingTab(panel, quemSou, modoOperar) {
 
   if (pickingState.erro) {
     const errBox = document.createElement("div");
-    errBox.style.cssText = "background:#2a1000;border:1px solid #4a2010;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:11px;color:#f0a060;white-space:pre-wrap;line-height:1.5;";
+    errBox.style.cssText = `background:${T.errBg};border:1px solid ${T.errBor};border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:11px;color:${T.errText};white-space:pre-wrap;line-height:1.5;`;
     errBox.textContent = pickingState.erro;
     wrap.appendChild(errBox);
   }
@@ -1162,7 +1189,7 @@ function renderPickingTab(panel, quemSou, modoOperar) {
         <div style="display:inline-block;padding:2px 7px;border-radius:9px;font-size:8px;font-weight:700;background:${ativo ? "rgba(255,255,255,0.25)" : (etiquetaImpressa ? "#1a2a1a" : "#0d1a2a")};color:${ativo ? "#000" : (etiquetaImpressa ? "#2dce89" : "#5eb3f0")};">${etiquetaImpressa ? "Etiqueta impressa" : "Etiqueta pronta para imprimir"}</div>
       </div>
       <div style="font-size:9px;color:${ativo ? "#000" : "#555"};margin-top:6px;">${travadoPorOutro ? `● sendo separado por ${lock.por}` : (ativo ? "● separando agora" : "na fila")}</div>
-      ${etiquetaImpressa && modoOperar ? `<button data-marcar-feito="${pedido.order_id}" style="width:100%;margin-top:8px;padding:6px;border-radius:6px;background:#1a2a1a;border:1px solid #2d5a2d;color:#2dce89;font-size:9px;font-weight:600;cursor:pointer;">Marcar como já feito</button>` : ""}
+      ${etiquetaImpressa && modoOperar ? `<button data-marcar-feito="${pedido.order_id}" style="width:100%;margin-top:8px;padding:6px;border-radius:6px;background:${T.okBg};border:1px solid ${T.okBor};color:#2dce89;font-size:9px;font-weight:600;cursor:pointer;">Marcar como já feito</button>` : ""}
     `;
     if (clicavel) {
       card.onclick = () => { if (!ativo) abrirPedidoPicking(pedido, quemSou, refresh); };
@@ -1203,7 +1230,7 @@ function renderPickingTab(panel, quemSou, modoOperar) {
         <div style="font-size:15px;font-weight:700;color:#fff;">Pedido #${pedido.order_id}</div>
         <div style="font-size:11px;color:#888;margin-top:2px;">${pedido.itens[0]?.titulo || ""}</div>
       </div>
-      ${temKit ? `<div style="padding:4px 10px;border-radius:11px;background:#0d1a2a;border:1px solid #1e3a5a;color:#5eb3f0;font-size:10px;font-weight:600;">📦 KIT</div>` : ""}
+      ${temKit ? `<div style="padding:4px 10px;border-radius:11px;background:${T.infoBg};border:1px solid ${T.infoBor};color:#5eb3f0;font-size:10px;font-weight:600;">📦 KIT</div>` : ""}
     `;
     colDetalhe.appendChild(cabecalho);
 
@@ -1215,7 +1242,7 @@ function renderPickingTab(panel, quemSou, modoOperar) {
 
     if (pickingState.blingTokenExpirado) {
       const avisoBling = document.createElement("div");
-      avisoBling.style.cssText = "display:flex;align-items:center;justify-content:space-between;gap:12px;background:#2a1000;border:1px solid #4a2010;border-radius:8px;padding:10px 14px;margin-bottom:14px;flex-wrap:wrap;";
+      avisoBling.style.cssText = `display:flex;align-items:center;justify-content:space-between;gap:12px;background:${T.errBg};border:1px solid ${T.errBor};border-radius:8px;padding:10px 14px;margin-bottom:14px;flex-wrap:wrap;`;
       avisoBling.innerHTML = `
         <div style="font-size:11px;color:#f0a060;line-height:1.4;">O Bling está desconectado ou o token expirou — não foi possível buscar EAN/kit desse pedido. Os itens abaixo caíram pra bipagem por SKU, sem conferência automática de kit.</div>
         <button id="picking-btn-reconectar-bling" style="background:#5e72e4;border:none;border-radius:6px;padding:7px 14px;color:#000;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">Reconectar Bling</button>
@@ -1228,7 +1255,7 @@ function renderPickingTab(panel, quemSou, modoOperar) {
     pedido.itens_bipagem.forEach(l => {
       const completo = l.quantidadeBipada >= l.quantidadeNecessaria;
       const linha = document.createElement("div");
-      linha.style.cssText = `display:flex;align-items:center;gap:10px;padding:10px 12px;background:#111;border:1px solid ${completo ? "#2d5a2d" : "#282828"};border-radius:8px;margin-bottom:6px;`;
+      linha.style.cssText = `display:flex;align-items:center;gap:10px;padding:10px 12px;background:${T.bg};border:1px solid ${completo ? T.okBor : T.border};border-radius:8px;margin-bottom:6px;`;
       linha.innerHTML = `
         <div style="flex:1;min-width:0;">
           <div style="font-size:12px;color:#fff;">${l.nome}</div>
@@ -1247,7 +1274,7 @@ function renderPickingTab(panel, quemSou, modoOperar) {
       bipInput.type = "text";
       bipInput.placeholder = "Bipar código de barras...";
       bipInput.autocomplete = "off";
-      bipInput.style.cssText = "width:100%;background:#0d0d0d;border:2px solid #ffffff;border-radius:8px;padding:12px 14px;color:#fff;font-size:13px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;margin-bottom:12px;";
+      bipInput.style.cssText = "width:100%;background:"+T.bg2+";border:2px solid "+T.text+";border-radius:8px;padding:12px 14px;color:"+T.text+";font-size:13px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;margin-bottom:12px;";
       bipInput.value = pickingState.bipando;
       bipInput.oninput = (e) => { pickingState.bipando = e.target.value; };
       bipInput.addEventListener("keydown", (e) => {
@@ -1297,7 +1324,7 @@ function renderPickingTab(panel, quemSou, modoOperar) {
 
   if (pickingState.diagnostico) {
     const diagBox = document.createElement("div");
-    diagBox.style.cssText = "background:#0d1a2a;border:1px solid #1e3a5a;border-radius:8px;padding:12px 14px;margin-top:16px;font-size:11px;color:#9ecbf0;white-space:pre-wrap;line-height:1.6;font-family:Inter,sans-serif;max-height:300px;overflow-y:auto;";
+    diagBox.style.cssText = `background:${T.infoBg};border:1px solid ${T.infoBor};border-radius:8px;padding:12px 14px;margin-top:16px;font-size:11px;color:${T.infoTxt};white-space:pre-wrap;line-height:1.6;font-family:Inter,sans-serif;max-height:300px;overflow-y:auto;`;
     diagBox.textContent = pickingState.diagnostico;
     panel.appendChild(diagBox);
   }
@@ -1348,7 +1375,7 @@ function renderPickingHistorico(panel) {
       <div style="font-size:11px;color:#666;margin-top:2px;">${entradasFiltradas.length} pedido${entradasFiltradas.length===1?"":"s"}${filtro ? " nesse dia" : " no total"}</div>
     </div>
     <div style="display:flex;gap:8px;align-items:center;">
-      <input id="picking-hist-data" type="date" value="${filtro}" style="background:#141414;border:1px solid #333;border-radius:6px;padding:7px 10px;color:#ccc;font-size:11px;font-family:Inter,sans-serif;outline:none;">
+      <input id="picking-hist-data" type="date" value="${filtro}" style="background:${T.bg3};border:1px solid ${T.border};border-radius:6px;padding:7px 10px;color:${T.text2};font-size:11px;font-family:Inter,sans-serif;outline:none;">
       ${filtro ? `<button id="picking-hist-limpar" style="background:none;border:1px solid #333;border-radius:6px;padding:7px 12px;color:#888;font-size:11px;cursor:pointer;">Limpar filtro</button>` : ""}
     </div>
   `;
@@ -1378,7 +1405,7 @@ function renderPickingHistorico(panel) {
 
       if (aberto) {
         const detalhe = document.createElement("div");
-        detalhe.style.cssText = "background:#111;border:1px solid #282828;border-radius:8px;padding:14px 16px;margin:-4px 0 12px;";
+        detalhe.style.cssText = "background:"+T.bg+";border:1px solid "+T.border+";border-radius:8px;padding:14px 16px;margin:-4px 0 12px;";
 
         // Conferência final: esperado x bipado
         if (c.itens_final && c.itens_final.length > 0) {
@@ -1465,12 +1492,12 @@ function renderPickingAcompanhar(panel) {
   aoVivo.style.cssText = "margin-bottom:16px;";
   aoVivo.innerHTML = `<div style="font-size:11px;color:#ffffff;margin-bottom:8px;">AGORA, EM TEMPO REAL</div>`;
   if (locksAtivos.length === 0) {
-    aoVivo.innerHTML += `<div style="font-size:11px;color:#555;padding:12px;background:#141414;border:1px solid #282828;border-radius:8px;">Ninguém separando pedidos no momento.</div>`;
+    aoVivo.innerHTML += `<div style="font-size:11px;color:"+T.text3+";padding:12px;background:"+T.bg3+";border:1px solid "+T.border+";border-radius:8px;">Ninguém separando pedidos no momento.</div>`;
   } else {
     locksAtivos.forEach(([orderId, lock]) => {
       const pedidoInfo = pickingState.fila?.find(p => String(p.order_id) === String(orderId));
       const linha = document.createElement("div");
-      linha.style.cssText = "display:flex;align-items:center;gap:8px;padding:10px 12px;background:#111;border:1px solid #1e3a5a;border-radius:8px;margin-bottom:6px;";
+      linha.style.cssText = "display:flex;align-items:center;gap:8px;padding:10px 12px;background:${T.infoBg};border:1px solid ${T.infoBor};border-radius:8px;margin-bottom:6px;";
       linha.innerHTML = `
         <div style="width:8px;height:8px;border-radius:50%;background:#2dce89;flex-shrink:0;"></div>
         <div style="flex:1;min-width:0;">
@@ -1491,7 +1518,7 @@ function renderPickingAcompanhar(panel) {
     concluidosHoje.slice(0, 8).forEach(([orderId, c]) => {
       const hora = new Date(c.ts).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
       const linha = document.createElement("div");
-      linha.style.cssText = "padding:9px 12px;background:#111;border:1px solid #282828;border-radius:7px;margin-bottom:5px;";
+      linha.style.cssText = "padding:9px 12px;background:"+T.bg+";border:1px solid "+T.border+";border-radius:7px;margin-bottom:5px;";
       linha.innerHTML = `<div style="font-size:11px;color:#ccc;">#${orderId} · ${c.titulo}</div><div style="font-size:10px;color:#2dce89;margin-top:2px;">✓ etiqueta impressa às ${hora} por ${c.por}</div>`;
       hist.appendChild(linha);
     });
@@ -1533,7 +1560,7 @@ function renderPickingFullscreenOverlay() {
   topo.style.cssText = "display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid #222;flex-shrink:0;";
   const btnVoltar = document.createElement("button");
   btnVoltar.textContent = "← Sair da tela cheia";
-  btnVoltar.style.cssText = "background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:8px 14px;color:#ccc;font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;";
+  btnVoltar.style.cssText = "background:"+T.bg2+";border:1px solid "+T.border+";border-radius:6px;padding:8px 14px;color:"+T.text2+";font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;";
   btnVoltar.onclick = () => { window._pickingModoDiogo = "acompanhar"; render(); };
   topo.appendChild(btnVoltar);
   overlay.appendChild(topo);
@@ -1730,7 +1757,7 @@ function renderPerguntasTab(container) {
 
   if (perguntasState.erro) {
     const errBox = document.createElement("div");
-    errBox.style.cssText = "background:#2a1000;border:1px solid #4a2010;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:11px;color:#f0a060;white-space:pre-wrap;line-height:1.5;";
+    errBox.style.cssText = `background:${T.errBg};border:1px solid ${T.errBor};border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:11px;color:${T.errText};white-space:pre-wrap;line-height:1.5;`;
     errBox.textContent = perguntasState.erro;
     wrap.appendChild(errBox);
   }
@@ -1767,31 +1794,31 @@ function renderPerguntasTab(container) {
         ${p.requires_attention
           ? `<div style="display:inline-block;padding:3px 10px;border-radius:12px;background:#2a1000;border:1px solid #4a2010;color:#f0a060;font-size:10px;font-weight:600;margin-bottom:12px;">⚠ requer atenção manual</div>`
           : `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
-              <div style="display:inline-block;padding:3px 10px;border-radius:12px;background:#1a2a1a;border:1px solid #2d5a2d;color:#2dce89;font-size:10px;font-weight:600;">sugestão da IA</div>
-              ${p.has_knowledge ? `<div style="display:inline-block;padding:3px 10px;border-radius:12px;background:#0d1a2a;border:1px solid #1e3a5a;color:#5eb3f0;font-size:10px;font-weight:600;">baseada em respostas já dadas</div>` : ""}
+              <div style="display:inline-block;padding:3px 10px;border-radius:12px;background:${T.okBg};border:1px solid ${T.okBor};color:#2dce89;font-size:10px;font-weight:600;">sugestão da IA</div>
+              ${p.has_knowledge ? `<div style="display:inline-block;padding:3px 10px;border-radius:12px;background:${T.infoBg};border:1px solid ${T.infoBor};color:#5eb3f0;font-size:10px;font-weight:600;">baseada em respostas já dadas</div>` : ""}
               ${enviadoAuto ? `<div style="display:inline-block;padding:3px 10px;border-radius:12px;background:#ffffff22;border:1px solid #ffffff55;color:#ffffff;font-size:10px;font-weight:600;">✓ enviada automaticamente</div>` : ""}
             </div>`
         }
 
         <div style="font-size:10px;color:#666;margin-bottom:6px;">Pergunta do comprador</div>
-        <div style="background:#111;border:1px solid #282828;border-radius:6px;padding:10px 12px;font-size:12px;color:#ccc;margin-bottom:14px;">${p.pergunta}</div>
+        <div style="background:${T.bg};border:1px solid ${T.border};border-radius:6px;padding:10px 12px;font-size:12px;color:${T.text2};margin-bottom:14px;">${p.pergunta}</div>
 
         ${itemInativo ? `
-          <div style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;background:#2a1000;border:1px solid #4a2010;border-radius:8px;margin-bottom:14px;">
+          <div style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;background:${T.errBg};border:1px solid ${T.errBor};border-radius:8px;margin-bottom:14px;">
             <div style="font-size:13px;flex-shrink:0;">⚠️</div>
             <div style="font-size:11px;color:#f0a060;line-height:1.4;">Esse anúncio está pausado ou inativo — o Mercado Livre não permite responder perguntas de anúncios inativos por aqui. Reative o anúncio ou responda direto pelo app do ML.</div>
           </div>
           <div style="display:flex;gap:8px;">
-            <a href="https://www.mercadolivre.com.br/anuncio/${p.item_id}" target="_blank" style="display:inline-block;padding:9px 18px;border-radius:6px;background:#1a1a1a;border:1px solid #333;color:#ccc;font-size:12px;font-weight:600;text-decoration:none;">Abrir anúncio no ML ↗</a>
+            <a href="https://www.mercadolivre.com.br/anuncio/${p.item_id}" target="_blank" style="display:inline-block;padding:9px 18px;border-radius:6px;background:${T.bg2};border:1px solid ${T.border};color:${T.text2};font-size:12px;font-weight:600;text-decoration:none;">Abrir anúncio no ML ↗</a>
             <button id="pergunta-dispensar-${p.question_id}" style="padding:9px 18px;border-radius:6px;background:none;border:1px solid #333;color:#666;font-size:12px;font-weight:600;cursor:pointer;">Dispensar</button>
           </div>
         ` : !p.requires_attention ? `
           <div style="font-size:10px;color:#666;margin-bottom:6px;">Resposta ${enviadoAuto || enviado ? "enviada" : "sugerida (editável)"}</div>
-          <textarea id="pergunta-resp-${p.question_id}" ${enviadoAuto || enviado ? "disabled" : ""} style="width:100%;background:#111;border:1px solid ${enviadoAuto ? "#333" : "#ffffff"};border-radius:6px;padding:10px 12px;color:${enviadoAuto ? "#888" : "#fff"};font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;resize:vertical;min-height:60px;margin-bottom:12px;">${p.suggested_answer}</textarea>
+          <textarea id="pergunta-resp-${p.question_id}" ${enviadoAuto || enviado ? "disabled" : ""} style="width:100%;background:${T.bg};border:1px solid ${enviadoAuto ? T.border : T.text};border-radius:6px;padding:10px 12px;color:${enviadoAuto ? T.text3 : T.text};font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;resize:vertical;min-height:60px;margin-bottom:12px;">${p.suggested_answer}</textarea>
           ${!enviadoAuto ? `<button id="pergunta-enviar-${p.question_id}" ${(enviado || enviandoAgora) ? "disabled" : ""} style="padding:9px 18px;border-radius:6px;background:${enviado ? "#1a2a1a" : "#ffffff"};border:1px solid ${enviado ? "#2d5a2d" : "transparent"};color:${enviado ? "#2dce89" : "#000"};font-size:12px;font-weight:600;cursor:${(enviado || enviandoAgora) ? "default" : "pointer"};opacity:${enviandoAgora ? "0.6" : "1"};">${enviado ? "Enviado ✓" : (enviandoAgora ? "Enviando..." : "Enviar resposta")}</button>` : ""}
         ` : `
           <div style="display:flex;gap:8px;">
-            <a href="https://www.mercadolivre.com.br/anuncio/${p.item_id}" target="_blank" style="display:inline-block;padding:9px 18px;border-radius:6px;background:#1a1a1a;border:1px solid #333;color:#ccc;font-size:12px;font-weight:600;text-decoration:none;">Responder no ML ↗</a>
+            <a href="https://www.mercadolivre.com.br/anuncio/${p.item_id}" target="_blank" style="display:inline-block;padding:9px 18px;border-radius:6px;background:${T.bg2};border:1px solid ${T.border};color:${T.text2};font-size:12px;font-weight:600;text-decoration:none;">Responder no ML ↗</a>
             <button id="pergunta-dispensar-${p.question_id}" style="padding:9px 18px;border-radius:6px;background:none;border:1px solid #333;color:#666;font-size:12px;font-weight:600;cursor:pointer;">Dispensar</button>
           </div>
         `}
@@ -1908,7 +1935,7 @@ function renderClonarTab(container) {
     : "background:linear-gradient(to top,#252525 0%,#000 100%);border:1px solid #333;border-radius:10px;padding:16px;margin-bottom:16px;";
   buscaCard.innerHTML = `
     <div style="font-size:11px;color:#888;margin-bottom:8px;">ID(s) ou link(s) do(s) anúncio(s) de origem</div>
-    <textarea id="clonar-input-id" rows="3" placeholder="Ex: MLB4718893383${"\n"}Cole vários, um por linha, pra clonar em lote" style="width:100%;background:#111;border:1px solid #333;border-radius:6px;padding:9px 12px;color:#fff;font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;margin-bottom:12px;resize:vertical;">${clonarState.itemBusca}</textarea>
+    <textarea id="clonar-input-id" rows="3" placeholder="Ex: MLB4718893383${"\n"}Cole vários, um por linha, pra clonar em lote" style="width:100%;background:${T.bg};border:1px solid ${T.border};border-radius:6px;padding:9px 12px;color:${T.text};font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;margin-bottom:12px;resize:vertical;">${clonarState.itemBusca}</textarea>
     ${isLoteModo ? `<div style="font-size:11px;color:#ffffff;margin-bottom:12px;">${idsDetectados.length} anúncios detectados — modo lote (SKU, preço e quantidade iguais ao original)</div>` : ""}
     <div style="font-size:11px;color:#888;margin-bottom:8px;">Conta de origem</div>
     <div style="display:flex;gap:8px;margin-bottom:14px;">
@@ -1939,7 +1966,7 @@ function renderClonarTab(container) {
 
   if (clonarState.erro) {
     const errBox = document.createElement("div");
-    errBox.style.cssText = "background:#2a1000;border:1px solid #4a2010;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:11px;color:#f0a060;white-space:pre-wrap;line-height:1.5;";
+    errBox.style.cssText = `background:${T.errBg};border:1px solid ${T.errBor};border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:11px;color:${T.errText};white-space:pre-wrap;line-height:1.5;`;
     errBox.textContent = clonarState.erro;
     alvoEsq.appendChild(errBox);
   }
@@ -1992,7 +2019,7 @@ function renderClonarTab(container) {
           `;
         }).join("")}
       </div>
-      ${!loteState.rodando && loteState.fase === "concluido" ? `<button id="clonar-lote-novo" style="width:100%;margin-top:12px;padding:9px;border-radius:6px;background:#1a1a1a;border:1px solid #333;color:#ccc;font-size:11px;font-weight:600;cursor:pointer;">Limpar e clonar outro lote</button>` : ""}
+      ${!loteState.rodando && loteState.fase === "concluido" ? `<button id="clonar-lote-novo" style="width:100%;margin-top:12px;padding:9px;border-radius:6px;background:${T.bg2};border:1px solid ${T.border};color:${T.text2};font-size:11px;font-weight:600;cursor:pointer;">Limpar e clonar outro lote</button>` : ""}
     `;
     colDir.appendChild(loteWrap);
     row.appendChild(colDir);
@@ -2015,7 +2042,7 @@ function renderClonarTab(container) {
         </div>
       </div>
 
-      ${item.has_variations ? `<div style="background:#2a1000;border:1px solid #4a2010;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:11px;color:#f0a060;">⚠️ Este anúncio tem variações — clonagem de variações ainda não é suportada.</div>` : ""}
+      ${item.has_variations ? `<div style="background:${T.errBg};border:1px solid ${T.errBor};border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:11px;color:#f0a060;">⚠️ Este anúncio tem variações — clonagem de variações ainda não é suportada.</div>` : ""}
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
         <div>
@@ -2070,7 +2097,7 @@ function renderClonarTab(container) {
           <div style="font-size:13px;font-weight:700;color:#fff;line-height:1.4;margin-bottom:10px;">${item.title}</div>
           <div style="font-size:22px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;margin-bottom:10px;">R$ ${Number(item.price).toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
           <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
-            <div style="display:inline-block;padding:3px 10px;border-radius:12px;background:#1a2a1a;border:1px solid #2d5a2d;color:#2dce89;font-size:11px;font-weight:600;">Frete grátis</div>
+            <div style="display:inline-block;padding:3px 10px;border-radius:12px;background:${T.okBg};border:1px solid ${T.okBor};color:#2dce89;font-size:11px;font-weight:600;">Frete grátis</div>
             <div style="display:inline-block;padding:3px 10px;border-radius:12px;background:#1e1e1e;border:1px solid #333;color:#888;font-size:11px;font-weight:600;">${condicaoP}</div>
             <div style="display:inline-block;padding:3px 10px;border-radius:12px;background:#1e1e1e;border:1px solid #333;color:#888;font-size:11px;font-weight:600;">${listingTipoP}</div>
           </div>
@@ -2395,7 +2422,7 @@ function renderDashboard(panel, color) {
 
   const header = document.createElement("div");
   header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;";
-  header.innerHTML = `<div><div style="font-size:20px;font-weight:700;color:#fff;letter-spacing:-0.3px;">${saudacao}, Diogo 👋</div><div style="font-size:11px;color:#666;margin-top:3px;font-family:'Inter',sans-serif;">${dias[now.getDay()]} · ${now.getDate()} ${meses[now.getMonth()]} ${now.getFullYear()}</div></div><div style="display:flex;align-items:center;gap:10px;"><div style="font-size:11px;font-weight:600;color:#ffffff;">${dashData.hora}</div><button onclick="dashData=null;fetchDashboard();" style="background:none;border:none;color:#444;font-size:16px;cursor:pointer;padding:4px;line-height:1;transition:color .15s;" onmouseover="this.style.color='#aaa'" onmouseout="this.style.color='#444'" title="Atualizar">↻</button></div>`;
+  header.innerHTML = `<div><div style="font-size:20px;font-weight:700;color:${T.text};letter-spacing:-0.3px;">${saudacao}, Diogo 👋</div><div style="font-size:11px;color:${T.text3};margin-top:3px;font-family:'Inter',sans-serif;">${dias[now.getDay()]} · ${now.getDate()} ${meses[now.getMonth()]} ${now.getFullYear()}</div></div><div style="display:flex;align-items:center;gap:10px;"><div style="font-size:11px;font-weight:600;color:${T.text};">${dashData.hora}</div><button onclick="dashData=null;fetchDashboard();" style="background:none;border:none;color:#444;font-size:16px;cursor:pointer;padding:4px;line-height:1;transition:color .15s;" onmouseover="this.style.color='#aaa'" onmouseout="this.style.color='#444'" title="Atualizar">↻</button></div>`;
   wrap.appendChild(header);
 
   const grid = document.createElement("div");
@@ -2409,24 +2436,24 @@ function renderDashboard(panel, color) {
     const top5 = d.top5hoje || [];
     const maxRev = top5[0]?.revenue || 1;
     const miniBars = [100, 65, 47, 30, 18].map(h =>
-      `<div style="flex:1;height:${h}%;border-radius:2px 2px 0 0;background:#ffffff;opacity:.2;"></div>`
+      `<div style="flex:1;height:${h}%;border-radius:2px 2px 0 0;background:${T.text};opacity:.15;"></div>`
     ).join('');
     const listRows = top5.map((p,i) => `
-      <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #1a1a1a;">
-        <div style="font-size:9px;color:#888;width:10px;flex-shrink:0;">${i+1}</div>
-        <div style="font-size:10px;color:#fff;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.sku||"—"}</div>
-        <div style="font-size:9px;color:#888;flex-shrink:0;">${p.qty} un</div>
-        <div style="width:32px;height:2px;background:#222;border-radius:2px;flex-shrink:0;"><div style="height:2px;border-radius:2px;background:#ffffff;width:${i===0?100:Math.round((p.revenue/maxRev)*100)}%;"></div></div>
+      <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid ${T.sep};">
+        <div style="font-size:9px;color:${T.text3};width:10px;flex-shrink:0;">${i+1}</div>
+        <div style="font-size:10px;color:${T.text};flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.sku||"—"}</div>
+        <div style="font-size:9px;color:${T.text3};flex-shrink:0;">${p.qty} un</div>
+        <div style="width:32px;height:2px;background:${T.border2};border-radius:2px;flex-shrink:0;"><div style="height:2px;border-radius:2px;background:#ffffff;width:${i===0?100:Math.round((p.revenue/maxRev)*100)}%;"></div></div>
         <div style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;font-family:'Inter',sans-serif;background:#ffffff;color:#000;flex-shrink:0;">${fmt(p.revenue||0)}</div>
       </div>`).join('');
     const ticketMedio = d.pedidosMes > 0 ? fmt(d.fatMes / d.pedidosMes) : 'R$ 0';
-    const rowStyle = 'display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1a1a1a;';
-    const lStyle = 'font-size:10px;color:#888;';
-    const vStyle = 'font-size:11px;font-weight:600;color:#fff;font-family:\'IBM Plex Mono\',monospace;';
+    const rowStyle = `display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid ${T.sep};`;
+    const lStyle = `font-size:10px;color:${T.text3};`;
+    const vStyle = `font-size:11px;font-weight:600;color:${T.text};font-family:'IBM Plex Mono',monospace;`;
 
     const projRows = `
       <div style="${rowStyle}"><div style="${lStyle}">Projeção do dia</div><div style="${vStyle}">${fmt(d.projecaoDia)}</div></div>
-      <div style="${rowStyle}"><div style="${lStyle}">% concluído</div><div style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;background:#222;color:#888;">${percDia}% DO DIA</div></div>
+      <div style="${rowStyle}"><div style="${lStyle}">% concluído</div><div style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;background:${T.border2};color:${T.text3};">${percDia}% DO DIA</div></div>
       <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;"><div style="${lStyle}">Faturado hoje</div><div style="${vStyle}">${fmtFull(d.fatHoje)}</div></div>`;
 
     const mesRows = `
@@ -2436,55 +2463,55 @@ function renderDashboard(panel, color) {
 
     return `
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;align-items:start;">
-        <div id="vdc-0" onclick="window._vdcActivate(0)" style="background:linear-gradient(to top,#252525 0%,#000 100%);border-radius:10px;overflow:hidden;border:1px solid #333;cursor:pointer;transition:border-color .2s;">
+        <div id="vdc-0" onclick="window._vdcActivate(0)" style="background:${T.isLight?"#ffffff":"linear-gradient(to top,#252525 0%,#000 100%)"};border-radius:10px;overflow:hidden;border:1px solid ${T.border2};cursor:pointer;transition:border-color .2s;">
           <div id="vdc-top-0" style="height:3px;background:#ffffff;"></div>
           <div style="padding:12px 14px 13px;">
-            <div style="font-size:10px;color:#ffffff;margin-bottom:6px;">Hoje</div>
+            <div style="font-size:10px;color:${T.text2};margin-bottom:6px;">Hoje</div>
             <div style="font-size:26px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">${fmtFull(d.fatHoje)}</div>
             <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;display:inline-block;background:#ffffff;color:#000;margin-top:8px;">↑ EM TEMPO REAL</div>
             <div id="vdc-bars-0" style="display:flex;align-items:flex-end;gap:3px;height:22px;margin-top:12px;transition:opacity .25s;opacity:1;">${miniBars}</div>
           </div>
           <div id="vdc-list-0" style="display:none;overflow:hidden;">
-            <div style="padding:8px 14px 12px;border-top:1px solid #1a1a1a;">${listRows}</div>
+            <div style="padding:8px 14px 12px;border-top:1px solid ${T.sep};">${listRows}</div>
           </div>
         </div>
-        <div id="vdc-1" onclick="window._vdcActivate(1)" style="background:linear-gradient(to top,#252525 0%,#000 100%);border-radius:10px;overflow:hidden;border:1px solid #333;cursor:pointer;transition:border-color .2s;">
+        <div id="vdc-1" onclick="window._vdcActivate(1)" style="background:${T.isLight?"#ffffff":"linear-gradient(to top,#252525 0%,#000 100%)"};border-radius:10px;overflow:hidden;border:1px solid ${T.border2};cursor:pointer;transition:border-color .2s;">
           <div id="vdc-top-1" style="height:3px;background:#ffffff;"></div>
           <div style="padding:12px 14px 13px;">
-            <div style="font-size:10px;color:#ffffff;margin-bottom:6px;">Projeção</div>
+            <div style="font-size:10px;color:${T.text2};margin-bottom:6px;">Projeção</div>
             <div style="font-size:26px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">${fmt(d.projecaoDia)}</div>
             <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;display:inline-block;background:#222;color:#888;margin-top:8px;">${percDia}% DO DIA</div>
             <div style="display:flex;align-items:center;gap:10px;margin-top:12px;height:22px;">
               <svg width="22" height="22" viewBox="0 0 36 36" style="flex-shrink:0;">
-                <circle cx="18" cy="18" r="14" fill="none" stroke="#222" stroke-width="3"/>
-                <circle cx="18" cy="18" r="14" fill="none" stroke="#ffffff" stroke-width="3" stroke-opacity="0.4" stroke-dasharray="${(percDia*0.879).toFixed(1)} 87.9" stroke-dashoffset="21.975" stroke-linecap="round"/>
+                <circle cx="18" cy="18" r="14" fill="none" stroke="${T.border2}" stroke-width="3"/>
+                <circle cx="18" cy="18" r="14" fill="none" stroke="${T.text}" stroke-width="3" stroke-opacity="0.4" stroke-dasharray="${(percDia*0.879).toFixed(1)} 87.9" stroke-dashoffset="21.975" stroke-linecap="round"/>
               </svg>
-              <div style="font-size:10px;color:#555;line-height:1.4;">falta <span style="color:#ffffff;font-weight:600;">${100-percDia}%</span> pra meta</div>
+              <div style="font-size:10px;color:${T.text3};line-height:1.4;">falta <span style="color:${T.text};font-weight:600;">${100-percDia}%</span> pra meta</div>
             </div>
           </div>
           <div id="vdc-list-1" style="display:none;overflow:hidden;">
-            <div style="padding:8px 14px 12px;border-top:1px solid #1a1a1a;">${projRows}</div>
+            <div style="padding:8px 14px 12px;border-top:1px solid ${T.sep};">${projRows}</div>
           </div>
         </div>
-        <div id="vdc-2" onclick="window._vdcActivate(2)" style="background:linear-gradient(to top,#252525 0%,#000 100%);border-radius:10px;overflow:hidden;border:1px solid #333;cursor:pointer;transition:border-color .2s;">
+        <div id="vdc-2" onclick="window._vdcActivate(2)" style="background:${T.isLight?"#ffffff":"linear-gradient(to top,#252525 0%,#000 100%)"};border-radius:10px;overflow:hidden;border:1px solid ${T.border2};cursor:pointer;transition:border-color .2s;">
           <div id="vdc-top-2" style="height:3px;background:#ffffff;"></div>
           <div style="padding:12px 14px 13px;">
-            <div style="font-size:10px;color:#ffffff;margin-bottom:6px;">Mês atual</div>
+            <div style="font-size:10px;color:${T.text2};margin-bottom:6px;">Mês atual</div>
             <div style="font-size:26px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">${fmt(d.fatMes)}</div>
             <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;display:inline-block;background:#ffffff;color:#000;margin-top:8px;">${d.pedidosMes} PEDIDOS</div>
             <div style="margin-top:12px;height:22px;">
               <svg width="100%" height="22" viewBox="0 0 200 22" preserveAspectRatio="none">
-                <polyline points="0,19 30,16 60,15 90,11 120,8 150,6 180,4 200,2" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-opacity="0.4" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="200" cy="2" r="2.5" fill="#ffffff" opacity="0.6"/>
+                <polyline points="0,19 30,16 60,15 90,11 120,8 150,6 180,4 200,2" fill="none" stroke="${T.text}" stroke-width="1.5" stroke-opacity="0.4" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="200" cy="2" r="2.5" fill="${T.text}" opacity="0.6"/>
               </svg>
             </div>
           </div>
           <div id="vdc-list-2" style="display:none;overflow:hidden;">
-            <div style="padding:8px 14px 12px;border-top:1px solid #1a1a1a;">${mesRows}</div>
+            <div style="padding:8px 14px 12px;border-top:1px solid ${T.sep};">${mesRows}</div>
           </div>
         </div>
       </div>
-      <div style="background:#1e1e1e;border-radius:99px;height:3px;margin-bottom:8px;overflow:hidden;"><div style="height:3px;border-radius:99px;background:linear-gradient(90deg,#c0392b,#ffffff);width:${percDia}%;transition:width .4s;"></div></div>
+      <div style="background:${T.border};border-radius:99px;height:3px;margin-bottom:8px;overflow:hidden;"><div style="height:3px;border-radius:99px;background:linear-gradient(90deg,#c0392b,#ffffff);width:${percDia}%;transition:width .4s;"></div></div>
     `;
   }
 
@@ -2528,8 +2555,8 @@ function renderDashboard(panel, color) {
 
   vendasCard.innerHTML = `
     <div style="margin-bottom:10px;">
-      <div style="font-size:11px;font-weight:500;color:#ffffff;font-family:'Inter',sans-serif;margin-bottom:10px;">Vendas Mercado Livre</div>
-      <div style="display:inline-flex;background:#1a1a1a;border-radius:8px;padding:3px;gap:2px;">
+      <div style="font-size:11px;font-weight:500;color:${T.text};font-family:'Inter',sans-serif;margin-bottom:10px;">Vendas Mercado Livre</div>
+      <div style="display:inline-flex;background:${T.bg3};border-radius:8px;padding:3px;gap:2px;border:1px solid ${T.border};">
         <div id="dash-aba-filial" onclick="window._vendasAba='filial';window.renderVendasAba();" style="padding:6px 18px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;font-family:'Inter',sans-serif;color:#ffffff;background:var(--bg2);border:1px solid #333;white-space:nowrap;">Filial SP</div>
         <div id="dash-aba-matriz" onclick="window._vendasAba='matriz';window.renderVendasAba();" style="padding:6px 18px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;font-family:'Inter',sans-serif;color:#444;background:transparent;white-space:nowrap;">${dashData.matriz ? "Matriz RS" : "Matriz (desconectado)"}</div>
       </div>
