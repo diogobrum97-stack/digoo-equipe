@@ -5012,7 +5012,7 @@ function render(){
             const isActive = group.tab === currentTab || group.subs.some(s => s.tab === currentTab);
 
             const btn = document.createElement("button");
-            btn.style.cssText = `background:${isActive?"#5e72e4":"#1a1a1a"};border:0.5px solid ${isActive?"transparent":"#242424"};border-radius:99px;color:${isActive?"#fff":"#888"};font-size:11px;font-weight:600;letter-spacing:0.5px;padding:7px 16px;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap;flex-shrink:0;`;
+            btn.style.cssText = `background:${isActive?"#5e72e4":(T.isLight?"#e0e0e0":"#1a1a1a")};border:0.5px solid ${isActive?"transparent":(T.isLight?"#cccccc":"#242424")};border-radius:99px;color:${isActive?"#fff":(T.isLight?"#444":"#888")};font-size:11px;font-weight:600;letter-spacing:0.5px;padding:7px 16px;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap;flex-shrink:0;`;
             btn.textContent = group.label;
 
             if(group.tab) {
@@ -5111,7 +5111,7 @@ function render(){
             mainGroups.forEach(group => {
               const isActive = window._activeNavGroup === group.label || (group.tab && group.tab === currentTab);
               const chip = document.createElement("div");
-              chip.style.cssText = `padding:6px 14px;border-radius:99px;font-size:11px;font-weight:600;letter-spacing:0.5px;white-space:nowrap;cursor:pointer;flex-shrink:0;transition:all .15s;background:${isActive?"#5e72e4":"#1a1a1a"};color:${isActive?"#fff":"#666"};border:0.5px solid ${isActive?"transparent":"#222"};font-family:inherit;`;
+              chip.style.cssText = `padding:6px 14px;border-radius:99px;font-size:11px;font-weight:600;letter-spacing:0.5px;white-space:nowrap;cursor:pointer;flex-shrink:0;transition:all .15s;background:${isActive?"#5e72e4":(T.isLight?"#e0e0e0":"#1a1a1a")};color:${isActive?"#fff":(T.isLight?"#444":"#666")};border:0.5px solid ${isActive?"transparent":(T.isLight?"#cccccc":"#222")};font-family:inherit;`;
               chip.textContent = group.label;
               chip.addEventListener("click", () => {
                 if(group.acao === "ideias") { window._openIdeiasModal(); return; }
