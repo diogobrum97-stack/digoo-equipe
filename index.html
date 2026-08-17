@@ -2314,7 +2314,7 @@ function renderExperienciaTab(container) {
   window._expPageDetailsCache = [];
 
   listaFiltrada.forEach((p, i) => {
-    const cor = p.color === 'red' ? '#e8432d' : (T.isLight ? '#f59e0b' : '#ffffff');
+    const cor = p.color === 'red' ? '#e8432d' : '#f59e0b';
     const score = p.value || 0;
     const dash = ((score/100)*circ).toFixed(1);
     const label = p.level || (p.color === 'red' ? 'Ruim' : 'Regular');
@@ -2365,7 +2365,7 @@ function renderExperienciaTab(container) {
     panel.dataset.idx = idx;
     panel.style.display = 'block';
     panel.innerHTML = window._expPageDetailsCache[idx] || '';
-    const corAtual = listaFiltrada[idx].color === 'red' ? '#e8432d' : '#ffffff';
+    const corAtual = listaFiltrada[idx].color === 'red' ? '#e8432d' : '#f59e0b';
     if(cards[idx]) { cards[idx].style.borderLeftColor = corAtual; }
   };
 }
@@ -2774,7 +2774,7 @@ function renderDashboard(panel, color) {
 
       const circPrev = 2 * Math.PI * 20;
       const previewRows = preview.map(p => {
-        const cor = p.color === 'red' ? '#e8432d' : (T.isLight ? '#f59e0b' : '#ffffff');
+        const cor = p.color === 'red' ? '#e8432d' : '#f59e0b';
         const score = p.value || 0;
         const dashPrev = ((score/100)*circPrev).toFixed(1);
         const nome = (p.title || p.sku || '');
