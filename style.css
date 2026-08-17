@@ -53,7 +53,7 @@ body.light [data-member="Larissa"] .member-name { color: #e91e8c; }
 body.light .card-bg { background: #ffffff; border-color: #e0e0e0; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
 body.light .member-panel { background: #ffffff; border: 0.5px solid #e0e0e0; border-radius: 10px; }
 body.light .card { background: #ffffff !important; border-color: #e0e0e0; box-shadow: 0 1px 6px rgba(0,0,0,0.08); }
-body.light .card::before { background: #e0e0e0; }
+body.light .card::before { background: #111111; }
 
 /* Modo claro — elementos inline com fundo hardcoded escuro */
 body.light .ml-card { background: #ffffff; border-color: #e8e8e8; }
