@@ -272,8 +272,8 @@ if (localStorage.getItem(THEME_KEY)==="light") {
 let currentUser = null;
 
 function _buildEntrySVG() {
-  const svgColor = T.isLight ? "rgba(0,0,0,0.55)" : "white";
-  const svgOp = T.isLight ? ".07" : ".11";
+  const svgColor = T.isLight ? "rgba(0,0,0,0.7)" : "white";
+  const svgOp = T.isLight ? ".18" : ".11";
   return `<svg style="position:absolute;inset:0;width:100%;height:100%;opacity:${svgOp};" viewBox="0 0 700 520" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">`
     +'<rect x="24" y="24" width="200" height="120" rx="6" fill="none" stroke="white" stroke-width="1"/>'
     +'<line x1="24" y1="48" x2="224" y2="48" stroke="white" stroke-width=".5"/>'
