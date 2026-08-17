@@ -2319,7 +2319,7 @@ function renderExperienciaTab(container) {
   window._expPageDetailsCache = [];
 
   listaFiltrada.forEach((p, i) => {
-    const cor = p.color === 'red' ? '#e8432d' : '#ffffff';
+    const cor = p.color === 'red' ? '#e8432d' : (T.isLight ? '#d97706' : '#ffffff');
     const score = p.value || 0;
     const dash = ((score/100)*circ).toFixed(1);
     const label = p.level || (p.color === 'red' ? 'Ruim' : 'Regular');
@@ -2461,7 +2461,7 @@ function renderDashboard(panel, color) {
 
     return `
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;align-items:start;">
-        <div id="vdc-0" onclick="window._vdcActivate(0)" style="background:${T.isLight?"#f2f2f2":"linear-gradient(to top,#252525 0%,#000 100%)"};border-radius:10px;overflow:hidden;border:1px solid ${T.border};cursor:pointer;transition:border-color .2s;">
+        <div id="vdc-0" onclick="window._vdcActivate(0)" style="background:${T.isLight?"linear-gradient(to bottom,#ffffff 0%,#cccccc 100%)":"linear-gradient(to top,#252525 0%,#000 100%)"};border-radius:10px;overflow:hidden;border:1px solid ${T.border};cursor:pointer;transition:border-color .2s;">
           <div id="vdc-top-0" style="height:3px;background:${T.isLight?"#111111":"#ffffff"};"></div>
           <div style="padding:12px 14px 13px;">
             <div style="font-size:10px;color:${T.text2};margin-bottom:6px;">Hoje</div>
@@ -2473,7 +2473,7 @@ function renderDashboard(panel, color) {
             <div style="padding:8px 14px 12px;border-top:1px solid ${T.sep};">${listRows}</div>
           </div>
         </div>
-        <div id="vdc-1" onclick="window._vdcActivate(1)" style="background:${T.isLight?"#f2f2f2":"linear-gradient(to top,#252525 0%,#000 100%)"};border-radius:10px;overflow:hidden;border:1px solid ${T.border};cursor:pointer;transition:border-color .2s;">
+        <div id="vdc-1" onclick="window._vdcActivate(1)" style="background:${T.isLight?"linear-gradient(to bottom,#ffffff 0%,#cccccc 100%)":"linear-gradient(to top,#252525 0%,#000 100%)"};border-radius:10px;overflow:hidden;border:1px solid ${T.border};cursor:pointer;transition:border-color .2s;">
           <div id="vdc-top-1" style="height:3px;background:${T.isLight?"#111111":"#ffffff"};"></div>
           <div style="padding:12px 14px 13px;">
             <div style="font-size:10px;color:${T.text2};margin-bottom:6px;">Projeção</div>
@@ -2491,7 +2491,7 @@ function renderDashboard(panel, color) {
             <div style="padding:8px 14px 12px;border-top:1px solid ${T.sep};">${projRows}</div>
           </div>
         </div>
-        <div id="vdc-2" onclick="window._vdcActivate(2)" style="background:${T.isLight?"#f2f2f2":"linear-gradient(to top,#252525 0%,#000 100%)"};border-radius:10px;overflow:hidden;border:1px solid ${T.border};cursor:pointer;transition:border-color .2s;">
+        <div id="vdc-2" onclick="window._vdcActivate(2)" style="background:${T.isLight?"linear-gradient(to bottom,#ffffff 0%,#cccccc 100%)":"linear-gradient(to top,#252525 0%,#000 100%)"};border-radius:10px;overflow:hidden;border:1px solid ${T.border};cursor:pointer;transition:border-color .2s;">
           <div id="vdc-top-2" style="height:3px;background:${T.isLight?"#111111":"#ffffff"};"></div>
           <div style="padding:12px 14px 13px;">
             <div style="font-size:10px;color:${T.text2};margin-bottom:6px;">Mês atual</div>
@@ -2779,7 +2779,7 @@ function renderDashboard(panel, color) {
 
       const circPrev = 2 * Math.PI * 20;
       const previewRows = preview.map(p => {
-        const cor = p.color === 'red' ? '#e8432d' : '#ffffff';
+        const cor = p.color === 'red' ? '#e8432d' : (T.isLight ? '#d97706' : '#ffffff');
         const score = p.value || 0;
         const dashPrev = ((score/100)*circPrev).toFixed(1);
         const nome = (p.title || p.sku || '');
