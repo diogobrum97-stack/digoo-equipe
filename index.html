@@ -1929,7 +1929,7 @@ function renderClonarTab(container) {
   buscaCard.innerHTML = `
     <div style="font-size:11px;color:#888;margin-bottom:8px;">ID(s) ou link(s) do(s) anúncio(s) de origem</div>
     <textarea id="clonar-input-id" rows="3" placeholder="Ex: MLB4718893383${"\n"}Cole vários, um por linha, pra clonar em lote" style="width:100%;background:${T.bg};border:1px solid ${T.border};border-radius:6px;padding:9px 12px;color:${T.text};font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;margin-bottom:12px;resize:vertical;">${clonarState.itemBusca}</textarea>
-    ${isLoteModo ? `<div style="font-size:11px;color:#ffffff;margin-bottom:12px;">${idsDetectados.length} anúncios detectados — modo lote (SKU, preço e quantidade iguais ao original)</div>` : ""}
+    ${isLoteModo ? `<div style="font-size:11px;color:#111111;margin-bottom:12px;">${idsDetectados.length} anúncios detectados — modo lote (SKU, preço e quantidade iguais ao original)</div>` : ""}
     <div style="font-size:11px;color:${T.text3};margin-bottom:8px;">Conta de origem</div>
     <div style="display:flex;gap:8px;margin-bottom:14px;">
       <button id="clonar-origem-matriz" style="flex:1;padding:9px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid ${clonarState.contaOrigem==='matriz'?"#5e72e4":T.border};background:${clonarState.contaOrigem==='matriz'?"#5e72e4":T.bg3};color:${clonarState.contaOrigem==='matriz'?"#fff":T.text2};">Matriz RS</button>
