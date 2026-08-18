@@ -2595,12 +2595,12 @@ function renderDashboard(panel, color) {
   const tarefasUrgentes = ownTasks.filter(t => t.prio === "urgente" || t.prio === "superurgente");
   const tarefasImp = ownTasks.filter(t => t.prio === "importante");
   const tarefasDrawerRows = [...tarefasUrgentes, ...tarefasImp].slice(0,6).map(t => {
-    const cor = (t.prio==="urgente"||t.prio==="superurgente") ? "#e8432d" : "#ffffff";
+    const cor = (t.prio==="urgente"||t.prio==="superurgente") ? "#e8432d" : "#f77614";
     const label = (t.prio==="urgente"||t.prio==="superurgente") ? "urgente" : "importante";
-    return `<div onclick="window._sbarNavTask(event)" style="display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border-radius:6px;margin-bottom:3px;cursor:pointer;border:1px solid transparent;transition:background .12s,border-color .12s;" onmouseover="this.style.background='#141414';this.style.borderColor='#2a2a2a';this.querySelector('.tarr').style.opacity='1';this.querySelector('.tarr').style.color='#ffffff';" onmouseout="this.style.background='';this.style.borderColor='transparent';this.querySelector('.tarr').style.opacity='0';this.querySelector('.tarr').style.color='#333';">
+    return `<div onclick="window._sbarNavTask(event)" style="display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border-radius:6px;margin-bottom:3px;cursor:pointer;border:1px solid transparent;transition:background .12s,border-color .12s;" onmouseover="this.style.background=document.body.classList.contains('light')?'#e8e8e8':'#141414';this.style.borderColor=document.body.classList.contains('light')?'#d0d0d0':'#2a2a2a';this.querySelector('.tarr').style.opacity='1';this.querySelector('.tarr').style.color=document.body.classList.contains('light')?'#111':'#ffffff';" onmouseout="this.style.background='';this.style.borderColor='transparent';this.querySelector('.tarr').style.opacity='0';">
       <div style="width:6px;height:6px;border-radius:50%;background:${cor};flex-shrink:0;margin-top:4px;"></div>
-      <div style="font-size:11px;color:#888;flex:1;line-height:1.4;">${t.text||t.title||"—"}</div>
-      <div style="font-size:9px;color:#555;background:${T.bg3};border-radius:4px;padding:2px 6px;white-space:nowrap;flex-shrink:0;">${label}</div>
+      <div style="font-size:11px;color:${T.text2};flex:1;line-height:1.4;">${t.text||t.title||"—"}</div>
+      <div style="font-size:9px;color:${cor};background:${T.isLight?'#f5f5f5':'rgba(0,0,0,0.3)'};border:1px solid ${cor}44;border-radius:4px;padding:2px 6px;white-space:nowrap;flex-shrink:0;">${label}</div>
       <div class="tarr" style="font-size:10px;color:#333;opacity:0;transition:opacity .12s,color .12s;flex-shrink:0;">→</div>
     </div>`;
   }).join("");
@@ -2681,7 +2681,7 @@ function renderDashboard(panel, color) {
         <div style="font-size:10px;color:#555;white-space:nowrap;">Tarefas</div>
         <div style="display:flex;align-items:center;gap:8px;flex:1;">
           <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#e8432d;"></div><div style="font-size:11px;font-weight:700;color:#e8432d;font-family:'Inter',sans-serif;">${urgentes}</div></div>
-          <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#ffffff;"></div><div style="font-size:11px;font-weight:700;color:#ffffff;font-family:'Inter',sans-serif;">${importantes}</div></div>
+          <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#f77614;"></div><div style="font-size:11px;font-weight:700;color:#f77614;font-family:'Inter',sans-serif;">${importantes}</div></div>
           <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#f0c000;"></div><div style="font-size:11px;font-weight:700;color:#f0c000;font-family:'Inter',sans-serif;">${normais}</div></div>
         </div>
         <div id="sbar-arr-tasks" style="font-size:10px;color:#2e2e2e;transition:transform .2s,color .2s;">▾</div>
