@@ -1586,9 +1586,9 @@ function renderPickingDiogo(panel) {
     b.style.cssText = `padding:8px 16px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid ${T.border};`;
     const key = ["acompanhar", "operar", "historico"][i];
     const isAtivo = modo === key;
-    b.style.background = isAtivo ? "#ffffff" : "#1a1a1a";
-    b.style.color = isAtivo ? "#fff" : "#888";
-    b.style.borderColor = isAtivo ? "#ffffff" : "#333";
+    b.style.background = isAtivo ? T.text : T.bg3;
+    b.style.color = isAtivo ? T.bg : T.text2;
+    b.style.borderColor = isAtivo ? T.text : T.border;
   });
   opAcompanhar.onclick = () => { window._pickingModoDiogo = "acompanhar"; render(); };
   opOperar.onclick = () => { window._pickingModoDiogo = "operar"; render(); };
