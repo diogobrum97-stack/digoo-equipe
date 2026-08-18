@@ -7723,7 +7723,17 @@ if(isPWA && !currentUser) {
   document.getElementById("identity-screen").style.display = "none";
   render();
 } else {
-  setupIdentityScreen();
+  // Timeout de segurança: se o Firebase travar, mostra a tela mesmo assim
+  const _initTimeout = setTimeout(() => {
+    if(!currentUser) setupIdentityScreen();
+  }, 5000);
+  try {
+    setupIdentityScreen();
+    clearTimeout(_initTimeout);
+  } catch(e) {
+    clearTimeout(_initTimeout);
+    setupIdentityScreen();
+  }
 }
 
 const urlParams=new URLSearchParams(window.location.search);
