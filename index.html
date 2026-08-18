@@ -489,7 +489,7 @@ function setupIdentityScreen() {
       localStorage.removeItem(DEVICE_KEY); localStorage.removeItem(PIN_KEY);
       currentUser = null; setupIdentityScreen();
     };
-    setTimeout(()=>loginAs(savedUser), 1300);
+    setTimeout(()=>loginAs(savedUser), 400);
     return;
   }
 
