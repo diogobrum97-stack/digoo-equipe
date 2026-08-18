@@ -1896,7 +1896,7 @@ function renderClonarTab(container) {
   header.style.cssText = "margin-bottom:20px;";
   header.innerHTML = `
     <div style="font-size:16px;font-weight:700;color:${T.text};">Clonar anúncio</div>
-    <div style="font-size:11px;color:#666;margin-top:2px;">Copia título, categoria, ficha técnica, fotos, SKU, preço e estoque para a outra conta.</div>
+    <div style="font-size:11px;color:${T.text2};margin-top:2px;">Copia título, categoria, ficha técnica, fotos, SKU, preço e estoque para a outra conta.</div>
   `;
   wrap.appendChild(header);
 
@@ -1927,7 +1927,7 @@ function renderClonarTab(container) {
     ? "padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid #282828;"
     : "background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:16px;margin-bottom:16px;";
   buscaCard.innerHTML = `
-    <div style="font-size:11px;color:#888;margin-bottom:8px;">ID(s) ou link(s) do(s) anúncio(s) de origem</div>
+    <div style="font-size:11px;color:${T.text3};margin-bottom:8px;">ID(s) ou link(s) do(s) anúncio(s) de origem</div>
     <textarea id="clonar-input-id" rows="3" placeholder="Ex: MLB4718893383${"\n"}Cole vários, um por linha, pra clonar em lote" style="width:100%;background:${T.bg};border:1px solid ${T.border};border-radius:6px;padding:9px 12px;color:${T.text};font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;margin-bottom:12px;resize:vertical;">${clonarState.itemBusca}</textarea>
     ${isLoteModo ? `<div style="font-size:11px;color:#111111;margin-bottom:12px;">${idsDetectados.length} anúncios detectados — modo lote (SKU, preço e quantidade iguais ao original)</div>` : ""}
     <div style="font-size:11px;color:${T.text3};margin-bottom:8px;">Conta de origem</div>
@@ -1950,7 +1950,7 @@ function renderClonarTab(container) {
     const jaClonando = loteState.fase === "clonando";
     confirmBtn.id = "clonar-btn-confirmar-lote";
     confirmBtn.disabled = jaClonando;
-    confirmBtn.style.cssText = `width:100%;padding:11px;border-radius:6px;background:${jaClonando ? "#8b5cf6" : "#2dce89"};border:none;color:#fff;font-size:12px;font-weight:700;cursor:${jaClonando ? "default" : "pointer"};margin-bottom:16px;`;
+    confirmBtn.style.cssText = `width:100%;padding:11px;border-radius:6px;background:${jaClonando ? "#8b5cf6" : "#2dce89"};border:none;color:${T.text};font-size:12px;font-weight:700;cursor:${jaClonando ? "default" : "pointer"};margin-bottom:16px;`;
     confirmBtn.textContent = jaClonando
       ? `Clonando ${loteState.itens.filter(it=>it.status==="sucesso"||it.status==="erro").length}/${encontrados.length}...`
       : `Confirmar e clonar ${loteState.itens.filter(it=>it.status==="encontrado").length} anúncios`;
@@ -1991,10 +1991,10 @@ function renderClonarTab(container) {
     else if (loteState.fase === "concluido") tituloPainel = `Concluído — ${sucessos} de ${loteState.total} clonados`;
 
     loteWrap.innerHTML = `
-      <div style="font-size:11px;color:#888;margin-bottom:12px;">${tituloPainel}</div>
+      <div style="font-size:11px;color:${T.text3};margin-bottom:12px;">${tituloPainel}</div>
       ${loteState.total > 0 && loteState.fase !== "revisao" ? `<div style="height:4px;background:#111;border-radius:99px;overflow:hidden;margin-bottom:16px;"><div style="height:4px;background:#ffffff;width:${(concluidos/loteState.total*100).toFixed(0)}%;transition:width .3s;"></div></div>` : ""}
       <div style="max-height:460px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">
-        ${itens.length === 0 ? `<div style="font-size:11px;color:#555;text-align:center;padding:30px 0;">Cole os IDs à esquerda e clique em "Buscar".</div>` : itens.map(it => {
+        ${itens.length === 0 ? `<div style="font-size:11px;color:${T.text2};text-align:center;padding:30px 0;">Cole os IDs à esquerda e clique em "Buscar".</div>` : itens.map(it => {
           const s = statusInfo[it.status] || statusInfo.aguardando;
           const mostrarDetalhes = it.status === "encontrado";
           return `
@@ -2003,7 +2003,7 @@ function renderClonarTab(container) {
             <div style="flex:1;min-width:0;">
               <div style="font-size:11px;color:${T.text2};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${it.titulo || it.itemId}</div>
               ${mostrarDetalhes
-                ? `<div style="font-size:10px;color:#666;margin-top:2px;">SKU ${it.sku || "—"} · ${it.quantidade} un · R$ ${Number(it.preco).toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>`
+                ? `<div style="font-size:10px;color:${T.text2};margin-top:2px;">SKU ${it.sku || "—"} · ${it.quantidade} un · R$ ${Number(it.preco).toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>`
                 : `<div style="font-size:10px;color:${s.cor};margin-top:2px;line-height:1.4;">${s.icone} ${it.status === "erro" ? it.motivo : s.label}</div>`
               }
             </div>
@@ -2030,8 +2030,8 @@ function renderClonarTab(container) {
       <div style="display:flex;gap:12px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid #282828;">
         ${foto ? `<img src="${foto}" style="width:64px;height:64px;border-radius:8px;object-fit:cover;flex-shrink:0;background:${T.bg};">` : ""}
         <div style="flex:1;min-width:0;">
-          <div style="font-size:12px;font-weight:600;color:#fff;line-height:1.4;">${item.title}</div>
-          <div style="font-size:11px;color:#666;margin-top:4px;">Categoria ${item.category_id} · ${item.condition === "new" ? "Novo" : item.condition}</div>
+          <div style="font-size:12px;font-weight:600;color:${T.text};line-height:1.4;">${item.title}</div>
+          <div style="font-size:11px;color:${T.text2};margin-top:4px;">Categoria ${item.category_id} · ${item.condition === "new" ? "Novo" : item.condition}</div>
         </div>
       </div>
 
@@ -2039,22 +2039,22 @@ function renderClonarTab(container) {
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
         <div>
-          <div style="font-size:10px;color:#666;margin-bottom:5px;">SKU</div>
+          <div style="font-size:10px;color:${T.text2};margin-bottom:5px;">SKU</div>
           <input id="clonar-input-sku" type="text" value="${item.sku || ""}" style="width:100%;background:${T.bg};border:1px solid ${T.border};border-radius:6px;padding:8px 10px;color:${T.text};font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
         </div>
         <div>
-          <div style="font-size:10px;color:#666;margin-bottom:5px;">Quantidade</div>
+          <div style="font-size:10px;color:${T.text2};margin-bottom:5px;">Quantidade</div>
           <input id="clonar-input-qtd" type="number" value="${item.available_quantity}" style="width:100%;background:${T.bg};border:1px solid ${T.border};border-radius:6px;padding:8px 10px;color:${T.text};font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
         </div>
       </div>
       <div style="margin-bottom:16px;">
-        <div style="font-size:10px;color:#666;margin-bottom:5px;">Preço (mantido igual ao original)</div>
-        <div style="font-size:16px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">R$ ${Number(item.price).toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
+        <div style="font-size:10px;color:${T.text2};margin-bottom:5px;">Preço (mantido igual ao original)</div>
+        <div style="font-size:16px;font-weight:700;color:${T.text};font-family:'IBM Plex Mono',monospace;">R$ ${Number(item.price).toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
       </div>
 
       <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:${T.bg3};border-radius:6px;margin-bottom:16px;">
-        <div style="font-size:11px;color:#888;">Clonando para</div>
-        <div style="font-size:12px;font-weight:600;color:#ffffff;">${contaDestino}</div>
+        <div style="font-size:11px;color:${T.text3};">Clonando para</div>
+        <div style="font-size:12px;font-weight:600;color:${T.text};">${contaDestino}</div>
       </div>
 
       <button id="clonar-btn-confirmar" ${item.has_variations ? "disabled" : ""} style="width:100%;padding:11px;border-radius:6px;background:${item.has_variations ? T.border : "#5e72e4"};border:none;color:${item.has_variations ? T.text3 : "#fff"};font-size:12px;font-weight:600;cursor:${item.has_variations ? "not-allowed" : "pointer"};">${clonarState.clonando ? "Clonando..." : "Confirmar e clonar anúncio"}</button>
@@ -2066,7 +2066,7 @@ function renderClonarTab(container) {
     const listingWrap = document.createElement("div");
     listingWrap.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:16px;height:100%;box-sizing:border-box;`;
     const listingTitle = document.createElement("div");
-    listingTitle.style.cssText = "font-size:11px;color:#888;margin-bottom:12px;";
+    listingTitle.style.cssText = "font-size:11px;color:${T.text3};margin-bottom:12px;";
     listingTitle.textContent = "Prévia do anúncio clonado";
     const previewEl = document.createElement("div");
     listingWrap.appendChild(listingTitle);
@@ -2085,21 +2085,21 @@ function renderClonarTab(container) {
         <div style="background:${T.bg};border:1px solid ${T.border};border-radius:10px;padding:16px;">
           <div style="display:inline-block;padding:3px 10px;border-radius:13px;background:#ffffff;color:#000;font-size:11px;font-weight:600;margin-bottom:14px;">${contaDestinoP}</div>
           <div style="width:100%;aspect-ratio:1;border-radius:8px;overflow:hidden;background:${T.bg3};margin-bottom:14px;display:flex;align-items:center;justify-content:center;">
-            ${fotoP ? `<img src="${fotoP}" style="width:100%;height:100%;object-fit:cover;">` : `<div style="font-size:11px;color:#555;">Sem imagem</div>`}
+            ${fotoP ? `<img src="${fotoP}" style="width:100%;height:100%;object-fit:cover;">` : `<div style="font-size:11px;color:${T.text2};">Sem imagem</div>`}
           </div>
-          <div style="font-size:13px;font-weight:700;color:#fff;line-height:1.4;margin-bottom:10px;">${item.title}</div>
-          <div style="font-size:22px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;margin-bottom:10px;">R$ ${Number(item.price).toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
+          <div style="font-size:13px;font-weight:700;color:${T.text};line-height:1.4;margin-bottom:10px;">${item.title}</div>
+          <div style="font-size:22px;font-weight:700;color:${T.text};font-family:'IBM Plex Mono',monospace;margin-bottom:10px;">R$ ${Number(item.price).toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
           <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
             <div style="display:inline-block;padding:3px 10px;border-radius:12px;background:${T.okBg};border:1px solid ${T.okBor};color:#2dce89;font-size:11px;font-weight:600;">Frete grátis</div>
             <div style="display:inline-block;padding:3px 10px;border-radius:12px;background:${T.bg3};border:1px solid ${T.border};color:${T.text3};font-size:11px;font-weight:600;">${condicaoP}</div>
             <div style="display:inline-block;padding:3px 10px;border-radius:12px;background:${T.bg3};border:1px solid ${T.border};color:${T.text3};font-size:11px;font-weight:600;">${listingTipoP}</div>
           </div>
           <div style="padding-top:14px;border-top:1px solid #282828;display:grid;grid-template-columns:1fr 1fr;gap:14px 24px;">
-            <div><div style="font-size:10px;color:#666;margin-bottom:3px;">SKU</div><div style="font-size:12px;color:#fff;font-weight:600;">${skuAtual}</div></div>
-            <div><div style="font-size:10px;color:#666;margin-bottom:3px;">Quantidade</div><div style="font-size:12px;color:#fff;font-weight:600;">${qtdAtual} unidades</div></div>
-            <div><div style="font-size:10px;color:#666;margin-bottom:3px;">Categoria</div><div style="font-size:12px;color:#fff;font-weight:600;">${item.category_id}</div></div>
-            <div><div style="font-size:10px;color:#666;margin-bottom:3px;">Fotos</div><div style="font-size:12px;color:#fff;font-weight:600;">${(item.pictures||[]).length} imagens</div></div>
-            <div><div style="font-size:10px;color:#666;margin-bottom:3px;">Ficha técnica</div><div style="font-size:12px;color:#fff;font-weight:600;">${(item.attributes||[]).length} atributos</div></div>
+            <div><div style="font-size:10px;color:${T.text2};margin-bottom:3px;">SKU</div><div style="font-size:12px;color:${T.text};font-weight:600;">${skuAtual}</div></div>
+            <div><div style="font-size:10px;color:${T.text2};margin-bottom:3px;">Quantidade</div><div style="font-size:12px;color:${T.text};font-weight:600;">${qtdAtual} unidades</div></div>
+            <div><div style="font-size:10px;color:${T.text2};margin-bottom:3px;">Categoria</div><div style="font-size:12px;color:${T.text};font-weight:600;">${item.category_id}</div></div>
+            <div><div style="font-size:10px;color:${T.text2};margin-bottom:3px;">Fotos</div><div style="font-size:12px;color:${T.text};font-weight:600;">${(item.pictures||[]).length} imagens</div></div>
+            <div><div style="font-size:10px;color:${T.text2};margin-bottom:3px;">Ficha técnica</div><div style="font-size:12px;color:${T.text};font-weight:600;">${(item.attributes||[]).length} atributos</div></div>
           </div>
         </div>
       `;
@@ -2115,10 +2115,10 @@ function renderClonarTab(container) {
     resCard.style.cssText = `background:${T.okBg};border:1px solid ${T.okBor};border-radius:10px;padding:16px;margin-bottom:16px;text-align:center;`;
     resCard.innerHTML = `
       <div style="font-size:13px;font-weight:700;color:#2dce89;margin-bottom:6px;">Anúncio clonado com sucesso ✓</div>
-      <div style="font-size:11px;color:#888;margin-bottom:14px;">${res.item_id}</div>
+      <div style="font-size:11px;color:${T.text3};margin-bottom:14px;">${res.item_id}</div>
       <a href="${res.permalink}" target="_blank" style="display:inline-block;padding:9px 18px;background:#ffffff;border-radius:6px;color:#000;font-size:12px;font-weight:600;text-decoration:none;">Abrir anúncio no ML ↗</a>
       <div style="margin-top:14px;">
-        <button id="clonar-btn-novo" style="background:none;border:none;color:#666;font-size:11px;cursor:pointer;text-decoration:underline;">Clonar outro anúncio</button>
+        <button id="clonar-btn-novo" style="background:none;border:none;color:${T.text2};font-size:11px;cursor:pointer;text-decoration:underline;">Clonar outro anúncio</button>
       </div>
     `;
     wrap.appendChild(resCard);
@@ -2251,7 +2251,7 @@ function renderExperienciaTab(container) {
   container.innerHTML = "";
 
   if(!dashExperiencia) {
-    container.innerHTML = '<div style="padding:40px 0;text-align:center;font-size:12px;color:#555;">Carregando experiência de compra...</div>';
+    container.innerHTML = '<div style="padding:40px 0;text-align:center;font-size:12px;color:${T.text2};">Carregando experiência de compra...</div>';
     return;
   }
 
@@ -2268,8 +2268,8 @@ function renderExperienciaTab(container) {
   header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;";
   header.innerHTML = `
     <div>
-      <div style="font-size:16px;font-weight:700;color:#fff;">Experiência de compra</div>
-      <div style="font-size:11px;color:#666;margin-top:2px;">${dashExperiencia.total || 0} anúncios ativos · ${todosProblemas.length} com problema</div>
+      <div style="font-size:16px;font-weight:700;color:${T.text};">Experiência de compra</div>
+      <div style="font-size:11px;color:${T.text2};margin-top:2px;">${dashExperiencia.total || 0} anúncios ativos · ${todosProblemas.length} com problema</div>
     </div>
     <button onclick="window._expRefresh()" style="background:${T.bg3};border:1px solid ${T.border};border-radius:6px;padding:7px 14px;color:${T.text2};font-size:11px;cursor:pointer;">↻ Atualizar</button>
   `;
@@ -2301,7 +2301,7 @@ function renderExperienciaTab(container) {
   // Grid de cards
   if(listaFiltrada.length === 0) {
     const empty = document.createElement("div");
-    empty.style.cssText = "padding:40px 0;text-align:center;font-size:12px;color:#555;";
+    empty.style.cssText = "padding:40px 0;text-align:center;font-size:12px;color:${T.text2};";
     empty.textContent = expPageFiltro === "todos" ? "Nenhum produto com problema de experiência. Tudo certo! ✓" : "Nenhum item nessa categoria.";
     container.appendChild(empty);
     return;
@@ -2322,11 +2322,11 @@ function renderExperienciaTab(container) {
     const nomeShort = nome.length > 40 ? nome.slice(0,40)+'…' : nome;
 
     const acoesRows = (p.actions||[]).map(a=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:${T.bg3};border-radius:6px;margin-bottom:5px;"><div style="width:6px;height:6px;border-radius:50%;background:${cor};flex-shrink:0;"></div><div style="font-size:11px;color:${T.text2};">${a}</div></div>`).join('') || '<div style="font-size:11px;color:${T.text3};">Nenhuma recomendação disponível.</div>';
-    const principalHTML = p.principalAcao ? `<div style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:${cor}1a;border:1px solid ${cor}44;border-radius:7px;margin-bottom:12px;"><div style="font-size:10px;color:${cor};font-weight:700;text-transform:uppercase;flex-shrink:0;">Prioridade</div><div style="font-size:12px;color:#fff;font-weight:600;">${p.principalAcao}</div></div>` : '';
+    const principalHTML = p.principalAcao ? `<div style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:${cor}1a;border:1px solid ${cor}44;border-radius:7px;margin-bottom:12px;"><div style="font-size:10px;color:${cor};font-weight:700;text-transform:uppercase;flex-shrink:0;">Prioridade</div><div style="font-size:12px;color:${T.text};font-weight:600;">${p.principalAcao}</div></div>` : '';
     const freezeHTML = p.freeze ? `<div style="display:flex;align-items:flex-start;gap:8px;padding:9px 12px;background:#2a1000;border:1px solid #4a2010;border-radius:7px;margin-bottom:12px;"><div style="font-size:13px;flex-shrink:0;">⚠️</div><div style="font-size:11px;color:#f0a060;line-height:1.4;">${p.freeze}</div></div>` : '';
     const statusHTML = p.status && p.status !== 'active' ? `<div style="display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;background:#c0392b22;color:#c0392b;margin-bottom:10px;">Anúncio ${p.status==='paused'?'pausado':'em moderação'}</div>` : '';
 
-    window._expPageDetailsCache[i] = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #1e1e1e;"><div style="font-size:12px;font-weight:600;color:#fff;">${nome}</div><a href="${p.link||'#'}" target="_blank" style="font-size:11px;color:#1a6be0;text-decoration:none;padding:3px 10px;border:1px solid #1a6be033;border-radius:5px;white-space:nowrap;">Abrir no ML ↗</a></div>${statusHTML}${principalHTML}${freezeHTML}<div><div style="font-size:11px;color:#777;margin-bottom:8px;">Ações recomendadas</div>${acoesRows}</div>`;
+    window._expPageDetailsCache[i] = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #1e1e1e;"><div style="font-size:12px;font-weight:600;color:${T.text};">${nome}</div><a href="${p.link||'#'}" target="_blank" style="font-size:11px;color:#1a6be0;text-decoration:none;padding:3px 10px;border:1px solid #1a6be033;border-radius:5px;white-space:nowrap;">Abrir no ML ↗</a></div>${statusHTML}${principalHTML}${freezeHTML}<div><div style="font-size:11px;color:#777;margin-bottom:8px;">Ações recomendadas</div>${acoesRows}</div>`;
 
     const card = document.createElement("div");
     card.className = "exp-page-card";
@@ -2339,7 +2339,7 @@ function renderExperienciaTab(container) {
           <text x="54" y="62" text-anchor="middle" fill="${cor}" font-size="22" font-weight="700" font-family="Inter,sans-serif">${score}</text>
         </svg>
         <div style="font-size:11px;font-weight:600;color:${cor};">${label}</div>
-        <div style="font-size:11px;font-weight:600;color:#fff;line-height:1.4;">${nomeShort}</div>
+        <div style="font-size:11px;font-weight:600;color:${T.text};line-height:1.4;">${nomeShort}</div>
         ${p.sku ? `<div style="font-size:11px;color:#444;">${p.sku}</div>` : ''}
       </div>
     `;
@@ -2446,11 +2446,11 @@ function renderDashboard(panel, color) {
 
     const projRows = `
       <div style="${rowStyle}"><div style="${lStyle}">Projeção do dia</div><div style="${vStyle}">${fmt(d.projecaoDia)}</div></div>
-      <div style="${rowStyle}"><div style="${lStyle}">% concluído</div><div style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;background:#8b5cf6;color:#ffffff;">${percDia}% DO DIA</div></div>
+      <div style="${rowStyle}"><div style="${lStyle}">% concluído</div><div style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;background:#8b5cf6;color:${T.text};">${percDia}% DO DIA</div></div>
       <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;"><div style="${lStyle}">Faturado hoje</div><div style="${vStyle}">${fmtFull(d.fatHoje)}</div></div>`;
 
     const mesRows = `
-      <div style="${rowStyle}"><div style="${lStyle}">Pedidos no mês</div><div style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;background:#111111;color:#ffffff;">${d.pedidosMes} PEDIDOS</div></div>
+      <div style="${rowStyle}"><div style="${lStyle}">Pedidos no mês</div><div style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;background:#111111;color:${T.text};">${d.pedidosMes} PEDIDOS</div></div>
       <div style="${rowStyle}"><div style="${lStyle}">Ticket médio</div><div style="${vStyle}">${ticketMedio}</div></div>
       <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;"><div style="${lStyle}">Faturamento mês</div><div style="${vStyle}">${fmt(d.fatMes)}</div></div>`;
 
@@ -2461,7 +2461,7 @@ function renderDashboard(panel, color) {
           <div style="padding:12px 14px 13px;">
             <div style="font-size:10px;color:${T.text2};margin-bottom:6px;">Hoje</div>
             <div style="font-size:26px;font-weight:700;color:${T.text};font-family:'IBM Plex Mono',monospace;">${fmtFull(d.fatHoje)}</div>
-            <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;display:inline-block;background:#3b82f6;color:#ffffff;margin-top:8px;">↑ EM TEMPO REAL</div>
+            <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;display:inline-block;background:#3b82f6;color:${T.text};margin-top:8px;">↑ EM TEMPO REAL</div>
             <div id="vdc-bars-0" style="display:flex;align-items:flex-end;gap:3px;height:22px;margin-top:12px;transition:opacity .25s;opacity:1;">${miniBars}</div>
           </div>
           <div id="vdc-list-0" style="display:none;overflow:hidden;">
@@ -2473,7 +2473,7 @@ function renderDashboard(panel, color) {
           <div style="padding:12px 14px 13px;">
             <div style="font-size:10px;color:${T.text2};margin-bottom:6px;">Projeção</div>
             <div style="font-size:26px;font-weight:700;color:${T.text};font-family:'IBM Plex Mono',monospace;">${fmt(d.projecaoDia)}</div>
-            <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;display:inline-block;background:#8b5cf6;color:#ffffff;margin-top:8px;">${percDia}% DO DIA</div>
+            <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;display:inline-block;background:#8b5cf6;color:${T.text};margin-top:8px;">${percDia}% DO DIA</div>
             <div style="display:flex;align-items:center;gap:10px;margin-top:12px;height:22px;">
               <svg width="22" height="22" viewBox="0 0 36 36" style="flex-shrink:0;">
                 <circle cx="18" cy="18" r="14" fill="none" stroke="#e0e0e0" stroke-width="3"/>
@@ -2491,7 +2491,7 @@ function renderDashboard(panel, color) {
           <div style="padding:12px 14px 13px;">
             <div style="font-size:10px;color:${T.text2};margin-bottom:6px;">Mês atual</div>
             <div style="font-size:26px;font-weight:700;color:${T.text};font-family:'IBM Plex Mono',monospace;">${fmt(d.fatMes)}</div>
-            <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;display:inline-block;background:#10b981;color:#ffffff;margin-top:8px;">${d.pedidosMes} PEDIDOS</div>
+            <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;display:inline-block;background:#10b981;color:${T.text};margin-top:8px;">${d.pedidosMes} PEDIDOS</div>
             <div style="margin-top:12px;height:22px;">
               <svg width="100%" height="22" viewBox="0 0 200 22" preserveAspectRatio="none">
                 <defs><linearGradient id="gGreen" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#10b981" stop-opacity="0.2"/><stop offset="100%" stop-color="#10b981" stop-opacity="0"/></linearGradient></defs>
@@ -2552,7 +2552,7 @@ function renderDashboard(panel, color) {
     <div style="margin-bottom:10px;">
       <div style="font-size:11px;font-weight:500;color:${T.text};font-family:'Inter',sans-serif;margin-bottom:10px;">Vendas Mercado Livre</div>
       <div style="display:inline-flex;background:${T.bg3};border-radius:8px;padding:3px;gap:2px;border:1px solid ${T.border};">
-        <div id="dash-aba-filial" onclick="window._vendasAba='filial';window.renderVendasAba();" style="padding:6px 18px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;font-family:'Inter',sans-serif;color:#ffffff;background:var(--bg2);border:1px solid ${T.border};white-space:nowrap;">Filial SP</div>
+        <div id="dash-aba-filial" onclick="window._vendasAba='filial';window.renderVendasAba();" style="padding:6px 18px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;font-family:'Inter',sans-serif;color:${T.text};background:var(--bg2);border:1px solid ${T.border};white-space:nowrap;">Filial SP</div>
         <div id="dash-aba-matriz" onclick="window._vendasAba='matriz';window.renderVendasAba();" style="padding:6px 18px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;font-family:'Inter',sans-serif;color:#444;background:transparent;white-space:nowrap;">${dashData.matriz ? "Matriz RS" : "Matriz (desconectado)"}</div>
       </div>
     </div>
@@ -2614,7 +2614,7 @@ function renderDashboard(panel, color) {
       <div style="width:6px;height:6px;border-radius:50%;background:${cor};flex-shrink:0;"></div>
       <div style="font-size:10px;color:#777;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.sku}</div>
       <div style="width:40px;height:2px;background:${T.border2};border-radius:2px;flex-shrink:0;"><div style="height:2px;border-radius:2px;background:${cor};width:${pct}%;"></div></div>
-      <div style="font-size:10px;font-weight:700;color:#fff;background:${cor};border-radius:4px;padding:2px 7px;font-family:'Inter',sans-serif;flex-shrink:0;">${dias}d</div>
+      <div style="font-size:10px;font-weight:700;color:${T.text};background:${cor};border-radius:4px;padding:2px 7px;font-family:'Inter',sans-serif;flex-shrink:0;">${dias}d</div>
     </div>`;
   }).join("");
 
@@ -2667,7 +2667,7 @@ function renderDashboard(panel, color) {
     return `<div onclick="window._sbarNavPergunta(event)" style="display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border-radius:6px;margin-bottom:3px;cursor:pointer;border:1px solid transparent;transition:background .12s,border-color .12s;" onmouseover="this.style.background='#141414';this.style.borderColor='#2a2a2a';" onmouseout="this.style.background='';this.style.borderColor='transparent';">
       <div style="width:6px;height:6px;border-radius:50%;background:${cor};flex-shrink:0;margin-top:4px;"></div>
       <div style="flex:1;min-width:0;">
-        <div style="font-size:10px;color:#666;margin-bottom:2px;">${nomeShort}</div>
+        <div style="font-size:10px;color:${T.text2};margin-bottom:2px;">${nomeShort}</div>
         <div style="font-size:11px;color:${T.text2};line-height:1.4;">${p.pergunta}</div>
       </div>
     </div>`;
@@ -2678,7 +2678,7 @@ function renderDashboard(panel, color) {
   statusBar.innerHTML = `
     <div id="sbar-card-tasks" onclick="window._sbarToggle('tasks')" style="background:${T.isLight?"#ffffff":"linear-gradient(to top,#252525 0%,#000 100%)"};border:1px solid ${T.border};border-radius:10px;overflow:hidden;cursor:pointer;box-shadow:${T.cardShadow};transition:border-color .15s;">
       <div style="padding:13px 16px;display:flex;align-items:center;gap:14px;">
-        <div style="font-size:10px;color:#555;white-space:nowrap;">Tarefas</div>
+        <div style="font-size:10px;color:${T.text2};white-space:nowrap;">Tarefas</div>
         <div style="display:flex;align-items:center;gap:8px;flex:1;">
           <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#e8432d;"></div><div style="font-size:11px;font-weight:700;color:#e8432d;font-family:'Inter',sans-serif;">${urgentes}</div></div>
           <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#f77614;"></div><div style="font-size:11px;font-weight:700;color:#f77614;font-family:'Inter',sans-serif;">${importantes}</div></div>
@@ -2687,28 +2687,28 @@ function renderDashboard(panel, color) {
         <div id="sbar-arr-tasks" style="font-size:10px;color:#2e2e2e;transition:transform .2s,color .2s;">▾</div>
       </div>
       <div id="sbar-drawer-tasks" style="max-height:0;overflow:hidden;transition:max-height .3s ease;border-top:0px solid #1a1a1a;">
-        <div style="padding:8px 14px 10px;">${tarefasDrawerRows || '<div style="font-size:11px;color:#555;padding:6px 0;">Nenhuma tarefa pendente ✓</div>'}</div>
+        <div style="padding:8px 14px 10px;">${tarefasDrawerRows || '<div style="font-size:11px;color:${T.text2};padding:6px 0;">Nenhuma tarefa pendente ✓</div>'}</div>
       </div>
     </div>
     <div id="sbar-card-stock" onclick="window._sbarToggle('stock')" style="background:${T.isLight?"#ffffff":"linear-gradient(to top,#252525 0%,#000 100%)"};border:1px solid ${T.border};border-radius:10px;overflow:hidden;cursor:pointer;box-shadow:${T.cardShadow};transition:border-color .15s;">
       <div style="padding:13px 16px;display:flex;align-items:center;gap:10px;">
-        <div style="font-size:10px;color:#555;white-space:nowrap;">Estoque Full · SP</div>
+        <div style="font-size:10px;color:${T.text2};white-space:nowrap;">Estoque Full · SP</div>
         <div style="font-size:11px;font-weight:700;color:${T.text};font-family:'IBM Plex Mono',monospace;">${fmtFull(valorTotal)}</div>
-        <div style="font-size:10px;color:#555;">${unidadesTotal} un</div>
+        <div style="font-size:10px;color:${T.text2};">${unidadesTotal} un</div>
         ${alertasCount > 0 ? `<div style="margin-left:auto;display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#c0392b;"></div><div style="font-size:10px;color:#c0392b;">${alertasCount} alertas</div></div>` : `<div style="margin-left:auto;font-size:10px;color:#2dce89;">OK ✓</div>`}
         <div id="sbar-arr-stock" style="font-size:10px;color:#2e2e2e;margin-left:8px;transition:transform .2s,color .2s;">▾</div>
       </div>
       <div id="sbar-drawer-stock" style="max-height:0;overflow:hidden;transition:max-height .3s ease;border-top:0px solid #1a1a1a;">
-        <div style="padding:8px 14px 10px;">${estDrawerRows || '<div style="font-size:11px;color:#555;padding:6px 0;">Nenhum produto crítico ✓</div>'}</div>
+        <div style="padding:8px 14px 10px;">${estDrawerRows || '<div style="font-size:11px;color:${T.text2};padding:6px 0;">Nenhum produto crítico ✓</div>'}</div>
       </div>
     </div>
     <div id="sbar-card-perguntas" onclick="window._sbarToggle('perguntas')" style="background:${T.isLight?"#ffffff":"linear-gradient(to top,#252525 0%,#000 100%)"};border:1px solid ${T.border};border-radius:10px;overflow:hidden;cursor:pointer;box-shadow:${T.cardShadow};transition:border-color .15s;">
       <div style="padding:13px 16px;display:flex;align-items:center;gap:10px;">
-        <div style="font-size:10px;color:#555;white-space:nowrap;">Perguntas</div>
+        <div style="font-size:10px;color:${T.text2};white-space:nowrap;">Perguntas</div>
         ${perguntasLista === null || perguntasLista === undefined
-          ? `<div style="font-size:11px;color:#555;">${perguntasState.carregando ? "buscando..." : "..."}</div>`
+          ? `<div style="font-size:11px;color:${T.text2};">${perguntasState.carregando ? "buscando..." : "..."}</div>`
           : perguntasTotal > 0
-            ? `<div style="font-size:11px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">${perguntasTotal}</div>
+            ? `<div style="font-size:11px;font-weight:700;color:${T.text};font-family:'IBM Plex Mono',monospace;">${perguntasTotal}</div>
                <div style="display:flex;align-items:center;gap:10px;flex:1;">
                 ${perguntasSugeridas > 0 ? `<div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#2dce89;"></div><div style="font-size:10px;color:#2dce89;">${perguntasSugeridas} sugerida${perguntasSugeridas>1?"s":""}</div></div>` : ""}
                 ${perguntasAtencao > 0 ? `<div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#c0392b;"></div><div style="font-size:10px;color:#c0392b;">${perguntasAtencao} atenção</div></div>` : ""}
@@ -2719,8 +2719,8 @@ function renderDashboard(panel, color) {
       </div>
       <div id="sbar-drawer-perguntas" style="max-height:0;overflow:hidden;transition:max-height .3s ease;border-top:0px solid #1a1a1a;">
         <div style="padding:8px 14px 10px;">
-          ${perguntasDrawerRows || '<div style="font-size:11px;color:#555;padding:6px 0;">Nenhuma pergunta pendente ✓</div>'}
-          ${perguntasTotal > 6 ? `<div onclick="window._goPerguntas()" style="text-align:center;font-size:10px;color:#ffffff;padding-top:8px;cursor:pointer;">Ver todas (${perguntasTotal}) →</div>` : (perguntasTotal > 0 ? `<div onclick="window._goPerguntas()" style="text-align:center;font-size:10px;color:#ffffff;padding-top:8px;cursor:pointer;">Ir para aba Perguntas →</div>` : "")}
+          ${perguntasDrawerRows || '<div style="font-size:11px;color:${T.text2};padding:6px 0;">Nenhuma pergunta pendente ✓</div>'}
+          ${perguntasTotal > 6 ? `<div onclick="window._goPerguntas()" style="text-align:center;font-size:10px;color:${T.text};padding-top:8px;cursor:pointer;">Ver todas (${perguntasTotal}) →</div>` : (perguntasTotal > 0 ? `<div onclick="window._goPerguntas()" style="text-align:center;font-size:10px;color:${T.text};padding-top:8px;cursor:pointer;">Ir para aba Perguntas →</div>` : "")}
         </div>
       </div>
     </div>
@@ -2812,9 +2812,9 @@ function renderDashboard(panel, color) {
   topCard.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:14px;padding:16px;grid-column:1/-1;";
   const maxRevenue = dashData.top10mes[0]?.revenue || 1;
   topCard.innerHTML = `
-    <div style="font-size:11px;font-weight:500;color:#888;font-family:'Inter',sans-serif;margin-bottom:14px;">Top 10 produtos · mês atual</div>
+    <div style="font-size:11px;font-weight:500;color:${T.text3};font-family:'Inter',sans-serif;margin-bottom:14px;">Top 10 produtos · mês atual</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
-      ${dashData.top10mes.map((p,i) => `<div style="display:flex;align-items:center;gap:10px;padding:9px 10px;background:var(--bg2);border-radius:8px;"><div style="font-size:11px;font-weight:700;color:${i===0?"#f0b400":"#ccc"};width:14px;text-align:center;flex-shrink:0;">${i+1}</div><div style="flex:1;min-width:0;"><div style="font-size:11px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.sku||"—"}</div><div style="background:var(--bg3);border-radius:99px;height:2px;margin-top:4px;"><div style="height:2px;border-radius:99px;background:${i===0?"#f0b400":"#5e72e4"};width:${Math.round((p.revenue/maxRevenue)*100)}%;"></div></div></div><div style="text-align:right;flex-shrink:0;min-width:52px;"><div style="font-size:11px;color:#bbb;">${p.qty} un</div><div style="font-size:11px;font-weight:600;color:${T.text2};">${fmt(p.revenue||0)}</div></div></div>`).join("")}
+      ${dashData.top10mes.map((p,i) => `<div style="display:flex;align-items:center;gap:10px;padding:9px 10px;background:var(--bg2);border-radius:8px;"><div style="font-size:11px;font-weight:700;color:${i===0?"#f0b400":"#ccc"};width:14px;text-align:center;flex-shrink:0;">${i+1}</div><div style="flex:1;min-width:0;"><div style="font-size:11px;font-weight:600;color:${T.text};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.sku||"—"}</div><div style="background:var(--bg3);border-radius:99px;height:2px;margin-top:4px;"><div style="height:2px;border-radius:99px;background:${i===0?"#f0b400":"#5e72e4"};width:${Math.round((p.revenue/maxRevenue)*100)}%;"></div></div></div><div style="text-align:right;flex-shrink:0;min-width:52px;"><div style="font-size:11px;color:#bbb;">${p.qty} un</div><div style="font-size:11px;font-weight:600;color:${T.text2};">${fmt(p.revenue||0)}</div></div></div>`).join("")}
     </div>
   `;
   grid.appendChild(topCard);
@@ -2890,7 +2890,7 @@ function renderCalFiscal() {
 
     <div style="padding:10px 14px;border-bottom:0.5px solid #1a1a1a;">
       <div style="display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px;">
-        ${["D","S","T","Q","Q","S","S"].map(d => `<div style="font-size:8px;color:#888;text-align:center;letter-spacing:0.5px;">${d}</div>`).join("")}
+        ${["D","S","T","Q","Q","S","S"].map(d => `<div style="font-size:8px;color:${T.text3};text-align:center;letter-spacing:0.5px;">${d}</div>`).join("")}
       </div>
       <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px;">
         ${Array(primeiroDia).fill('<div style="height:26px;"></div>').join("")}
@@ -2899,7 +2899,7 @@ function renderCalFiscal() {
           const isHoje = d===hoje.getDate() && mes===hoje.getMonth() && ano===hoje.getFullYear();
           const evs = eventosPorDia[d] || [];
           const cor = evs.length > 0 ? CAL_CORES[evs[0].tipo] : null;
-          return `<div style="height:26px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:4px;font-size:11px;cursor:pointer;position:relative;${isHoje?"background:#5e72e4;color:#fff;font-weight:700;":"color:"+(evs.length?"#ddd":"#888")+";"}">
+          return `<div style="height:26px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:4px;font-size:11px;cursor:pointer;position:relative;${isHoje?"background:#5e72e4;color:${T.text};font-weight:700;":"color:"+(evs.length?"#ddd":"#888")+";"}">
             ${d}
             ${cor && !isHoje ? `<div style="width:3px;height:3px;border-radius:50%;background:${cor};position:absolute;bottom:2px;"></div>` : ""}
           </div>`;
@@ -2914,11 +2914,11 @@ function renderCalFiscal() {
         const diasCor = e.diff < 0 ? "#e91e8c" : e.diff <= 7 ? "#e91e8c" : e.diff <= 14 ? "#f0b400" : "#888";
         const diasTxt = e.diff < 0 ? `${Math.abs(e.diff)}d atrás` : e.diff === 0 ? "hoje" : `em ${e.diff}d`;
         return `<div style="display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:0.5px solid #111;">
-          <div style="font-size:11px;font-weight:700;color:#aaa;width:18px;text-align:center;flex-shrink:0;">${e.dia}</div>
+          <div style="font-size:11px;font-weight:700;color:${T.text3};width:18px;text-align:center;flex-shrink:0;">${e.dia}</div>
           <div style="width:6px;height:6px;border-radius:50%;background:${cor};flex-shrink:0;"></div>
           <div style="flex:1;">
             <div style="font-size:11px;font-weight:500;color:#ddd;">${e.nome}</div>
-            <div style="font-size:11px;color:#888;margin-top:1px;">Ref. ${String(mes).padStart(2,"0")}/${ano}</div>
+            <div style="font-size:11px;color:${T.text3};margin-top:1px;">Ref. ${String(mes).padStart(2,"0")}/${ano}</div>
           </div>
           <div style="font-size:11px;font-weight:600;color:${diasCor};white-space:nowrap;">${diasTxt}</div>
         </div>`;
@@ -5242,7 +5242,7 @@ function render(){
               const recSec=document.createElement("div");
               recSec.style.cssText="margin-bottom:16px;";
               const recLabel=document.createElement("div");
-              recLabel.style.cssText="font-size:8px;letter-spacing:2px;color:#ffffff;text-transform:uppercase;margin-bottom:8px;";
+              recLabel.style.cssText="font-size:8px;letter-spacing:2px;color:${T.text};text-transform:uppercase;margin-bottom:8px;";
               recLabel.textContent="Recorrentes de hoje";
               recSec.appendChild(recLabel);
               const recGrid=document.createElement("div");
@@ -5311,7 +5311,7 @@ function render(){
             if(ownTasks.length===0&&recTasks.length===0){const e=document.createElement("p");e.style.cssText="font-size:11px;color:var(--text3);padding:10px 0 4px;";e.textContent="Nenhuma tarefa sua ainda";panel.appendChild(e);}
             if(ownTasks.length>0){
               const manLabel=document.createElement("div");
-              manLabel.style.cssText="font-size:8px;letter-spacing:2px;color:#ffffff;text-transform:uppercase;margin-bottom:8px;margin-top:4px;display:flex;align-items:center;gap:6px;";
+              manLabel.style.cssText="font-size:8px;letter-spacing:2px;color:${T.text};text-transform:uppercase;margin-bottom:8px;margin-top:4px;display:flex;align-items:center;gap:6px;";
               manLabel.innerHTML='minhas tarefas <span style="flex:1;height:1px;background:#ffffff33;display:inline-block;"></span>';
               panel.appendChild(manLabel);
             }
@@ -5368,7 +5368,7 @@ function render(){
               // Alça de drag no topo direito
               const handle=document.createElement("div");
               handle.textContent="⠿";
-              handle.style.cssText="position:absolute;top:8px;right:8px;color:#ffffff;font-size:12px;cursor:grab;user-select:none;";
+              handle.style.cssText="position:absolute;top:8px;right:8px;color:${T.text};font-size:12px;cursor:grab;user-select:none;";
               handle.setAttribute("draggable","false");
               card.style.position="relative";
               card.appendChild(handle);
@@ -5708,7 +5708,7 @@ function render(){
     avWrap.appendChild(avLarissa);
 
     const lbl = document.createElement("span");
-    lbl.style.cssText = "font-size:11px;color:#666;letter-spacing:1px;text-transform:uppercase;";
+    lbl.style.cssText = "font-size:11px;color:${T.text2};letter-spacing:1px;text-transform:uppercase;";
     lbl.textContent = isExpanded ? "Esconder equipe" : "Ver equipe";
 
     pill.appendChild(avWrap);
@@ -5944,7 +5944,7 @@ function renderCancelamentos(panel) {
   function copiavel(texto, exibir) {
     const span = document.createElement("span");
     span.textContent = exibir || texto;
-    span.style.cssText = "cursor:pointer;text-decoration:underline;text-underline-offset:2px;text-decoration-color:#555;color:var(--text2);";
+    span.style.cssText = "cursor:pointer;text-decoration:underline;text-underline-offset:2px;text-decoration-color:${T.text2};color:var(--text2);";
     span.title = "Clique pra copiar";
     span.addEventListener("click", e => {
       e.stopPropagation();
@@ -6102,7 +6102,7 @@ function renderCancelamentosBruno(panel) {
   function copiavel(texto, exibir) {
     const span = document.createElement("span");
     span.textContent = exibir || texto;
-    span.style.cssText = "cursor:pointer;text-decoration:underline;text-underline-offset:2px;text-decoration-color:#555;color:var(--text2);";
+    span.style.cssText = "cursor:pointer;text-decoration:underline;text-underline-offset:2px;text-decoration-color:${T.text2};color:var(--text2);";
     span.title = "Clique pra copiar";
     span.addEventListener("click", e => {
       e.stopPropagation();
@@ -6729,7 +6729,7 @@ function renderSaudeChart(panel, enriched) {
       (mostrarPonto ? '<div style="position:absolute;top:6px;right:6px;width:6px;height:6px;border-radius:50%;background:' + c + ';box-shadow:0 0 4px ' + c + ';"></div>' : '') +
       '<div style="font-size:11px;color:' + c + ';font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px;">' + d.sku + '</div>' +
       '<div style="font-size:12px;font-weight:600;color:' + c + ';">' + diasLabel(d) + '</div>' +
-      '<div style="font-size:11px;color:#aaa;">R$' + Math.round(d.valor / 1000) + 'k · ' + d.vendas30 + '/mês</div>';
+      '<div style="font-size:11px;color:${T.text3};">R$' + Math.round(d.valor / 1000) + 'k · ' + d.vendas30 + '/mês</div>';
 
     chip.addEventListener("click", () => {
       if (mostrarPonto) update(ref(db, `/categoria_saude/${skuKey}`), { vista: true });
@@ -6903,7 +6903,7 @@ function renderSaudeChart(panel, enriched) {
           info.innerHTML =
             '<div style="font-size:11px;color:var(--text3);letter-spacing:1px;margin-bottom:8px;">MUDANÇA DE PREÇO · há ' + diasDesde + 'd</div>' +
             '<div style="background:var(--bg2);border-radius:8px;padding:10px 12px;margin-bottom:10px;display:flex;align-items:center;gap:10px;">' +
-              '<div style="font-size:13px;color:#888;text-decoration:line-through;">R$ ' + Number(pc.priceBefore).toFixed(2) + '</div>' +
+              '<div style="font-size:13px;color:${T.text3};text-decoration:line-through;">R$ ' + Number(pc.priceBefore).toFixed(2) + '</div>' +
               '<div style="color:var(--text3);">→</div>' +
               '<div style="font-size:13px;font-weight:700;color:' + precoColor + ';">R$ ' + Number(pc.priceAfter).toFixed(2) + '</div>' +
               '<div style="font-size:11px;color:' + precoColor + ';margin-left:4px;">' + (subiu ? "+" : "") + diffPct + '%</div>' +
@@ -6913,7 +6913,7 @@ function renderSaudeChart(panel, enriched) {
               '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">' +
                 '<div style="background:var(--bg2);border-radius:7px;padding:10px;">' +
                   '<div style="font-size:8px;color:var(--text3);letter-spacing:1px;margin-bottom:4px;">ANTES (R$ ' + Number(pc.priceBefore).toFixed(0) + ')</div>' +
-                  '<div style="font-size:18px;font-weight:700;color:#888;">' + vendasAntes + ' un</div>' +
+                  '<div style="font-size:18px;font-weight:700;color:${T.text3};">' + vendasAntes + ' un</div>' +
                   '<div style="font-size:11px;color:var(--text3);margin-top:2px;">em 30 dias</div>' +
                 '</div>' +
                 '<div style="background:var(--bg2);border-radius:7px;padding:10px;">' +
@@ -7768,7 +7768,7 @@ window._openIdeiasModal = function() {
       <div style="font-size:16px;font-weight:700;color:${T.text};">Ideias & Melhorias</div>
       <button id="ideias-fechar" style="background:none;border:none;color:${T.text3};font-size:20px;cursor:pointer;line-height:1;">×</button>
     </div>
-    <div style="font-size:11px;color:#666;margin-bottom:18px;">Anote o que quiser implementar depois — separado por onde vai entrar.</div>
+    <div style="font-size:11px;color:${T.text2};margin-bottom:18px;">Anote o que quiser implementar depois — separado por onde vai entrar.</div>
     <div style="display:flex;gap:8px;margin-bottom:22px;">
       <input id="ideias-input" type="text" placeholder="Ex: adicionar filtro de data no relatório de vendas..." style="flex:1;background:${T.bg3};border:1px solid ${T.border};border-radius:8px;padding:10px 14px;color:${T.text};font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
       <select id="ideias-categoria" style="background:${T.bg3};border:1px solid ${T.border};border-radius:8px;padding:10px 12px;color:${T.text2};font-size:12px;font-family:Inter,sans-serif;outline:none;">
@@ -7892,7 +7892,7 @@ function renderIdeiasLista() {
 
   if (entradas.length === 0) {
     const empty = document.createElement("div");
-    empty.style.cssText = "text-align:center;padding:30px 0;font-size:12px;color:#555;";
+    empty.style.cssText = "text-align:center;padding:30px 0;font-size:12px;color:${T.text2};";
     empty.textContent = filtro === "Todas" ? "Nenhuma ideia anotada ainda." : `Nenhuma ideia em "${filtro}" ainda.`;
     listaEl.appendChild(empty);
   }
@@ -7963,12 +7963,12 @@ function notifRefreshFalhou(conta) {
   notif.innerHTML = `
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
       <span style="color:#e91e8c;font-size:16px;">⚠</span>
-      <span style="font-size:12px;font-weight:600;color:#fff;">Token ML ${label} expirou</span>
+      <span style="font-size:12px;font-weight:600;color:${T.text};">Token ML ${label} expirou</span>
     </div>
-    <div style="font-size:11px;color:#aaa;margin-bottom:12px;line-height:1.5;">O refresh automático falhou. Reconecte manualmente abrindo o link no browser certo.</div>
+    <div style="font-size:11px;color:${T.text3};margin-bottom:12px;line-height:1.5;">O refresh automático falhou. Reconecte manualmente abrindo o link no browser certo.</div>
     <div style="display:flex;gap:8px;">
-      <button onclick="window.open('${VERCEL_BACKEND}/api/ml-auth?conta=${conta}','_blank')" style="flex:1;background:#e91e8c;border:none;border-radius:5px;color:#fff;font-size:11px;font-weight:700;letter-spacing:1px;padding:6px;cursor:pointer;font-family:inherit;">RECONECTAR</button>
-      <button onclick="document.getElementById('${id}').remove()" style="background:none;border:1px solid ${T.border};border-radius:5px;color:#666;font-size:11px;padding:6px 10px;cursor:pointer;font-family:inherit;">✕</button>
+      <button onclick="window.open('${VERCEL_BACKEND}/api/ml-auth?conta=${conta}','_blank')" style="flex:1;background:#e91e8c;border:none;border-radius:5px;color:${T.text};font-size:11px;font-weight:700;letter-spacing:1px;padding:6px;cursor:pointer;font-family:inherit;">RECONECTAR</button>
+      <button onclick="document.getElementById('${id}').remove()" style="background:none;border:1px solid ${T.border};border-radius:5px;color:${T.text2};font-size:11px;padding:6px 10px;cursor:pointer;font-family:inherit;">✕</button>
     </div>
   `;
   document.body.appendChild(notif);
