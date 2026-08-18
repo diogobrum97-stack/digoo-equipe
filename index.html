@@ -1483,7 +1483,7 @@ function renderPickingAcompanhar(panel) {
 
   const aoVivo = document.createElement("div");
   aoVivo.style.cssText = "margin-bottom:16px;";
-  aoVivo.innerHTML = `<div style="font-size:11px;color:#ffffff;margin-bottom:8px;">AGORA, EM TEMPO REAL</div>`;
+  aoVivo.innerHTML = `<div style="font-size:11px;color:${T.text3};margin-bottom:8px;">AGORA, EM TEMPO REAL</div>`;
   if (locksAtivos.length === 0) {
     aoVivo.innerHTML += `<div style="font-size:11px;color:"+T.text3+";padding:12px;background:"+T.bg3+";border:1px solid "+T.border+";border-radius:8px;">Ninguém separando pedidos no momento.</div>`;
   } else {
@@ -1504,7 +1504,7 @@ function renderPickingAcompanhar(panel) {
   wrap.appendChild(aoVivo);
 
   const hist = document.createElement("div");
-  hist.innerHTML = `<div style="font-size:11px;color:#ffffff;margin-bottom:8px;">ÚLTIMOS CONCLUÍDOS HOJE</div>`;
+  hist.innerHTML = `<div style="font-size:11px;color:${T.text3};margin-bottom:8px;">ÚLTIMOS CONCLUÍDOS HOJE</div>`;
   if (concluidosHoje.length === 0) {
     hist.innerHTML += `<div style="font-size:11px;color:#555;">Nenhum pedido concluído ainda hoje.</div>`;
   } else {
@@ -1512,7 +1512,7 @@ function renderPickingAcompanhar(panel) {
       const hora = new Date(c.ts).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
       const linha = document.createElement("div");
       linha.style.cssText = "padding:9px 12px;background:"+T.bg+";border:1px solid "+T.border+";border-radius:7px;margin-bottom:5px;";
-      linha.innerHTML = `<div style="font-size:11px;color:${T.text2};">#${orderId} · ${c.titulo}</div><div style="font-size:10px;color:#2dce89;margin-top:2px;">✓ etiqueta impressa às ${hora} por ${c.por}</div>`;
+      linha.innerHTML = `<div style="font-size:11px;color:${T.text};">#${orderId} · ${c.titulo}</div><div style="font-size:10px;color:#2dce89;margin-top:2px;">✓ etiqueta impressa às ${hora} por ${c.por}</div>`;
       hist.appendChild(linha);
     });
   }
