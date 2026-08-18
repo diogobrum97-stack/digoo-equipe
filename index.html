@@ -7755,8 +7755,8 @@ window._openIdeiasModal = function() {
   box.style.cssText = `background:${T.bg2};border:1px solid ${T.border};border-radius:14px;padding:24px;max-width:640px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,${T.isLight?0.15:0.6});`;
   box.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-      <div style="font-size:16px;font-weight:700;color:#fff;">Ideias & Melhorias</div>
-      <button id="ideias-fechar" style="background:none;border:none;color:#666;font-size:20px;cursor:pointer;line-height:1;">×</button>
+      <div style="font-size:16px;font-weight:700;color:${T.text};">Ideias & Melhorias</div>
+      <button id="ideias-fechar" style="background:none;border:none;color:${T.text3};font-size:20px;cursor:pointer;line-height:1;">×</button>
     </div>
     <div style="font-size:11px;color:#666;margin-bottom:18px;">Anote o que quiser implementar depois — separado por onde vai entrar.</div>
     <div style="display:flex;gap:8px;margin-bottom:22px;">
@@ -7830,7 +7830,7 @@ function renderIdeiasLista() {
   };
 
   const grupos = {
-    afazer: { titulo: "A FAZER", cor: "#ffffff", itens: [] },
+    afazer: { titulo: "A FAZER", cor: T.text, itens: [] },
     andamento: { titulo: "EM ANDAMENTO", cor: "#5e8ce6", itens: [] },
     concluido: { titulo: "CONCLUÍDO", cor: "#2dce89", itens: [] },
   };
@@ -7858,7 +7858,7 @@ function renderIdeiasLista() {
 
     grupo.itens.forEach((item) => {
       const row = document.createElement("div");
-      row.style.cssText = "display:flex;align-items:flex-start;gap:10px;background:#141414;border:1px solid ${T.border};border-radius:8px;padding:12px 14px;margin-bottom:6px;";
+      row.style.cssText = `display:flex;align-items:flex-start;gap:10px;background:${T.bg3};border:1px solid ${T.border};border-radius:8px;padding:12px 14px;margin-bottom:6px;`;
       const catItem = item.categoria || "Outro";
       const corCat = corCategoria[catItem] || "#888";
       const opcoesCategoria = IDEIAS_CATEGORIAS.map(c => `<option value="${c}" ${c===catItem?"selected":""}>${c}</option>`).join("");
@@ -7866,14 +7866,14 @@ function renderIdeiasLista() {
         <div style="width:8px;height:8px;border-radius:50%;background:${grupo.cor};flex-shrink:0;margin-top:5px;"></div>
         <div style="flex:1;min-width:0;">
           <select data-catedit="${item.id}" style="display:inline-block;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:600;background:${corCat}22;color:${corCat};border:1px solid ${corCat}44;margin-bottom:5px;font-family:Inter,sans-serif;cursor:pointer;outline:none;">${opcoesCategoria}</select>
-          <div style="font-size:12px;color:#eee;line-height:1.4;">${item.texto}</div>
-          <div style="font-size:10px;color:#666;margin-top:3px;">${fmtData(item.createdAt)}</div>
+          <div style="font-size:12px;color:${T.text};line-height:1.4;">${item.texto}</div>
+          <div style="font-size:10px;color:${T.text3};margin-top:3px;">${fmtData(item.createdAt)}</div>
         </div>
         <div style="display:flex;gap:4px;flex-shrink:0;">
-          ${key !== "afazer" ? `<button data-move="afazer" data-id="${item.id}" title="Mover para A fazer" style="background:none;border:1px solid ${T.border};border-radius:5px;color:#666;font-size:10px;padding:4px 7px;cursor:pointer;">A fazer</button>` : ""}
-          ${key !== "andamento" ? `<button data-move="andamento" data-id="${item.id}" title="Mover para Em andamento" style="background:none;border:1px solid ${T.border};border-radius:5px;color:#666;font-size:10px;padding:4px 7px;cursor:pointer;">Andamento</button>` : ""}
-          ${key !== "concluido" ? `<button data-move="concluido" data-id="${item.id}" title="Mover para Concluído" style="background:none;border:1px solid ${T.border};border-radius:5px;color:#666;font-size:10px;padding:4px 7px;cursor:pointer;">Concluído</button>` : ""}
-          <button data-del="${item.id}" title="Excluir" style="background:none;border:none;color:#555;font-size:13px;padding:4px 6px;cursor:pointer;">×</button>
+          ${key !== "afazer" ? `<button data-move="afazer" data-id="${item.id}" title="Mover para A fazer" style="background:none;border:1px solid ${T.border};border-radius:5px;color:${T.text2};font-size:10px;padding:4px 7px;cursor:pointer;">A fazer</button>` : ""}
+          ${key !== "andamento" ? `<button data-move="andamento" data-id="${item.id}" title="Mover para Em andamento" style="background:none;border:1px solid ${T.border};border-radius:5px;color:${T.text2};font-size:10px;padding:4px 7px;cursor:pointer;">Andamento</button>` : ""}
+          ${key !== "concluido" ? `<button data-move="concluido" data-id="${item.id}" title="Mover para Concluído" style="background:none;border:1px solid ${T.border};border-radius:5px;color:${T.text2};font-size:10px;padding:4px 7px;cursor:pointer;">Concluído</button>` : ""}
+          <button data-del="${item.id}" title="Excluir" style="background:none;border:none;color:${T.text3};font-size:13px;padding:4px 6px;cursor:pointer;">×</button>
         </div>
       `;
       listaEl.appendChild(row);
