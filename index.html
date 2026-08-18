@@ -1175,13 +1175,13 @@ function renderPickingTab(panel, quemSou, modoOperar) {
     const card = document.createElement("div");
     card.style.cssText = `padding:10px 12px;border-radius:8px;cursor:${clicavel ? "pointer" : "default"};background:${ativo ? "#ffffff" : "#111"};border:1px solid ${ativo ? "#ffffff" : "#282828"};opacity:${travadoPorOutro ? "0.5" : "1"};`;
     card.innerHTML = `
-      <div style="font-size:11px;font-weight:700;color:${ativo ? "#000" : "#ffffff"};">#${pedido.order_id}</div>
-      <div style="font-size:10px;color:${ativo ? "#000" : "#aaaaaa"};margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nomeItem}</div>
+      <div style="font-size:11px;font-weight:700;color:${ativo ? "#000" : T.text};">#${pedido.order_id}</div>
+      <div style="font-size:10px;color:${ativo ? "#000" : T.text2};margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nomeItem}</div>
       <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;">
-        <div style="display:inline-block;padding:2px 7px;border-radius:9px;font-size:8px;font-weight:700;background:${ativo ? "rgba(255,255,255,0.25)" : "rgba(247,118,20,0.15)"};color:${ativo ? "#000" : "#f77614"};">Enviar hoje</div>
+        <div style="display:inline-block;padding:2px 7px;border-radius:9px;font-size:8px;font-weight:700;background:${ativo ? "rgba(255,255,255,0.25)" : "rgba(59,130,246,0.15)"};color:${ativo ? "#000" : "#3b82f6"};">Enviar hoje</div>
         <div style="display:inline-block;padding:2px 7px;border-radius:9px;font-size:8px;font-weight:700;background:${ativo ? "rgba(255,255,255,0.25)" : (etiquetaImpressa ? "rgba(16,185,129,0.15)" : "rgba(59,130,246,0.15)")};color:${ativo ? "#000" : (etiquetaImpressa ? "#10b981" : "#3b82f6")};">${etiquetaImpressa ? "Etiqueta impressa" : "Etiqueta pronta para imprimir"}</div>
       </div>
-      <div style="font-size:9px;color:${ativo ? "#000" : "#888"};margin-top:6px;">${travadoPorOutro ? `● sendo separado por ${lock.por}` : (ativo ? "● separando agora" : "na fila")}</div>
+      <div style="font-size:9px;color:${ativo ? "#000" : T.text3};margin-top:6px;">${travadoPorOutro ? `● sendo separado por ${lock.por}` : (ativo ? "● separando agora" : "na fila")}</div>
       ${etiquetaImpressa && modoOperar ? `<button data-marcar-feito="${pedido.order_id}" style="width:100%;margin-top:8px;padding:6px;border-radius:6px;background:${T.okBg};border:1px solid ${T.okBor};color:#2dce89;font-size:9px;font-weight:600;cursor:pointer;">Marcar como já feito</button>` : ""}
     `;
     if (clicavel) {
@@ -1248,7 +1248,7 @@ function renderPickingTab(panel, quemSou, modoOperar) {
     pedido.itens_bipagem.forEach(l => {
       const completo = l.quantidadeBipada >= l.quantidadeNecessaria;
       const linha = document.createElement("div");
-      linha.style.cssText = `display:flex;align-items:center;gap:10px;padding:10px 12px;background:${T.isLight?"#111111":T.bg};border:1px solid ${completo ? T.okBor : (T.isLight?"#222":"#282828")};border-radius:8px;margin-bottom:6px;`;
+      linha.style.cssText = `display:flex;align-items:center;gap:10px;padding:10px 12px;background:${T.bg3};border:1px solid ${completo ? T.okBor : T.border};border-radius:8px;margin-bottom:6px;`;
       linha.innerHTML = `
         <div style="flex:1;min-width:0;">
           <div style="font-size:12px;color:#fff;">${l.nome}</div>
