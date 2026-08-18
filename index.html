@@ -8186,9 +8186,9 @@ async function renderConferencia(panel, color) {
     return c;
   }
 
-  summary.appendChild(sumCard("Total do mês", totalGeral, T.isLight?"#111111":"#ffffff", `${servicosFiltrados.length + impostosFiltrados.length} documentos`));
-  summary.appendChild(sumCard("Serviços", totalServicos, T.isLight?"#111111":"#ffffff", `${servicosFiltrados.length} notas`));
-  summary.appendChild(sumCard("Impostos", totalImpostos, T.isLight?"#111111":"#ffffff", `${impostosFiltrados.length} guias`));
+  summary.appendChild(sumCard("Total do mês", totalGeral, "#3b82f6", `${servicosFiltrados.length + impostosFiltrados.length} documentos`));
+  summary.appendChild(sumCard("Serviços", totalServicos, "#8b5cf6", `${servicosFiltrados.length} notas`));
+  summary.appendChild(sumCard("Impostos", totalImpostos, "#10b981", `${impostosFiltrados.length} guias`));
   panel.appendChild(summary);
 
   // Filtros dinâmicos de tipo de imposto
