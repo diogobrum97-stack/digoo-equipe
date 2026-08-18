@@ -1888,8 +1888,6 @@ function renderPerguntasTab(container) {
 function renderClonarTab(container) {
   container.innerHTML = "";
 
-  const card = document.createElement("div");
-  card.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:12px;padding:24px;box-shadow:${T.cardShadow};`;
   const wrap = document.createElement("div");
   wrap.style.cssText = "max-width:1100px;";
 
@@ -5538,7 +5536,7 @@ function render(){
           }else if(window._diogotab==="clonar"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
             let clonarContainer = panel.querySelector(".clonar-container");
-            if(!clonarContainer){ clonarContainer = document.createElement("div"); clonarContainer.className="clonar-container"; panel.appendChild(clonarContainer); }
+            if(!clonarContainer){ clonarContainer = document.createElement("div"); clonarContainer.className="clonar-container"; clonarContainer.style.cssText=`background:${T.card};border:1px solid ${T.border};border-radius:12px;padding:24px;box-shadow:${T.cardShadow};`; panel.appendChild(clonarContainer); }
             renderClonarTab(clonarContainer);
           }else if(window._diogotab==="perguntas"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
