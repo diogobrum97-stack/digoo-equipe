@@ -1935,7 +1935,7 @@ function renderClonarTab(container) {
       <button id="clonar-origem-matriz" style="flex:1;padding:9px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid ${clonarState.contaOrigem==='matriz'?"#5e72e4":T.border};background:${clonarState.contaOrigem==='matriz'?"#5e72e4":T.bg3};color:${clonarState.contaOrigem==='matriz'?"#fff":T.text2};">Matriz RS</button>
       <button id="clonar-origem-filial" style="flex:1;padding:9px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid ${clonarState.contaOrigem==='filial'?"#5e72e4":T.border};background:${clonarState.contaOrigem==='filial'?"#5e72e4":T.bg3};color:${clonarState.contaOrigem==='filial'?"#fff":T.text2};">Filial SP</button>
     </div>
-    <button id="clonar-btn-buscar" ${loteState.rodando ? "disabled" : ""} style="width:100%;padding:10px;border-radius:6px;background:${loteState.rodando ? "#333" : "#ffffff"};border:none;color:${loteState.rodando ? "#888" : "#000"};font-size:12px;font-weight:600;cursor:${loteState.rodando ? "default" : "pointer"};">${
+    <button id="clonar-btn-buscar" ${loteState.rodando ? "disabled" : ""} style="width:100%;padding:10px;border-radius:6px;background:${loteState.rodando ? T.border : T.bg3};border:1px solid ${T.border};color:${loteState.rodando ? T.text3 : T.text};font-size:12px;font-weight:600;cursor:${loteState.rodando ? "default" : "pointer"};">${
       isLoteModo
         ? (loteState.fase === "busca" ? `Buscando ${(loteState.itens||[]).filter(it=>it.status!=="aguardando").length}/${loteState.total}...` : `Buscar ${idsDetectados.length} anúncios`)
         : (clonarState.buscando ? "Buscando..." : "Buscar anúncio")
