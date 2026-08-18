@@ -1173,7 +1173,7 @@ function renderPickingTab(panel, quemSou, modoOperar) {
     const etiquetaImpressa = pedido.substatus === "printed";
     const clicavel = !travadoPorOutro && modoOperar && !etiquetaImpressa;
     const card = document.createElement("div");
-    card.style.cssText = `padding:10px 12px;border-radius:8px;cursor:${clicavel ? "pointer" : "default"};background:${ativo ? "#ffffff" : "#111"};border:1px solid ${ativo ? "#ffffff" : "#282828"};opacity:${travadoPorOutro ? "0.5" : "1"};`;
+    card.style.cssText = `padding:10px 12px;border-radius:8px;cursor:${clicavel ? "pointer" : "default"};background:${ativo ? (T.isLight?"#ffffff":"#1e1e1e") : (T.isLight?"#f2f2f2":"#111")};border:1px solid ${ativo ? T.border : (T.isLight?"#e0e0e0":"#282828")};opacity:${travadoPorOutro ? "0.5" : "1"};`;
     card.innerHTML = `
       <div style="font-size:11px;font-weight:700;color:${T.text};">#${pedido.order_id}</div>
       <div style="font-size:10px;color:${T.text2};margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nomeItem}</div>
