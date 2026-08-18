@@ -4912,7 +4912,7 @@ function render(){
     // Botão Claude no header
     if(isOpen&&currentUser===member.name){
       const chatBtn=document.createElement("button");
-      chatBtn.style.cssText="background:none;border:0.5px solid rgba(255,255,255,0.25);border-radius:50%;width:26px;height:26px;color:rgba(255,255,255,0.4);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-right:6px;flex-shrink:0;transition:all 0.15s;";
+      chatBtn.style.cssText=`background:none;border:0.5px solid ${T.isLight?"rgba(0,0,0,0.2)":"rgba(255,255,255,0.25)"};border-radius:50%;width:26px;height:26px;color:${T.isLight?"#111":"rgba(255,255,255,0.4)"};font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-right:6px;flex-shrink:0;transition:all 0.15s;`;
       chatBtn.textContent="✦";
       chatBtn.title="Assistente Claude";
       chatBtn.addEventListener("click",(e)=>{e.stopPropagation();chatState[member.name].open=!chatState[member.name].open;renderChatModal(member.name,color);});
@@ -4927,7 +4927,7 @@ function render(){
           return diff >= 0 && diff <= 7;
         });
         const calCircleBtn = document.createElement("button");
-        calCircleBtn.style.cssText = "background:none;border:0.5px solid rgba(255,255,255,0.25);border-radius:50%;width:26px;height:26px;color:rgba(255,255,255,0.4);font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-right:6px;flex-shrink:0;position:relative;transition:all 0.15s;";
+        calCircleBtn.style.cssText = `background:none;border:0.5px solid ${T.isLight?"rgba(0,0,0,0.2)":"rgba(255,255,255,0.25)"};border-radius:50%;width:26px;height:26px;color:${T.isLight?"#111":"rgba(255,255,255,0.4)"};font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-right:6px;flex-shrink:0;position:relative;transition:all 0.15s;`;
         calCircleBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`;
         if(proxCal.length > 0) {
           const dot = document.createElement("div");
@@ -4948,7 +4948,7 @@ function render(){
     // Botão diminuir/expandir a tela cheia automática (disponível sempre que o PIN estiver desbloqueado)
     if(member.locked&&isOpen&&diogoPinOk){
       const minBtn=document.createElement("button");
-      minBtn.style.cssText="background:none;border:0.5px solid rgba(255,255,255,0.25);border-radius:50%;width:22px;height:22px;color:rgba(255,255,255,0.4);font-size:12px;cursor:pointer;font-family:inherit;margin-right:6px;display:flex;align-items:center;justify-content:center;";
+      minBtn.style.cssText=`background:none;border:0.5px solid ${T.isLight?"rgba(0,0,0,0.2)":"rgba(255,255,255,0.25)"};border-radius:50%;width:22px;height:22px;color:${T.isLight?"#111":"rgba(255,255,255,0.4)"};font-size:12px;cursor:pointer;font-family:inherit;margin-right:6px;display:flex;align-items:center;justify-content:center;`;
       // 3 estados: 0=normal, 1=médio (grid full), 2=fullscreen real
       const _expandState = diogoCardFullscreen ? 2 : diogoAutoFullscreen ? 1 : 0;
       minBtn.textContent = ["⤢","⤡","✕"][_expandState];
