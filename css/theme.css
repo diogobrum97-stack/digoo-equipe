@@ -37,7 +37,7 @@ body {
 body.light {
   --bg: #e8e8e8; --bg2: #f2f2f2; --bg3: #f7f7f7;
   --border: #d8d8d8; --border2: #cacaca;
-  --text: #111111; --text2: #555555; --text3: #999999; --sub: #777777;
+  --text: #111111; --text2: #333333; --text3: #888888; --sub: #777777;
   --done: #aaa; --sep: rgba(0,0,0,0.07);
   --c-d: #11cdef; --hbg-d: rgba(17,205,239,0.08);
   --c-b: #5e72e4; --hbg-b: rgba(94,114,228,0.08);
