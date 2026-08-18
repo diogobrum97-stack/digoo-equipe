@@ -1248,7 +1248,7 @@ function renderPickingTab(panel, quemSou, modoOperar) {
     pedido.itens_bipagem.forEach(l => {
       const completo = l.quantidadeBipada >= l.quantidadeNecessaria;
       const linha = document.createElement("div");
-      linha.style.cssText = `display:flex;align-items:center;gap:10px;padding:10px 12px;background:${T.isLight?"#ffffff":"#111111"};border:1px solid ${completo ? T.okBor : T.border};border-radius:8px;margin-bottom:6px;box-shadow:${T.cardShadow};`;
+      linha.style.cssText = `display:flex;align-items:center;gap:10px;padding:10px 12px;background:${T.isLight?"#f2f2f2":"#111111"};border:1px solid ${completo ? T.okBor : T.border};border-radius:8px;margin-bottom:6px;`;
       linha.innerHTML = `
         <div style="flex:1;min-width:0;">
           <div style="font-size:12px;color:#fff;">${l.nome}</div>
