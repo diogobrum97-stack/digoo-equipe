@@ -1132,7 +1132,7 @@ function renderPickingTab(panel, quemSou, modoOperar) {
   header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;";
   header.innerHTML = `
     <div>
-      <div style="font-size:16px;font-weight:700;color:#fff;">Picking & Packing</div>
+      <div style="font-size:16px;font-weight:700;color:${T.isLight?"#111111":"#ffffff"};">Picking & Packing</div>
       <div style="font-size:11px;color:#666;margin-top:2px;">${pickingState.fila ? `${pickingState.fila.length} pedidos prontos pra separar` : "Carregando fila..."}</div>
     </div>
     <div style="display:flex;gap:8px;">
@@ -1552,7 +1552,7 @@ function renderPickingFullscreenOverlay() {
   const topo = document.createElement("div");
   topo.style.cssText = "display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid #222;flex-shrink:0;";
   const btnVoltar = document.createElement("button");
-  btnVoltar.textContent = "← Sair da tela cheia";
+  btnVoltar.textContent = "← Voltar";
   btnVoltar.style.cssText = "background:"+T.bg2+";border:1px solid "+T.border+";border-radius:6px;padding:8px 14px;color:"+T.text2+";font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;";
   btnVoltar.onclick = () => { window._pickingModoDiogo = "acompanhar"; render(); };
   topo.appendChild(btnVoltar);
