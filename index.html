@@ -1950,7 +1950,7 @@ function renderClonarTab(container) {
     const jaClonando = loteState.fase === "clonando";
     confirmBtn.id = "clonar-btn-confirmar-lote";
     confirmBtn.disabled = jaClonando;
-    confirmBtn.style.cssText = `width:100%;padding:11px;border-radius:6px;background:${jaClonando ? "#333" : "#2dce89"};border:none;color:${jaClonando ? "#888" : "#000"};font-size:12px;font-weight:700;cursor:${jaClonando ? "default" : "pointer"};margin-bottom:16px;`;
+    confirmBtn.style.cssText = `width:100%;padding:11px;border-radius:6px;background:${jaClonando ? "#8b5cf6" : "#2dce89"};border:none;color:#fff;font-size:12px;font-weight:700;cursor:${jaClonando ? "default" : "pointer"};margin-bottom:16px;`;
     confirmBtn.textContent = jaClonando
       ? `Clonando ${loteState.itens.filter(it=>it.status==="sucesso"||it.status==="erro").length}/${encontrados.length}...`
       : `Confirmar e clonar ${loteState.itens.filter(it=>it.status==="encontrado").length} anúncios`;
