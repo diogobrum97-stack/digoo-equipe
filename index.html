@@ -1888,6 +1888,8 @@ function renderPerguntasTab(container) {
 function renderClonarTab(container) {
   container.innerHTML = "";
 
+  const card = document.createElement("div");
+  card.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:12px;padding:24px;box-shadow:${T.cardShadow};`;
   const wrap = document.createElement("div");
   wrap.style.cssText = "max-width:1100px;";
 
