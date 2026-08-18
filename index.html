@@ -1476,8 +1476,8 @@ function renderPickingAcompanhar(panel) {
   const resumo = document.createElement("div");
   resumo.style.cssText = `display:flex;gap:24px;background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:16px 20px;margin-bottom:16px;`;
   resumo.innerHTML = `
-    <div><div style="font-size:20px;font-weight:700;color:#2dce89;font-family:Inter,sans-serif;">${concluidosHoje.length}</div><div style="font-size:10px;color:#ffffff;margin-top:2px;">embalados hoje</div></div>
-    <div><div style="font-size:20px;font-weight:700;color:#ffffff;font-family:Inter,sans-serif;">${filaTotal}</div><div style="font-size:10px;color:#ffffff;margin-top:2px;">na fila</div></div>
+    <div><div style="font-size:20px;font-weight:700;color:#2dce89;font-family:Inter,sans-serif;">${concluidosHoje.length}</div><div style="font-size:10px;color:${T.text3};margin-top:2px;">embalados hoje</div></div>
+    <div><div style="font-size:20px;font-weight:700;color:${T.text};font-family:Inter,sans-serif;">${filaTotal}</div><div style="font-size:10px;color:${T.text3};margin-top:2px;">na fila</div></div>
   `;
   wrap.appendChild(resumo);
 
