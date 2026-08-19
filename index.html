@@ -8231,7 +8231,8 @@ async function uploadParaDrive(file, mes, categoria) {
 
 // Renderiza a aba conferência
 // ── NF Transferência Full ────────────────────────────────────────────────────
-let nfFullState = { itens: [], processando: false, erro: null, fase: 'upload' }; // upload | processando | preview | emitindo | concluido
+if (!window._nfFullState) window._nfFullState = { itens: [], processando: false, erro: null, fase: 'upload' };
+let nfFullState = window._nfFullState; // upload | processando | preview | emitindo | concluido
 
 async function renderNfTransferenciaFull(container, color) {
   container.innerHTML = "";
@@ -8267,11 +8268,11 @@ async function renderNfTransferenciaFull(container, color) {
   // ── Card direito: resultado ──
   const cardDir = document.createElement("div");
 
-  if (nfFullState.fase === 'upload' && !nfFullState.itens.length) {
+  if (nfFullState.fase === 'upload' && !(nfFullState.itens||[]).length) {
     cardDir.style.cssText = `background:${T.card};border:2px dashed ${T.border2};border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;align-self:stretch;`;
     cardDir.innerHTML = `<div style="font-size:12px;color:${T.text3};text-align:center;">Componentes desmembrados<br>aparecem aqui</div>`;
 
-  } else if (nfFullState.itens.length) {
+  } else if ((nfFullState.itens||[]).length) {
     cardDir.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:16px;box-sizing:border-box;`;
 
     const totalItens = nfFullState.itens.length;
@@ -8360,7 +8361,7 @@ async function renderNfTransferenciaFull(container, color) {
       // Parse manual
       const linhas = (manual?.value || "").split("\n").filter(l => l.trim());
       for (const linha of linhas) {
-        const match = linha.match(/^(.+?)[\s·\-\t]+(\d+)\s*$/);
+        const match = linha.match(/^(.+?)[\s·\-\|\t,;]+(\d+)\s*$/) || linha.match(/^(\S+)\s+(\d+)$/);
         if (match) itensParaProcessar.push({ sku: match[1].trim(), descricao: match[1].trim(), quantidade: Number(match[2]) });
       }
     }
@@ -8382,7 +8383,8 @@ async function renderNfTransferenciaFull(container, color) {
       const data = await r.json();
       if (!r.ok || !data.ok) throw new Error(data.erro || "Erro no backend");
 
-      nfFullState.itens = data.itens;
+      nfFullState.itens = data.itens || [];
+      if (!nfFullState.itens.length) throw new Error("Nenhum componente retornado pelo Bling. Verifique os SKUs.");
       nfFullState.fase = "preview";
       nfFullState.processando = false;
       nfFullState.erro = null;
