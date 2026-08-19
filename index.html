@@ -2471,7 +2471,7 @@ function renderDashboard(panel, color) {
       <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;"><div style="${lStyle}">Faturado hoje</div><div style="${vStyle}">${fmtFull(d.fatHoje)}</div></div>`;
 
     const mesRows = `
-      <div style="${rowStyle}"><div style="${lStyle}">Pedidos no mês</div><div style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;background:#111111;color:${T.text};">${d.pedidosMes} PEDIDOS</div></div>
+      <div style="${rowStyle}"><div style="${lStyle}">Pedidos no mês</div><div style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;background:#8b5cf6;color:#ffffff;">${d.pedidosMes} PEDIDOS</div></div>
       <div style="${rowStyle}"><div style="${lStyle}">Ticket médio</div><div style="${vStyle}">${ticketMedio}</div></div>
       <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;"><div style="${lStyle}">Faturamento mês</div><div style="${vStyle}">${fmt(d.fatMes)}</div></div>`;
 
@@ -2482,7 +2482,7 @@ function renderDashboard(panel, color) {
           <div style="padding:12px 14px 13px;">
             <div style="font-size:10px;color:${T.text2};margin-bottom:6px;">Hoje</div>
             <div style="font-size:26px;font-weight:700;color:${T.text};font-family:'IBM Plex Mono',monospace;">${fmtFull(d.fatHoje)}</div>
-            <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;display:inline-block;background:#3b82f6;color:${T.text};margin-top:8px;">↑ EM TEMPO REAL</div>
+            <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;display:inline-block;background:#3b82f6;color:#ffffff;margin-top:8px;">↑ EM TEMPO REAL</div>
             <div id="vdc-bars-0" style="display:flex;align-items:flex-end;gap:3px;height:22px;margin-top:12px;transition:opacity .25s;opacity:1;">${miniBars}</div>
           </div>
           <div id="vdc-list-0" style="display:none;overflow:hidden;">
@@ -2512,7 +2512,7 @@ function renderDashboard(panel, color) {
           <div style="padding:12px 14px 13px;">
             <div style="font-size:10px;color:${T.text2};margin-bottom:6px;">Mês atual</div>
             <div style="font-size:26px;font-weight:700;color:${T.text};font-family:'IBM Plex Mono',monospace;">${fmt(d.fatMes)}</div>
-            <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;display:inline-block;background:#10b981;color:${T.text};margin-top:8px;">${d.pedidosMes} PEDIDOS</div>
+            <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;display:inline-block;background:#10b981;color:#ffffff;margin-top:8px;">${d.pedidosMes} PEDIDOS</div>
             <div style="margin-top:12px;height:22px;">
               <svg width="100%" height="22" viewBox="0 0 200 22" preserveAspectRatio="none">
                 <defs><linearGradient id="gGreen" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#10b981" stop-opacity="0.2"/><stop offset="100%" stop-color="#10b981" stop-opacity="0"/></linearGradient></defs>
