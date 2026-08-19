@@ -8342,25 +8342,14 @@ async function renderNfTransferenciaFull(container, color) {
       renderNfTransferenciaFull(container, color);
 
       try {
-        const resp = await fetch("https://api.anthropic.com/v1/messages", {
+        const resp = await fetch(`${BLING_PROXY}/api/bling-produtos?action=extrair-pdf-full`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model: "claude-sonnet-4-6",
-            max_tokens: 1000,
-            messages: [{
-              role: "user",
-              content: [
-                { type: "document", source: { type: "base64", media_type: "application/pdf", data: pdfB64 } },
-                { type: "text", text: "Extrai todos os SKUs e quantidades desta lista de produtos do ML Full. Retorna APENAS um JSON puro, sem markdown, no formato: [{\"sku\":\"SKU-AQUI\",\"descricao\":\"...\",\"quantidade\":38}]. Usa o campo SKU do documento. Não inclua nada além do JSON." }
-              ]
-            }]
-          })
+          body: JSON.stringify({ pdfBase64: pdfB64 })
         });
         const data = await resp.json();
-        const texto = data.content?.[0]?.text || "[]";
-        const clean = texto.replace(/```json|```/g, "").trim();
-        itensParaProcessar = JSON.parse(clean);
+        if (!resp.ok || !data.ok) throw new Error(data.erro || "Erro ao extrair PDF");
+        itensParaProcessar = data.itens || [];
       } catch(e) {
         nfFullState.processando = false;
         nfFullState.erro = "Erro ao extrair PDF: " + e.message;
