@@ -8235,7 +8235,6 @@ if (!window._nfFullState) window._nfFullState = { itens: [], processando: false,
 let nfFullState = window._nfFullState;
 
 async function nfFullCarregarCmp() {
-  if (nfFullState.cmpData) return; // já carregado
   try {
     const snap = await get(ref(db, "/nf_full_cmp"));
     const val = snap.val();
@@ -8276,7 +8275,7 @@ async function renderNfTransferenciaFull(container, color) {
 
     ${nfFullState.erro ? `<div style="background:${T.errBg};border:1px solid ${T.errBor};border-radius:6px;padding:10px;margin-top:12px;font-size:11px;color:${T.errText};">${nfFullState.erro}</div>` : ""}
     <div style="margin-top:14px;padding-top:14px;border-top:1px solid ${T.sep};">
-      ${nfFullState.cmpData && !nfFullState.cmpMostrarUpload ? `
+      ${nfFullState.cmpData && !nfFullState.cmpMostrarUpload && !nfFullState.cmpAplicado ? `
       <div style="background:${T.okBg};border:1px solid ${T.okBor};border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
         <div>
           <div style="font-size:11px;font-weight:600;color:${T.okTxt};">✓ CMP salvo — ${new Date(nfFullState.cmpAtualizado).toLocaleDateString("pt-BR")}</div>
@@ -8436,6 +8435,8 @@ async function renderNfTransferenciaFull(container, color) {
       nfFullState.fase = "preview";
       nfFullState.processando = false;
       nfFullState.erro = null;
+      nfFullState.cmpMostrarUpload = false; // reseta pra mostrar aviso de CMP
+      nfFullState.cmpAplicado = false; // ainda não aplicou nessa rodada
       btnProcessar.textContent = "Processar e desmembrar kits";
       btnProcessar.disabled = false;
       renderNfTransferenciaFull(container, color);
@@ -8468,16 +8469,16 @@ async function renderNfTransferenciaFull(container, color) {
 
   // Botões sim/não de CMP salvo
   container.querySelector("#nf-full-cmp-nao")?.addEventListener("click", () => {
-    // Aplica CMP salvo automaticamente
     if (nfFullState.cmpData && (nfFullState.itens||[]).length) {
       let atualizados = 0;
       nfFullState.itens.forEach(it => {
         const custo = nfFullState.cmpData[it.sku];
         if (custo !== undefined) { it.custo = custo; atualizados++; }
       });
+      nfFullState.cmpAplicado = true;
+      renderNfTransferenciaFull(container, color);
       const st = container.querySelector("#nf-full-cmp-status");
       if (st) st.textContent = `✓ CMP aplicado em ${atualizados} produtos`;
-      renderNfTransferenciaFull(container, color);
     }
   });
   container.querySelector("#nf-full-cmp-sim")?.addEventListener("click", () => {
