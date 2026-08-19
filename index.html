@@ -2056,7 +2056,9 @@ function renderClonarTab(container) {
     const item = clonarState.itemEncontrado;
     const contaDestino = clonarState.contaOrigem === "matriz" ? "Filial SP" : "Matriz RS";
 
+    const colDir = document.createElement("div");
     const previewCard = document.createElement("div");
+    previewCard.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:16px;box-sizing:border-box;`;
 
     const foto = item.pictures?.[0]?.source || "";
     previewCard.innerHTML = `
@@ -2092,12 +2094,12 @@ function renderClonarTab(container) {
 
       <button id="clonar-btn-confirmar" ${item.has_variations ? "disabled" : ""} style="width:100%;padding:11px;border-radius:6px;background:${item.has_variations ? T.border : "#5e72e4"};border:none;color:${item.has_variations ? T.text3 : "#fff"};font-size:12px;font-weight:600;cursor:${item.has_variations ? "not-allowed" : "pointer"};">${clonarState.clonando ? "Clonando..." : "Confirmar e clonar anúncio"}</button>
     `;
-    alvoEsq.appendChild(previewCard);
+    colDir.appendChild(previewCard);
+    row.appendChild(colDir);
 
-    // ── Coluna direita: prévia visual do anúncio clonado ──
-    const colDir = document.createElement("div");
+    // ── Coluna direita: prévia visual do anúncio clonado (dentro do mesmo card) ──
     const listingWrap = document.createElement("div");
-    listingWrap.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:16px;height:100%;box-sizing:border-box;`;
+    listingWrap.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:16px;box-sizing:border-box;margin-top:10px;`;
     const listingTitle = document.createElement("div");
     listingTitle.style.cssText = "font-size:11px;color:${T.text3};margin-bottom:12px;";
     listingTitle.textContent = "Prévia do anúncio clonado";
@@ -2105,7 +2107,6 @@ function renderClonarTab(container) {
     listingWrap.appendChild(listingTitle);
     listingWrap.appendChild(previewEl);
     colDir.appendChild(listingWrap);
-    row.appendChild(colDir);
 
     window._clonarToggle = function(idx) {
     if (!loteState.itens || !loteState.itens[idx]) return;
