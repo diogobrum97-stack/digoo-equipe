@@ -1,7 +1,7 @@
 // Digoo OPS — Service Worker com cache busting automático
 // A versão muda a cada deploy via GitHub Actions
 
-const CACHE_VERSION = 'digoo-ops-ee37f74';
+const CACHE_VERSION = 'digoo-ops-9c01d57';
 const CACHE_NAME = `digoo-${CACHE_VERSION}`;
 
 const ASSETS = [
