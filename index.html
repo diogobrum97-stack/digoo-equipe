@@ -8391,7 +8391,7 @@ async function renderNfTransferenciaFull(container, color) {
       console.log("Backend response:", JSON.stringify(data).slice(0, 300));
       if (!r.ok || !data.ok) throw new Error(data.erro || `Erro ${r.status} no backend`);
 
-      nfFullState.itens = data.itens || [];
+      nfFullState.itens = data.itens || data.data || [];
       if (!nfFullState.itens.length) throw new Error("Nenhum componente retornado pelo Bling. Verifique se o token Bling está conectado e os SKUs existem.");
       nfFullState.fase = "preview";
       nfFullState.processando = false;
