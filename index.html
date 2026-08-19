@@ -5100,7 +5100,7 @@ function render(){
             { label: "Tarefas", tab: "tarefas", subs: [] },
             { label: "Equipe", tab: null, subs: [{label:"Concluídas",tab:"concluidas"},{label:"Conversas",tab:"conversas"}] },
             { label: "Mercado Livre", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência de Compra",tab:"experiencia"},{label:"Clonar Anúncio",tab:"clonar"},{label:"Perguntas",tab:"perguntas"},{label:"Picking & Packing",tab:"picking"}] },
-            { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"}] },
+            { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"},{label:"NF Transferência Full",tab:"nf-full"}] },
           ];
 
           const currentTab = window._diogotab;
@@ -5203,7 +5203,7 @@ function render(){
               { label: "Tarefas", tab: "tarefas", subs: [] },
               { label: "Equipe", tab: null, subs: [{label:"Concluídas",tab:"concluidas"},{label:"Conversas",tab:"conversas"}] },
               { label: "ML", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência",tab:"experiencia"},{label:"Clonar",tab:"clonar"},{label:"Perguntas",tab:"perguntas"},{label:"Picking",tab:"picking"}] },
-              { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"}] },
+              { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"},{label:"NF Transferência Full",tab:"nf-full"}] },
               { label: "📝", tab: null, subs: [], acao: "ideias" },
               { label: "⚙", tab: "config", subs: [] },
             ];
@@ -5652,6 +5652,11 @@ function render(){
             let pickingContainer = panel.querySelector(".picking-container");
             if(!pickingContainer){ pickingContainer = document.createElement("div"); pickingContainer.className="picking-container"; panel.appendChild(pickingContainer); }
             renderPickingDiogo(pickingContainer);
+          }else if(window._diogotab==="nf-full"){
+            panel.style.maxHeight="none"; panel.style.overflowY="auto";
+            let nfFullContainer = panel.querySelector(".nf-full-container");
+            if(!nfFullContainer){ nfFullContainer = document.createElement("div"); nfFullContainer.className="nf-full-container"; panel.appendChild(nfFullContainer); }
+            renderNfTransferenciaFull(nfFullContainer, color);
           }else if(window._diogotab==="conferencia"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
             let confContainer = panel.querySelector(".conf-container");
@@ -8225,6 +8230,309 @@ async function uploadParaDrive(file, mes, categoria) {
 }
 
 // Renderiza a aba conferência
+// ── NF Transferência Full ────────────────────────────────────────────────────
+let nfFullState = { itens: [], processando: false, erro: null, fase: 'upload' }; // upload | processando | preview | emitindo | concluido
+
+async function renderNfTransferenciaFull(container, color) {
+  container.innerHTML = "";
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;";
+
+  // ── Card esquerdo: upload e controles ──
+  const cardEsq = document.createElement("div");
+  cardEsq.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:20px;box-sizing:border-box;`;
+
+  cardEsq.innerHTML = `
+    <div style="font-size:15px;font-weight:700;color:${T.text};margin-bottom:4px;">NF Transferência Full</div>
+    <div style="font-size:11px;color:${T.text3};margin-bottom:20px;">Importa o PDF do ML Full, desmembra os kits e monta a NF de transferência.</div>
+
+    <div style="font-size:11px;color:${T.text3};margin-bottom:8px;">1. Sobe o PDF de instruções do envio Full (ML)</div>
+    <label id="nf-full-label" style="display:block;border:2px dashed ${T.border2};border-radius:8px;padding:20px;text-align:center;cursor:pointer;margin-bottom:16px;transition:border-color .2s;">
+      <input type="file" id="nf-full-pdf" accept="application/pdf" style="display:none;">
+      <div style="font-size:12px;color:${T.text3};">📄 Clique para selecionar o PDF</div>
+      <div style="font-size:10px;color:${T.text3};margin-top:4px;">Inbound-XXXXXXXX-preparation-instructions.pdf</div>
+    </label>
+
+    <div style="font-size:11px;color:${T.text3};margin-bottom:8px;">2. Ou cole os itens manualmente (SKU · Quantidade)</div>
+    <textarea id="nf-full-manual" rows="6" placeholder="COSMIQ-REV-PRETO · 72\nWINDX-REV-KIT10-PRETO · 50\nWC-HDC-PRETO · 38" style="width:100%;background:${T.bg3};border:1px solid ${T.border};border-radius:6px;padding:10px 12px;color:${T.text};font-size:12px;font-family:'IBM Plex Mono',monospace;outline:none;box-sizing:border-box;resize:vertical;margin-bottom:16px;"></textarea>
+
+    <button id="nf-full-processar" style="width:100%;padding:11px;border-radius:6px;background:#3b82f6;border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">
+      ${nfFullState.processando ? "⏳ Buscando no Bling..." : "Processar e desmembrar kits"}
+    </button>
+
+    ${nfFullState.erro ? `<div style="background:${T.errBg};border:1px solid ${T.errBor};border-radius:6px;padding:10px;margin-top:12px;font-size:11px;color:${T.errText};">${nfFullState.erro}</div>` : ""}
+  `;
+  wrap.appendChild(cardEsq);
+
+  // ── Card direito: resultado ──
+  const cardDir = document.createElement("div");
+
+  if (nfFullState.fase === 'upload' && !nfFullState.itens.length) {
+    cardDir.style.cssText = `background:${T.card};border:2px dashed ${T.border2};border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;align-self:stretch;`;
+    cardDir.innerHTML = `<div style="font-size:12px;color:${T.text3};text-align:center;">Componentes desmembrados<br>aparecem aqui</div>`;
+
+  } else if (nfFullState.itens.length) {
+    cardDir.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:16px;box-sizing:border-box;`;
+
+    const totalItens = nfFullState.itens.length;
+    const totalUnidades = nfFullState.itens.reduce((s,i) => s + i.quantidade, 0);
+    const totalCusto = nfFullState.itens.reduce((s,i) => s + (i.custo * i.quantidade), 0);
+
+    cardDir.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid ${T.sep};">
+        <div style="font-size:12px;font-weight:600;color:${T.text};">${totalItens} produtos · ${totalUnidades} unidades</div>
+        <div style="font-size:12px;color:${T.text2};">Total: <strong style="color:${T.text};font-family:'IBM Plex Mono',monospace;">R$ ${totalCusto.toLocaleString("pt-BR",{minimumFractionDigits:2})}</strong></div>
+      </div>
+      <div style="max-height:400px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin-bottom:14px;">
+        ${nfFullState.itens.map((it,idx) => `
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;background:${T.bg3};border:1px solid ${it.tipo==='componente'?T.border2:T.border};border-radius:7px;">
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:11px;font-weight:600;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${it.descricao}</div>
+              <div style="font-size:10px;color:${T.text3};margin-top:1px;">${it.sku} ${it.kitOrigem?`<span style="color:${T.text3};">← ${it.kitOrigem}</span>`:""} · NCM ${it.ncm||"—"}</div>
+            </div>
+            <div style="text-align:right;flex-shrink:0;">
+              <div style="font-size:12px;font-weight:700;color:${T.text};">${it.quantidade} un</div>
+              <div style="font-size:10px;color:${T.text3};">R$ ${(it.custo*it.quantidade).toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
+            </div>
+            <input type="number" value="${it.quantidade}" min="1" data-idx="${idx}" class="nf-full-qtd" style="width:55px;background:${T.bg};border:1px solid ${T.border};border-radius:4px;padding:5px 6px;color:${T.text};font-size:11px;text-align:center;font-family:inherit;">
+          </div>
+        `).join("")}
+      </div>
+      <button id="nf-full-preview-btn" style="width:100%;padding:11px;border-radius:6px;background:#2dce89;border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">
+        Ver preview e emitir NF de transferência
+      </button>
+    `;
+  }
+
+  wrap.appendChild(cardDir);
+  container.appendChild(wrap);
+
+  // ── Event listeners ──
+  const pdfInput = container.querySelector("#nf-full-pdf");
+  const label = container.querySelector("#nf-full-label");
+  const btnProcessar = container.querySelector("#nf-full-processar");
+
+  // Upload PDF — extrai via Claude API
+  pdfInput?.addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    label.innerHTML = `<div style="font-size:12px;color:${T.text};">📄 ${file.name}</div>`;
+
+    // Lê PDF como base64 e envia pra Claude extrair SKUs
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const b64 = ev.target.result.split(",")[1];
+      container.querySelector("#nf-full-manual").value = ""; // limpa manual
+      container.querySelector("#nf-full-manual").dataset.pdfB64 = b64;
+      container.querySelector("#nf-full-manual").placeholder = `PDF carregado: ${file.name}\nClique em "Processar" para extrair os SKUs.`;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // Processar
+  btnProcessar?.addEventListener("click", async () => {
+    const manual = container.querySelector("#nf-full-manual");
+    const pdfB64 = manual?.dataset.pdfB64;
+    let itensParaProcessar = [];
+
+    if (pdfB64) {
+      // Extrai SKUs do PDF via Claude
+      nfFullState.processando = true;
+      nfFullState.erro = null;
+      renderNfTransferenciaFull(container, color);
+
+      try {
+        const resp = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-6",
+            max_tokens: 1000,
+            messages: [{
+              role: "user",
+              content: [
+                { type: "document", source: { type: "base64", media_type: "application/pdf", data: pdfB64 } },
+                { type: "text", text: "Extrai todos os SKUs e quantidades desta lista de produtos do ML Full. Retorna APENAS um JSON puro, sem markdown, no formato: [{\"sku\":\"SKU-AQUI\",\"descricao\":\"...\",\"quantidade\":38}]. Usa o campo SKU do documento. Não inclua nada além do JSON." }
+              ]
+            }]
+          })
+        });
+        const data = await resp.json();
+        const texto = data.content?.[0]?.text || "[]";
+        const clean = texto.replace(/```json|```/g, "").trim();
+        itensParaProcessar = JSON.parse(clean);
+      } catch(e) {
+        nfFullState.processando = false;
+        nfFullState.erro = "Erro ao extrair PDF: " + e.message;
+        renderNfTransferenciaFull(container, color);
+        return;
+      }
+    } else {
+      // Parse manual
+      const linhas = (manual?.value || "").split("\n").filter(l => l.trim());
+      for (const linha of linhas) {
+        const match = linha.match(/^(.+?)[\s·\-\t]+(\d+)\s*$/);
+        if (match) itensParaProcessar.push({ sku: match[1].trim(), descricao: match[1].trim(), quantidade: Number(match[2]) });
+      }
+    }
+
+    if (!itensParaProcessar.length) {
+      nfFullState.processando = false;
+      nfFullState.erro = "Nenhum item encontrado. Verifique o PDF ou o formato do texto manual.";
+      renderNfTransferenciaFull(container, color);
+      return;
+    }
+
+    // Chama backend para desmembrar kits
+    try {
+      const r = await fetch(`${BLING_PROXY}/api/bling-produtos?action=desmembrar-kits-full`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ itens: itensParaProcessar }),
+      });
+      const data = await r.json();
+      if (!r.ok || !data.ok) throw new Error(data.erro || "Erro no backend");
+
+      nfFullState.itens = data.itens;
+      nfFullState.fase = "preview";
+      nfFullState.processando = false;
+      nfFullState.erro = null;
+      renderNfTransferenciaFull(container, color);
+    } catch(e) {
+      nfFullState.processando = false;
+      nfFullState.erro = e.message;
+      renderNfTransferenciaFull(container, color);
+    }
+  });
+
+  // Edição de quantidades
+  container.querySelectorAll(".nf-full-qtd").forEach(inp => {
+    inp.addEventListener("change", () => {
+      const idx = Number(inp.dataset.idx);
+      if (nfFullState.itens[idx]) nfFullState.itens[idx].quantidade = Number(inp.value) || 1;
+    });
+  });
+
+  // Preview e emitir
+  container.querySelector("#nf-full-preview-btn")?.addEventListener("click", () => {
+    renderNfFullEmitirModal(nfFullState.itens);
+  });
+}
+
+function renderNfFullEmitirModal(itens) {
+  const overlay = document.createElement("div");
+  overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px;";
+
+  const box = document.createElement("div");
+  box.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:14px;padding:24px;max-width:720px;width:100%;max-height:90vh;overflow-y:auto;box-sizing:border-box;`;
+
+  const totalCusto = itens.reduce((s,i) => s + (i.custo * i.quantidade), 0);
+  const totalUnidades = itens.reduce((s,i) => s + i.quantidade, 0);
+
+  box.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div>
+        <div style="font-size:15px;font-weight:700;color:${T.text};">Preview — NF Transferência Full</div>
+        <div style="font-size:11px;color:${T.text3};margin-top:2px;">CFOP 6152 · Natureza: Transferência de Mercadorias p/ Filial · Matriz RS → Filial SP</div>
+      </div>
+      <button id="nf-full-modal-fechar" style="background:none;border:none;color:${T.text3};font-size:20px;cursor:pointer;padding:4px 8px;">×</button>
+    </div>
+
+    <div style="background:${T.bg3};border:1px solid ${T.border};border-radius:8px;padding:12px 14px;margin-bottom:16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;font-size:11px;">
+      <div><div style="color:${T.text3};margin-bottom:2px;">Produtos</div><div style="font-weight:700;color:${T.text};">${itens.length}</div></div>
+      <div><div style="color:${T.text3};margin-bottom:2px;">Unidades</div><div style="font-weight:700;color:${T.text};">${totalUnidades}</div></div>
+      <div><div style="color:${T.text3};margin-bottom:2px;">Valor total</div><div style="font-weight:700;color:${T.text};font-family:'IBM Plex Mono',monospace;">R$ ${totalCusto.toLocaleString("pt-BR",{minimumFractionDigits:2})}</div></div>
+    </div>
+
+    <table style="width:100%;border-collapse:collapse;font-size:11px;margin-bottom:16px;">
+      <thead>
+        <tr style="border-bottom:1px solid ${T.border};">
+          <th style="text-align:left;padding:6px 8px;color:${T.text3};font-weight:500;">Produto / SKU</th>
+          <th style="text-align:center;padding:6px 8px;color:${T.text3};font-weight:500;">NCM</th>
+          <th style="text-align:center;padding:6px 8px;color:${T.text3};font-weight:500;">Qtd</th>
+          <th style="text-align:right;padding:6px 8px;color:${T.text3};font-weight:500;">Unit</th>
+          <th style="text-align:right;padding:6px 8px;color:${T.text3};font-weight:500;">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${itens.map(it => `
+          <tr style="border-bottom:1px solid ${T.sep};">
+            <td style="padding:8px;color:${T.text};">${it.descricao}<br><span style="color:${T.text3};font-size:10px;">${it.sku}${it.kitOrigem?` ← ${it.kitOrigem}`:""}</span></td>
+            <td style="padding:8px;text-align:center;color:${T.text2};">${it.ncm||"—"}</td>
+            <td style="padding:8px;text-align:center;font-weight:700;color:${T.text};">${it.quantidade}</td>
+            <td style="padding:8px;text-align:right;color:${T.text2};">R$ ${Number(it.custo).toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
+            <td style="padding:8px;text-align:right;font-weight:600;color:${T.text};font-family:'IBM Plex Mono',monospace;">R$ ${(it.custo*it.quantidade).toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
+          </tr>
+        `).join("")}
+      </tbody>
+      <tfoot>
+        <tr style="border-top:2px solid ${T.border};">
+          <td colspan="4" style="padding:10px 8px;text-align:right;color:${T.text3};">Total NF</td>
+          <td style="padding:10px 8px;text-align:right;font-weight:700;color:#2dce89;font-family:'IBM Plex Mono',monospace;font-size:13px;">R$ ${totalCusto.toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div style="background:${T.infoBg};border:1px solid ${T.infoBor};border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:11px;color:${T.infoTxt};line-height:1.6;">
+      ℹ️ A NF será emitida com CFOP 6152, natureza <strong>Transferência de Mercadorias p/ Filial</strong>. Os custos vêm do cadastro do Bling. Verifique os NCMs antes de emitir.
+    </div>
+
+    <div id="nf-full-status"></div>
+
+    <button id="nf-full-emitir" style="width:100%;padding:12px;border-radius:6px;background:#2dce89;border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
+      Emitir NF de Transferência no Bling
+    </button>
+  `;
+
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+
+  document.getElementById("nf-full-modal-fechar")?.addEventListener("click", () => overlay.remove());
+  overlay.addEventListener("click", e => { if (e.target === overlay) overlay.remove(); });
+
+  document.getElementById("nf-full-emitir")?.addEventListener("click", async () => {
+    const btn = document.getElementById("nf-full-emitir");
+    const statusEl = document.getElementById("nf-full-status");
+    btn.disabled = true;
+    btn.textContent = "Emitindo...";
+    statusEl.innerHTML = `<div style="font-size:11px;color:${T.text3};padding:8px 0;">Enviando para o Bling e transmitindo para a SEFAZ...</div>`;
+
+    try {
+      const r = await fetch(`${BLING_PROXY}/api/bling-produtos?action=emitir-nf-transferencia`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ itens, naturezaId: 15109130797 }),
+      });
+      const data = await r.json();
+
+      if (!r.ok || !data.ok) {
+        statusEl.innerHTML = `<div style="background:${T.errBg};border:1px solid ${T.errBor};border-radius:6px;padding:10px 12px;font-size:11px;color:${T.errText};margin-bottom:12px;white-space:pre-wrap;">Erro: ${data.erro||"Falha"}\n${JSON.stringify(data.detalhe||data.raw||"",null,2)}</div>`;
+        btn.disabled = false;
+        btn.textContent = "Tentar novamente";
+        return;
+      }
+
+      statusEl.innerHTML = `
+        <div style="background:${T.okBg};border:1px solid ${T.okBor};border-radius:8px;padding:14px;margin-bottom:12px;">
+          <div style="font-size:13px;font-weight:700;color:${T.okTxt};margin-bottom:8px;">✓ NF emitida com sucesso!</div>
+          <div style="font-size:11px;color:${T.text2};margin-bottom:4px;">Número: <strong style="color:${T.text};">${data.numero||"—"}</strong></div>
+          <div style="font-size:11px;color:${T.text2};">Chave: <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:${T.text};">${data.chaveAcesso||"—"}</span></div>
+        </div>
+      `;
+      btn.style.background = T.okBg;
+      btn.style.color = T.okTxt;
+      btn.style.border = `1px solid ${T.okBor}`;
+      btn.textContent = "✓ Emitida";
+      btn.disabled = true;
+      nfFullState.fase = "concluido";
+    } catch(e) {
+      statusEl.innerHTML = `<div style="background:${T.errBg};border:1px solid ${T.errBor};border-radius:6px;padding:10px;font-size:11px;color:${T.errText};margin-bottom:12px;">${e.message}</div>`;
+      btn.disabled = false;
+      btn.textContent = "Tentar novamente";
+    }
+  });
+}
+
 async function renderConferencia(panel, color) {
   panel.innerHTML = "";
 
