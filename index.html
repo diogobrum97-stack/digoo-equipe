@@ -15,6 +15,24 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <script>
+    // Captura de erros globais para debug no mobile
+    window.addEventListener('error', function(e) {
+      const msg = (e.message || '') + ' @ ' + (e.filename || '').split('/').pop() + ':' + e.lineno;
+      // Mostra erro na tela em vez de crashar silenciosamente
+      const el = document.createElement('div');
+      el.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#c0392b;color:#fff;padding:10px;font-size:11px;z-index:99999;font-family:monospace;white-space:pre-wrap;max-height:40vh;overflow-y:auto;';
+      el.textContent = '⚠ ' + msg;
+      document.body.appendChild(el);
+    });
+    window.addEventListener('unhandledrejection', function(e) {
+      const msg = 'Promise rejected: ' + (e.reason?.message || e.reason || 'unknown');
+      const el = document.createElement('div');
+      el.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#e67e22;color:#fff;padding:10px;font-size:11px;z-index:99999;font-family:monospace;white-space:pre-wrap;max-height:40vh;overflow-y:auto;';
+      el.textContent = '⚠ ' + msg;
+      document.body.appendChild(el);
+    });
+  </script>
 
 <div class="toggle-wrap">
   <div class="toggle-track" id="toggle-track" onclick="toggleTheme()" title="Alternar tema">
