@@ -8280,11 +8280,14 @@ async function renderNfTransferenciaFull(container, color) {
     const totalCusto = nfFullState.itens.reduce((s,i) => s + (Number(i.custo||0) * Number(i.quantidade||0)), 0);
 
     cardDir.innerHTML = `
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid ${T.sep};">
-        <div style="font-size:12px;font-weight:600;color:${T.text};">${totalItens} produtos · ${totalUnidades} unidades</div>
-        <div style="font-size:12px;color:${T.text2};">Total: <strong style="color:${T.text};font-family:'IBM Plex Mono',monospace;">R$ ${totalCusto.toLocaleString("pt-BR",{minimumFractionDigits:2})}</strong></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid ${T.sep};">
+        <div style="font-size:12px;font-weight:600;color:${T.text};">${totalItens} produtos · ${totalUnidades} un</div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <button id="nf-full-usar-cmp" style="background:none;border:1px solid #00dfc366;color:#00dfc3;border-radius:5px;padding:4px 10px;font-size:10px;font-weight:600;cursor:pointer;font-family:inherit;">Usar CMP da Filial</button>
+          <div style="font-size:12px;color:${T.text2};">R$ <strong style="color:${T.text};font-family:'IBM Plex Mono',monospace;">${totalCusto.toLocaleString("pt-BR",{minimumFractionDigits:2})}</strong></div>
+        </div>
       </div>
-      <div style="max-height:400px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin-bottom:14px;">
+      <div style="max-height:calc(100vh - 280px);overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin-bottom:14px;">
         ${nfFullState.itens.map((it,idx) => `
           <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;background:${T.bg3};border:1px solid ${it.tipo==='componente'?T.border2:T.border};border-radius:7px;">
             <div style="flex:1;min-width:0;">
@@ -8412,8 +8415,39 @@ async function renderNfTransferenciaFull(container, color) {
   container.querySelectorAll(".nf-full-qtd").forEach(inp => {
     inp.addEventListener("change", () => {
       const idx = Number(inp.dataset.idx);
-      if (nfFullState.itens[idx]) nfFullState.itens[idx].quantidade = Number(inp.value) || 1;
+      if (nfFullState.itens[idx]) { nfFullState.itens[idx].quantidade = Number(inp.value) || 1; renderNfTransferenciaFull(container, color); }
     });
+  });
+
+  // Edição de custo
+  container.querySelectorAll(".nf-full-custo").forEach(inp => {
+    inp.addEventListener("change", () => {
+      const idx = Number(inp.dataset.idx);
+      if (nfFullState.itens[idx]) { nfFullState.itens[idx].custo = Number(inp.value) || 0; renderNfTransferenciaFull(container, color); }
+    });
+  });
+
+  // Botão Usar CMP
+  container.querySelector("#nf-full-usar-cmp")?.addEventListener("click", async () => {
+    const btn = container.querySelector("#nf-full-usar-cmp");
+    btn.textContent = "⏳ Carregando CMP...";
+    btn.disabled = true;
+    try {
+      const snap = await get(ref(db, "/custos_medios_filial"));
+      const custos = snap.val() || {};
+      let atualizados = 0;
+      nfFullState.itens.forEach(it => {
+        const key = it.sku.replace(/-/g, "_");
+        const cmp = custos[key]?.novoCmp || custos[key]?.custoAtual;
+        if (cmp) { it.custo = Number(cmp); atualizados++; }
+      });
+      btn.textContent = `✓ CMP aplicado (${atualizados} produtos)`;
+      setTimeout(() => { btn.textContent = "Usar CMP da Filial"; btn.disabled = false; }, 2500);
+      renderNfTransferenciaFull(container, color);
+    } catch(e) {
+      btn.textContent = "Erro ao carregar CMP";
+      btn.disabled = false;
+    }
   });
 
   // Preview e emitir
