@@ -3827,6 +3827,197 @@ function renderCalcIpiPanel(container, task){
   });
 
   container.appendChild(cmpWrap);
+
+  // ── Botão Gerar NF Complementar de IPI ──────────────────────────────────
+  const nfCompBtn = document.createElement("button");
+  nfCompBtn.textContent = "⊕ Gerar NF Complementar de IPI";
+  nfCompBtn.style.cssText = `margin-top:16px;width:100%;padding:11px;border-radius:6px;background:none;border:1px solid #3b82f644;color:#3b82f6;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;`;
+  nfCompBtn.addEventListener("click", () => {
+    renderNfComplementarPreview(container, task, calc);
+  });
+  container.appendChild(nfCompBtn);
+}
+
+// ── Preview e emissão da NF complementar de IPI ──────────────────────────────
+async function renderNfComplementarPreview(container, task, calc) {
+  // Remover botão e mostrar painel de preview
+  const overlay = document.createElement("div");
+  overlay.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px;`;
+
+  const box = document.createElement("div");
+  box.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:14px;padding:24px;max-width:680px;width:100%;max-height:90vh;overflow-y:auto;box-sizing:border-box;`;
+
+  // Header
+  box.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div>
+        <div style="font-size:15px;font-weight:700;color:${T.text};">NF Complementar de IPI</div>
+        <div style="font-size:11px;color:${T.text3};margin-top:2px;">CFOP 6.152 · Natureza: Complementar de IPI · Matriz RS → Filial SP</div>
+      </div>
+      <button id="nf-comp-fechar" style="background:none;border:none;color:${T.text3};font-size:20px;cursor:pointer;padding:4px 8px;">×</button>
+    </div>
+  `;
+
+  // Referência NF original
+  const refBlock = document.createElement("div");
+  refBlock.style.cssText = `background:${T.bg3};border:1px solid ${T.border};border-radius:8px;padding:12px 14px;margin-bottom:16px;`;
+  const nfRef = calc.nfUsada || task.nfNumero || "";
+  const chaveRef = calc.chaveAcesso || "";
+  refBlock.innerHTML = `
+    <div style="font-size:11px;color:${T.text3};margin-bottom:8px;">Referência à NF original</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div>
+        <div style="font-size:10px;color:${T.text3};margin-bottom:3px;">Número da NF</div>
+        <input id="nf-comp-numero-ref" type="text" value="${nfRef}" placeholder="ex: 020061" style="width:100%;background:${T.bg};border:1px solid ${T.border};border-radius:4px;padding:7px 10px;color:${T.text};font-size:12px;font-family:inherit;outline:none;box-sizing:border-box;">
+      </div>
+      <div>
+        <div style="font-size:10px;color:${T.text3};margin-bottom:3px;">Chave de Acesso (44 dígitos) <span style="color:${T.text3};">— opcional se informar número</span></div>
+        <input id="nf-comp-chave-ref" type="text" value="${chaveRef}" placeholder="ex: 35240812345..." style="width:100%;background:${T.bg};border:1px solid ${T.border};border-radius:4px;padding:7px 10px;color:${T.text};font-size:12px;font-family:inherit;outline:none;box-sizing:border-box;">
+      </div>
+    </div>
+  `;
+  box.appendChild(refBlock);
+
+  // Tabela de itens com IPI
+  const itensBlock = document.createElement("div");
+  itensBlock.style.cssText = `margin-bottom:16px;`;
+  itensBlock.innerHTML = `<div style="font-size:11px;color:${T.text3};margin-bottom:8px;">Itens — valores de IPI a complementar</div>`;
+
+  const produtosComIpi = (calc.produtos || []).filter(p => p.aliquota > 0 && p.quantidade > 0);
+
+  if (!produtosComIpi.length) {
+    itensBlock.innerHTML += `<div style="font-size:12px;color:${T.errText};padding:10px;background:${T.errBg};border:1px solid ${T.errBor};border-radius:6px;">Nenhum produto com IPI calculado. Calcule o IPI antes de gerar a NF complementar.</div>`;
+    box.appendChild(itensBlock);
+  } else {
+    const tbl = document.createElement("table");
+    tbl.style.cssText = `width:100%;border-collapse:collapse;font-size:11px;`;
+    tbl.innerHTML = `
+      <thead>
+        <tr style="border-bottom:1px solid ${T.border};">
+          <th style="text-align:left;padding:6px 8px;color:${T.text3};font-weight:500;">Produto / SKU</th>
+          <th style="text-align:center;padding:6px 8px;color:${T.text3};font-weight:500;">NCM</th>
+          <th style="text-align:center;padding:6px 8px;color:${T.text3};font-weight:500;">Qtd</th>
+          <th style="text-align:center;padding:6px 8px;color:${T.text3};font-weight:500;">Alíq. IPI</th>
+          <th style="text-align:right;padding:6px 8px;color:${T.text3};font-weight:500;">Vl. IPI Unit</th>
+          <th style="text-align:right;padding:6px 8px;color:${T.text3};font-weight:500;">Vl. IPI Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${produtosComIpi.map(p => {
+          const ipiUnit = parseFloat(p.ipiUnitario || 0);
+          const ipiTotal = ipiUnit * Number(p.quantidade);
+          return `<tr style="border-bottom:1px solid ${T.sep};">
+            <td style="padding:8px;color:${T.text};">${p.produto || p.sku}<br><span style="color:${T.text3};font-size:10px;">${p.sku}</span></td>
+            <td style="padding:8px;text-align:center;color:${T.text2};">${p.ncm || "—"}</td>
+            <td style="padding:8px;text-align:center;color:${T.text2};">${p.quantidade}</td>
+            <td style="padding:8px;text-align:center;color:${T.text2};">${Number(p.aliquota*100).toFixed(0)}%</td>
+            <td style="padding:8px;text-align:right;color:${T.text};font-family:'IBM Plex Mono',monospace;">R$ ${ipiUnit.toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
+            <td style="padding:8px;text-align:right;color:${T.text};font-family:'IBM Plex Mono',monospace;font-weight:600;">R$ ${ipiTotal.toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
+          </tr>`;
+        }).join("")}
+      </tbody>
+      <tfoot>
+        <tr style="border-top:2px solid ${T.border};">
+          <td colspan="5" style="padding:10px 8px;text-align:right;color:${T.text3};font-size:11px;">Total IPI Complementar</td>
+          <td style="padding:10px 8px;text-align:right;color:#3b82f6;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px;">R$ ${produtosComIpi.reduce((s,p)=>{const u=parseFloat(p.ipiUnitario||0);return s+u*Number(p.quantidade);},0).toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
+        </tr>
+      </tfoot>
+    `;
+    itensBlock.appendChild(tbl);
+    box.appendChild(itensBlock);
+
+    // Aviso + botão emitir
+    const avisoBlock = document.createElement("div");
+    avisoBlock.style.cssText = `background:${T.infoBg};border:1px solid ${T.infoBor};border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:11px;color:${T.infoTxt};line-height:1.6;`;
+    avisoBlock.innerHTML = `ℹ️ A NF será emitida com CFOP 6152, finalidade <strong>Complementar</strong>, referenciando a NF original. Valor dos itens = R$ 0,00. Apenas o IPI será destacado. Verifique os dados antes de emitir.`;
+    box.appendChild(avisoBlock);
+
+    // Status de emissão
+    const statusEl = document.createElement("div");
+    statusEl.id = "nf-comp-status";
+    box.appendChild(statusEl);
+
+    // Botão emitir
+    const emitirBtn = document.createElement("button");
+    emitirBtn.id = "nf-comp-emitir";
+    emitirBtn.textContent = "Emitir NF Complementar de IPI";
+    emitirBtn.style.cssText = `width:100%;padding:12px;border-radius:6px;background:#3b82f6;border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;`;
+    emitirBtn.addEventListener("click", async () => {
+      const chaveRefInput = document.getElementById("nf-comp-chave-ref")?.value?.trim() || "";
+      const numeroRefInput = document.getElementById("nf-comp-numero-ref")?.value?.trim() || "";
+      if (!chaveRefInput && !numeroRefInput) {
+        statusEl.innerHTML = `<div style="background:${T.errBg};border:1px solid ${T.errBor};border-radius:6px;padding:10px;font-size:11px;color:${T.errText};margin-bottom:12px;">Informe o número ou a chave de acesso da NF original.</div>`;
+        return;
+      }
+
+      emitirBtn.disabled = true;
+      emitirBtn.textContent = "Emitindo...";
+      statusEl.innerHTML = `<div style="font-size:11px;color:${T.text3};padding:8px 0;">Enviando para o Bling e transmitindo para a SEFAZ...</div>`;
+
+      try {
+        const payload = {
+          chaveRefOriginal: chaveRefInput || null,
+          numeroOriginal: numeroRefInput || null,
+          itens: produtosComIpi.map(p => ({
+            sku: p.sku,
+            descricao: p.produto || p.sku,
+            ncm: p.ncm || "",
+            quantidade: Number(p.quantidade),
+            aliquota: Number(p.aliquota),
+            valorIpi: parseFloat(p.ipiUnitario || 0) * Number(p.quantidade),
+          })),
+        };
+
+        const r = await fetch(`${BLING_PROXY}/api/bling-produtos?action=emitir-complementar-ipi`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await r.json();
+
+        if (!r.ok || !data.ok) {
+          statusEl.innerHTML = `<div style="background:${T.errBg};border:1px solid ${T.errBor};border-radius:6px;padding:10px 12px;font-size:11px;color:${T.errText};margin-bottom:12px;white-space:pre-wrap;">Erro: ${data.erro || "Falha ao emitir"}
+${JSON.stringify(data.detalhe||data.raw||"",null,2)}</div>`;
+          emitirBtn.disabled = false;
+          emitirBtn.textContent = "Tentar novamente";
+          return;
+        }
+
+        // Sucesso
+        statusEl.innerHTML = `
+          <div style="background:${T.okBg};border:1px solid ${T.okBor};border-radius:8px;padding:14px;margin-bottom:12px;">
+            <div style="font-size:13px;font-weight:700;color:${T.okTxt};margin-bottom:8px;">✓ NF emitida com sucesso!</div>
+            <div style="font-size:11px;color:${T.text2};margin-bottom:4px;">Número: <strong style="color:${T.text};">${data.numero || "—"}</strong></div>
+            <div style="font-size:11px;color:${T.text2};margin-bottom:8px;">Chave: <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:${T.text};">${data.chaveAcesso || "—"}</span></div>
+            <div style="font-size:10px;color:${T.text3};">Status SEFAZ: ${data.status || "—"}</div>
+          </div>
+        `;
+        emitirBtn.style.background = T.okBg;
+        emitirBtn.style.color = T.okTxt;
+        emitirBtn.style.border = `1px solid ${T.okBor}`;
+        emitirBtn.textContent = "✓ Emitida";
+        emitirBtn.disabled = true;
+
+        // Salva chave no Firebase para referência futura
+        if (data.chaveAcesso && calc.nfUsada) {
+          const chaveKey = String(calc.nfUsada).replace(/[.#$\[\]\/]/g, "_");
+          await update(ref(db, \`/nfes_processadas/\${chaveKey}\`), { chaveAcesso: data.chaveAcesso, nfComplementarNumero: data.numero });
+        }
+
+      } catch (e) {
+        statusEl.innerHTML = `<div style="background:${T.errBg};border:1px solid ${T.errBor};border-radius:6px;padding:10px;font-size:11px;color:${T.errText};margin-bottom:12px;">${e.message}</div>`;
+        emitirBtn.disabled = false;
+        emitirBtn.textContent = "Tentar novamente";
+      }
+    });
+    box.appendChild(emitirBtn);
+  }
+
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+
+  document.getElementById("nf-comp-fechar")?.addEventListener("click", () => overlay.remove());
+  overlay.addEventListener("click", e => { if (e.target === overlay) overlay.remove(); });
 }
 
 async function fetchVendas(days) {
