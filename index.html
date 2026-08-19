@@ -1934,7 +1934,7 @@ function renderClonarTab(container) {
 
   // Envelope único da coluna esquerda (mesma altura da direita quando há prévia)
   const colEsqCard = document.createElement("div");
-  colEsqCard.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:16px;box-sizing:border-box;`;
+  colEsqCard.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:20px;box-sizing:border-box;`;
   colEsq.appendChild(colEsqCard);
   const alvoEsq = temColunaDireita ? colEsqCard : colEsq;
 
@@ -2040,22 +2040,6 @@ function renderClonarTab(container) {
       ${!loteState.rodando && loteState.fase === "concluido" ? `<button id="clonar-lote-novo" style="width:100%;margin-top:12px;padding:9px;border-radius:6px;background:${T.bg2};border:1px solid ${T.border};color:${T.text2};font-size:11px;font-weight:600;cursor:pointer;">Limpar e clonar outro lote</button>` : ""}
     `;
     colDir.appendChild(loteWrap);
-    row.appendChild(colDir);
-  }
-
-  // Coluna direita vazia (estado inicial)
-  if (!isLoteModo && !clonarState.itemEncontrado && !clonarState.resultado) {
-    const colDir = document.createElement("div");
-    colDir.style.cssText = `background:${T.card};border:1px dashed ${T.border2};border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:200px;`;
-    colDir.innerHTML = `<div style="font-size:28px;">🔍</div><div style="font-size:12px;color:${T.text3};text-align:center;">Prévia do anúncio<br>aparece aqui</div>`;
-    row.appendChild(colDir);
-  }
-
-  // Coluna direita vazia (estado inicial)
-  if (!isLoteModo && !clonarState.itemEncontrado && !clonarState.resultado && !clonarState.erro) {
-    const colDir = document.createElement("div");
-    colDir.style.cssText = `background:${T.card};border:1px dashed ${T.border2};border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:200px;`;
-    colDir.innerHTML = `<div style="font-size:28px;">🔍</div><div style="font-size:12px;color:${T.text3};text-align:center;">Prévia do anúncio<br>aparece aqui</div>`;
     row.appendChild(colDir);
   }
 
