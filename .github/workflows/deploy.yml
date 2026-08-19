@@ -1,0 +1,33 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update Service Worker cache version
+        run: |
+          COMMIT=$(git rev-parse --short HEAD)
+          sed -i "s/const CACHE_VERSION = 'digoo-ops-[^']*'/const CACHE_VERSION = 'digoo-ops-$COMMIT'/" sw.js
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add sw.js
+          git diff --staged --quiet || git commit -m "ci: update SW cache version to $COMMIT"
+          git push
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./
+          publish_branch: gh-pages
