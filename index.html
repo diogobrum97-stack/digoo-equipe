@@ -4001,7 +4001,7 @@ ${JSON.stringify(data.detalhe||data.raw||"",null,2)}</div>`;
         // Salva chave no Firebase para referência futura
         if (data.chaveAcesso && calc.nfUsada) {
           const chaveKey = String(calc.nfUsada).replace(/[.#$\[\]\/]/g, "_");
-          await update(ref(db, \`/nfes_processadas/\${chaveKey}\`), { chaveAcesso: data.chaveAcesso, nfComplementarNumero: data.numero });
+          await update(ref(db, `/nfes_processadas/${chaveKey}`), { chaveAcesso: data.chaveAcesso, nfComplementarNumero: data.numero });
         }
 
       } catch (e) {
