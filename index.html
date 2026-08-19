@@ -13,28 +13,6 @@
 <title>Digoo · Equipe</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=Bebas+Neue&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').then(reg => {
-          // Verifica atualização a cada vez que abre
-          reg.update();
-          reg.addEventListener('updatefound', () => {
-            const newWorker = reg.installing;
-            newWorker.addEventListener('statechange', () => {
-              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                // Há versão nova — ativa imediatamente e recarrega
-                newWorker.postMessage('skipWaiting');
-                navigator.serviceWorker.addEventListener('controllerchange', () => {
-                  window.location.reload();
-                });
-              }
-            });
-          });
-        });
-      });
-    }
-  </script>
 </head>
 <body>
 
