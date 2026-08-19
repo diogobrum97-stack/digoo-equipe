@@ -92,6 +92,16 @@
   <div id="ml-modal-body"></div>
 </div>
 
+<script>
+  // Fallback se o Firebase demorar demais pra carregar
+  window._firebaseTimeout = setTimeout(function() {
+    var el = document.getElementById('identity-screen');
+    if(el && !window._firebaseOk) {
+      el.style.cssText = 'position:fixed;inset:0;background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;font-family:Inter,sans-serif;';
+      el.innerHTML = '<div style="color:#fff;font-size:16px;font-weight:700;margin-bottom:12px;">⚠ Falha na conexão</div><div style="color:#888;font-size:12px;text-align:center;max-width:260px;line-height:1.6;">O sistema não conseguiu conectar ao servidor.<br>Verifique sua internet e tente recarregar.</div><button onclick="location.reload()" style="margin-top:24px;background:#5e72e4;color:#fff;border:none;border-radius:8px;padding:12px 28px;font-size:13px;font-weight:600;cursor:pointer;">↺ Recarregar</button>';
+    }
+  }, 12000); // 12s timeout
+</script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, onValue, push, remove, update, set, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
@@ -330,6 +340,8 @@ function _buildEntrySVG() {
 }
 
 function setupIdentityScreen() {
+  window._firebaseOk = true;
+  if(window._firebaseTimeout) clearTimeout(window._firebaseTimeout);
   const _isMobile = window.innerWidth <= 768;
   if(currentUser) { requestNotif(); return; }
 
