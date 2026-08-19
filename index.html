@@ -8378,20 +8378,26 @@ async function renderNfTransferenciaFull(container, color) {
     }
 
     // Chama backend para desmembrar kits
+    btnProcessar.textContent = "⏳ Buscando no Bling...";
+    btnProcessar.disabled = true;
     try {
       const r = await fetch(`${BLING_PROXY}/api/bling-produtos?action=desmembrar-kits-full`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ itens: itensParaProcessar }),
       });
+      console.log("Backend status:", r.status);
       const data = await r.json();
-      if (!r.ok || !data.ok) throw new Error(data.erro || "Erro no backend");
+      console.log("Backend response:", JSON.stringify(data).slice(0, 300));
+      if (!r.ok || !data.ok) throw new Error(data.erro || `Erro ${r.status} no backend`);
 
       nfFullState.itens = data.itens || [];
-      if (!nfFullState.itens.length) throw new Error("Nenhum componente retornado pelo Bling. Verifique os SKUs.");
+      if (!nfFullState.itens.length) throw new Error("Nenhum componente retornado pelo Bling. Verifique se o token Bling está conectado e os SKUs existem.");
       nfFullState.fase = "preview";
       nfFullState.processando = false;
       nfFullState.erro = null;
+      btnProcessar.textContent = "Processar e desmembrar kits";
+      btnProcessar.disabled = false;
       renderNfTransferenciaFull(container, color);
     } catch(e) {
       nfFullState.processando = false;
