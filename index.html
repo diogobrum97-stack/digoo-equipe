@@ -8277,7 +8277,7 @@ async function renderNfTransferenciaFull(container, color) {
 
     const totalItens = nfFullState.itens.length;
     const totalUnidades = nfFullState.itens.reduce((s,i) => s + i.quantidade, 0);
-    const totalCusto = nfFullState.itens.reduce((s,i) => s + (i.custo * i.quantidade), 0);
+    const totalCusto = nfFullState.itens.reduce((s,i) => s + (Number(i.custo||0) * Number(i.quantidade||0)), 0);
 
     cardDir.innerHTML = `
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid ${T.sep};">
@@ -8293,7 +8293,7 @@ async function renderNfTransferenciaFull(container, color) {
             </div>
             <div style="text-align:right;flex-shrink:0;">
               <div style="font-size:12px;font-weight:700;color:${T.text};">${it.quantidade} un</div>
-              <div style="font-size:10px;color:${T.text3};">R$ ${(it.custo*it.quantidade).toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
+              <div style="font-size:10px;color:${T.text3};">R$ ${(Number(it.custo||0)*Number(it.quantidade||0)).toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
             </div>
             <input type="number" value="${it.quantidade}" min="1" data-idx="${idx}" class="nf-full-qtd" style="width:55px;background:${T.bg};border:1px solid ${T.border};border-radius:4px;padding:5px 6px;color:${T.text};font-size:11px;text-align:center;font-family:inherit;">
           </div>
@@ -8429,8 +8429,8 @@ function renderNfFullEmitirModal(itens) {
   const box = document.createElement("div");
   box.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:14px;padding:24px;max-width:720px;width:100%;max-height:90vh;overflow-y:auto;box-sizing:border-box;`;
 
-  const totalCusto = itens.reduce((s,i) => s + (i.custo * i.quantidade), 0);
-  const totalUnidades = itens.reduce((s,i) => s + i.quantidade, 0);
+  const totalCusto = itens.reduce((s,i) => s + (Number(i.custo||0) * Number(i.quantidade||0)), 0);
+  const totalUnidades = itens.reduce((s,i) => s + Number(i.quantidade||0), 0);
 
   box.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
@@ -8463,8 +8463,8 @@ function renderNfFullEmitirModal(itens) {
             <td style="padding:8px;color:${T.text};">${it.descricao}<br><span style="color:${T.text3};font-size:10px;">${it.sku}${it.kitOrigem?` ← ${it.kitOrigem}`:""}</span></td>
             <td style="padding:8px;text-align:center;color:${T.text2};">${it.ncm||"—"}</td>
             <td style="padding:8px;text-align:center;font-weight:700;color:${T.text};">${it.quantidade}</td>
-            <td style="padding:8px;text-align:right;color:${T.text2};">R$ ${Number(it.custo).toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
-            <td style="padding:8px;text-align:right;font-weight:600;color:${T.text};font-family:'IBM Plex Mono',monospace;">R$ ${(it.custo*it.quantidade).toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
+            <td style="padding:8px;text-align:right;color:${T.text2};">R$ ${Number(it.custo||0).toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
+            <td style="padding:8px;text-align:right;font-weight:600;color:${T.text};font-family:'IBM Plex Mono',monospace;">R$ ${(Number(it.custo||0)*Number(it.quantidade||0)).toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
           </tr>
         `).join("")}
       </tbody>
