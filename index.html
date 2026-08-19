@@ -8231,11 +8231,24 @@ async function uploadParaDrive(file, mes, categoria) {
 
 // Renderiza a aba conferência
 // ── NF Transferência Full ────────────────────────────────────────────────────
-if (!window._nfFullState) window._nfFullState = { itens: [], processando: false, erro: null, fase: 'upload' };
-let nfFullState = window._nfFullState; // upload | processando | preview | emitindo | concluido
+if (!window._nfFullState) window._nfFullState = { itens: [], processando: false, erro: null, fase: 'upload', cmp: null, cmpData: null, cmpAtualizado: null };
+let nfFullState = window._nfFullState;
+
+async function nfFullCarregarCmp() {
+  if (nfFullState.cmpData) return; // já carregado
+  try {
+    const snap = await get(ref(db, "/nf_full_cmp"));
+    const val = snap.val();
+    if (val && val.dados) {
+      nfFullState.cmpData = val.dados;
+      nfFullState.cmpAtualizado = val.atualizadoEm;
+    }
+  } catch(e) {}
+} // upload | processando | preview | emitindo | concluido
 
 async function renderNfTransferenciaFull(container, color) {
   container.innerHTML = "";
+  await nfFullCarregarCmp();
   const wrap = document.createElement("div");
   wrap.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;";
 
@@ -8262,16 +8275,26 @@ async function renderNfTransferenciaFull(container, color) {
     </button>
 
     ${nfFullState.erro ? `<div style="background:${T.errBg};border:1px solid ${T.errBor};border-radius:6px;padding:10px;margin-top:12px;font-size:11px;color:${T.errText};">${nfFullState.erro}</div>` : ""}
-    ${(nfFullState.itens||[]).length ? `
     <div style="margin-top:14px;padding-top:14px;border-top:1px solid ${T.sep};">
-      <div style="font-size:11px;color:${T.text3};margin-bottom:8px;">Aplicar custo médio (CSV do Bling)</div>
+      ${nfFullState.cmpData && !nfFullState.cmpMostrarUpload ? `
+      <div style="background:${T.okBg};border:1px solid ${T.okBor};border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+        <div>
+          <div style="font-size:11px;font-weight:600;color:${T.okTxt};">✓ CMP salvo — ${new Date(nfFullState.cmpAtualizado).toLocaleDateString("pt-BR")}</div>
+          <div style="font-size:10px;color:${T.text3};margin-top:2px;">Houve entrada de estoque desde então?</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0;">
+          <button id="nf-full-cmp-sim" style="padding:6px 12px;background:#5e72e4;border:none;border-radius:5px;font-size:11px;font-weight:600;color:#fff;cursor:pointer;font-family:inherit;">Sim, atualizar</button>
+          <button id="nf-full-cmp-nao" style="padding:6px 12px;background:${T.bg3};border:1px solid ${T.border};border-radius:5px;font-size:11px;font-weight:600;color:${T.text2};cursor:pointer;font-family:inherit;">Não, manter</button>
+        </div>
+      </div>` : `
+      <div style="font-size:11px;color:${T.text3};margin-bottom:8px;">${nfFullState.cmpData ? "Atualizar CMP:" : "Custo médio (CSV do Bling):"}</div>
       <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
         <input type="file" id="nf-full-cmp-csv" accept=".csv" style="display:none;">
         <div id="nf-full-cmp-label" style="flex:1;padding:8px 12px;background:${T.bg3};border:1px solid ${T.border};border-radius:6px;font-size:11px;color:${T.text3};cursor:pointer;">📎 Selecionar relatório CSV do Bling</div>
-        <button id="nf-full-cmp-aplicar" disabled style="padding:8px 14px;background:#00dfc322;border:1px solid #00dfc366;border-radius:6px;font-size:11px;font-weight:600;color:#00dfc3;cursor:not-allowed;font-family:inherit;white-space:nowrap;">Aplicar CMP</button>
-      </label>
+        <button id="nf-full-cmp-aplicar" disabled style="padding:8px 14px;background:#00dfc322;border:1px solid #00dfc366;border-radius:6px;font-size:11px;font-weight:600;color:#00dfc3;cursor:not-allowed;font-family:inherit;white-space:nowrap;">Aplicar</button>
+      </label>`}
       <div id="nf-full-cmp-status" style="font-size:10px;color:${T.text3};margin-top:6px;"></div>
-    </div>` : ""}
+    </div>
   `;
   wrap.appendChild(cardEsq);
 
@@ -8443,46 +8466,72 @@ async function renderNfTransferenciaFull(container, color) {
 
 
 
+  // Botões sim/não de CMP salvo
+  container.querySelector("#nf-full-cmp-nao")?.addEventListener("click", () => {
+    // Aplica CMP salvo automaticamente
+    if (nfFullState.cmpData && (nfFullState.itens||[]).length) {
+      let atualizados = 0;
+      nfFullState.itens.forEach(it => {
+        const custo = nfFullState.cmpData[it.sku];
+        if (custo !== undefined) { it.custo = custo; atualizados++; }
+      });
+      const st = container.querySelector("#nf-full-cmp-status");
+      if (st) st.textContent = `✓ CMP aplicado em ${atualizados} produtos`;
+      renderNfTransferenciaFull(container, color);
+    }
+  });
+  container.querySelector("#nf-full-cmp-sim")?.addEventListener("click", () => {
+    nfFullState.cmpMostrarUpload = true;
+    renderNfTransferenciaFull(container, color);
+  });
+
   // Upload CSV de CMP
   const cmpCsvInput = container.querySelector("#nf-full-cmp-csv");
   const cmpAplicarBtn = container.querySelector("#nf-full-cmp-aplicar");
   const cmpLabel = container.querySelector("#nf-full-cmp-label");
   const cmpStatus = container.querySelector("#nf-full-cmp-status");
-
-  let cmpData = null; // { SKU -> custo }
+  let _cmpParsed = null;
 
   cmpCsvInput?.addEventListener("change", (e) => {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
       const text = ev.target.result;
       const linhas = text.split("\n").filter(l => l.trim());
-      cmpData = {};
+      _cmpParsed = {};
       let encontrados = 0;
-      for (let i = 1; i < linhas.length; i++) { // pula header
+      for (let i = 1; i < linhas.length; i++) {
         const cols = linhas[i].split(";").map(s => s.replace(/"/g,'').trim());
         if (cols.length < 5) continue;
         const sku = cols[0];
-        const custoStr = cols[4]; // "Valor unitário"
+        const custoStr = cols[4];
         if (!sku || sku === "nan") continue;
         const custo = parseFloat(custoStr.replace(/\./g,'').replace(',','.'));
-        if (!isNaN(custo) && custo > 0) { cmpData[sku] = custo; encontrados++; }
+        if (!isNaN(custo) && custo > 0) { _cmpParsed[sku] = custo; encontrados++; }
       }
-      if (cmpLabel) cmpLabel.textContent = `✓ ${file.name} (${encontrados} produtos)`;
-      if (cmpAplicarBtn) { cmpAplicarBtn.disabled = false; cmpAplicarBtn.style.cursor = "pointer"; cmpAplicarBtn.style.opacity = "1"; }
+      if (cmpLabel) cmpLabel.textContent = `✓ ${file.name} (${encontrados} produtos com CMP)`;
+      if (cmpAplicarBtn) { cmpAplicarBtn.disabled = false; cmpAplicarBtn.style.cursor = "pointer"; }
     };
     reader.readAsText(file, "utf-8");
   });
 
-  cmpAplicarBtn?.addEventListener("click", () => {
-    if (!cmpData) return;
+  cmpAplicarBtn?.addEventListener("click", async () => {
+    if (!_cmpParsed) return;
+    // Salva no Firebase para uso futuro
+    try {
+      await set(ref(db, "/nf_full_cmp"), { dados: _cmpParsed, atualizadoEm: Date.now() });
+      nfFullState.cmpData = _cmpParsed;
+      nfFullState.cmpAtualizado = Date.now();
+      nfFullState.cmpMostrarUpload = false;
+    } catch(e) {}
+    // Aplica nos itens
     let atualizados = 0;
-    nfFullState.itens.forEach(it => {
-      const custo = cmpData[it.sku];
+    (nfFullState.itens||[]).forEach(it => {
+      const custo = _cmpParsed[it.sku];
       if (custo !== undefined) { it.custo = custo; atualizados++; }
     });
-    if (cmpStatus) cmpStatus.textContent = `✓ CMP aplicado em ${atualizados} de ${nfFullState.itens.length} produtos`;
+    if (cmpStatus) cmpStatus.textContent = `✓ CMP salvo e aplicado em ${atualizados} produtos`;
     renderNfTransferenciaFull(container, color);
   });
 
