@@ -1909,288 +1909,159 @@ function renderPerguntasTab(container) {
 function renderClonarTab(container) {
   container.innerHTML = "";
 
-  const wrap = document.createElement("div");
-  wrap.style.cssText = "max-width:1100px;";
-
-  // Título
-  const header = document.createElement("div");
-  header.style.cssText = "margin-bottom:20px;";
-  header.innerHTML = `
-    <div style="font-size:16px;font-weight:700;color:${T.text};">Clonar anúncio</div>
-    <div style="font-size:11px;color:${T.text2};margin-top:2px;">Copia título, categoria, ficha técnica, fotos, SKU, preço e estoque para a outra conta.</div>
-  `;
-  wrap.appendChild(header);
-
   const idsDetectados = extrairMultiplosIds(clonarState.itemBusca);
   const isLoteModo = idsDetectados.length > 1 || loteState.total > 0;
-  const temPreview = !isLoteModo && !!(clonarState.itemEncontrado && !clonarState.resultado);
-  const temColunaDireita = true;
-  const row = document.createElement("div");
-  row.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;";
-  wrap.appendChild(row);
 
-  const colEsq = document.createElement("div");
-  row.appendChild(colEsq);
+  // ── Grid 2 colunas sempre ──
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;";
+  container.appendChild(wrap);
 
-  // Envelope único da coluna esquerda (mesma altura da direita quando há prévia)
-  const colEsqCard = document.createElement("div");
-  colEsqCard.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:20px;box-sizing:border-box;`;
-  colEsq.appendChild(colEsqCard);
-  const alvoEsq = temColunaDireita ? colEsqCard : colEsq;
-
-  // Card de busca
-  const buscaCard = document.createElement("div");
-  buscaCard.style.cssText = "margin-bottom:0;";
-  buscaCard.innerHTML = `
-    <div style="font-size:11px;color:${T.text3};margin-bottom:8px;">ID(s) ou link(s) do(s) anúncio(s) de origem</div>
-    <textarea id="clonar-input-id" rows="3" placeholder="Ex: MLB4718893383${"\n"}Cole vários, um por linha, pra clonar em lote" style="width:100%;background:${T.bg};border:1px solid ${T.border};border-radius:6px;padding:9px 12px;color:${T.text};font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;margin-bottom:12px;resize:vertical;">${clonarState.itemBusca}</textarea>
-    ${isLoteModo ? `<div style="font-size:11px;color:#111111;margin-bottom:12px;">${idsDetectados.length} anúncios detectados — modo lote (SKU, preço e quantidade iguais ao original)</div>` : ""}
+  // ── Card esquerdo: APENAS o formulário ──
+  const cardEsq = document.createElement("div");
+  cardEsq.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:20px;box-sizing:border-box;`;
+  cardEsq.innerHTML = `
+    <div style="font-size:15px;font-weight:700;color:${T.text};margin-bottom:4px;">Clonar anúncio</div>
+    <div style="font-size:11px;color:${T.text3};margin-bottom:16px;">Copia título, categoria, fotos, SKU, preço e estoque.</div>
+    <div style="font-size:11px;color:${T.text3};margin-bottom:6px;">ID(s) ou link(s) de origem</div>
+    <textarea id="clonar-input-id" rows="3" placeholder="Ex: MLB4718893383\nCole vários, um por linha" style="width:100%;background:${T.bg3};border:1px solid ${T.border};border-radius:6px;padding:9px 12px;color:${T.text};font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;margin-bottom:10px;resize:vertical;">${clonarState.itemBusca}</textarea>
+    ${isLoteModo ? `<div style="font-size:11px;color:#8b5cf6;margin-bottom:10px;">⋯ ${idsDetectados.length} anúncios — modo lote</div>` : ""}
     <div style="font-size:11px;color:${T.text3};margin-bottom:8px;">Conta de origem</div>
     <div style="display:flex;gap:8px;margin-bottom:14px;">
       <button id="clonar-origem-matriz" style="flex:1;padding:9px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid ${clonarState.contaOrigem==='matriz'?"#5e72e4":T.border};background:${clonarState.contaOrigem==='matriz'?"#5e72e4":T.bg3};color:${clonarState.contaOrigem==='matriz'?"#fff":T.text2};">Matriz RS</button>
       <button id="clonar-origem-filial" style="flex:1;padding:9px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid ${clonarState.contaOrigem==='filial'?"#5e72e4":T.border};background:${clonarState.contaOrigem==='filial'?"#5e72e4":T.bg3};color:${clonarState.contaOrigem==='filial'?"#fff":T.text2};">Filial SP</button>
     </div>
-    <button id="clonar-btn-buscar" ${loteState.rodando ? "disabled" : ""} style="width:100%;padding:10px;border-radius:6px;background:${loteState.rodando ? T.border : T.bg3};border:1px solid ${T.border};color:${loteState.rodando ? T.text3 : T.text};font-size:12px;font-weight:600;cursor:${loteState.rodando ? "default" : "pointer"};">${
+    <button id="clonar-btn-buscar" ${loteState.rodando?"disabled":""} style="width:100%;padding:10px;border-radius:6px;background:${loteState.rodando?T.border:T.bg3};border:1px solid ${T.border};color:${loteState.rodando?T.text3:T.text};font-size:12px;font-weight:600;cursor:${loteState.rodando?"default":"pointer"};">${
       isLoteModo
-        ? (loteState.fase === "busca" ? `Buscando ${(loteState.itens||[]).filter(it=>it.status!=="aguardando").length}/${loteState.total}...` : `Buscar ${idsDetectados.length} anúncios`)
+        ? (loteState.fase==="busca" ? `Buscando ${(loteState.itens||[]).filter(it=>it.status!=="aguardando").length}/${loteState.total}...` : `Buscar ${idsDetectados.length} anúncios`)
         : (clonarState.buscando ? "Buscando..." : "Buscar anúncio")
     }</button>
+    ${clonarState.erro ? `<div style="background:${T.errBg};border:1px solid ${T.errBor};border-radius:8px;padding:10px 12px;margin-top:12px;font-size:11px;color:${T.errText};white-space:pre-wrap;">${clonarState.erro}</div>` : ""}
+    ${isLoteModo && (loteState.fase==="revisao"||loteState.fase==="clonando") ? (() => {
+      const encontrados = (loteState.itens||[]).filter(it=>it.status==="encontrado"||it.status==="clonando"||it.status==="sucesso");
+      const jaClonando = loteState.fase==="clonando";
+      if (!encontrados.length && !jaClonando) return "";
+      const concluidos2 = (loteState.itens||[]).filter(it=>it.status==="sucesso"||it.status==="erro").length;
+      return `<button id="clonar-btn-confirmar-lote" ${jaClonando?"disabled":""} style="width:100%;margin-top:12px;padding:11px;border-radius:6px;background:${jaClonando?"#8b5cf6":"#2dce89"};border:none;color:#fff;font-size:12px;font-weight:700;cursor:${jaClonando?"default":"pointer"};">${jaClonando?`Clonando ${concluidos2}/${encontrados.length}...`:`Confirmar e clonar ${(loteState.itens||[]).filter(it=>it.status==="encontrado").length} anúncios`}</button>`;
+    })() : ""}
+    ${!isLoteModo && clonarState.itemEncontrado && !clonarState.resultado ? (() => {
+      const item = clonarState.itemEncontrado;
+      const contaDestino = clonarState.contaOrigem==="matriz" ? "Filial SP" : "Matriz RS";
+      return `
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid ${T.sep};">
+        ${item.has_variations ? `<div style="background:${T.errBg};border:1px solid ${T.errBor};border-radius:8px;padding:10px;margin-bottom:12px;font-size:11px;color:${T.errText};">⚠️ Variações não suportadas.</div>` : ""}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+          <div><div style="font-size:10px;color:${T.text3};margin-bottom:4px;">SKU</div><input id="clonar-input-sku" type="text" value="${item.sku||""}" style="width:100%;background:${T.bg3};border:1px solid ${T.border};border-radius:6px;padding:8px 10px;color:${T.text};font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;"></div>
+          <div><div style="font-size:10px;color:${T.text3};margin-bottom:4px;">Quantidade</div><input id="clonar-input-qtd" type="number" value="${item.available_quantity}" style="width:100%;background:${T.bg3};border:1px solid ${T.border};border-radius:6px;padding:8px 10px;color:${T.text};font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;"></div>
+        </div>
+        <div style="font-size:10px;color:${T.text3};margin-bottom:4px;">Preço</div>
+        <div style="font-size:16px;font-weight:700;color:${T.text};font-family:'IBM Plex Mono',monospace;margin-bottom:12px;">R$ ${Number(item.price).toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:${T.bg3};border-radius:6px;margin-bottom:12px;font-size:11px;">
+          <span style="color:${T.text3};">Clonando para</span><span style="color:${T.text};font-weight:600;">${contaDestino}</span>
+        </div>
+        <button id="clonar-btn-confirmar" ${item.has_variations?"disabled":""} style="width:100%;padding:11px;border-radius:6px;background:${item.has_variations?T.border:"#5e72e4"};border:none;color:${item.has_variations?T.text3:"#fff"};font-size:12px;font-weight:600;cursor:${item.has_variations?"not-allowed":"pointer"};">${clonarState.clonando?"Clonando...":"Confirmar e clonar anúncio"}</button>
+      </div>`;
+    })() : ""}
+    ${clonarState.resultado ? `<div style="background:${T.okBg};border:1px solid ${T.okBor};border-radius:8px;padding:14px;margin-top:12px;text-align:center;"><div style="font-size:13px;font-weight:700;color:${T.okTxt};margin-bottom:8px;">✓ Clonado com sucesso!</div><a href="${clonarState.resultado.permalink||"#"}" target="_blank" style="font-size:11px;color:#5eb3f0;">Ver anúncio clonado ↗</a></div>` : ""}
   `;
-  alvoEsq.appendChild(buscaCard);
+  wrap.appendChild(cardEsq);
 
-  // Botão de confirmação — só aparece depois da prévia (fase revisão), fora do card de busca
-  if (isLoteModo && (loteState.fase === "revisao" || loteState.fase === "clonando")) {
-    const encontrados = (loteState.itens || []).filter(it => it.status === "encontrado" || it.status === "clonando" || it.status === "sucesso");
-    const confirmBtn = document.createElement("button");
-    const jaClonando = loteState.fase === "clonando";
-    confirmBtn.id = "clonar-btn-confirmar-lote";
-    confirmBtn.disabled = jaClonando;
-    confirmBtn.style.cssText = `width:100%;padding:11px;border-radius:6px;background:${jaClonando ? "#8b5cf6" : "#2dce89"};border:none;color:${T.text};font-size:12px;font-weight:700;cursor:${jaClonando ? "default" : "pointer"};margin-bottom:16px;`;
-    confirmBtn.textContent = jaClonando
-      ? `Clonando ${loteState.itens.filter(it=>it.status==="sucesso"||it.status==="erro").length}/${encontrados.length}...`
-      : `Confirmar e clonar ${loteState.itens.filter(it=>it.status==="encontrado").length} anúncios`;
-    if (loteState.itens.filter(it=>it.status==="encontrado").length > 0 || jaClonando) alvoEsq.appendChild(confirmBtn);
-  }
+  // ── Card direito: prévia ──
+  const cardDir = document.createElement("div");
 
-  if (clonarState.erro) {
-    const errBox = document.createElement("div");
-    errBox.style.cssText = `background:${T.errBg};border:1px solid ${T.errBor};border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:11px;color:${T.errText};white-space:pre-wrap;line-height:1.5;`;
-    errBox.textContent = clonarState.erro;
-    alvoEsq.appendChild(errBox);
-  }
+  if (!isLoteModo && !clonarState.itemEncontrado && !clonarState.resultado) {
+    // Placeholder vazio
+    cardDir.style.cssText = `background:${T.card};border:2px dashed ${T.border2};border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:200px;`;
+    cardDir.innerHTML = `<div style="font-size:28px;">🔍</div><div style="font-size:12px;color:${T.text3};text-align:center;">Prévia do anúncio<br>aparece aqui</div>`;
 
-  // ── Coluna direita: um card por anúncio — prévia primeiro, depois status ao vivo ──
-  if (isLoteModo) {
-    const colDir = document.createElement("div");
-    const loteWrap = document.createElement("div");
-    loteWrap.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:16px;height:100%;box-sizing:border-box;`;
-
-    const itens = loteState.itens || [];
-    const concluidos = itens.filter(it => it.status === "sucesso" || it.status === "erro").length;
-    const sucessos = itens.filter(it => it.status === "sucesso").length;
-    const encontradosCount = itens.filter(it => it.status === "encontrado").length;
-
-    const statusInfo = {
-      aguardando: { label: "Na fila", cor: "#555", icone: "⋯" },
-      buscando:   { label: "Buscando...", cor: "#ffffff", icone: "⏳" },
-      encontrado: { label: "Pronto pra clonar", cor: "#5eb3f0", icone: "👁" },
-      clonando:   { label: "Clonando...", cor: "#ffffff", icone: "⏳" },
-      sucesso:    { label: "Clonado", cor: "#2dce89", icone: "✓" },
-      erro:       { label: "Erro", cor: "#e8432d", icone: "✕" },
+  } else if (!isLoteModo && clonarState.itemEncontrado) {
+    // Prévia do anúncio único
+    cardDir.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:16px;box-sizing:border-box;`;
+    const item = clonarState.itemEncontrado;
+    const foto = item.pictures?.[0]?.source || "";
+    const contaDestino = clonarState.contaOrigem==="matriz" ? "Filial SP" : "Matriz RS";
+    cardDir.innerHTML = `
+      <div style="font-size:11px;color:${T.text3};margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid ${T.sep};">Prévia — clonando para ${contaDestino}</div>
+      <div style="display:flex;gap:12px;margin-bottom:12px;">
+        ${foto ? `<img src="${foto}" style="width:80px;height:80px;border-radius:8px;object-fit:cover;flex-shrink:0;background:${T.bg3};">` : `<div style="width:80px;height:80px;border-radius:8px;background:${T.bg3};flex-shrink:0;"></div>`}
+        <div>
+          <div style="font-size:12px;font-weight:600;color:${T.text};line-height:1.4;margin-bottom:6px;">${item.title}</div>
+          <div style="font-size:11px;color:${T.text3};">Categoria ${item.category_id} · ${item.condition==="new"?"Novo":item.condition}</div>
+        </div>
+      </div>
+      <div id="clonar-preview-info" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11px;">
+        <div style="background:${T.bg3};border-radius:6px;padding:8px;"><div style="color:${T.text3};font-size:10px;margin-bottom:2px;">SKU</div><div style="color:${T.text};font-weight:600;">${item.sku||"—"}</div></div>
+        <div style="background:${T.bg3};border-radius:6px;padding:8px;"><div style="color:${T.text3};font-size:10px;margin-bottom:2px;">Quantidade</div><div style="color:${T.text};font-weight:600;">${item.available_quantity} un</div></div>
+        <div style="background:${T.bg3};border-radius:6px;padding:8px;"><div style="color:${T.text3};font-size:10px;margin-bottom:2px;">Preço</div><div style="color:${T.text};font-weight:600;">R$ ${Number(item.price).toLocaleString("pt-BR",{minimumFractionDigits:2})}</div></div>
+        <div style="background:${T.bg3};border-radius:6px;padding:8px;"><div style="color:${T.text3};font-size:10px;margin-bottom:2px;">Fotos</div><div style="color:${T.text};font-weight:600;">${(item.pictures||[]).length} imagens</div></div>
+      </div>
+    `;
+    window._clonarAtualizarPreview = function() {
+      const sku = document.getElementById("clonar-input-sku")?.value || item.sku || "";
+      const qtd = document.getElementById("clonar-input-qtd")?.value || item.available_quantity;
+      const el = document.getElementById("clonar-preview-info");
+      if (el) el.querySelector("div:nth-child(1) div:last-child").textContent = sku;
+      if (el) el.querySelector("div:nth-child(2) div:last-child").textContent = qtd + " un";
     };
 
-    let tituloPainel = "Resultado do lote";
-    if (loteState.fase === "busca") tituloPainel = `Buscando ${itens.filter(it=>it.status!=="aguardando").length}/${loteState.total}...`;
-    else if (loteState.fase === "revisao") tituloPainel = `Prévia — ${encontradosCount} prontos pra clonar`;
-    else if (loteState.fase === "clonando") tituloPainel = `Clonando ${concluidos}/${loteState.total}...`;
-    else if (loteState.fase === "concluido") tituloPainel = `Concluído — ${sucessos} de ${loteState.total} clonados`;
+  } else if (isLoteModo) {
+    // Cards do lote com accordion
+    cardDir.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:16px;box-sizing:border-box;`;
+    const statusInfo = {
+      aguardando: { label: "Na fila", cor: T.text3, icone: "⋯" },
+      buscando:   { label: "Buscando...", cor: T.text2, icone: "⏳" },
+      encontrado: { label: "Pronto pra clonar", cor: "#5e72e4", icone: "✓" },
+      clonando:   { label: "Clonando...", cor: T.text2, icone: "⏳" },
+      sucesso:    { label: "Clonado", cor: T.okTxt, icone: "✓" },
+      erro:       { label: "Erro", cor: T.errText, icone: "✕" },
+    };
+    const itens = loteState.itens || [];
+    const concluidos = itens.filter(it=>it.status==="sucesso"||it.status==="erro").length;
+    let titulo = "Prévia do lote";
+    if (loteState.fase==="busca") titulo = `Buscando ${itens.filter(it=>it.status!=="aguardando").length}/${loteState.total}...`;
+    else if (loteState.fase==="revisao") titulo = `${itens.filter(it=>it.status==="encontrado").length} prontos pra clonar`;
+    else if (loteState.fase==="clonando") titulo = `Clonando ${concluidos}/${loteState.total}...`;
+    else if (loteState.fase==="concluido") titulo = `✓ ${itens.filter(it=>it.status==="sucesso").length} de ${loteState.total} clonados`;
 
-    loteWrap.innerHTML = `
-      <div style="font-size:11px;color:${T.text3};margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid ${T.sep};">${tituloPainel}</div>
-      ${loteState.total > 0 && loteState.fase !== "revisao" ? `<div style="height:3px;background:${T.border};border-radius:99px;overflow:hidden;margin-bottom:14px;"><div style="height:3px;background:#5e72e4;width:${(concluidos/loteState.total*100).toFixed(0)}%;transition:width .3s;"></div></div>` : ""}
+    cardDir.innerHTML = `
+      <div style="font-size:11px;color:${T.text3};margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid ${T.sep};">${titulo}</div>
+      ${loteState.total>0&&loteState.fase!=="revisao" ? `<div style="height:3px;background:${T.border};border-radius:99px;overflow:hidden;margin-bottom:12px;"><div style="height:3px;background:#5e72e4;width:${(concluidos/loteState.total*100).toFixed(0)}%;transition:width .3s;"></div></div>` : ""}
       <div style="display:flex;flex-direction:column;gap:8px;">
-        ${itens.length === 0 ? `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 0;gap:10px;"><div style="font-size:28px;">🔍</div><div style="font-size:12px;color:${T.text3};text-align:center;">Cole os IDs à esquerda<br>e clique em Buscar.</div></div>` : itens.map((it,idx) => {
-          const s = statusInfo[it.status] || statusInfo.aguardando;
-          const expandido = it._expandido || false;
-          const podeExpandir = it.status === "encontrado" || it.status === "sucesso";
-          return `
-          <div style="background:${T.bg3};border:1px solid ${it.status==='encontrado'?'#5e72e4':it.status==='sucesso'?T.okBor:it.status==='erro'?T.errBor:T.border};border-radius:8px;overflow:hidden;">
-            <div onclick="window._clonarToggle(${idx})" style="display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:${podeExpandir?'pointer':'default'};">
-              ${it.foto ? `<img src="${it.foto}" style="width:36px;height:36px;border-radius:5px;object-fit:cover;flex-shrink:0;">` : `<div style="width:36px;height:36px;border-radius:5px;background:${T.border};flex-shrink:0;"></div>`}
+        ${itens.length===0 ? `<div style="text-align:center;padding:30px 0;color:${T.text3};font-size:12px;">Cole os IDs e clique em Buscar</div>` : itens.map((it,idx) => {
+          const s = statusInfo[it.status]||statusInfo.aguardando;
+          const podeExpandir = it.status==="encontrado"||it.status==="sucesso";
+          const exp = it._expandido||false;
+          return `<div style="background:${T.bg3};border:1px solid ${it.status==="encontrado"?"#5e72e4":it.status==="sucesso"?T.okBor:it.status==="erro"?T.errBor:T.border};border-radius:8px;overflow:hidden;">
+            <div onclick="window._clonarToggle(${idx})" style="display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:${podeExpandir?"pointer":"default"};">
+              ${it.foto?`<img src="${it.foto}" style="width:36px;height:36px;border-radius:5px;object-fit:cover;flex-shrink:0;">`:`<div style="width:36px;height:36px;border-radius:5px;background:${T.border};flex-shrink:0;"></div>`}
               <div style="flex:1;min-width:0;">
                 <div style="font-size:11px;font-weight:600;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${it.titulo||it.itemId}</div>
-                <div style="font-size:10px;color:${it.status==='encontrado'?'#5e72e4':it.status==='sucesso'?T.okTxt:it.status==='erro'?T.errText:T.text3};margin-top:2px;">${s.icone} ${it.status==='erro'?it.motivo:s.label}</div>
+                <div style="font-size:10px;color:${s.cor};margin-top:2px;">${s.icone} ${it.status==="erro"?it.motivo:s.label}</div>
               </div>
-              ${podeExpandir ? `<div style="font-size:10px;color:${T.text3};flex-shrink:0;">${expandido?'▲':'▼'}</div>` : ''}
-              ${it.status==='sucesso' ? `<a href="${it.permalink}" target="_blank" onclick="event.stopPropagation()" style="font-size:10px;color:#5eb3f0;text-decoration:none;white-space:nowrap;flex-shrink:0;padding:4px 8px;border:1px solid #5eb3f044;border-radius:4px;">ver ↗</a>` : ''}
+              ${podeExpandir?`<span style="font-size:10px;color:${T.text3};">${exp?"▲":"▼"}</span>`:""}
+              ${it.status==="sucesso"?`<a href="${it.permalink}" target="_blank" onclick="event.stopPropagation()" style="font-size:10px;color:#5eb3f0;padding:3px 8px;border:1px solid #5eb3f044;border-radius:4px;text-decoration:none;">ver ↗</a>`:""}
             </div>
-            ${expandido && podeExpandir ? `
-            <div style="padding:10px 12px 12px;border-top:1px solid ${T.sep};background:${T.bg};">
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:10px;">
-                <div><span style="color:${T.text3};">SKU</span><br><span style="color:${T.text};font-weight:600;">${it.sku||'—'}</span></div>
-                <div><span style="color:${T.text3};">Quantidade</span><br><span style="color:${T.text};font-weight:600;">${it.quantidade} un</span></div>
-                <div><span style="color:${T.text3};">Preço</span><br><span style="color:${T.text};font-weight:600;">R$ ${Number(it.preco).toLocaleString('pt-BR',{minimumFractionDigits:2})}</span></div>
-                <div><span style="color:${T.text3};">Categoria</span><br><span style="color:${T.text};font-weight:600;">${it.categoria||'—'}</span></div>
-              </div>
-            </div>` : ''}
-          </div>
-          `;
+            ${exp&&podeExpandir?`<div style="padding:10px 12px 12px;border-top:1px solid ${T.sep};display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:10px;">
+              <div><span style="color:${T.text3};">SKU</span><br><strong style="color:${T.text};">${it.sku||"—"}</strong></div>
+              <div><span style="color:${T.text3};">Qtd</span><br><strong style="color:${T.text};">${it.quantidade} un</strong></div>
+              <div><span style="color:${T.text3};">Preço</span><br><strong style="color:${T.text};">R$ ${Number(it.preco).toLocaleString("pt-BR",{minimumFractionDigits:2})}</strong></div>
+              <div><span style="color:${T.text3};">Categoria</span><br><strong style="color:${T.text};">${it.categoria||"—"}</strong></div>
+            </div>`:""}
+          </div>`;
         }).join("")}
       </div>
-      ${!loteState.rodando && loteState.fase === "concluido" ? `<button id="clonar-lote-novo" style="width:100%;margin-top:12px;padding:9px;border-radius:6px;background:${T.bg2};border:1px solid ${T.border};color:${T.text2};font-size:11px;font-weight:600;cursor:pointer;">Limpar e clonar outro lote</button>` : ""}
+      ${!loteState.rodando&&loteState.fase==="concluido"?`<button id="clonar-lote-novo" style="width:100%;margin-top:12px;padding:9px;border-radius:6px;background:${T.bg3};border:1px solid ${T.border};color:${T.text2};font-size:11px;font-weight:600;cursor:pointer;">Limpar e clonar outro lote</button>`:""}
     `;
-    colDir.appendChild(loteWrap);
-    row.appendChild(colDir);
   }
 
-  // Coluna direita vazia (estado inicial)
-  if (!isLoteModo && !clonarState.itemEncontrado && !clonarState.resultado) {
-    const colDir = document.createElement("div");
-    colDir.style.cssText = `background:${T.card};border:2px dashed ${T.border2};border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:200px;`;
-    colDir.innerHTML = `<div style="font-size:28px;">🔍</div><div style="font-size:12px;color:${T.text3};text-align:center;">Prévia do anúncio<br>aparece aqui</div>`;
-    row.appendChild(colDir);
-  }
+  wrap.appendChild(cardDir);
 
-  // Preview do item encontrado
-  if (!isLoteModo && clonarState.itemEncontrado && !clonarState.resultado) {
-    const item = clonarState.itemEncontrado;
-    const contaDestino = clonarState.contaOrigem === "matriz" ? "Filial SP" : "Matriz RS";
-
-    const colDir = document.createElement("div");
-    const previewCard = document.createElement("div");
-    previewCard.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:16px;box-sizing:border-box;`;
-
-    const foto = item.pictures?.[0]?.source || "";
-    previewCard.innerHTML = `
-      <div style="display:flex;gap:12px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid #282828;">
-        ${foto ? `<img src="${foto}" style="width:64px;height:64px;border-radius:8px;object-fit:cover;flex-shrink:0;background:${T.bg};">` : ""}
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:12px;font-weight:600;color:${T.text};line-height:1.4;">${item.title}</div>
-          <div style="font-size:11px;color:${T.text2};margin-top:4px;">Categoria ${item.category_id} · ${item.condition === "new" ? "Novo" : item.condition}</div>
-        </div>
-      </div>
-
-      ${item.has_variations ? `<div style="background:${T.errBg};border:1px solid ${T.errBor};border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:11px;color:#f0a060;">⚠️ Este anúncio tem variações — clonagem de variações ainda não é suportada.</div>` : ""}
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
-        <div>
-          <div style="font-size:10px;color:${T.text2};margin-bottom:5px;">SKU</div>
-          <input id="clonar-input-sku" type="text" value="${item.sku || ""}" style="width:100%;background:${T.bg};border:1px solid ${T.border};border-radius:6px;padding:8px 10px;color:${T.text};font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
-        </div>
-        <div>
-          <div style="font-size:10px;color:${T.text2};margin-bottom:5px;">Quantidade</div>
-          <input id="clonar-input-qtd" type="number" value="${item.available_quantity}" style="width:100%;background:${T.bg};border:1px solid ${T.border};border-radius:6px;padding:8px 10px;color:${T.text};font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
-        </div>
-      </div>
-      <div style="margin-bottom:16px;">
-        <div style="font-size:10px;color:${T.text2};margin-bottom:5px;">Preço (mantido igual ao original)</div>
-        <div style="font-size:16px;font-weight:700;color:${T.text};font-family:'IBM Plex Mono',monospace;">R$ ${Number(item.price).toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
-      </div>
-
-      <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:${T.bg3};border-radius:6px;margin-bottom:16px;">
-        <div style="font-size:11px;color:${T.text3};">Clonando para</div>
-        <div style="font-size:12px;font-weight:600;color:${T.text};">${contaDestino}</div>
-      </div>
-
-      <button id="clonar-btn-confirmar" ${item.has_variations ? "disabled" : ""} style="width:100%;padding:11px;border-radius:6px;background:${item.has_variations ? T.border : "#5e72e4"};border:none;color:${item.has_variations ? T.text3 : "#fff"};font-size:12px;font-weight:600;cursor:${item.has_variations ? "not-allowed" : "pointer"};">${clonarState.clonando ? "Clonando..." : "Confirmar e clonar anúncio"}</button>
-    `;
-    colDir.appendChild(previewCard);
-    row.appendChild(colDir);
-
-    // ── Coluna direita: prévia visual do anúncio clonado (dentro do mesmo card) ──
-    const listingWrap = document.createElement("div");
-    listingWrap.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:16px;box-sizing:border-box;margin-top:10px;`;
-    const listingTitle = document.createElement("div");
-    listingTitle.style.cssText = "font-size:11px;color:${T.text3};margin-bottom:12px;";
-    listingTitle.textContent = "Prévia do anúncio clonado";
-    const previewEl = document.createElement("div");
-    listingWrap.appendChild(listingTitle);
-    listingWrap.appendChild(previewEl);
-    colDir.appendChild(listingWrap);
-
-    window._clonarToggle = function(idx) {
-    if (!loteState.itens || !loteState.itens[idx]) return;
+  window._clonarToggle = function(idx) {
+    if (!loteState.itens?.[idx]) return;
     const it = loteState.itens[idx];
-    if (it.status !== "encontrado" && it.status !== "sucesso") return;
+    if (it.status!=="encontrado"&&it.status!=="sucesso") return;
     it._expandido = !it._expandido;
     renderClonarTab(container);
-  };
-  window._clonarAtualizarPreview = function() {
-      const skuAtual = document.getElementById("clonar-input-sku")?.value || item.sku || "";
-      const qtdAtual = document.getElementById("clonar-input-qtd")?.value || item.available_quantity;
-      const fotoP = item.pictures?.[0]?.source || "";
-      const contaDestinoP = clonarState.contaOrigem === "matriz" ? "Filial SP" : "Matriz RS";
-      const condicaoP = item.condition === "new" ? "Novo" : item.condition;
-      const listingTipoP = item.listing_type_id === "gold_special" ? "Clássico" : (item.listing_type_id || "—");
-      previewEl.innerHTML = `
-        <div style="background:${T.bg};border:1px solid ${T.border};border-radius:10px;padding:16px;">
-          <div style="display:inline-block;padding:3px 10px;border-radius:13px;background:#ffffff;color:#000;font-size:11px;font-weight:600;margin-bottom:14px;">${contaDestinoP}</div>
-          <div style="width:100%;aspect-ratio:1;border-radius:8px;overflow:hidden;background:${T.bg3};margin-bottom:14px;display:flex;align-items:center;justify-content:center;">
-            ${fotoP ? `<img src="${fotoP}" style="width:100%;height:100%;object-fit:cover;">` : `<div style="font-size:11px;color:${T.text2};">Sem imagem</div>`}
-          </div>
-          <div style="font-size:13px;font-weight:700;color:${T.text};line-height:1.4;margin-bottom:10px;">${item.title}</div>
-          <div style="font-size:22px;font-weight:700;color:${T.text};font-family:'IBM Plex Mono',monospace;margin-bottom:10px;">R$ ${Number(item.price).toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
-          <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
-            <div style="display:inline-block;padding:3px 10px;border-radius:12px;background:${T.okBg};border:1px solid ${T.okBor};color:#2dce89;font-size:11px;font-weight:600;">Frete grátis</div>
-            <div style="display:inline-block;padding:3px 10px;border-radius:12px;background:${T.bg3};border:1px solid ${T.border};color:${T.text3};font-size:11px;font-weight:600;">${condicaoP}</div>
-            <div style="display:inline-block;padding:3px 10px;border-radius:12px;background:${T.bg3};border:1px solid ${T.border};color:${T.text3};font-size:11px;font-weight:600;">${listingTipoP}</div>
-          </div>
-          <div style="padding-top:14px;border-top:1px solid #282828;display:grid;grid-template-columns:1fr 1fr;gap:14px 24px;">
-            <div><div style="font-size:10px;color:${T.text2};margin-bottom:3px;">SKU</div><div style="font-size:12px;color:${T.text};font-weight:600;">${skuAtual}</div></div>
-            <div><div style="font-size:10px;color:${T.text2};margin-bottom:3px;">Quantidade</div><div style="font-size:12px;color:${T.text};font-weight:600;">${qtdAtual} unidades</div></div>
-            <div><div style="font-size:10px;color:${T.text2};margin-bottom:3px;">Categoria</div><div style="font-size:12px;color:${T.text};font-weight:600;">${item.category_id}</div></div>
-            <div><div style="font-size:10px;color:${T.text2};margin-bottom:3px;">Fotos</div><div style="font-size:12px;color:${T.text};font-weight:600;">${(item.pictures||[]).length} imagens</div></div>
-            <div><div style="font-size:10px;color:${T.text2};margin-bottom:3px;">Ficha técnica</div><div style="font-size:12px;color:${T.text};font-weight:600;">${(item.attributes||[]).length} atributos</div></div>
-          </div>
-        </div>
-      `;
-    };
-    // Popula imediatamente — usa a referência direta, não precisa esperar o DOM
-    window._clonarAtualizarPreview();
-  }
-
-  // Resultado
-  if (clonarState.resultado) {
-    const res = clonarState.resultado;
-    const resCard = document.createElement("div");
-    resCard.style.cssText = `background:${T.okBg};border:1px solid ${T.okBor};border-radius:10px;padding:16px;margin-bottom:16px;text-align:center;`;
-    resCard.innerHTML = `
-      <div style="font-size:13px;font-weight:700;color:#2dce89;margin-bottom:6px;">Anúncio clonado com sucesso ✓</div>
-      <div style="font-size:11px;color:${T.text3};margin-bottom:14px;">${res.item_id}</div>
-      <a href="${res.permalink}" target="_blank" style="display:inline-block;padding:9px 18px;background:#ffffff;border-radius:6px;color:#000;font-size:12px;font-weight:600;text-decoration:none;">Abrir anúncio no ML ↗</a>
-      <div style="margin-top:14px;">
-        <button id="clonar-btn-novo" style="background:none;border:none;color:${T.text2};font-size:11px;cursor:pointer;text-decoration:underline;">Clonar outro anúncio</button>
-      </div>
-    `;
-    wrap.appendChild(resCard);
-  }
-
-  container.appendChild(wrap);
-  if (window._clonarAtualizarPreview) window._clonarAtualizarPreview();
-
-  // ── Eventos ──
-  const inputId = container.querySelector("#clonar-input-id");
-  if (inputId) {
-    inputId.oninput = (e) => { clonarState.itemBusca = e.target.value; };
-    inputId.addEventListener("blur", () => { renderClonarTab(container); });
-    inputId.addEventListener("paste", () => { setTimeout(() => { clonarState.itemBusca = inputId.value; renderClonarTab(container); }, 0); });
-  }
-
-  const btnMatriz = container.querySelector("#clonar-origem-matriz");
-  const btnFilial = container.querySelector("#clonar-origem-filial");
-  if (btnMatriz) btnMatriz.onclick = () => { clonarState.contaOrigem = "matriz"; clonarState.itemEncontrado = null; clonarState.resultado = null; renderClonarTab(container); };
-  if (btnFilial) btnFilial.onclick = () => { clonarState.contaOrigem = "filial"; clonarState.itemEncontrado = null; clonarState.resultado = null; renderClonarTab(container); };
-
-  const btnLoteNovo = container.querySelector("#clonar-lote-novo");
-  if (btnLoteNovo) btnLoteNovo.onclick = () => {
-    clonarState.itemBusca = "";
-    loteState = { rodando: false, fase: "idle", total: 0, itens: [] };
-    renderClonarTab(container);
-  };
-
-  const btnConfirmarLote = container.querySelector("#clonar-btn-confirmar-lote");
-  if (btnConfirmarLote) btnConfirmarLote.onclick = async () => {
-    await confirmarLoteClonagem(container);
   };
 
   const btnBuscar = container.querySelector("#clonar-btn-buscar");
