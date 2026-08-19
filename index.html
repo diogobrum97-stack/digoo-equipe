@@ -8283,8 +8283,7 @@ async function renderNfTransferenciaFull(container, color) {
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid ${T.sep};">
         <div style="font-size:12px;font-weight:600;color:${T.text};">${totalItens} produtos · ${totalUnidades} un</div>
         <div style="display:flex;align-items:center;gap:10px;">
-          <button id="nf-full-usar-cmp" style="background:none;border:1px solid #00dfc366;color:#00dfc3;border-radius:5px;padding:4px 10px;font-size:10px;font-weight:600;cursor:pointer;font-family:inherit;">Usar CMP da Filial</button>
-          <div style="font-size:12px;color:${T.text2};">R$ <strong style="color:${T.text};font-family:'IBM Plex Mono',monospace;">${totalCusto.toLocaleString("pt-BR",{minimumFractionDigits:2})}</strong></div>
+<div style="font-size:12px;color:${T.text2};">R$ <strong style="color:${T.text};font-family:'IBM Plex Mono',monospace;">${totalCusto.toLocaleString("pt-BR",{minimumFractionDigits:2})}</strong></div>
         </div>
       </div>
       <div style="max-height:calc(100vh - 280px);overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin-bottom:14px;">
@@ -8294,11 +8293,17 @@ async function renderNfTransferenciaFull(container, color) {
               <div style="font-size:11px;font-weight:600;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${it.descricao}</div>
               <div style="font-size:10px;color:${T.text3};margin-top:1px;">${it.sku} ${it.kitOrigem?`<span style="color:${T.text3};">← ${it.kitOrigem}</span>`:""} · NCM ${it.ncm||"—"}</div>
             </div>
-            <div style="text-align:right;flex-shrink:0;">
-              <div style="font-size:12px;font-weight:700;color:${T.text};">${it.quantidade} un</div>
-              <div style="font-size:10px;color:${T.text3};">R$ ${(Number(it.custo||0)*Number(it.quantidade||0)).toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;min-width:120px;">
+              <div style="display:flex;align-items:center;gap:4px;">
+                <input type="number" value="${it.quantidade}" min="1" data-idx="${idx}" class="nf-full-qtd" style="width:50px;background:${T.bg};border:1px solid ${T.border};border-radius:4px;padding:4px 6px;color:${T.text};font-size:11px;text-align:center;font-family:inherit;" title="Quantidade">
+                <span style="font-size:10px;color:${T.text3};">un</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:4px;">
+                <span style="font-size:10px;color:${T.text3};">R$</span>
+                <input type="number" value="${Number(it.custo||0).toFixed(2)}" step="0.01" min="0" data-idx="${idx}" class="nf-full-custo" style="width:70px;background:${T.bg};border:1px solid ${T.border};border-radius:4px;padding:4px 6px;color:${T.text};font-size:11px;text-align:right;font-family:'IBM Plex Mono',monospace;" title="Custo unitário">
+              </div>
+              <div style="font-size:10px;color:${T.text3};">= R$ ${(Number(it.custo||0)*Number(it.quantidade||0)).toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
             </div>
-            <input type="number" value="${it.quantidade}" min="1" data-idx="${idx}" class="nf-full-qtd" style="width:55px;background:${T.bg};border:1px solid ${T.border};border-radius:4px;padding:5px 6px;color:${T.text};font-size:11px;text-align:center;font-family:inherit;">
           </div>
         `).join("")}
       </div>
@@ -8427,28 +8432,7 @@ async function renderNfTransferenciaFull(container, color) {
     });
   });
 
-  // Botão Usar CMP
-  container.querySelector("#nf-full-usar-cmp")?.addEventListener("click", async () => {
-    const btn = container.querySelector("#nf-full-usar-cmp");
-    btn.textContent = "⏳ Carregando CMP...";
-    btn.disabled = true;
-    try {
-      const snap = await get(ref(db, "/custos_medios_filial"));
-      const custos = snap.val() || {};
-      let atualizados = 0;
-      nfFullState.itens.forEach(it => {
-        const key = it.sku.replace(/-/g, "_");
-        const cmp = custos[key]?.novoCmp || custos[key]?.custoAtual;
-        if (cmp) { it.custo = Number(cmp); atualizados++; }
-      });
-      btn.textContent = `✓ CMP aplicado (${atualizados} produtos)`;
-      setTimeout(() => { btn.textContent = "Usar CMP da Filial"; btn.disabled = false; }, 2500);
-      renderNfTransferenciaFull(container, color);
-    } catch(e) {
-      btn.textContent = "Erro ao carregar CMP";
-      btn.disabled = false;
-    }
-  });
+
 
   // Preview e emitir
   container.querySelector("#nf-full-preview-btn")?.addEventListener("click", () => {
@@ -8497,8 +8481,8 @@ function renderNfFullEmitirModal(itens) {
             <td style="padding:8px;color:${T.text};">${it.descricao}<br><span style="color:${T.text3};font-size:10px;">${it.sku}${it.kitOrigem?` ← ${it.kitOrigem}`:""}</span></td>
             <td style="padding:8px;text-align:center;color:${T.text2};">${it.ncm||"—"}</td>
             <td style="padding:8px;text-align:center;font-weight:700;color:${T.text};">${it.quantidade}</td>
-            <td style="padding:8px;text-align:right;color:${T.text2};">R$ ${Number(it.custo||0).toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
-            <td style="padding:8px;text-align:right;font-weight:600;color:${T.text};font-family:'IBM Plex Mono',monospace;">R$ ${(Number(it.custo||0)*Number(it.quantidade||0)).toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
+            <td style="padding:8px;text-align:right;"><input type="number" value="${Number(it.custo||0).toFixed(2)}" step="0.01" data-modal-idx="${itens.indexOf(it)}" class="nf-modal-custo" style="width:75px;background:${T.bg3};border:1px solid ${T.border};border-radius:4px;padding:3px 6px;color:${T.text};font-size:11px;text-align:right;font-family:'IBM Plex Mono',monospace;"></td>
+            <td style="padding:8px;text-align:right;font-weight:600;color:${T.text};font-family:'IBM Plex Mono',monospace;" class="nf-modal-total-${itens.indexOf(it)}">R$ ${(Number(it.custo||0)*Number(it.quantidade||0)).toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
           </tr>
         `).join("")}
       </tbody>
@@ -8524,6 +8508,20 @@ function renderNfFullEmitirModal(itens) {
   overlay.appendChild(box);
   document.body.appendChild(overlay);
 
+  // Custo editável no modal
+  box.querySelectorAll(".nf-modal-custo").forEach(inp => {
+    inp.addEventListener("change", () => {
+      const idx = Number(inp.dataset.modalIdx);
+      if (itens[idx] !== undefined) {
+        itens[idx].custo = Number(inp.value) || 0;
+        const totalEl = box.querySelector(`.nf-modal-total-\${idx}`);
+        if (totalEl) totalEl.textContent = "R$ " + (itens[idx].custo * itens[idx].quantidade).toLocaleString("pt-BR",{minimumFractionDigits:2});
+        // Atualiza total geral
+        const novoTotal = itens.reduce((s,i) => s + (Number(i.custo||0)*Number(i.quantidade||0)), 0);
+        box.querySelector(".nf-modal-total-geral")?.querySelector("td:last-child")?.textContent && null;
+      }
+    });
+  });
   document.getElementById("nf-full-modal-fechar")?.addEventListener("click", () => overlay.remove());
   overlay.addEventListener("click", e => { if (e.target === overlay) overlay.remove(); });
 
