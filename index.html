@@ -8340,7 +8340,8 @@ async function renderNfTransferenciaFull(container, color) {
       // Extrai SKUs do PDF via Claude
       nfFullState.processando = true;
       nfFullState.erro = null;
-      renderNfTransferenciaFull(container, color);
+      btnProcessar.textContent = "⏳ Extraindo SKUs do PDF...";
+      btnProcessar.disabled = true;
 
       try {
         const resp = await fetch(`${BLING_PROXY}/api/bling-produtos?action=extrair-pdf-full`, {
@@ -8359,9 +8360,12 @@ async function renderNfTransferenciaFull(container, color) {
       }
     } else {
       // Parse manual
-      const linhas = (manual?.value || "").split("\n").filter(l => l.trim());
+      const texto = manual?.value || "";
+      const linhas = texto.split("\n").filter(l => l.trim());
+      console.log("Linhas para parse:", linhas);
       for (const linha of linhas) {
-        const match = linha.match(/^(.+?)[\s·\-\|\t,;]+(\d+)\s*$/) || linha.match(/^(\S+)\s+(\d+)$/);
+        const match = linha.match(/^(.+?)\s+(\d+)\s*$/);
+        console.log("Linha:", JSON.stringify(linha), "->", match ? [match[1], match[2]] : "no match");
         if (match) itensParaProcessar.push({ sku: match[1].trim(), descricao: match[1].trim(), quantidade: Number(match[2]) });
       }
     }
@@ -8392,6 +8396,8 @@ async function renderNfTransferenciaFull(container, color) {
     } catch(e) {
       nfFullState.processando = false;
       nfFullState.erro = e.message;
+      btnProcessar.textContent = "Processar e desmembrar kits";
+      btnProcessar.disabled = false;
       renderNfTransferenciaFull(container, color);
     }
   });
