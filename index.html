@@ -3302,36 +3302,15 @@ async function initCalcIpi(task, numeroManual){
   render();
 }
 
-function calcularLinhaIpi(p, freteRateadoUnit){
+function calcularLinhaIpi(p){
   const precoVenda = p.precoVenda;
   if(precoVenda==null || !p.qtd) return { precoAjustado:0, baseUnit:0, baseTotal:0, ipi:0, aliquotaValor:p.aliquotaValor||0 };
   const aliquotaValor = p.aliquotaValor!=null ? p.aliquotaValor : 0;
-  const freteUn = freteRateadoUnit || 0;
-  const precoAjustado = (precoVenda - freteUn) * (1 - REDUCAO_IPI);
+  const precoAjustado = precoVenda * (1 - REDUCAO_IPI);
   const baseUnit = precoAjustado - p.valorNf;
   const baseTotal = baseUnit * p.qtd;
   const ipi = baseTotal * aliquotaValor;
-  return { precoAjustado, baseUnit, baseTotal, ipi, aliquotaValor, freteUn };
-}
-
-// Calcula frete rateado por linha proporcional ao valor de cada produto
-function calcularFreteRateado(produtos, freteML) {
-  if (!freteML || freteML <= 0) return {};
-  // Soma valor total (precoVenda × qtd) de todos os produtos com precoVenda
-  const totalValor = produtos.reduce((s, p) => {
-    if (p.precoVenda != null && p.qtd > 0) s += p.precoVenda * p.qtd;
-    return s;
-  }, 0);
-  if (totalValor <= 0) return {};
-  const rateado = {};
-  produtos.forEach((p, idx) => {
-    if (p.precoVenda != null && p.qtd > 0) {
-      const proporcao = (p.precoVenda * p.qtd) / totalValor;
-      const freteTotal = freteML * proporcao;
-      rateado[idx] = freteTotal / p.qtd; // frete por unidade
-    }
-  });
-  return rateado;
+  return { precoAjustado, baseUnit, baseTotal, ipi, aliquotaValor };
 }
 
 function renderCalcIpiPanel(container, task){
@@ -3376,7 +3355,7 @@ function renderCalcIpiPanel(container, task){
     inp.addEventListener("input", ()=>{ onInput(parseFloat(inp.value)||0); recalcular(); });
     box.appendChild(lbl); box.appendChild(inp); return box;
   };
-  inputsRow.appendChild(campoInput("Frete ML (R$)", calc.freteML||calc.frete||0, v=>{calc.freteML=v;calc.frete=v;}));
+  inputsRow.appendChild(campoInput("Frete Total (R$)", calc.frete, v=>calc.frete=v));
   inputsRow.appendChild(campoInput("IPI da NF Original (R$)", calc.ipiOriginal, v=>calc.ipiOriginal=v));
   wrap.appendChild(inputsRow);
 
@@ -3464,12 +3443,6 @@ function renderCalcIpiPanel(container, task){
       const inpPreco = document.createElement("input"); inpPreco.type="number"; inpPreco.placeholder="digitar";
       inpPreco.value = p.precoVenda!=null ? p.precoVenda.toFixed(2) : "";
       inpPreco.style.cssText=`width:70px;background:var(--bg);border:1px solid ${p.precoVenda==null?"#e91e8c":"var(--border2)"};border-radius:4px;padding:3px 5px;color:#f0b400;font-family:inherit;font-size:11px;text-align:right;`;
-      // Célula frete/un rateado
-      const tdFreteUn = document.createElement("td");
-      tdFreteUn.style.cssText = "text-align:right;padding:4px 6px;font-size:10px;color:var(--text3);";
-      const frRateado = calcularFreteRateado(calc.produtos, calc.freteML||calc.frete||0);
-      const frUn = frRateado[idx];
-      tdFreteUn.textContent = frUn > 0 ? `R$ ${frUn.toFixed(2)}` : "—";
       inpPreco.addEventListener("click",e=>e.stopPropagation());
       // Só recalcula localmente enquanto digita (sem gravar no Firebase a cada
       // tecla — isso disparava um recarregamento da tela inteira e derrubava
@@ -3554,8 +3527,7 @@ function renderCalcIpiPanel(container, task){
     const totalDiluir = (calc.frete||0) + (calc.ipiOriginal||0);
 
     calc.produtos.forEach((p, i)=>{
-      const _frateado = calcularFreteRateado(calc.produtos, calc.freteML||calc.frete||0);
-      const r = calcularLinhaIpi(p, _frateado[calc.produtos.indexOf(p)]);
+      const r = calcularLinhaIpi(p);
       total += r.ipi;
       if(p.precoVenda!=null && p.qtd>0 && p.aliquotaValor!=null){
         const chaveAliq = p.aliquotaValor;
@@ -3718,8 +3690,7 @@ function renderCalcIpiPanel(container, task){
 
       // Estado local editável
       const linhasCmp = produtosComCmv.map(p => {
-        const _frateado = calcularFreteRateado(calc.produtos, calc.freteML||calc.frete||0);
-      const r = calcularLinhaIpi(p, _frateado[calc.produtos.indexOf(p)]);
+        const r = calcularLinhaIpi(p);
         // CMV completo = valorNF + IPI unitário + frete rateado + IPI original rateado
         const baseRateio = produtosComCmv.reduce((s, pp) => s + (pp.valorNf||0) * (pp.qtd||0), 0);
         const totalDiluir = (calc.frete||0) + (calc.ipiOriginal||0);
