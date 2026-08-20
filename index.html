@@ -519,7 +519,6 @@ function setupIdentityScreen() {
 function requestNotif(){if("Notification"in window&&Notification.permission==="default")Notification.requestPermission();}
 
 let state={tasks:{},messages:{},flashes:{}};
-window._digooState = state; // debug temporário
 let prevTasks={},flashQueue={},completionAlerts={},openCard=null,diogoPinUnlocked=false,diogoAutoFullscreen=false,diogoCardFullscreen=false,tabFlashInterval=null,faviconInterval=null,cmpSalvando=false;
 const syncDot=document.getElementById("sync-dot");
 function setSyncing(v){syncDot.style.opacity=v?"0.4":"1";}
