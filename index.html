@@ -6449,9 +6449,10 @@ async function checkPriceChangesAuto() {
 }
 
 async function fetchBlingProdutos() {
+  if (window._fetchBlingProdutosRunning) return; // evita loop
+  window._fetchBlingProdutosRunning = true;
   estoqueBlingLoading = true;
   estoqueBlingErro = null;
-  render();
 
   try {
     const r = await fetch(`${BLING_PROXY}/api/bling-produtos`);
@@ -6484,9 +6485,8 @@ async function fetchBlingProdutos() {
   }
 
   estoqueBlingLoading = false;
-  // Se dashboard está aberto, atualizar
+  window._fetchBlingProdutosRunning = false;
   if(window._diogotab === "dashboard") render();
-  else render();
 }
 
 // ── RENDER CARD ESTOQUE ──────────────────────────────────────
