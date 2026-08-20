@@ -3298,19 +3298,30 @@ async function initCalcIpi(task, numeroManual){
     frete: 0, ipiOriginal: 0,
     erro: erro,
     nfUsada: chave,
+    freteComponentes: null, // carregado do Firebase
   };
+  // Tenta carregar frete médio por componente já calculado
+  try {
+    const frSnap = await get(ref(db, "/frete_medio_componentes"));
+    const frVal = frSnap.val();
+    if (frVal?.dados) {
+      calcIpiState[task.id].freteComponentes = frVal.dados;
+      calcIpiState[task.id].freteAtualizadoEm = frVal.atualizadoEm;
+    }
+  } catch(e) {}
   render();
 }
 
-function calcularLinhaIpi(p){
+function calcularLinhaIpi(p, freteUnitario){
   const precoVenda = p.precoVenda;
-  if(precoVenda==null || !p.qtd) return { precoAjustado:0, baseUnit:0, baseTotal:0, ipi:0, aliquotaValor:p.aliquotaValor||0 };
+  if(precoVenda==null || !p.qtd) return { precoAjustado:0, baseUnit:0, baseTotal:0, ipi:0, aliquotaValor:p.aliquotaValor||0, freteUnitario:0 };
   const aliquotaValor = p.aliquotaValor!=null ? p.aliquotaValor : 0;
-  const precoAjustado = precoVenda * (1 - REDUCAO_IPI);
+  const freteUn = Number(freteUnitario || p.freteML || 0);
+  const precoAjustado = (precoVenda - freteUn) * (1 - REDUCAO_IPI);
   const baseUnit = precoAjustado - p.valorNf;
   const baseTotal = baseUnit * p.qtd;
   const ipi = baseTotal * aliquotaValor;
-  return { precoAjustado, baseUnit, baseTotal, ipi, aliquotaValor };
+  return { precoAjustado, baseUnit, baseTotal, ipi, aliquotaValor, freteUnitario: freteUn };
 }
 
 function renderCalcIpiPanel(container, task){
@@ -3355,8 +3366,46 @@ function renderCalcIpiPanel(container, task){
     inp.addEventListener("input", ()=>{ onInput(parseFloat(inp.value)||0); recalcular(); });
     box.appendChild(lbl); box.appendChild(inp); return box;
   };
-  inputsRow.appendChild(campoInput("Frete Total (R$)", calc.frete, v=>calc.frete=v));
+  inputsRow.appendChild(campoInput("Frete (R$)", calc.frete, v=>calc.frete=v));
   inputsRow.appendChild(campoInput("IPI da NF Original (R$)", calc.ipiOriginal, v=>calc.ipiOriginal=v));
+
+  // Botão e status do frete médio por componente
+  const freteMLWrap = document.createElement("div");
+  freteMLWrap.style.cssText = "display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;";
+  const freteMLBtn = document.createElement("button");
+  freteMLBtn.style.cssText = `padding:7px 14px;background:none;border:1px solid ${T.border};border-radius:6px;font-size:11px;font-weight:600;color:${T.text2};cursor:pointer;font-family:inherit;`;
+  const freteAtualizado = calc.freteAtualizadoEm ? new Date(calc.freteAtualizadoEm).toLocaleDateString("pt-BR") : null;
+  const temFrete = calc.freteComponentes && Object.keys(calc.freteComponentes).length > 0;
+  const skusComFrete = temFrete ? calc.produtos.filter(p => calc.freteComponentes[p.sku] > 0).length : 0;
+  freteMLBtn.textContent = temFrete ? `↻ Atualizar frete ML${freteAtualizado ? " ("+freteAtualizado+")" : ""}` : "📦 Calcular frete médio ML";
+  const freteMLStatus = document.createElement("div");
+  freteMLStatus.style.cssText = `font-size:10px;color:${T.text3};`;
+  freteMLStatus.textContent = temFrete ? `${skusComFrete} de ${calc.produtos.length} produtos com frete — deduzindo da base IPI` : "Calcula o frete médio pago por produto nas últimas 60 dias";
+  freteMLBtn.addEventListener("click", async () => {
+    freteMLBtn.textContent = "⏳ Calculando...";
+    freteMLBtn.disabled = true;
+    freteMLStatus.textContent = "Buscando pedidos ML e kits no Bling (pode levar 1-2 min)...";
+    try {
+      const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=frete-medio-componentes&token=${encodeURIComponent(TOKEN_ML||"")}&dias=60`);
+      const data = await r.json();
+      if (!r.ok || !data.ok) throw new Error(data.erro || "Erro ao calcular frete");
+      calc.freteComponentes = data.resultado;
+      calc.freteAtualizadoEm = Date.now();
+      const nProd = Object.keys(data.resultado).length;
+      freteMLStatus.textContent = `✓ ${nProd} componentes com frete calculado — ${data.pedidosAnalisados} pedidos dos últimos ${data.diasBase} dias`;
+      freteMLBtn.textContent = "↻ Atualizar frete ML";
+      freteMLBtn.disabled = false;
+      recalcular();
+      render();
+    } catch(e) {
+      freteMLStatus.textContent = "Erro: " + e.message;
+      freteMLBtn.textContent = "📦 Calcular frete médio ML";
+      freteMLBtn.disabled = false;
+    }
+  });
+  freteMLWrap.appendChild(freteMLBtn);
+  freteMLWrap.appendChild(freteMLStatus);
+  wrap.appendChild(freteMLWrap);
   wrap.appendChild(inputsRow);
 
   // Cards por alíquota (BASE e VALOR), igual à planilha — ficam em cima da tabela
@@ -3527,7 +3576,8 @@ function renderCalcIpiPanel(container, task){
     const totalDiluir = (calc.frete||0) + (calc.ipiOriginal||0);
 
     calc.produtos.forEach((p, i)=>{
-      const r = calcularLinhaIpi(p);
+      const freteUn = calc.freteComponentes?.[p.sku] || 0;
+      const r = calcularLinhaIpi(p, freteUn);
       total += r.ipi;
       if(p.precoVenda!=null && p.qtd>0 && p.aliquotaValor!=null){
         const chaveAliq = p.aliquotaValor;
