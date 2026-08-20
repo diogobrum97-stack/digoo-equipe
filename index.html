@@ -3380,13 +3380,13 @@ function renderCalcIpiPanel(container, task){
   freteMLBtn.textContent = temFrete ? `↻ Atualizar frete ML${freteAtualizado ? " ("+freteAtualizado+")" : ""}` : "📦 Calcular frete médio ML";
   const freteMLStatus = document.createElement("div");
   freteMLStatus.style.cssText = `font-size:10px;color:${T.text3};`;
-  freteMLStatus.textContent = temFrete ? `${skusComFrete} de ${calc.produtos.length} produtos com frete — deduzindo da base IPI` : "Calcula o frete médio pago por produto nas últimas 60 dias";
+  freteMLStatus.textContent = temFrete ? `${skusComFrete} de ${calc.produtos.length} produtos com frete — deduzindo da base IPI` : "Calcula o frete médio pago por produto nos últimos 30 dias";
   freteMLBtn.addEventListener("click", async () => {
     freteMLBtn.textContent = "⏳ Calculando...";
     freteMLBtn.disabled = true;
     freteMLStatus.textContent = "Buscando pedidos ML e kits no Bling (pode levar 1-2 min)...";
     try {
-      const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=frete-medio-componentes&token=${encodeURIComponent(TOKEN_ML||"")}&dias=60`);
+      const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=frete-medio-componentes&token=${encodeURIComponent(TOKEN_ML||"")}&dias=30`);
       const data = await r.json();
       if (!r.ok || !data.ok) throw new Error(data.erro || "Erro ao calcular frete");
       calc.freteComponentes = data.resultado;
