@@ -3288,11 +3288,13 @@ async function initCalcIpi(task, numeroManual){
       const precoSalvo = state.precos_venda_manual?.[normSku(it.sku)];
       const precoRef = PRECOS_VENDA_REFERENCIA_NORM[normSku(it.sku)];
       const precoInicial = precoSalvo!=null ? precoSalvo : (precoRef!=null ? precoRef : null);
+      const freteManual = state.frete_ml_manual?.[normSku(it.sku)];
       const sugestao = getAliquotaIPI(it.ncm); // só usada como ponto de partida — sempre editável depois
       return {
         sku: it.sku, produto: it.produto, qtd: it.quantidade, valorNf: it.valorUnit,
         ncm: it.ncm, precoVenda: precoInicial, automatico: true,
         aliquotaValor: sugestao.conhecido ? sugestao.valor : null,
+        freteML: freteManual != null ? freteManual : null,
       };
     }),
     frete: 0, ipiOriginal: 0,
@@ -3316,7 +3318,7 @@ function calcularLinhaIpi(p, freteUnitario){
   const precoVenda = p.precoVenda;
   if(precoVenda==null || !p.qtd) return { precoAjustado:0, baseUnit:0, baseTotal:0, ipi:0, aliquotaValor:p.aliquotaValor||0, freteUnitario:0 };
   const aliquotaValor = p.aliquotaValor!=null ? p.aliquotaValor : 0;
-  const freteUn = Number(freteUnitario || p.freteML || 0);
+  const freteUn = Number(p.freteML != null ? p.freteML : (freteUnitario || 0));
   const precoAjustado = (precoVenda - freteUn) * (1 - REDUCAO_IPI);
   const baseUnit = precoAjustado - p.valorNf;
   const baseTotal = baseUnit * p.qtd;
@@ -3377,30 +3379,44 @@ function renderCalcIpiPanel(container, task){
   const freteAtualizado = calc.freteAtualizadoEm ? new Date(calc.freteAtualizadoEm).toLocaleDateString("pt-BR") : null;
   const temFrete = calc.freteComponentes && Object.keys(calc.freteComponentes).length > 0;
   const skusComFrete = temFrete ? calc.produtos.filter(p => calc.freteComponentes[p.sku] > 0).length : 0;
-  freteMLBtn.textContent = temFrete ? `↻ Atualizar frete ML${freteAtualizado ? " ("+freteAtualizado+")" : ""}` : "📦 Calcular frete médio ML";
+  freteMLBtn.textContent = temFrete ? `Atualizar frete ML${freteAtualizado ? " ("+freteAtualizado+")" : ""}` : "Calcular frete médio ML";
+  // Seletor de período
+  const diasSelect = document.createElement("select");
+  diasSelect.style.cssText = `background:${T.bg3};border:1px solid ${T.border};border-radius:6px;padding:6px 10px;font-size:11px;color:${T.text};font-family:inherit;cursor:pointer;`;
+  [30,60,90].forEach(d => {
+    const opt = document.createElement("option");
+    opt.value = d; opt.textContent = `${d} dias`;
+    if (d === 60) opt.selected = true;
+    diasSelect.appendChild(opt);
+  });
+  freteMLWrap.appendChild(diasSelect);
   const freteMLStatus = document.createElement("div");
   freteMLStatus.style.cssText = `font-size:10px;color:${T.text3};`;
-  freteMLStatus.textContent = temFrete ? `${skusComFrete} de ${calc.produtos.length} produtos com frete — deduzindo da base IPI` : "Calcula o frete médio pago por produto nos últimos 30 dias";
+  freteMLStatus.textContent = temFrete ? `${skusComFrete} de ${calc.produtos.length} produtos com frete — deduzindo da base IPI` : "Calcula o frete médio pago por produto no período selecionado";
   freteMLBtn.addEventListener("click", async () => {
-    freteMLBtn.textContent = "⏳ Calculando...";
+    const dias = parseInt(diasSelect.value) || 60;
+    freteMLBtn.textContent = "Calculando...";
     freteMLBtn.disabled = true;
-    freteMLStatus.textContent = "Buscando pedidos ML e kits no Bling (pode levar 1-2 min)...";
+    diasSelect.disabled = true;
+    freteMLStatus.textContent = `Buscando pedidos ML dos últimos ${dias} dias e kits no Bling (pode levar 1-2 min)...`;
     try {
-      const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=frete-medio-componentes&token=${encodeURIComponent(TOKEN_ML||"")}&dias=30`);
+      const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=frete-medio-componentes&token=${encodeURIComponent(TOKEN_ML||"")}&dias=${dias}`);
       const data = await r.json();
       if (!r.ok || !data.ok) throw new Error(data.erro || "Erro ao calcular frete");
       calc.freteComponentes = data.resultado;
       calc.freteAtualizadoEm = Date.now();
       const nProd = Object.keys(data.resultado).length;
       freteMLStatus.textContent = `✓ ${nProd} componentes com frete calculado — ${data.pedidosAnalisados} pedidos dos últimos ${data.diasBase} dias`;
-      freteMLBtn.textContent = "↻ Atualizar frete ML";
+      freteMLBtn.textContent = "Atualizar frete ML";
       freteMLBtn.disabled = false;
+      diasSelect.disabled = false;
       recalcular();
       render();
     } catch(e) {
       freteMLStatus.textContent = "Erro: " + e.message;
-      freteMLBtn.textContent = "📦 Calcular frete médio ML";
+      freteMLBtn.textContent = "Calcular frete médio ML";
       freteMLBtn.disabled = false;
+      diasSelect.disabled = false;
     }
   });
   freteMLWrap.appendChild(freteMLBtn);
