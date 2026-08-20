@@ -525,7 +525,7 @@ function setSyncing(v){syncDot.style.opacity=v?"0.4":"1";}
 
 onValue(ref(db,"/"),snap=>{
   const d=snap.val()||{};
-  d.tasks=d.tasks||{};d.messages=d.messages||{};d.flashes=d.flashes||{};d.notices=d.notices||{};d.ml_token=d.ml_token||null;d.ml_cache=d.ml_cache||null;d.price_changes=d.price_changes||{};d.ml_token_filial=d.ml_token_filial||null;d.last_known_prices=d.last_known_prices||{};d.nfes_processadas=d.nfes_processadas||{};d.categoria_saude=d.categoria_saude||{};d.aliquotas_ipi_extra=d.aliquotas_ipi_extra||{};d.precos_venda_manual=d.precos_venda_manual||{};d.ordem_tarefas=d.ordem_tarefas||[];d.google_token=d.google_token||null;d.fechamentos=d.fechamentos||{};d.config_atributos=d.config_atributos||null;d.config_kits=d.config_kits||null;
+  d.tasks=d.tasks||{};d.messages=d.messages||{};d.flashes=d.flashes||{};d.notices=d.notices||{};d.ml_token=d.ml_token||null;d.ml_cache=d.ml_cache||null;d.price_changes=d.price_changes||{};d.ml_token_filial=d.ml_token_filial||null;d.last_known_prices=d.last_known_prices||{};d.nfes_processadas=d.nfes_processadas||{};d.categoria_saude=d.categoria_saude||{};d.aliquotas_ipi_extra=d.aliquotas_ipi_extra||{};d.precos_venda_manual=d.precos_venda_manual||{};d.frete_ml_manual=d.frete_ml_manual||{};d.ordem_tarefas=d.ordem_tarefas||[];d.google_token=d.google_token||null;d.fechamentos=d.fechamentos||{};d.config_atributos=d.config_atributos||null;d.config_kits=d.config_kits||null;
   const seenTasks=JSON.parse(localStorage.getItem("digoo_seen_tasks")||"{}");
   let seenChanged=false;
   Object.entries(d.tasks).filter(([,t])=>t!=null).forEach(([id,task])=>{
