@@ -3609,7 +3609,8 @@ function renderCalcIpiPanel(container, task){
       const celulaCmv = linhas[i]?.querySelector(".celulaCmv");
       if(celulaCmv){
         if(p.precoVenda!=null && p.qtd>0 && baseRateio>0){
-          const cmv = p.valorNf + (r.ipi/p.qtd) + (p.valorNf/baseRateio)*totalDiluir;
+          const freteUn = calc.freteComponentes?.[p.sku] || 0;
+          const cmv = p.valorNf + (r.ipi/p.qtd) + freteUn + (p.valorNf/baseRateio)*totalDiluir;
           celulaCmv.textContent = `R$ ${cmv.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
         }else{
           celulaCmv.textContent = "—";
@@ -3757,12 +3758,13 @@ function renderCalcIpiPanel(container, task){
 
       // Estado local editável
       const linhasCmp = produtosComCmv.map(p => {
-        const r = calcularLinhaIpi(p);
+        const freteUnCmp = calc.freteComponentes?.[p.sku] || 0;
+        const r = calcularLinhaIpi(p, freteUnCmp);
         // CMV completo = valorNF + IPI unitário + frete rateado + IPI original rateado
         const baseRateio = produtosComCmv.reduce((s, pp) => s + (pp.valorNf||0) * (pp.qtd||0), 0);
         const totalDiluir = (calc.frete||0) + (calc.ipiOriginal||0);
         const freteProporcional = baseRateio > 0 ? (p.valorNf / baseRateio) * totalDiluir : 0;
-        const cmvUnit = p.valorNf + (r.ipi / p.qtd) + freteProporcional;
+        const cmvUnit = p.valorNf + (r.ipi / p.qtd) + freteUnCmp + freteProporcional;
         const skuKey = (p.sku||"").toLowerCase();
         const fbKey  = skuKey.replace(/-/g, "_");
         // Busca em todas as variações de chave: underscore, hífen, uppercase
