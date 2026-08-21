@@ -4023,7 +4023,7 @@ async function renderNfComplementarPreview(container, task, calc) {
             ncm: p.ncm || "",
             quantidade: Number(p.quantidade),
             aliquota: Number(p.aliquota),
-            valorIpi: parseFloat(p.ipiUnitario || 0) * Number(p.quantidade),
+            valorIpi: parseFloat(p.ipiUnitario || 0), // unitário — Bling multiplica pela qtd internamente
           })),
         };
 
