@@ -3400,7 +3400,8 @@ function renderCalcIpiPanel(container, task){
     diasSelect.disabled = true;
     freteMLStatus.textContent = `Buscando pedidos ML dos últimos ${dias} dias e kits no Bling (pode levar 1-2 min)...`;
     try {
-      const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=frete-medio-componentes&token=${encodeURIComponent(TOKEN_ML||"")}&dias=${dias}`);
+      const token = state.ml_token?.access_token || "";
+      const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=frete-medio-componentes&token=${encodeURIComponent(token)}&dias=${dias}`);
       const data = await r.json();
       if (!r.ok || !data.ok) throw new Error(data.erro || "Erro ao calcular frete");
       calc.freteComponentes = data.resultado;
@@ -3897,7 +3898,7 @@ function renderCalcIpiPanel(container, task){
   // ── Botão Gerar NF Complementar de IPI ──────────────────────────────────
   const nfCompBtn = document.createElement("button");
   nfCompBtn.textContent = "⊕ Gerar NF Complementar de IPI";
-  nfCompBtn.style.cssText = `margin-top:16px;width:100%;padding:11px;border-radius:6px;background:none;border:1px solid #5e72e444;color:#5e72e4;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;`;
+  nfCompBtn.style.cssText = `margin-top:16px;width:100%;padding:11px;border-radius:6px;background:none;border:1px solid #00dfc366;color:#00dfc3;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;`;
   nfCompBtn.addEventListener("click", () => {
     renderNfComplementarPreview(container, task, calc);
   });
@@ -3985,7 +3986,7 @@ async function renderNfComplementarPreview(container, task, calc) {
       <tfoot>
         <tr style="border-top:2px solid ${T.border};">
           <td colspan="5" style="padding:10px 8px;text-align:right;color:${T.text3};font-size:11px;">Total IPI Complementar</td>
-          <td style="padding:10px 8px;text-align:right;color:#5e72e4;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px;">R$ ${produtosComIpi.reduce((s,p)=>{const u=parseFloat(p.ipiUnitario||0);return s+u*Number(p.quantidade);},0).toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
+          <td style="padding:10px 8px;text-align:right;color:#00dfc3;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px;">R$ ${produtosComIpi.reduce((s,p)=>{const u=parseFloat(p.ipiUnitario||0);return s+u*Number(p.quantidade);},0).toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
         </tr>
       </tfoot>
     `;
@@ -4007,7 +4008,7 @@ async function renderNfComplementarPreview(container, task, calc) {
     const emitirBtn = document.createElement("button");
     emitirBtn.id = "nf-comp-emitir";
     emitirBtn.textContent = "Emitir NF Complementar de IPI";
-    emitirBtn.style.cssText = `width:100%;padding:12px;border-radius:6px;background:#5e72e4;border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;`;
+    emitirBtn.style.cssText = `width:100%;padding:12px;border-radius:6px;background:#00dfc3;border:none;color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;`;
     emitirBtn.addEventListener("click", async () => {
       const chaveRefInput = document.getElementById("nf-comp-chave-ref")?.value?.trim() || "";
       const numeroRefInput = document.getElementById("nf-comp-numero-ref")?.value?.trim() || "";
