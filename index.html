@@ -8340,6 +8340,19 @@ async function renderNfTransferenciaFull(container, color) {
     </button>
 
     ${nfFullState.erro ? `<div style="background:${T.errBg};border:1px solid ${T.errBor};border-radius:6px;padding:10px;margin-top:12px;font-size:11px;color:${T.errText};">${nfFullState.erro}</div>` : ""}
+    ${nfFullState.fase === "concluido" && nfFullState.nfEmitida ? `
+    <div style="background:${T.okBg};border:1px solid ${T.okBor};border-radius:10px;padding:16px;margin-top:16px;">
+      <div style="font-size:13px;font-weight:700;color:${T.okTxt};margin-bottom:10px;">✓ NF de Transferência emitida!</div>
+      <div style="display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:11px;">
+        <span style="color:${T.text3};">Número</span>
+        <span style="color:${T.text};font-weight:700;font-family:'IBM Plex Mono',monospace;">${nfFullState.nfEmitida.numero || "—"}</span>
+        <span style="color:${T.text3};">Status</span>
+        <span style="color:${T.okTxt};font-weight:600;">${nfFullState.nfEmitida.status || "Autorizada"}</span>
+        <span style="color:${T.text3};">Chave</span>
+        <span style="color:${T.text};font-family:'IBM Plex Mono',monospace;font-size:10px;word-break:break-all;">${nfFullState.nfEmitida.chave || "—"}</span>
+      </div>
+      <button onclick="window._nfFullState.fase='upload';window._nfFullState.itens=[];window._nfFullState.nfEmitida=null;window._nfFullState.cmpAplicado=false;" style="margin-top:12px;width:100%;padding:8px;background:none;border:1px solid ${T.okBor};border-radius:6px;font-size:11px;color:${T.okTxt};cursor:pointer;font-family:inherit;">Nova transferência</button>
+    </div>` : ""}
     <div style="margin-top:14px;padding-top:14px;border-top:1px solid ${T.sep};">
       ${nfFullState.cmpData && !nfFullState.cmpMostrarUpload && !nfFullState.cmpAplicado ? `
       <div style="background:${T.okBg};border:1px solid ${T.okBor};border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
@@ -8715,6 +8728,7 @@ function renderNfFullEmitirModal(itens) {
       btn.textContent = "✓ Emitida";
       btn.disabled = true;
       nfFullState.fase = "concluido";
+      nfFullState.nfEmitida = { numero: data.numero, chave: data.chaveAcesso, status: data.status };
     } catch(e) {
       statusEl.innerHTML = `<div style="background:${T.errBg};border:1px solid ${T.errBor};border-radius:6px;padding:10px;font-size:11px;color:${T.errText};margin-bottom:12px;">${e.message}</div>`;
       btn.disabled = false;
