@@ -5732,9 +5732,13 @@ function render(){
             if(!confContainer){ confContainer = document.createElement("div"); confContainer.className="conf-container"; panel.appendChild(confContainer); }
             renderConferencia(confContainer, color);
           }else if(window._diogotab==="contas-pagar"){
-            panel.style.maxHeight="none"; panel.style.overflowY="auto";
+            panel.style.maxHeight="none"; panel.style.overflowY="auto"; panel.style.flex="1";
+            // Limpa containers de outras abas para evitar conflito
+            ["nf-full-container","conf-container","picking-container"].forEach(cls => {
+              const old = panel.querySelector("."+cls); if(old) old.remove();
+            });
             let cpContainer = panel.querySelector(".cp-container");
-            if(!cpContainer){ cpContainer = document.createElement("div"); cpContainer.className="cp-container"; panel.appendChild(cpContainer); }
+            if(!cpContainer){ cpContainer = document.createElement("div"); cpContainer.className="cp-container"; cpContainer.style.cssText="min-height:200px;width:100%;"; panel.appendChild(cpContainer); }
             renderContasPagar(cpContainer);
           }else if(window._diogotab==="config"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
@@ -8769,6 +8773,7 @@ const PORTADOR_ITAU = 14893332147;
 let cpState = { aba: "nova", contas: [], carregando: false, filtroSituacao: "", dataInicio: "", dataFim: "", pdfExtraindo: false };
 
 async function renderContasPagar(panel) {
+  try {
   const T = getTheme();
   panel.innerHTML = "";
   panel.style.cssText = "padding:16px;font-family:'Inter',sans-serif;";
@@ -8788,7 +8793,10 @@ async function renderContasPagar(panel) {
   if (cpState.aba === "nova") {
     renderCpFormulario(panel, T);
   } else {
-    renderCpLista(panel, T);
+    await renderCpLista(panel, T);
+  }
+  } catch(err) {
+    panel.innerHTML = `<div style="color:#ff3d3d;padding:20px;font-size:12px;font-family:'Inter',sans-serif;">Erro: ${err.message}<br><pre style="font-size:10px;margin-top:8px;">${err.stack}</pre></div>`;
   }
 }
 
