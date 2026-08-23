@@ -8860,26 +8860,10 @@ async function renderContasPagar(panel) {
   catPill.appendChild(catSel);
   filtrosWrap.appendChild(catPill);
 
-  // Buscar
-  const btnBuscar = document.createElement("button");
-  btnBuscar.textContent = "Buscar";
-  btnBuscar.style.cssText = `background:none;border:0.5px solid ${T.border};border-radius:20px;padding:5px 16px;font-size:12px;color:${T.text2};cursor:pointer;font-family:inherit;`;
-  btnBuscar.addEventListener("click", async () => {
-    btnBuscar.textContent = "↻"; btnBuscar.disabled = true;
-    const params = new URLSearchParams({ action: "listar-contas-pagar" });
-    if (cpState.filtroSituacao) params.append("situacao", cpState.filtroSituacao);
-    if (cpState.mes) { params.append("dataInicio", cpState.mes+"-01"); params.append("dataFim", cpState.mes+"-31"); }
-    try {
-      const r = await fetch(`${BLING_PROXY}/api/bling-produtos?${params}`);
-      const d = await r.json();
-      cpState.contas = d.contas || [];
-    } catch(e) { cpState.contas = []; }
-    btnBuscar.textContent = "Buscar"; btnBuscar.disabled = false;
-    renderContasPagar(panel);
-  });
-  filtrosWrap.appendChild(btnBuscar);
   colLista.appendChild(filtrosWrap);
 
+  // Carrega do Firebase automaticamente
+  await carregarContasFirebase();
   await renderCpLista(colLista);
   layout.appendChild(colLista);
 
@@ -8917,7 +8901,7 @@ function renderCpFormulario(card, mainPanel) {
       const resp = await fetch(`${BLING_PROXY}/api/bling-produtos?action=extrair-nf-cp`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({pdfBase64:base64}) });
       const aiData = await resp.json();
       if (!aiData.ok) throw new Error(aiData.erro);
-      preencherCampos(aiData.dados);
+      preencherCampos(aiData.dados); cpState._nfBase64 = base64; cpState._nfNome = file.name;
       uploadArea.innerHTML = `<span style="font-size:11px;color:#2dce89;">✓ ${file.name}</span>`;
     } catch(e) {
       uploadArea.innerHTML = `<span style="font-size:11px;color:#ff3d3d;">Erro — preencha manualmente</span>`;
@@ -8991,17 +8975,42 @@ function renderCpFormulario(card, mainPanel) {
     const valor = parseFloat(campos.valor.value);
     const vencimento = campos.vencimento.value;
     if (!valor || !vencimento) { alert("Preencha valor e vencimento."); return; }
-    btnCriar.disabled = true; btnCriar.textContent = "Enviando...";
+    btnCriar.disabled = true; btnCriar.textContent = "Salvando...";
     try {
-      const r = await fetch(`${BLING_PROXY}/api/bling-produtos?action=criar-conta-pagar`, {
-        method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ fornecedor:campos.fornecedor.value, cnpj:campos.cnpj.value, valor, vencimento, historico:campos.historico.value, categoriaId:campos.categoriaId.value, numeroDoc:campos.numeroDoc.value, portador:PORTADOR_ITAU })
-      });
-      const d = await r.json();
-      if (!r.ok || !d.ok) throw new Error(d.erro||"Erro ao criar");
-      btnCriar.style.background="#2dce89"; btnCriar.textContent="✓ Criado!";
-      cpState.mostraForm = false; cpState.contas = [];
-      setTimeout(() => renderContasPagar(mainPanel), 1200);
+      const mes = vencimento.slice(0,7);
+      const mesPath = mes.replace("-","/");
+      const id = "cp_" + Date.now();
+      const catId = campos.categoriaId.value;
+      const catLabel = CATEGORIAS_CP.find(c => c.id == catId)?.label || "";
+
+      // 1. Salva no Firebase
+      const entrada = {
+        fornecedor: campos.fornecedor.value,
+        cnpj: campos.cnpj.value.replace(/\D/g,""),
+        numeroDoc: campos.numeroDoc.value,
+        valor, vencimento,
+        historico: campos.historico.value,
+        categoriaId: catId,
+        categoriaLabel: catLabel,
+        situacao: "aberto",
+        criadoEm: new Date().toISOString(),
+      };
+      if (cpState._nfBase64) { entrada.nfBase64 = cpState._nfBase64; entrada.nfNome = cpState._nfNome; }
+      await set(ref(db, `/contas_pagar/${mesPath}/${id}`), entrada);
+
+      // 2. Tenta criar no Bling (não bloqueia se falhar)
+      try {
+        const r = await fetch(`${BLING_PROXY}/api/bling-produtos?action=criar-conta-pagar`, {
+          method:"POST", headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({ fornecedor:campos.fornecedor.value, cnpj:campos.cnpj.value, valor, vencimento, historico:campos.historico.value, categoriaId:catId, numeroDoc:campos.numeroDoc.value, portador:PORTADOR_ITAU })
+        });
+        const d = await r.json();
+        if (d.ok && d.id) await set(ref(db, `/contas_pagar/${mesPath}/${id}/blingId`), d.id);
+      } catch(e) { /* Bling falhou mas Firebase já salvou */ }
+
+      btnCriar.style.background="#2dce89"; btnCriar.textContent="✓ Salvo!";
+      cpState.mostraForm = false; cpState._nfBase64 = null; cpState._nfNome = null;
+      setTimeout(() => renderContasPagar(mainPanel), 1000);
     } catch(e) {
       btnCriar.style.background="#ff3d3d"; btnCriar.style.color="#fff";
       btnCriar.textContent=`Erro: ${e.message}`;
@@ -9122,7 +9131,7 @@ async function renderCpLista(panel) {
   if (!cpState.contas.length) {
     const vazio = document.createElement("div");
     vazio.style.cssText = `color:${T.text3};font-size:12px;padding:40px;text-align:center;`;
-    vazio.textContent = "Clique em Buscar para carregar os lançamentos.";
+    vazio.textContent = "Nenhum lançamento neste mês.";
     panel.appendChild(vazio);
     return;
   }
@@ -9130,7 +9139,6 @@ async function renderCpLista(panel) {
   const tabWrap = document.createElement("div");
   tabWrap.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:12px;overflow:hidden;`;
 
-  // Header tabela
   const thead = document.createElement("div");
   thead.style.cssText = `display:grid;grid-template-columns:2fr 1.5fr 1fr 1fr 100px;padding:8px 16px;border-bottom:0.5px solid ${T.border};background:${T.bg3};`;
   thead.innerHTML = `
@@ -9143,24 +9151,55 @@ async function renderCpLista(panel) {
 
   let total = 0;
   cpState.contas.forEach((c, i) => {
-    const sit = c.situacao;
-    const sitCor = sit===2?"#2dce89":sit===3?"#888":"#f0b400";
-    const sitLabel = sit===2?"pago":sit===3?"cancelado":"em aberto";
+    const sit = c.situacao || "aberto";
+    const sitCor = sit==="pago"?"#2dce89":sit==="cancelado"?"#888":"#f0b400";
     const valor = Number(c.valor||0);
-    if (sit !== 3) total += valor;
+    if (sit !== "cancelado") total += valor;
 
     const row = document.createElement("div");
-    row.style.cssText = `display:grid;grid-template-columns:2fr 1.5fr 1fr 1fr 100px;padding:11px 16px;border-bottom:0.5px solid ${T.border};${i%2===1?"background:"+T.bg3+";":""}`;
+    row.style.cssText = `display:grid;grid-template-columns:2fr 1.5fr 1fr 1fr 100px;padding:11px 16px;border-bottom:0.5px solid ${T.border};${i%2===1?"background:"+T.bg3+";":""}cursor:pointer;`;
     row.innerHTML = `
-      <div style="font-size:13px;color:${T.text};font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.contato?.nome||"—"}</div>
+      <div style="font-size:13px;color:${T.text};font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.fornecedor||"—"}</div>
       <div style="font-size:12px;color:${T.text2};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.historico||"—"}</div>
       <div style="font-size:13px;color:${T.text};text-align:right;font-family:'IBM Plex Mono',monospace;">R$ ${valor.toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
       <div style="font-size:12px;color:${T.text2};text-align:center;">${c.vencimento||"—"}</div>
-      <div style="text-align:center;"><span style="font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;background:${sitCor}22;color:${sitCor};">${sitLabel}</span></div>`;
+      <div style="text-align:center;"><span style="font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;background:${sitCor}22;color:${sitCor};">${sit}</span></div>`;
+
+    // Clique expande preview com NF
+    row.addEventListener("click", () => {
+      const existing = tabWrap.querySelector(".cp-row-detail");
+      if (existing && existing.dataset.id === c.id) { existing.remove(); return; }
+      if (existing) existing.remove();
+      const detail = document.createElement("div");
+      detail.className = "cp-row-detail";
+      detail.dataset.id = c.id;
+      detail.style.cssText = `grid-column:1/-1;padding:12px 16px;background:${T.bg3};border-bottom:0.5px solid ${T.border};display:flex;gap:16px;align-items:flex-start;`;
+      let nfBtn = "";
+      if (c.nfBase64) nfBtn = `<button onclick="(()=>{const b=atob('${c.nfBase64}');const bytes=new Uint8Array(b.length);for(let i=0;i<b.length;i++)bytes[i]=b.charCodeAt(i);const blob=new Blob([bytes],{type:'application/pdf'});window.open(URL.createObjectURL(blob),'_blank');})()" style="background:none;border:0.5px solid ${T.border};border-radius:6px;padding:5px 12px;font-size:11px;color:${T.text2};cursor:pointer;font-family:inherit;">📄 Ver NF</button>`;
+      detail.innerHTML = `
+        <div style="flex:1;font-size:12px;color:${T.text2};line-height:1.8;">
+          <div><b style="color:${T.text};">CNPJ:</b> ${c.cnpj||"—"}</div>
+          <div><b style="color:${T.text};">Nº Doc:</b> ${c.numeroDoc||"—"}</div>
+          <div><b style="color:${T.text};">Categoria:</b> ${c.categoriaLabel||"—"}</div>
+          <div><b style="color:${T.text};">Bling ID:</b> ${c.blingId||"não enviado"}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          ${nfBtn}
+          <button data-sit="${c.id}" style="background:none;border:0.5px solid ${T.border};border-radius:6px;padding:5px 12px;font-size:11px;color:${sit==="pago"?"#f0b400":"#2dce89"};cursor:pointer;font-family:inherit;">${sit==="pago"?"↩ Reabrir":"✓ Marcar pago"}</button>
+        </div>`;
+      detail.querySelector("[data-sit]")?.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const novaSit = sit==="pago"?"aberto":"pago";
+        await set(ref(db, `/contas_pagar/${cpState.mes.replace("-","/")}/${c.id}/situacao`), novaSit);
+        detail.remove();
+        await carregarContasFirebase();
+        renderContasPagar(panel.closest(".cp-container")||panel.parentElement);
+      });
+      row.insertAdjacentElement("afterend", detail);
+    });
     tabWrap.appendChild(row);
   });
 
-  // Total
   const tfoot = document.createElement("div");
   tfoot.style.cssText = `display:grid;grid-template-columns:2fr 1.5fr 1fr 1fr 100px;padding:10px 16px;border-top:0.5px solid ${T.border};background:${T.bg3};`;
   tfoot.innerHTML = `
@@ -9169,6 +9208,21 @@ async function renderCpLista(panel) {
     <div></div><div></div>`;
   tabWrap.appendChild(tfoot);
   panel.appendChild(tabWrap);
+}
+
+async function carregarContasFirebase() {
+  const mes = cpState.mes || new Date().toISOString().slice(0,7);
+  const mesPath = mes.replace("-","/");
+  const snap = await get(ref(db, `/contas_pagar/${mesPath}`));
+  const dados = snap.val() || {};
+  let contas = Object.entries(dados).map(([id, v]) => ({ id, ...v }));
+  // Filtro situação
+  if (cpState.filtroSituacao === "1") contas = contas.filter(c => c.situacao === "aberto" || !c.situacao);
+  if (cpState.filtroSituacao === "2") contas = contas.filter(c => c.situacao === "pago");
+  if (cpState.filtroSituacao === "3") contas = contas.filter(c => c.situacao === "cancelado");
+  // Ordena por vencimento
+  contas.sort((a,b) => (a.vencimento||"").localeCompare(b.vencimento||""));
+  cpState.contas = contas;
 }
 
 async function renderConferencia(panel, color) {
