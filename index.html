@@ -8774,7 +8774,6 @@ let cpState = { aba: "nova", contas: [], carregando: false, filtroSituacao: "", 
 
 async function renderContasPagar(panel) {
   try {
-  const T = getTheme();
   panel.innerHTML = "";
   panel.style.cssText = "padding:16px;font-family:'Inter',sans-serif;";
 
@@ -8791,16 +8790,16 @@ async function renderContasPagar(panel) {
   panel.appendChild(abaWrap);
 
   if (cpState.aba === "nova") {
-    renderCpFormulario(panel, T);
+    renderCpFormulario(panel);
   } else {
-    await renderCpLista(panel, T);
+    await renderCpLista(panel);
   }
   } catch(err) {
     panel.innerHTML = `<div style="color:#ff3d3d;padding:20px;font-size:12px;font-family:'Inter',sans-serif;">Erro: ${err.message}<br><pre style="font-size:10px;margin-top:8px;">${err.stack}</pre></div>`;
   }
 }
 
-function renderCpFormulario(panel, T) {
+function renderCpFormulario(panel) {
   const card = document.createElement("div");
   card.style.cssText = `background:${T.card};border:1px solid #2a2a2a;border-radius:10px;padding:20px;max-width:640px;`;
 
@@ -8855,7 +8854,6 @@ function preencherFormCP(card, dados) {
   const formAnt = card.querySelector(".cp-form");
   if (formAnt) formAnt.remove();
 
-  const T = getTheme();
   const form = document.createElement("div");
   form.className = "cp-form";
 
@@ -8958,7 +8956,7 @@ function preencherFormCP(card, dados) {
   card.appendChild(form);
 }
 
-async function renderCpLista(panel, T) {
+async function renderCpLista(panel) {
   // Filtros
   const filtros = document.createElement("div");
   filtros.style.cssText = "display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;";
