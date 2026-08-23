@@ -5159,7 +5159,7 @@ function render(){
             { label: "Tarefas", tab: "tarefas", subs: [] },
             { label: "Equipe", tab: null, subs: [{label:"Concluídas",tab:"concluidas"},{label:"Conversas",tab:"conversas"}] },
             { label: "Mercado Livre", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência de Compra",tab:"experiencia"},{label:"Clonar Anúncio",tab:"clonar"},{label:"Perguntas",tab:"perguntas"},{label:"Picking & Packing",tab:"picking"}] },
-            { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"},{label:"NF Transferência Full",tab:"nf-full"}] },
+            { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"},{label:"NF Transferência Full",tab:"nf-full"},{label:"Contas a Pagar",tab:"contas-pagar"}] },
           ];
 
           const currentTab = window._diogotab;
@@ -5731,6 +5731,11 @@ function render(){
             let confContainer = panel.querySelector(".conf-container");
             if(!confContainer){ confContainer = document.createElement("div"); confContainer.className="conf-container"; panel.appendChild(confContainer); }
             renderConferencia(confContainer, color);
+          }else if(window._diogotab==="contas-pagar"){
+            panel.style.maxHeight="none"; panel.style.overflowY="auto";
+            let cpContainer = panel.querySelector(".cp-container");
+            if(!cpContainer){ cpContainer = document.createElement("div"); cpContainer.className="cp-container"; panel.appendChild(cpContainer); }
+            renderContasPagar(cpContainer);
           }else if(window._diogotab==="config"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
             renderConfig(panel, color);
@@ -8738,6 +8743,301 @@ function renderNfFullEmitirModal(itens) {
       btn.textContent = "Tentar novamente";
     }
   });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CONTAS A PAGAR
+// ══════════════════════════════════════════════════════════════════════════════
+
+const CATEGORIAS_CP = [
+  { id: 14729399721, label: "Antecipação de Importação", grupo: "COMPRAS" },
+  { id: 14729394142, label: "Aluguel", grupo: "DESPESAS OPERACIONAIS" },
+  { id: 14729402416, label: "Armazenagem", grupo: "DESPESAS OPERACIONAIS" },
+  { id: 14632652910, label: "Fretes", grupo: "DESPESAS OPERACIONAIS" },
+  { id: 14617756256, label: "Salário", grupo: "DESPESAS OPERACIONAIS" },
+  { id: 14729594171, label: "Infraestrutura", grupo: "DESPESAS OPERACIONAIS" },
+  { id: 14729584147, label: "Insumos", grupo: "DESPESAS OPERACIONAIS" },
+  { id: 14729584900, label: "Prestador de Serviços", grupo: "DESPESAS OPERACIONAIS" },
+  { id: 14617763097, label: "Honorários (Contabilidade)", grupo: "DESPESAS OPERACIONAIS" },
+  { id: 14729401229, label: "Sistemas", grupo: "DESPESAS OPERACIONAIS" },
+  { id: 14729391948, label: "Plano de Saúde", grupo: "REMUNERAÇÃO E PESSOAL" },
+  { id: 14729397458, label: "Retirada de Lucro", grupo: "REMUNERAÇÃO E PESSOAL" },
+];
+
+const PORTADOR_ITAU = 14893332147;
+
+let cpState = { aba: "nova", contas: [], carregando: false, filtroSituacao: "", dataInicio: "", dataFim: "", pdfExtraindo: false };
+
+async function renderContasPagar(panel) {
+  const T = getTheme();
+  panel.innerHTML = "";
+  panel.style.cssText = "padding:16px;font-family:'Inter',sans-serif;";
+
+  // ── Abas ──
+  const abaWrap = document.createElement("div");
+  abaWrap.style.cssText = "display:flex;gap:8px;margin-bottom:20px;border-bottom:1px solid #2a2a2a;padding-bottom:0;";
+  [["nova","➕ Nova Conta"],["listar","📋 Lançamentos"]].forEach(([key,label]) => {
+    const btn = document.createElement("button");
+    btn.textContent = label;
+    btn.style.cssText = `background:none;border:none;border-bottom:2px solid ${cpState.aba===key?"#00dfc3":"transparent"};color:${cpState.aba===key?"#00dfc3":T.text3};padding:8px 14px;font-size:12px;font-weight:${cpState.aba===key?"700":"400"};cursor:pointer;font-family:inherit;transition:all .15s;margin-bottom:-1px;`;
+    btn.addEventListener("click", () => { cpState.aba = key; renderContasPagar(panel); });
+    abaWrap.appendChild(btn);
+  });
+  panel.appendChild(abaWrap);
+
+  if (cpState.aba === "nova") {
+    renderCpFormulario(panel, T);
+  } else {
+    renderCpLista(panel, T);
+  }
+}
+
+function renderCpFormulario(panel, T) {
+  const card = document.createElement("div");
+  card.style.cssText = `background:${T.card};border:1px solid #2a2a2a;border-radius:10px;padding:20px;max-width:640px;`;
+
+  // Upload PDF
+  const uploadLabel = document.createElement("div");
+  uploadLabel.style.cssText = "font-size:11px;font-weight:600;color:#00dfc3;margin-bottom:8px;letter-spacing:.5px;";
+  uploadLabel.textContent = "NOTA FISCAL (PDF)";
+  card.appendChild(uploadLabel);
+
+  const uploadArea = document.createElement("div");
+  uploadArea.style.cssText = `border:1px dashed #3a3a3a;border-radius:8px;padding:20px;text-align:center;cursor:pointer;margin-bottom:16px;transition:border-color .15s;color:${T.text3};font-size:12px;`;
+  uploadArea.innerHTML = `<div style="font-size:22px;margin-bottom:6px;">📄</div><div>Clique ou arraste um PDF de NFS-e / NF-e</div>`;
+  uploadArea.addEventListener("mouseenter", () => uploadArea.style.borderColor = "#00dfc3");
+  uploadArea.addEventListener("mouseleave", () => uploadArea.style.borderColor = "#3a3a3a");
+
+  const fileInput = document.createElement("input");
+  fileInput.type = "file"; fileInput.accept = ".pdf"; fileInput.style.display = "none";
+  fileInput.addEventListener("change", async (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    uploadArea.innerHTML = `<div style="color:#00dfc3;font-size:12px;">↻ Extraindo dados com IA...</div>`;
+    const base64 = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result.split(",")[1]); r.readAsDataURL(file); });
+    try {
+      const resp = await fetch(`${BLING_PROXY}/api/claude-chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          system: "Você é um extrator de dados de notas fiscais brasileiras. Extraia os dados da NF e retorne APENAS JSON válido, sem markdown. Campos: fornecedor (string), cnpj (string, só números), numeroDoc (string), dataEmissao (YYYY-MM-DD), valor (number), discriminacao (string, descrição do serviço/produto), categoria_sugerida (string, uma das: Antecipação de Importação, Aluguel, Armazenagem, Fretes, Salário, Infraestrutura, Insumos, Prestador de Serviços, Honorários, Sistemas, Plano de Saúde, Retirada de Lucro), tipo (string: 'servico' ou 'produto').",
+          messages: [{ role: "user", content: [{ type: "document", source: { type: "base64", media_type: "application/pdf", data: base64 } }, { type: "text", text: "Extraia os dados desta nota fiscal." }] }]
+        })
+      });
+      const aiData = await resp.json();
+      const text = aiData.content?.[0]?.text || aiData.text || "";
+      const clean = text.replace(/```json|```/g, "").trim();
+      const extracted = JSON.parse(clean);
+      uploadArea.innerHTML = `<div style="color:#2dce89;font-size:12px;">✓ ${file.name}</div>`;
+      preencherFormCP(card, extracted);
+    } catch(e) {
+      uploadArea.innerHTML = `<div style="color:#ff3d3d;font-size:12px;">Erro ao extrair — preencha manualmente</div>`;
+      preencherFormCP(card, {});
+    }
+  });
+  uploadArea.addEventListener("click", () => fileInput.click());
+  uploadArea.appendChild(fileInput);
+  card.appendChild(uploadArea);
+
+  preencherFormCP(card, {});
+  panel.appendChild(card);
+}
+
+function preencherFormCP(card, dados) {
+  // Remove form anterior se existir
+  const formAnt = card.querySelector(".cp-form");
+  if (formAnt) formAnt.remove();
+
+  const T = getTheme();
+  const form = document.createElement("div");
+  form.className = "cp-form";
+
+  const campo = (label, key, tipo="text", valor="") => {
+    const wrap = document.createElement("div");
+    wrap.style.cssText = "margin-bottom:12px;";
+    const lbl = document.createElement("div");
+    lbl.style.cssText = "font-size:10px;font-weight:600;color:#888;margin-bottom:4px;letter-spacing:.5px;";
+    lbl.textContent = label;
+    const inp = document.createElement(tipo === "select" ? "select" : "input");
+    inp.dataset.key = key;
+    inp.style.cssText = `width:100%;padding:8px 10px;background:${T.bg};border:1px solid #2a2a2a;border-radius:6px;color:${T.text};font-size:12px;font-family:'Inter',sans-serif;box-sizing:border-box;`;
+    if (tipo !== "select") { inp.type = tipo === "number" ? "number" : "text"; inp.value = valor || dados[key] || ""; }
+    wrap.appendChild(lbl);
+    wrap.appendChild(inp);
+    return { wrap, inp };
+  };
+
+  // Row 2 col
+  const row2 = (a, b) => { const d = document.createElement("div"); d.style.cssText="display:grid;grid-template-columns:1fr 1fr;gap:10px;"; d.appendChild(a); d.appendChild(b); return d; };
+
+  const { wrap: wForn, inp: inpForn } = campo("FORNECEDOR", "fornecedor");
+  const { wrap: wCnpj, inp: inpCnpj } = campo("CNPJ", "cnpj");
+  const { wrap: wNum, inp: inpNum } = campo("NÚMERO DOC", "numeroDoc");
+  const { wrap: wData, inp: inpData } = campo("VENCIMENTO", "vencimento", "date", dados.dataEmissao || new Date().toISOString().split("T")[0]);
+  const { wrap: wVal, inp: inpVal } = campo("VALOR (R$)", "valor", "number");
+  const { wrap: wHist, inp: inpHist } = campo("HISTÓRICO / DISCRIMINAÇÃO", "historico");
+  inpHist.value = dados.discriminacao || "";
+  inpVal.value = dados.valor || "";
+  inpVal.step = "0.01";
+
+  // Categoria select
+  const wCat = document.createElement("div"); wCat.style.cssText = "margin-bottom:12px;";
+  const lCat = document.createElement("div"); lCat.style.cssText = "font-size:10px;font-weight:600;color:#888;margin-bottom:4px;letter-spacing:.5px;"; lCat.textContent = "CATEGORIA";
+  const selCat = document.createElement("select");
+  selCat.dataset.key = "categoriaId";
+  selCat.style.cssText = `width:100%;padding:8px 10px;background:${T.bg};border:1px solid #2a2a2a;border-radius:6px;color:${T.text};font-size:12px;font-family:'Inter',sans-serif;`;
+  selCat.innerHTML = `<option value="">— Selecionar —</option>`;
+  let grupoAtual = "";
+  CATEGORIAS_CP.forEach(c => {
+    if (c.grupo !== grupoAtual) {
+      grupoAtual = c.grupo;
+      const og = document.createElement("optgroup"); og.label = c.grupo; selCat.appendChild(og);
+    }
+    const opt = document.createElement("option"); opt.value = c.id; opt.textContent = c.label;
+    if (dados.categoria_sugerida && c.label.toLowerCase().includes(dados.categoria_sugerida.toLowerCase())) opt.selected = true;
+    selCat.appendChild(opt);
+  });
+  wCat.appendChild(lCat); wCat.appendChild(selCat);
+
+  form.appendChild(row2(wForn, wCnpj));
+  form.appendChild(row2(wNum, wData));
+  form.appendChild(row2(wVal, wCat));
+  form.appendChild(wHist);
+
+  // Badge categoria sugerida
+  if (dados.categoria_sugerida) {
+    const badge = document.createElement("div");
+    badge.style.cssText = "font-size:10px;color:#00dfc3;margin-top:-8px;margin-bottom:12px;";
+    badge.textContent = `✦ IA sugeriu: ${dados.categoria_sugerida}`;
+    form.appendChild(badge);
+  }
+
+  // Botão enviar
+  const btnEnviar = document.createElement("button");
+  btnEnviar.textContent = "Criar no Bling";
+  btnEnviar.style.cssText = "width:100%;padding:12px;background:#00dfc3;border:none;border-radius:6px;color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;margin-top:4px;";
+  btnEnviar.addEventListener("click", async () => {
+    const get = key => form.querySelector(`[data-key="${key}"]`)?.value?.trim();
+    const valor = parseFloat(get("valor"));
+    const vencimento = get("vencimento");
+    if (!valor || !vencimento) { alert("Preencha valor e vencimento."); return; }
+    btnEnviar.disabled = true; btnEnviar.textContent = "Enviando...";
+    try {
+      const r = await fetch(`${BLING_PROXY}/api/bling-produtos?action=criar-conta-pagar`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fornecedor: get("fornecedor"),
+          cnpj: get("cnpj"),
+          valor, vencimento,
+          historico: get("historico"),
+          categoriaId: get("categoriaId"),
+          numeroDoc: get("numeroDoc"),
+          portador: PORTADOR_ITAU,
+        })
+      });
+      const d = await r.json();
+      if (!r.ok || !d.ok) throw new Error(d.erro || "Erro ao criar");
+      btnEnviar.style.background = "#2dce89";
+      btnEnviar.textContent = `✓ Criado no Bling (ID ${d.id})`;
+      setTimeout(() => { btnEnviar.disabled = false; btnEnviar.textContent = "Criar no Bling"; btnEnviar.style.background = "#00dfc3"; }, 3000);
+    } catch(e) {
+      btnEnviar.style.background = "#ff3d3d"; btnEnviar.style.color = "#fff";
+      btnEnviar.textContent = `Erro: ${e.message}`;
+      setTimeout(() => { btnEnviar.disabled = false; btnEnviar.textContent = "Criar no Bling"; btnEnviar.style.background = "#00dfc3"; btnEnviar.style.color = "#000"; }, 3000);
+    }
+  });
+  form.appendChild(btnEnviar);
+  card.appendChild(form);
+}
+
+async function renderCpLista(panel, T) {
+  // Filtros
+  const filtros = document.createElement("div");
+  filtros.style.cssText = "display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;";
+
+  const selSit = document.createElement("select");
+  selSit.style.cssText = `padding:7px 10px;background:${T.card};border:1px solid #2a2a2a;border-radius:6px;color:${T.text};font-size:12px;font-family:'Inter',sans-serif;`;
+  selSit.innerHTML = `<option value="">Todas</option><option value="1">Em aberto</option><option value="2">Pagas</option><option value="3">Canceladas</option>`;
+  selSit.value = cpState.filtroSituacao;
+  selSit.addEventListener("change", () => { cpState.filtroSituacao = selSit.value; cpState.contas = []; renderCpLista(panel, T); });
+
+  const inpDe = document.createElement("input"); inpDe.type="date"; inpDe.value=cpState.dataInicio;
+  inpDe.style.cssText = selSit.style.cssText; inpDe.placeholder="De";
+  inpDe.addEventListener("change", () => { cpState.dataInicio = inpDe.value; cpState.contas = []; renderCpLista(panel, T); });
+
+  const inpAte = document.createElement("input"); inpAte.type="date"; inpAte.value=cpState.dataFim;
+  inpAte.style.cssText = selSit.style.cssText; inpAte.placeholder="Até";
+  inpAte.addEventListener("change", () => { cpState.dataFim = inpAte.value; cpState.contas = []; renderCpLista(panel, T); });
+
+  const btnBuscar = document.createElement("button");
+  btnBuscar.textContent = "Buscar";
+  btnBuscar.style.cssText = "padding:7px 16px;background:#00dfc3;border:none;border-radius:6px;color:#000;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;";
+  btnBuscar.addEventListener("click", async () => {
+    btnBuscar.disabled = true; btnBuscar.textContent = "↻ Buscando...";
+    const params = new URLSearchParams({ action: "listar-contas-pagar" });
+    if (cpState.filtroSituacao) params.append("situacao", cpState.filtroSituacao);
+    if (cpState.dataInicio) params.append("dataInicio", cpState.dataInicio);
+    if (cpState.dataFim) params.append("dataFim", cpState.dataFim);
+    try {
+      const r = await fetch(`${BLING_PROXY}/api/bling-produtos?${params}`);
+      const d = await r.json();
+      cpState.contas = d.contas || [];
+    } catch(e) { cpState.contas = []; }
+    btnBuscar.disabled = false; btnBuscar.textContent = "Buscar";
+    renderCpLista(panel, T);
+  });
+
+  filtros.appendChild(selSit); filtros.appendChild(inpDe); filtros.appendChild(inpAte); filtros.appendChild(btnBuscar);
+  panel.appendChild(filtros);
+
+  if (!cpState.contas.length) {
+    const vazio = document.createElement("div");
+    vazio.style.cssText = `color:${T.text3};font-size:12px;padding:32px;text-align:center;`;
+    vazio.textContent = "Clique em Buscar para carregar os lançamentos.";
+    panel.appendChild(vazio);
+    return;
+  }
+
+  // Tabela
+  const tabWrap = document.createElement("div");
+  tabWrap.style.cssText = "overflow-x:auto;";
+  const tab = document.createElement("table");
+  tab.style.cssText = "width:100%;border-collapse:collapse;font-size:12px;";
+  tab.innerHTML = `<thead><tr style="border-bottom:1px solid #2a2a2a;">
+    <th style="text-align:left;padding:8px 10px;color:#888;font-weight:600;font-size:10px;letter-spacing:.5px;">FORNECEDOR</th>
+    <th style="text-align:left;padding:8px 10px;color:#888;font-weight:600;font-size:10px;">HISTÓRICO</th>
+    <th style="text-align:right;padding:8px 10px;color:#888;font-weight:600;font-size:10px;">VALOR</th>
+    <th style="text-align:center;padding:8px 10px;color:#888;font-weight:600;font-size:10px;">VENCIMENTO</th>
+    <th style="text-align:center;padding:8px 10px;color:#888;font-weight:600;font-size:10px;">STATUS</th>
+  </tr></thead>`;
+  const tbody = document.createElement("tbody");
+
+  let total = 0;
+  cpState.contas.forEach(c => {
+    const sit = c.situacao;
+    const sitCor = sit===2?"#2dce89":sit===3?"#888":"#f0b400";
+    const sitLabel = sit===2?"Pago":sit===3?"Cancelado":"Em aberto";
+    const valor = Number(c.valor||0);
+    if (sit !== 3) total += valor;
+    const tr = document.createElement("tr");
+    tr.style.cssText = "border-bottom:1px solid #1a1a1a;";
+    tr.innerHTML = `
+      <td style="padding:9px 10px;color:${T.text};">${c.contato?.nome||"—"}</td>
+      <td style="padding:9px 10px;color:${T.text2};max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.historico||"—"}</td>
+      <td style="padding:9px 10px;text-align:right;font-family:'IBM Plex Mono',monospace;color:${T.text};">R$ ${valor.toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
+      <td style="padding:9px 10px;text-align:center;color:${T.text2};">${c.vencimento||"—"}</td>
+      <td style="padding:9px 10px;text-align:center;"><span style="background:${sitCor}22;color:${sitCor};border-radius:4px;padding:2px 8px;font-size:10px;font-weight:700;">${sitLabel}</span></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Total
+  const tfoot = document.createElement("tfoot");
+  tfoot.innerHTML = `<tr style="border-top:1px solid #2a2a2a;"><td colspan="2" style="padding:10px;color:#888;font-size:11px;">Total (${cpState.contas.length} lançamentos)</td><td style="padding:10px;text-align:right;font-family:'IBM Plex Mono',monospace;color:#00dfc3;font-weight:700;font-size:13px;">R$ ${total.toLocaleString("pt-BR",{minimumFractionDigits:2})}</td><td colspan="2"></td></tr>`;
+
+  tab.appendChild(tbody); tab.appendChild(tfoot);
+  tabWrap.appendChild(tab);
+  panel.appendChild(tabWrap);
 }
 
 async function renderConferencia(panel, color) {
