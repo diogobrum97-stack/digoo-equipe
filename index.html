@@ -8822,18 +8822,14 @@ function renderCpFormulario(panel) {
     uploadArea.innerHTML = `<div style="color:#2dce89;font-size:12px;">↻ Extraindo dados com IA...</div>`;
     const base64 = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result.split(",")[1]); r.readAsDataURL(file); });
     try {
-      const resp = await fetch(`${BLING_PROXY}/api/claude-chat`, {
+      const resp = await fetch(`${BLING_PROXY}/api/bling-produtos?action=extrair-nf-cp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          system: "Você é um extrator de dados de notas fiscais brasileiras. Extraia os dados da NF e retorne APENAS JSON válido, sem markdown. Campos: fornecedor (string), cnpj (string, só números), numeroDoc (string), dataEmissao (YYYY-MM-DD), valor (number), discriminacao (string, descrição do serviço/produto), categoria_sugerida (string, uma das: Antecipação de Importação, Aluguel, Armazenagem, Fretes, Salário, Infraestrutura, Insumos, Prestador de Serviços, Honorários, Sistemas, Plano de Saúde, Retirada de Lucro), tipo (string: 'servico' ou 'produto').",
-          messages: [{ role: "user", content: [{ type: "document", source: { type: "base64", media_type: "application/pdf", data: base64 } }, { type: "text", text: "Extraia os dados desta nota fiscal." }] }]
-        })
+        body: JSON.stringify({ pdfBase64: base64 })
       });
       const aiData = await resp.json();
-      const text = aiData.content?.[0]?.text || aiData.text || "";
-      const clean = text.replace(/```json|```/g, "").trim();
-      const extracted = JSON.parse(clean);
+      if (!aiData.ok) throw new Error(aiData.erro || "Erro na extração");
+      const extracted = aiData.dados;
       uploadArea.innerHTML = `<div style="color:#2dce89;font-size:12px;">✓ ${file.name}</div>`;
       preencherFormCP(card, extracted);
     } catch(e) {
