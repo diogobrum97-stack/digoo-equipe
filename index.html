@@ -9024,92 +9024,55 @@ function preencherFormCP(card, dados) {
 }
 
 async function renderCpLista(panel) {
-  // Filtros
-  const filtros = document.createElement("div");
-  filtros.style.cssText = "display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;";
-
-  const selSit = document.createElement("select");
-  selSit.style.cssText = `padding:7px 10px;background:${T.card};border:1px solid #2a2a2a;border-radius:6px;color:${T.text};font-size:12px;font-family:'Inter',sans-serif;`;
-  selSit.innerHTML = `<option value="">Todas</option><option value="1">Em aberto</option><option value="2">Pagas</option><option value="3">Canceladas</option>`;
-  selSit.value = cpState.filtroSituacao;
-  selSit.addEventListener("change", () => { cpState.filtroSituacao = selSit.value; cpState.contas = []; renderCpLista(panel, T); });
-
-  const inpDe = document.createElement("input"); inpDe.type="date"; inpDe.value=cpState.dataInicio;
-  inpDe.style.cssText = selSit.style.cssText; inpDe.placeholder="De";
-  inpDe.addEventListener("change", () => { cpState.dataInicio = inpDe.value; cpState.contas = []; renderCpLista(panel, T); });
-
-  const inpAte = document.createElement("input"); inpAte.type="date"; inpAte.value=cpState.dataFim;
-  inpAte.style.cssText = selSit.style.cssText; inpAte.placeholder="Até";
-  inpAte.addEventListener("change", () => { cpState.dataFim = inpAte.value; cpState.contas = []; renderCpLista(panel, T); });
-
-  const btnBuscar = document.createElement("button");
-  btnBuscar.textContent = "Buscar";
-  btnBuscar.style.cssText = "padding:7px 16px;background:#2dce89;border:none;border-radius:6px;color:#000;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;";
-  btnBuscar.addEventListener("click", async () => {
-    btnBuscar.disabled = true; btnBuscar.textContent = "↻ Buscando...";
-    const params = new URLSearchParams({ action: "listar-contas-pagar" });
-    if (cpState.filtroSituacao) params.append("situacao", cpState.filtroSituacao);
-    if (cpState.dataInicio) params.append("dataInicio", cpState.dataInicio);
-    if (cpState.dataFim) params.append("dataFim", cpState.dataFim);
-    try {
-      const r = await fetch(`${BLING_PROXY}/api/bling-produtos?${params}`);
-      const d = await r.json();
-      cpState.contas = d.contas || [];
-    } catch(e) { cpState.contas = []; }
-    btnBuscar.disabled = false; btnBuscar.textContent = "Buscar";
-    renderCpLista(panel, T);
-  });
-
-  filtros.appendChild(selSit); filtros.appendChild(inpDe); filtros.appendChild(inpAte); filtros.appendChild(btnBuscar);
-  panel.appendChild(filtros);
-
   if (!cpState.contas.length) {
     const vazio = document.createElement("div");
-    vazio.style.cssText = `color:${T.text3};font-size:12px;padding:32px;text-align:center;`;
+    vazio.style.cssText = `color:${T.text3};font-size:12px;padding:40px;text-align:center;`;
     vazio.textContent = "Clique em Buscar para carregar os lançamentos.";
     panel.appendChild(vazio);
     return;
   }
 
-  // Tabela
   const tabWrap = document.createElement("div");
-  tabWrap.style.cssText = "overflow-x:auto;";
-  const tab = document.createElement("table");
-  tab.style.cssText = "width:100%;border-collapse:collapse;font-size:12px;";
-  tab.innerHTML = `<thead><tr style="border-bottom:1px solid #2a2a2a;">
-    <th style="text-align:left;padding:8px 10px;color:#888;font-weight:600;font-size:10px;letter-spacing:.5px;">FORNECEDOR</th>
-    <th style="text-align:left;padding:8px 10px;color:#888;font-weight:600;font-size:10px;">HISTÓRICO</th>
-    <th style="text-align:right;padding:8px 10px;color:#888;font-weight:600;font-size:10px;">VALOR</th>
-    <th style="text-align:center;padding:8px 10px;color:#888;font-weight:600;font-size:10px;">VENCIMENTO</th>
-    <th style="text-align:center;padding:8px 10px;color:#888;font-weight:600;font-size:10px;">STATUS</th>
-  </tr></thead>`;
-  const tbody = document.createElement("tbody");
+  tabWrap.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:12px;overflow:hidden;`;
+
+  // Header tabela
+  const thead = document.createElement("div");
+  thead.style.cssText = `display:grid;grid-template-columns:2fr 1.5fr 1fr 1fr 100px;padding:8px 16px;border-bottom:0.5px solid ${T.border};background:${T.bg3};`;
+  thead.innerHTML = `
+    <div style="font-size:11px;font-weight:500;color:${T.text3};">FORNECEDOR</div>
+    <div style="font-size:11px;font-weight:500;color:${T.text3};">HISTÓRICO</div>
+    <div style="font-size:11px;font-weight:500;color:${T.text3};text-align:right;">VALOR</div>
+    <div style="font-size:11px;font-weight:500;color:${T.text3};text-align:center;">VENCIMENTO</div>
+    <div style="font-size:11px;font-weight:500;color:${T.text3};text-align:center;">STATUS</div>`;
+  tabWrap.appendChild(thead);
 
   let total = 0;
-  cpState.contas.forEach(c => {
+  cpState.contas.forEach((c, i) => {
     const sit = c.situacao;
     const sitCor = sit===2?"#2dce89":sit===3?"#888":"#f0b400";
-    const sitLabel = sit===2?"Pago":sit===3?"Cancelado":"Em aberto";
+    const sitLabel = sit===2?"pago":sit===3?"cancelado":"em aberto";
     const valor = Number(c.valor||0);
     if (sit !== 3) total += valor;
-    const tr = document.createElement("tr");
-    tr.style.cssText = "border-bottom:1px solid #1a1a1a;";
-    tr.innerHTML = `
-      <td style="padding:9px 10px;color:${T.text};">${c.contato?.nome||"—"}</td>
-      <td style="padding:9px 10px;color:${T.text2};max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.historico||"—"}</td>
-      <td style="padding:9px 10px;text-align:right;font-family:'IBM Plex Mono',monospace;color:${T.text};">R$ ${valor.toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
-      <td style="padding:9px 10px;text-align:center;color:${T.text2};">${c.vencimento||"—"}</td>
-      <td style="padding:9px 10px;text-align:center;"><span style="background:${sitCor}22;color:${sitCor};border-radius:4px;padding:2px 8px;font-size:10px;font-weight:700;">${sitLabel}</span></td>
-    `;
-    tbody.appendChild(tr);
+
+    const row = document.createElement("div");
+    row.style.cssText = `display:grid;grid-template-columns:2fr 1.5fr 1fr 1fr 100px;padding:11px 16px;border-bottom:0.5px solid ${T.border};${i%2===1?"background:"+T.bg3+";":""}`;
+    row.innerHTML = `
+      <div style="font-size:13px;color:${T.text};font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.contato?.nome||"—"}</div>
+      <div style="font-size:12px;color:${T.text2};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.historico||"—"}</div>
+      <div style="font-size:13px;color:${T.text};text-align:right;font-family:'IBM Plex Mono',monospace;">R$ ${valor.toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
+      <div style="font-size:12px;color:${T.text2};text-align:center;">${c.vencimento||"—"}</div>
+      <div style="text-align:center;"><span style="font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;background:${sitCor}22;color:${sitCor};">${sitLabel}</span></div>`;
+    tabWrap.appendChild(row);
   });
 
   // Total
-  const tfoot = document.createElement("tfoot");
-  tfoot.innerHTML = `<tr style="border-top:1px solid #2a2a2a;"><td colspan="2" style="padding:10px;color:#888;font-size:11px;">Total (${cpState.contas.length} lançamentos)</td><td style="padding:10px;text-align:right;font-family:'IBM Plex Mono',monospace;color:#2dce89;font-weight:700;font-size:13px;">R$ ${total.toLocaleString("pt-BR",{minimumFractionDigits:2})}</td><td colspan="2"></td></tr>`;
-
-  tab.appendChild(tbody); tab.appendChild(tfoot);
-  tabWrap.appendChild(tab);
+  const tfoot = document.createElement("div");
+  tfoot.style.cssText = `display:grid;grid-template-columns:2fr 1.5fr 1fr 1fr 100px;padding:10px 16px;border-top:0.5px solid ${T.border};background:${T.bg3};`;
+  tfoot.innerHTML = `
+    <div style="font-size:12px;color:${T.text3};grid-column:1/3;">${cpState.contas.length} lançamentos</div>
+    <div style="font-size:14px;font-weight:600;color:#2dce89;text-align:right;font-family:'IBM Plex Mono',monospace;">R$ ${total.toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
+    <div></div><div></div>`;
+  tabWrap.appendChild(tfoot);
   panel.appendChild(tabWrap);
 }
 
