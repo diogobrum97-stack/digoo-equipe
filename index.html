@@ -8770,38 +8770,109 @@ const CATEGORIAS_CP = [
 
 const PORTADOR_ITAU = 14893332147;
 
-let cpState = { aba: "nova", contas: [], carregando: false, filtroSituacao: "", dataInicio: "", dataFim: "", pdfExtraindo: false };
+let cpState = { mostraForm: false, contas: [], carregando: false, filtroSituacao: "", filtroCategoria: "", mes: new Date().toISOString().slice(0,7) };
 
 async function renderContasPagar(panel) {
   try {
   panel.innerHTML = "";
-  panel.style.cssText = "padding:16px;font-family:'Inter',sans-serif;";
+  panel.style.cssText = "padding:16px 20px;font-family:'Inter',sans-serif;";
 
-  // ── Abas ──
-  const abaWrap = document.createElement("div");
-  abaWrap.style.cssText = "display:flex;gap:8px;margin-bottom:20px;border-bottom:1px solid #2a2a2a;padding-bottom:0;";
-  [["nova","➕ Nova Conta"],["listar","📋 Lançamentos"]].forEach(([key,label]) => {
-    const btn = document.createElement("button");
-    btn.textContent = label;
-    btn.style.cssText = `background:none;border:none;border-bottom:2px solid ${cpState.aba===key?"#2dce89":"transparent"};color:${cpState.aba===key?"#2dce89":T.text3};padding:8px 14px;font-size:12px;font-weight:${cpState.aba===key?"700":"400"};cursor:pointer;font-family:inherit;transition:all .15s;margin-bottom:-1px;`;
-    btn.addEventListener("click", () => { cpState.aba = key; renderContasPagar(panel); });
-    abaWrap.appendChild(btn);
-  });
-  panel.appendChild(abaWrap);
+  // ── Header ──
+  const header = document.createElement("div");
+  header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;";
+  const headerLeft = document.createElement("div");
+  headerLeft.innerHTML = `<div style="font-size:16px;font-weight:600;color:${T.text};">Contas a pagar</div><div id="cp-subtitle" style="font-size:12px;color:${T.text3};margin-top:2px;">${cpState.contas.length ? cpState.contas.length+" lançamentos" : "clique em Buscar"}</div>`;
+  const btnNova = document.createElement("button");
+  btnNova.textContent = "+ Nova conta";
+  btnNova.style.cssText = "background:#2dce89;border:none;border-radius:8px;padding:8px 16px;color:#000;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;";
+  btnNova.addEventListener("click", () => { cpState.mostraForm = true; renderContasPagar(panel); });
+  header.appendChild(headerLeft);
+  header.appendChild(btnNova);
+  panel.appendChild(header);
 
-  if (cpState.aba === "nova") {
+  if (cpState.mostraForm) {
     renderCpFormulario(panel);
-  } else {
-    await renderCpLista(panel);
+    return;
   }
+
+  // ── Filtros pills ──
+  const filtrosWrap = document.createElement("div");
+  filtrosWrap.style.cssText = "display:flex;align-items:center;gap:8px;margin-bottom:20px;flex-wrap:wrap;";
+
+  // Pills status
+  const pillsWrap = document.createElement("div");
+  pillsWrap.style.cssText = `display:flex;gap:3px;background:${T.card};border:0.5px solid ${T.border};border-radius:20px;padding:3px;`;
+  [["","Todas"],["1","Em aberto"],["2","Pagas"],["3","Canceladas"]].forEach(([val, label]) => {
+    const p = document.createElement("button");
+    p.textContent = label;
+    const ativo = cpState.filtroSituacao === val;
+    p.style.cssText = `background:${ativo?"#2dce89":"none"};border:none;border-radius:20px;padding:5px 14px;font-size:12px;font-weight:${ativo?"600":"400"};color:${ativo?"#000":T.text2};cursor:pointer;font-family:inherit;white-space:nowrap;`;
+    p.addEventListener("click", () => { cpState.filtroSituacao = val; cpState.contas = []; renderContasPagar(panel); });
+    pillsWrap.appendChild(p);
+  });
+  filtrosWrap.appendChild(pillsWrap);
+
+  // Pill mês
+  const mesPill = document.createElement("div");
+  mesPill.style.cssText = `display:flex;align-items:center;background:${T.card};border:0.5px solid ${T.border};border-radius:20px;padding:5px 14px;`;
+  const mesInput = document.createElement("input");
+  mesInput.type = "month";
+  mesInput.value = cpState.mes || new Date().toISOString().slice(0,7);
+  mesInput.style.cssText = `border:none;background:none;font-size:12px;font-weight:500;color:${T.text};outline:none;cursor:pointer;font-family:inherit;width:120px;`;
+  mesInput.addEventListener("change", () => { cpState.mes = mesInput.value; cpState.contas = []; renderContasPagar(panel); });
+  mesPill.appendChild(mesInput);
+  filtrosWrap.appendChild(mesPill);
+
+  // Pill categoria
+  const catPill = document.createElement("div");
+  catPill.style.cssText = `display:flex;align-items:center;background:${T.card};border:0.5px solid ${T.border};border-radius:20px;padding:5px 14px;`;
+  const catSel = document.createElement("select");
+  catSel.style.cssText = `border:none;background:none;font-size:12px;color:${T.text2};outline:none;cursor:pointer;font-family:inherit;`;
+  catSel.innerHTML = "<option value=''>Categoria</option>";
+  CATEGORIAS_CP.forEach(c => {
+    const o = document.createElement("option"); o.value = c.id; o.textContent = c.label;
+    if (cpState.filtroCategoria == c.id) o.selected = true;
+    catSel.appendChild(o);
+  });
+  catSel.addEventListener("change", () => { cpState.filtroCategoria = catSel.value; });
+  catPill.appendChild(catSel);
+  filtrosWrap.appendChild(catPill);
+
+  // Botão buscar
+  const btnBuscar = document.createElement("button");
+  btnBuscar.textContent = "Buscar";
+  btnBuscar.style.cssText = `background:none;border:0.5px solid ${T.border};border-radius:20px;padding:5px 16px;font-size:12px;color:${T.text2};cursor:pointer;font-family:inherit;margin-left:4px;`;
+  btnBuscar.addEventListener("click", async () => {
+    btnBuscar.textContent = "↻"; btnBuscar.disabled = true;
+    const params = new URLSearchParams({ action: "listar-contas-pagar" });
+    if (cpState.filtroSituacao) params.append("situacao", cpState.filtroSituacao);
+    if (cpState.mes) { params.append("dataInicio", cpState.mes+"-01"); params.append("dataFim", cpState.mes+"-31"); }
+    try {
+      const r = await fetch(`${BLING_PROXY}/api/bling-produtos?${params}`);
+      const d = await r.json();
+      cpState.contas = d.contas || [];
+    } catch(e) { cpState.contas = []; }
+    btnBuscar.textContent = "Buscar"; btnBuscar.disabled = false;
+    renderContasPagar(panel);
+  });
+  filtrosWrap.appendChild(btnBuscar);
+  panel.appendChild(filtrosWrap);
+
+  await renderCpLista(panel);
   } catch(err) {
     panel.innerHTML = `<div style="color:#ff3d3d;padding:20px;font-size:12px;font-family:'Inter',sans-serif;">Erro: ${err.message}<br><pre style="font-size:10px;margin-top:8px;">${err.stack}</pre></div>`;
   }
 }
 
 function renderCpFormulario(panel) {
+  const voltarBtn = document.createElement("button");
+  voltarBtn.textContent = "← Voltar";
+  voltarBtn.style.cssText = `background:none;border:none;color:${T.text3};font-size:12px;cursor:pointer;font-family:inherit;padding:0;margin-bottom:16px;`;
+  voltarBtn.addEventListener("click", () => { cpState.mostraForm = false; renderContasPagar(panel); });
+  panel.appendChild(voltarBtn);
+
   const card = document.createElement("div");
-  card.style.cssText = `background:${T.card};border:1px solid #2a2a2a;border-radius:10px;padding:20px;max-width:640px;`;
+  card.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:12px;padding:20px;max-width:640px;`;
 
   // Upload PDF
   const uploadLabel = document.createElement("div");
