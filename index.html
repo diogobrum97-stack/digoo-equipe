@@ -8933,13 +8933,26 @@ function renderCpFormulario(card, mainPanel, overlay) {
 
   card.appendChild(campo("FORNECEDOR","fornecedor","text","Nome do fornecedor"));
   card.appendChild(grid2(campo("CNPJ","cnpj","text","00.000.000/0001-00"), campo("Nº DOCUMENTO","numeroDoc","text","Ex: 3742")));
-  card.appendChild(grid2(campo("VALOR (R$)","valor","number","0,00"), (() => {
-    const wrap=document.createElement("div"); wrap.style.cssText="margin-bottom:12px;";
-    const lbl=document.createElement("div"); lbl.style.cssText=`font-size:10px;font-weight:600;color:${T.text3};margin-bottom:4px;letter-spacing:.4px;`; lbl.textContent="VENCIMENTO";
-    const inp=document.createElement("input"); inp.type="date";
-    inp.style.cssText=`width:100%;padding:8px 10px;background:${T.bg};border:0.5px solid ${T.border};border-radius:8px;color:${T.text};font-size:13px;font-family:'Inter',sans-serif;box-sizing:border-box;outline:none;`;
-    campos["vencimento"]=inp; wrap.appendChild(lbl); wrap.appendChild(inp); return wrap;
-  })()));
+  // Valor
+  card.appendChild(campo("VALOR (R$)","valor","number","0,00"));
+
+  // Competência + Vencimento
+  const gridComp = document.createElement("div"); gridComp.style.cssText="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;";
+  (() => {
+    // Competência (mês/ano)
+    const wc=document.createElement("div");
+    const lc=document.createElement("div"); lc.style.cssText=`font-size:10px;font-weight:600;color:${T.text3};margin-bottom:4px;letter-spacing:.4px;`; lc.textContent="COMPETÊNCIA";
+    const ic=document.createElement("input"); ic.type="month";
+    ic.style.cssText=`width:100%;padding:8px 10px;background:${T.bg};border:0.5px solid ${T.border};border-radius:8px;color:${T.text};font-size:13px;font-family:'Inter',sans-serif;box-sizing:border-box;outline:none;`;
+    campos["competencia"]=ic; wc.appendChild(lc); wc.appendChild(ic); gridComp.appendChild(wc);
+    // Vencimento
+    const wv=document.createElement("div");
+    const lv=document.createElement("div"); lv.style.cssText=lc.style.cssText; lv.textContent="VENCIMENTO";
+    const iv=document.createElement("input"); iv.type="date";
+    iv.style.cssText=ic.style.cssText;
+    campos["vencimento"]=iv; wv.appendChild(lv); wv.appendChild(iv); gridComp.appendChild(wv);
+  })();
+  card.appendChild(gridComp);
 
   // Categoria
   const wCat=document.createElement("div"); wCat.style.cssText="margin-bottom:12px;";
@@ -8971,7 +8984,8 @@ function renderCpFormulario(card, mainPanel, overlay) {
     if(dados.fornecedor) campos.fornecedor.value=dados.fornecedor;
     if(dados.cnpj) campos.cnpj.value=dados.cnpj;
     if(dados.valor) campos.valor.value=dados.valor;
-    if(dados.dataEmissao) campos.vencimento.value=dados.dataEmissao;
+    if(dados.competencia) campos.competencia.value=dados.competencia;
+    if(dados.dataVencimento) campos.vencimento.value=dados.dataVencimento;
     if(dados.discriminacao) campos.historico.value=dados.discriminacao;
     if(dados.numeroDoc) campos.numeroDoc.value=dados.numeroDoc;
     if(dados.categoria_sugerida){
@@ -8997,14 +9011,14 @@ function renderCpFormulario(card, mainPanel, overlay) {
     if(!valor||!vencimento){alert("Preencha valor e vencimento.");return;}
     btnCriar.disabled=true; btnCriar.textContent="Salvando...";
     try {
-      const mes=vencimento.slice(0,7);
-      const mesPath=mes.replace("-","/");
+      const competencia=campos.competencia.value || vencimento.slice(0,7);
+      const mesPath=competencia.replace("-","/");
       const id="cp_"+Date.now();
       const catId=campos.categoriaId.value;
       const catLabel=CATEGORIAS_CP.find(c=>c.id==catId)?.label||"";
       const entrada={
         fornecedor:campos.fornecedor.value, cnpj:campos.cnpj.value.replace(/\D/g,""),
-        numeroDoc:campos.numeroDoc.value, valor, vencimento,
+        numeroDoc:campos.numeroDoc.value, valor, vencimento, competencia,
         historico:campos.historico.value, categoriaId:catId, categoriaLabel:catLabel,
         situacao:"aberto", criadoEm:new Date().toISOString(),
         filial: (campos.cnpj.value.replace(/\D/g,"") === CNPJ_FILIAL),
@@ -9017,7 +9031,7 @@ function renderCpFormulario(card, mainPanel, overlay) {
         if(d.ok&&d.id) await set(ref(db,`/contas_pagar/${mesPath}/${id}/blingId`),d.id);
       }catch(e){}
       btnCriar.textContent="✓ Salvo!";
-      cpState._nfBase64=null; cpState._nfNome=null; cpState.mes=mes;
+      cpState._nfBase64=null; cpState._nfNome=null; cpState.mes=competencia;
       if(overlay) overlay.remove();
       await carregarContasFirebase();
       renderContasPagar(mainPanel);
