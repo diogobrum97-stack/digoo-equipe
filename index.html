@@ -8771,7 +8771,7 @@ const CATEGORIAS_CP = [
 const PORTADOR_ITAU = 14893332147;
 const CNPJ_FILIAL = "40981026000344";
 
-let cpState = { mostraForm: false, contas: [], carregando: false, filtroSituacao: "", filtroCategoria: "", mes: new Date().toISOString().slice(0,7) };
+let cpState = { mostraForm: false, contas: [], carregando: false, filtroSituacao: "", filtroCategoria: "", mes: new Date().toISOString().slice(0,7), _filial: false };
 
 async function renderContasPagar(panel) {
   try {
@@ -9019,12 +9019,13 @@ function renderCpFormulario(card, mainPanel, overlay) {
       const match=CATEGORIAS_CP.find(c=>c.label.toLowerCase().includes(dados.categoria_sugerida.toLowerCase()));
       if(match){campos.categoriaId.value=match.id; badge.textContent=`✦ IA sugeriu: ${dados.categoria_sugerida}`; badge.style.display="block";}
     }
-    const cnpjLimpo = (dados.cnpj||"").replace(/\D/g,"");
-    if(cnpjLimpo === CNPJ_FILIAL) {
+    const cnpjTomador = (dados.cnpjTomador||"").replace(/\D/g,"");
+    if(cnpjTomador === CNPJ_FILIAL) {
       filialBadge.style.display = "flex";
-      campos.cnpj.value = dados.cnpj; // mantém o cnpj mesmo sendo filial
+      cpState._filial = true;
     } else {
       filialBadge.style.display = "none";
+      cpState._filial = false;
     }
   };
 
@@ -9050,7 +9051,7 @@ function renderCpFormulario(card, mainPanel, overlay) {
         numeroDoc:campos.numeroDoc.value, valor, vencimento, competencia,
         historico:campos.historico.value, categoriaId:catId, categoriaLabel:catLabel,
         situacao:"aberto", criadoEm:new Date().toISOString(),
-        filial: (campos.cnpj.value.replace(/\D/g,"") === CNPJ_FILIAL),
+        filial: cpState._filial === true,
       };
       if(cpState._nfBase64){entrada.nfBase64=cpState._nfBase64; entrada.nfNome=cpState._nfNome;}
       await set(ref(db,`/contas_pagar/${mesPath}/${id}`),entrada);
