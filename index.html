@@ -9218,7 +9218,7 @@ async function renderCpLista(panel) {
       <div style="font-size:12px;color:${T.text2};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.historico||"—"}</div>
       <div style="font-size:13px;color:${T.text};text-align:right;font-family:'IBM Plex Mono',monospace;">R$ ${valor.toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
       <div style="font-size:12px;color:${T.text2};text-align:center;">${c.vencimento||"—"}</div>
-      <div style="text-align:center;"><span style="font-size:11px;font-weight:500;padding:3px 10px;border-radius:6px;background:${T.bg3};color:${sitCor};border:0.5px solid ${sitCor}33;">${sit}</span></div>`;
+      <div style="text-align:center;"><span style="font-size:11px;font-weight:600;padding:3px 12px;border-radius:20px;background:${sitCor};color:${sit==="pago"?"#000":"#000"};letter-spacing:.2px;">${sit}</span></div>`;
 
     // Clique expande preview com NF
     row.addEventListener("click", () => {
