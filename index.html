@@ -8945,13 +8945,6 @@ function renderCpFormulario(card, mainPanel, overlay) {
     const ic=document.createElement("input"); ic.type="month";
     ic.style.cssText=`width:100%;padding:8px 10px;background:${T.bg};border:0.5px solid ${T.border};border-radius:8px;color:${T.text};font-size:13px;font-family:'Inter',sans-serif;box-sizing:border-box;outline:none;`;
     campos["competencia"]=ic;
-    ic.addEventListener("change", () => {
-      if(!campos.vencimento.value && ic.value) {
-        const [y,m]=ic.value.split("-");
-        const ultimoDia=new Date(parseInt(y),parseInt(m),0).getDate();
-        campos.vencimento.value=`${y}-${m}-${String(ultimoDia).padStart(2,"0")}`;
-      }
-    });
     wc.appendChild(lc); wc.appendChild(ic); gridComp.appendChild(wc);
     // Vencimento
     const wv=document.createElement("div");
@@ -8961,6 +8954,32 @@ function renderCpFormulario(card, mainPanel, overlay) {
     campos["vencimento"]=iv; wv.appendChild(lv); wv.appendChild(iv); gridComp.appendChild(wv);
   })();
   card.appendChild(gridComp);
+
+  // Checkbox "Usar data de competência como vencimento"
+  const checkWrap = document.createElement("label");
+  checkWrap.style.cssText = "display:flex;align-items:center;gap:8px;margin-top:-6px;margin-bottom:14px;cursor:pointer;user-select:none;";
+  const checkbox = document.createElement("input");
+  checkbox.type = "checkbox";
+  checkbox.style.cssText = "width:14px;height:14px;accent-color:#2dce89;cursor:pointer;";
+  checkbox.addEventListener("change", () => {
+    if(checkbox.checked && campos.competencia.value) {
+      const [y,m] = campos.competencia.value.split("-");
+      const ultimoDia = new Date(parseInt(y), parseInt(m), 0).getDate();
+      campos.vencimento.value = `${y}-${m}-${String(ultimoDia).padStart(2,"0")}`;
+      campos.vencimento.disabled = true;
+      campos.vencimento.style.opacity = "0.4";
+    } else {
+      campos.vencimento.disabled = false;
+      campos.vencimento.style.opacity = "1";
+      campos.vencimento.value = "";
+    }
+  });
+  const checkLabel = document.createElement("span");
+  checkLabel.style.cssText = `font-size:11px;color:${T.text3};`;
+  checkLabel.textContent = "Usar data de competência como vencimento";
+  checkWrap.appendChild(checkbox);
+  checkWrap.appendChild(checkLabel);
+  card.appendChild(checkWrap);
 
   // Categoria
   const wCat=document.createElement("div"); wCat.style.cssText="margin-bottom:12px;";
@@ -8992,15 +9011,7 @@ function renderCpFormulario(card, mainPanel, overlay) {
     if(dados.fornecedor) campos.fornecedor.value=dados.fornecedor;
     if(dados.cnpj) campos.cnpj.value=dados.cnpj;
     if(dados.valor) campos.valor.value=dados.valor;
-    if(dados.competencia) {
-      campos.competencia.value=dados.competencia;
-      // Copia competência para vencimento se não tiver data de vencimento
-      if(!dados.dataVencimento && !campos.vencimento.value) {
-        const [y,m]=dados.competencia.split("-");
-        const ultimoDia=new Date(parseInt(y),parseInt(m),0).getDate();
-        campos.vencimento.value=`${y}-${m}-${String(ultimoDia).padStart(2,"0")}`;
-      }
-    }
+    if(dados.competencia) campos.competencia.value=dados.competencia;
     if(dados.dataVencimento) campos.vencimento.value=dados.dataVencimento;
     if(dados.discriminacao) campos.historico.value=dados.discriminacao;
     if(dados.numeroDoc) campos.numeroDoc.value=dados.numeroDoc;
@@ -9024,13 +9035,7 @@ function renderCpFormulario(card, mainPanel, overlay) {
   btnCriar.addEventListener("click", async () => {
     const valor=parseFloat(String(campos.valor.value).replace(",","."));
     const competencia=campos.competencia.value;
-    // Vencimento: usa o que foi preenchido, senão pega último dia do mês de competência
-    let vencimento=campos.vencimento.value;
-    if(!vencimento && competencia){
-      const [y,m]=competencia.split("-");
-      const ultimoDia=new Date(parseInt(y),parseInt(m),0).getDate();
-      vencimento=`${y}-${m}-${String(ultimoDia).padStart(2,"0")}`;
-    }
+    const vencimento=campos.vencimento.value||null;
     if(!valor){alert("Preencha o valor.");return;}
     if(!competencia){alert("Preencha a competência.");return;}
     btnCriar.disabled=true; btnCriar.textContent="Salvando...";
