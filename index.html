@@ -8781,24 +8781,16 @@ async function renderContasPagar(panel) {
   const header = document.createElement("div");
   header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;";
   const headerLeft = document.createElement("div");
-  headerLeft.innerHTML = `<div style="font-size:16px;font-weight:600;color:${T.text};">Contas a pagar</div><div style="font-size:12px;color:${T.text3};margin-top:2px;">${cpState.contas.length ? cpState.contas.length+" lançamentos" : "clique em Buscar"}</div>`;
+  headerLeft.innerHTML = `<div style="font-size:16px;font-weight:600;color:${T.text};">Contas a pagar</div><div style="font-size:12px;color:${T.text3};margin-top:2px;">${cpState.contas.length ? cpState.contas.length+" lançamentos" : ""}</div>`;
   const btnNova = document.createElement("button");
-  btnNova.textContent = cpState.mostraForm ? "✕ Fechar" : "+ Nova conta";
-  btnNova.style.cssText = `background:${cpState.mostraForm?"none":"#2dce89"};border:${cpState.mostraForm?"0.5px solid "+T.border:"none"};border-radius:8px;padding:7px 14px;color:${cpState.mostraForm?T.text2:"#000"};font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;`;
-  btnNova.addEventListener("click", () => { cpState.mostraForm = !cpState.mostraForm; renderContasPagar(panel); });
+  btnNova.textContent = "+ Nova conta";
+  btnNova.style.cssText = "background:#2dce89;border:none;border-radius:8px;padding:7px 14px;color:#000;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;";
+  btnNova.addEventListener("click", () => abrirModalNovaConta(panel));
   header.appendChild(headerLeft);
   header.appendChild(btnNova);
   panel.appendChild(header);
 
-  // ── Layout: lista + painel lateral ──
-  const layout = document.createElement("div");
-  layout.style.cssText = `display:flex;gap:16px;align-items:flex-start;`;
-
-  // ── Coluna lista ──
-  const colLista = document.createElement("div");
-  colLista.style.cssText = "flex:1;min-width:0;";
-
-  // Pills status
+  // ── Filtros pills ──
   const filtrosWrap = document.createElement("div");
   filtrosWrap.style.cssText = "display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap;";
 
@@ -8809,26 +8801,24 @@ async function renderContasPagar(panel) {
     p.textContent = label;
     const ativo = cpState.filtroSituacao === val;
     p.style.cssText = `background:${ativo?"#2dce89":"none"};border:none;border-radius:20px;padding:5px 14px;font-size:12px;font-weight:${ativo?"600":"400"};color:${ativo?"#000":T.text2};cursor:pointer;font-family:inherit;white-space:nowrap;`;
-    p.addEventListener("click", () => { cpState.filtroSituacao = val; cpState.contas = []; renderContasPagar(panel); });
+    p.addEventListener("click", () => { cpState.filtroSituacao = val; renderContasPagar(panel); });
     pillsWrap.appendChild(p);
   });
   filtrosWrap.appendChild(pillsWrap);
 
-  // Navegador de mês moderno
+  // Navegador de mês
   const mesNav = document.createElement("div");
   mesNav.style.cssText = `display:flex;align-items:center;gap:4px;background:${T.card};border:0.5px solid ${T.border};border-radius:20px;padding:3px 6px;`;
   const getMesLabel = (val) => {
     if (!val) return "Mês";
     const [y, m] = val.split("-");
-    const nomes = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
-    return `${nomes[parseInt(m)-1]} ${y}`;
+    return ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"][parseInt(m)-1]+" "+y;
   };
-  const navMes = (delta) => {
-    const cur = cpState.mes || new Date().toISOString().slice(0,7);
-    const d = new Date(cur+"-01");
+  const navMes = async (delta) => {
+    const d = new Date((cpState.mes||new Date().toISOString().slice(0,7))+"-01");
     d.setMonth(d.getMonth()+delta);
     cpState.mes = d.toISOString().slice(0,7);
-    cpState.contas = [];
+    await carregarContasFirebase();
     renderContasPagar(panel);
   };
   const btnPrev = document.createElement("button");
@@ -8845,7 +8835,7 @@ async function renderContasPagar(panel) {
   mesNav.appendChild(btnPrev); mesNav.appendChild(mesLabel); mesNav.appendChild(btnNext);
   filtrosWrap.appendChild(mesNav);
 
-  // Categoria pill
+  // Categoria
   const catPill = document.createElement("div");
   catPill.style.cssText = `display:flex;align-items:center;background:${T.card};border:0.5px solid ${T.border};border-radius:20px;padding:5px 14px;`;
   const catSel = document.createElement("select");
@@ -8856,165 +8846,170 @@ async function renderContasPagar(panel) {
     if (cpState.filtroCategoria == c.id) o.selected = true;
     catSel.appendChild(o);
   });
-  catSel.addEventListener("change", () => { cpState.filtroCategoria = catSel.value; });
+  catSel.addEventListener("change", () => { cpState.filtroCategoria = catSel.value; renderContasPagar(panel); });
   catPill.appendChild(catSel);
   filtrosWrap.appendChild(catPill);
 
-  colLista.appendChild(filtrosWrap);
+  panel.appendChild(filtrosWrap);
 
-  // Carrega do Firebase automaticamente
+  // Carrega e renderiza lista
   await carregarContasFirebase();
-  await renderCpLista(colLista);
-  layout.appendChild(colLista);
-
-  // ── Coluna formulário (lateral direita) ──
-  if (cpState.mostraForm) {
-    const colForm = document.createElement("div");
-    colForm.style.cssText = `width:260px;flex-shrink:0;background:${T.card};border:0.5px solid ${T.border};border-radius:12px;padding:16px;`;
-    renderCpFormulario(colForm, panel);
-    layout.appendChild(colForm);
-  }
-
-  panel.appendChild(layout);
+  await renderCpLista(panel);
   } catch(err) {
     panel.innerHTML = `<div style="color:#ff3d3d;padding:20px;font-size:12px;font-family:'Inter',sans-serif;">Erro: ${err.message}<br><pre style="font-size:10px;margin-top:8px;">${err.stack}</pre></div>`;
   }
 }
 
-function renderCpFormulario(card, mainPanel) {
-  const titulo = document.createElement("div");
-  titulo.style.cssText = `font-size:13px;font-weight:600;color:${T.text};margin-bottom:14px;`;
-  titulo.textContent = "Nova conta";
-  card.appendChild(titulo);
+function abrirModalNovaConta(panel) {
+  // Remove modal anterior se existir
+  const old = document.getElementById("cp-modal-overlay");
+  if (old) old.remove();
 
+  const overlay = document.createElement("div");
+  overlay.id = "cp-modal-overlay";
+  overlay.style.cssText = "position:fixed;inset:0;background:#00000066;z-index:9999;display:flex;align-items:center;justify-content:center;";
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.remove(); });
+
+  const modal = document.createElement("div");
+  modal.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:16px;padding:24px;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto;position:relative;box-shadow:0 24px 64px #00000044;`;
+
+  // Header modal
+  const mHead = document.createElement("div");
+  mHead.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;";
+  mHead.innerHTML = `<div style="font-size:15px;font-weight:600;color:${T.text};">Nova conta a pagar</div>`;
+  const btnClose = document.createElement("button");
+  btnClose.textContent = "✕";
+  btnClose.style.cssText = `background:none;border:none;color:${T.text3};font-size:16px;cursor:pointer;padding:4px 8px;border-radius:6px;`;
+  btnClose.addEventListener("click", () => overlay.remove());
+  mHead.appendChild(btnClose);
+  modal.appendChild(mHead);
+
+  renderCpFormulario(modal, panel, overlay);
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+}
+
+function renderCpFormulario(card, mainPanel, overlay) {
   // Upload PDF
   const uploadArea = document.createElement("div");
-  uploadArea.style.cssText = `display:flex;align-items:center;gap:8px;padding:8px 10px;background:${T.bg3};border:0.5px dashed ${T.border};border-radius:8px;cursor:pointer;margin-bottom:14px;`;
-  uploadArea.innerHTML = `<span style="font-size:16px;">📄</span><span style="font-size:11px;color:${T.text3};">Upload NF — preenche com IA</span>`;
+  uploadArea.style.cssText = `display:flex;align-items:center;gap:8px;padding:10px 12px;background:${T.bg3};border:0.5px dashed ${T.border};border-radius:10px;cursor:pointer;margin-bottom:18px;transition:border-color .15s;`;
+  uploadArea.innerHTML = `<span style="font-size:18px;">📄</span><div><div style="font-size:12px;font-weight:500;color:${T.text};">Upload de NF</div><div style="font-size:11px;color:${T.text3};">PDF preenchido automaticamente com IA</div></div>`;
   const fileInput = document.createElement("input");
   fileInput.type = "file"; fileInput.accept = ".pdf"; fileInput.style.display = "none";
   fileInput.addEventListener("change", async (e) => {
     const file = e.target.files[0]; if (!file) return;
-    uploadArea.innerHTML = `<span style="font-size:11px;color:#2dce89;">↻ Extraindo...</span>`;
+    uploadArea.innerHTML = `<span style="font-size:14px;">↻</span><span style="font-size:12px;color:#2dce89;">Extraindo dados com IA...</span>`;
     const base64 = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result.split(",")[1]); r.readAsDataURL(file); });
     try {
       const resp = await fetch(`${BLING_PROXY}/api/bling-produtos?action=extrair-nf-cp`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({pdfBase64:base64}) });
       const aiData = await resp.json();
       if (!aiData.ok) throw new Error(aiData.erro);
-      preencherCampos(aiData.dados); cpState._nfBase64 = base64; cpState._nfNome = file.name;
-      uploadArea.innerHTML = `<span style="font-size:11px;color:#2dce89;">✓ ${file.name}</span>`;
+      preencherCampos(aiData.dados);
+      cpState._nfBase64 = base64; cpState._nfNome = file.name;
+      uploadArea.innerHTML = `<span style="font-size:14px;">✓</span><span style="font-size:12px;color:#2dce89;">${file.name}</span>`;
     } catch(e) {
-      uploadArea.innerHTML = `<span style="font-size:11px;color:#ff3d3d;">Erro — preencha manualmente</span>`;
+      uploadArea.innerHTML = `<span style="font-size:14px;">⚠</span><span style="font-size:12px;color:#ff3d3d;">Erro na extração — preencha manualmente</span>`;
     }
   });
   uploadArea.addEventListener("click", () => fileInput.click());
   uploadArea.appendChild(fileInput);
   card.appendChild(uploadArea);
 
-  // Campos
+  // Grid de campos
   const campos = {};
-  const campo = (label, key, tipo="text", ph="") => {
-    const wrap = document.createElement("div"); wrap.style.cssText = "margin-bottom:10px;";
-    const lbl = document.createElement("div"); lbl.style.cssText = `font-size:10px;font-weight:500;color:${T.text3};margin-bottom:3px;letter-spacing:.4px;`; lbl.textContent = label;
-    const inp = document.createElement(tipo==="select"?"select":"input");
-    inp.style.cssText = `width:100%;padding:7px 9px;background:${T.bg};border:0.5px solid ${T.border};border-radius:8px;color:${T.text};font-size:12px;font-family:'Inter',sans-serif;box-sizing:border-box;`;
-    if (tipo!=="select") { inp.type=tipo==="number"?"number":"text"; inp.placeholder=ph||""; }
+  const campo = (label, key, tipo, ph) => {
+    const wrap = document.createElement("div"); wrap.style.cssText = "margin-bottom:12px;";
+    const lbl = document.createElement("div"); lbl.style.cssText = `font-size:10px;font-weight:600;color:${T.text3};margin-bottom:4px;letter-spacing:.4px;`; lbl.textContent = label;
+    const inp = document.createElement("input");
+    inp.type = tipo==="number"?"number":"text"; inp.placeholder = ph||"";
+    inp.style.cssText = `width:100%;padding:8px 10px;background:${T.bg};border:0.5px solid ${T.border};border-radius:8px;color:${T.text};font-size:13px;font-family:'Inter',sans-serif;box-sizing:border-box;outline:none;`;
     campos[key] = inp;
-    wrap.appendChild(lbl); wrap.appendChild(inp);
-    return wrap;
+    wrap.appendChild(lbl); wrap.appendChild(inp); return wrap;
   };
 
-  card.appendChild(campo("FORNECEDOR","fornecedor","text","Nome"));
-  card.appendChild(campo("CNPJ","cnpj","text","00.000.000/0000-00"));
+  // Layout 2 colunas
+  const grid2 = (a, b) => { const d=document.createElement("div"); d.style.cssText="display:grid;grid-template-columns:1fr 1fr;gap:12px;"; d.appendChild(a); d.appendChild(b); return d; };
 
-  const row2 = document.createElement("div"); row2.style.cssText="display:grid;grid-template-columns:1fr 1fr;gap:8px;";
-  row2.appendChild(campo("VALOR","valor","number","0,00"));
-  row2.appendChild(campo("VENCIMENTO","vencimento","date"));
-  card.appendChild(row2);
+  card.appendChild(campo("FORNECEDOR","fornecedor","text","Nome do fornecedor"));
+  card.appendChild(grid2(campo("CNPJ","cnpj","text","00.000.000/0001-00"), campo("Nº DOCUMENTO","numeroDoc","text","Ex: 3742")));
+  card.appendChild(grid2(campo("VALOR (R$)","valor","number","0,00"), (() => {
+    const wrap=document.createElement("div"); wrap.style.cssText="margin-bottom:12px;";
+    const lbl=document.createElement("div"); lbl.style.cssText=`font-size:10px;font-weight:600;color:${T.text3};margin-bottom:4px;letter-spacing:.4px;`; lbl.textContent="VENCIMENTO";
+    const inp=document.createElement("input"); inp.type="date";
+    inp.style.cssText=`width:100%;padding:8px 10px;background:${T.bg};border:0.5px solid ${T.border};border-radius:8px;color:${T.text};font-size:13px;font-family:'Inter',sans-serif;box-sizing:border-box;outline:none;`;
+    campos["vencimento"]=inp; wrap.appendChild(lbl); wrap.appendChild(inp); return wrap;
+  })()));
 
-  // Categoria select
-  const wCat = document.createElement("div"); wCat.style.cssText="margin-bottom:10px;";
-  const lCat = document.createElement("div"); lCat.style.cssText=`font-size:10px;font-weight:500;color:${T.text3};margin-bottom:3px;letter-spacing:.4px;`; lCat.textContent="CATEGORIA";
-  const selCat = document.createElement("select");
-  selCat.style.cssText = campos["fornecedor"].style.cssText;
-  selCat.innerHTML = "<option value=''>— Selecionar —</option>";
-  let grupoAtual = "";
+  // Categoria
+  const wCat=document.createElement("div"); wCat.style.cssText="margin-bottom:12px;";
+  const lCat=document.createElement("div"); lCat.style.cssText=`font-size:10px;font-weight:600;color:${T.text3};margin-bottom:4px;letter-spacing:.4px;`; lCat.textContent="CATEGORIA";
+  const selCat=document.createElement("select");
+  selCat.style.cssText=`width:100%;padding:8px 10px;background:${T.bg};border:0.5px solid ${T.border};border-radius:8px;color:${T.text};font-size:13px;font-family:'Inter',sans-serif;box-sizing:border-box;outline:none;`;
+  selCat.innerHTML="<option value=''>— Selecionar —</option>";
+  let grupoAtual="";
   CATEGORIAS_CP.forEach(c => {
-    if (c.grupo !== grupoAtual) { grupoAtual=c.grupo; const og=document.createElement("optgroup"); og.label=c.grupo; selCat.appendChild(og); }
+    if(c.grupo!==grupoAtual){grupoAtual=c.grupo;const og=document.createElement("optgroup");og.label=c.grupo;selCat.appendChild(og);}
     const opt=document.createElement("option"); opt.value=c.id; opt.textContent=c.label; selCat.appendChild(opt);
   });
-  campos["categoriaId"] = selCat;
-  wCat.appendChild(lCat); wCat.appendChild(selCat);
-  card.appendChild(wCat);
+  campos["categoriaId"]=selCat; wCat.appendChild(lCat); wCat.appendChild(selCat); card.appendChild(wCat);
 
-  card.appendChild(campo("HISTÓRICO","historico","text","Descrição do serviço"));
-  card.appendChild(campo("Nº DOC","numeroDoc","text",""));
+  card.appendChild(campo("HISTÓRICO / DISCRIMINAÇÃO","historico","text","Descrição do serviço ou produto"));
+
+  // Badge IA
+  const badge=document.createElement("div");
+  badge.style.cssText="font-size:11px;color:#2dce89;margin-top:-8px;margin-bottom:12px;display:none;";
+  card.appendChild(badge);
 
   const preencherCampos = (dados) => {
-    if (dados.fornecedor) campos.fornecedor.value = dados.fornecedor;
-    if (dados.cnpj) campos.cnpj.value = dados.cnpj;
-    if (dados.valor) campos.valor.value = dados.valor;
-    if (dados.dataEmissao) campos.vencimento.value = dados.dataEmissao;
-    if (dados.discriminacao) campos.historico.value = dados.discriminacao;
-    if (dados.numeroDoc) campos.numeroDoc.value = dados.numeroDoc;
-    if (dados.categoria_sugerida) {
-      const match = CATEGORIAS_CP.find(c => c.label.toLowerCase().includes(dados.categoria_sugerida.toLowerCase()));
-      if (match) { campos.categoriaId.value = match.id; badge.textContent = `✦ IA sugeriu: ${dados.categoria_sugerida}`; badge.style.display="block"; }
+    if(dados.fornecedor) campos.fornecedor.value=dados.fornecedor;
+    if(dados.cnpj) campos.cnpj.value=dados.cnpj;
+    if(dados.valor) campos.valor.value=dados.valor;
+    if(dados.dataEmissao) campos.vencimento.value=dados.dataEmissao;
+    if(dados.discriminacao) campos.historico.value=dados.discriminacao;
+    if(dados.numeroDoc) campos.numeroDoc.value=dados.numeroDoc;
+    if(dados.categoria_sugerida){
+      const match=CATEGORIAS_CP.find(c=>c.label.toLowerCase().includes(dados.categoria_sugerida.toLowerCase()));
+      if(match){campos.categoriaId.value=match.id; badge.textContent=`✦ IA sugeriu: ${dados.categoria_sugerida}`; badge.style.display="block";}
     }
   };
 
-  const badge = document.createElement("div");
-  badge.style.cssText = "font-size:10px;color:#2dce89;margin-top:-6px;margin-bottom:10px;display:none;";
-  card.appendChild(badge);
-
   // Botão criar
-  const btnCriar = document.createElement("button");
-  btnCriar.textContent = "Criar no Bling";
-  btnCriar.style.cssText = "width:100%;padding:10px;background:#2dce89;border:none;border-radius:8px;color:#000;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;margin-top:4px;";
+  const btnCriar=document.createElement("button");
+  btnCriar.textContent="Criar no Bling";
+  btnCriar.style.cssText="width:100%;padding:12px;background:#2dce89;border:none;border-radius:10px;color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;margin-top:8px;";
   btnCriar.addEventListener("click", async () => {
-    const valor = parseFloat(campos.valor.value);
-    const vencimento = campos.vencimento.value;
-    if (!valor || !vencimento) { alert("Preencha valor e vencimento."); return; }
-    btnCriar.disabled = true; btnCriar.textContent = "Salvando...";
+    const valor=parseFloat(campos.valor.value);
+    const vencimento=campos.vencimento.value;
+    if(!valor||!vencimento){alert("Preencha valor e vencimento.");return;}
+    btnCriar.disabled=true; btnCriar.textContent="Salvando...";
     try {
-      const mes = vencimento.slice(0,7);
-      const mesPath = mes.replace("-","/");
-      const id = "cp_" + Date.now();
-      const catId = campos.categoriaId.value;
-      const catLabel = CATEGORIAS_CP.find(c => c.id == catId)?.label || "";
-
-      // 1. Salva no Firebase
-      const entrada = {
-        fornecedor: campos.fornecedor.value,
-        cnpj: campos.cnpj.value.replace(/\D/g,""),
-        numeroDoc: campos.numeroDoc.value,
-        valor, vencimento,
-        historico: campos.historico.value,
-        categoriaId: catId,
-        categoriaLabel: catLabel,
-        situacao: "aberto",
-        criadoEm: new Date().toISOString(),
+      const mes=vencimento.slice(0,7);
+      const mesPath=mes.replace("-","/");
+      const id="cp_"+Date.now();
+      const catId=campos.categoriaId.value;
+      const catLabel=CATEGORIAS_CP.find(c=>c.id==catId)?.label||"";
+      const entrada={
+        fornecedor:campos.fornecedor.value, cnpj:campos.cnpj.value.replace(/\D/g,""),
+        numeroDoc:campos.numeroDoc.value, valor, vencimento,
+        historico:campos.historico.value, categoriaId:catId, categoriaLabel:catLabel,
+        situacao:"aberto", criadoEm:new Date().toISOString(),
       };
-      if (cpState._nfBase64) { entrada.nfBase64 = cpState._nfBase64; entrada.nfNome = cpState._nfNome; }
-      await set(ref(db, `/contas_pagar/${mesPath}/${id}`), entrada);
-
-      // 2. Tenta criar no Bling (não bloqueia se falhar)
+      if(cpState._nfBase64){entrada.nfBase64=cpState._nfBase64; entrada.nfNome=cpState._nfNome;}
+      await set(ref(db,`/contas_pagar/${mesPath}/${id}`),entrada);
       try {
-        const r = await fetch(`${BLING_PROXY}/api/bling-produtos?action=criar-conta-pagar`, {
-          method:"POST", headers:{"Content-Type":"application/json"},
-          body: JSON.stringify({ fornecedor:campos.fornecedor.value, cnpj:campos.cnpj.value, valor, vencimento, historico:campos.historico.value, categoriaId:catId, numeroDoc:campos.numeroDoc.value, portador:PORTADOR_ITAU })
-        });
-        const d = await r.json();
-        if (d.ok && d.id) await set(ref(db, `/contas_pagar/${mesPath}/${id}/blingId`), d.id);
-      } catch(e) { /* Bling falhou mas Firebase já salvou */ }
-
-      btnCriar.style.background="#2dce89"; btnCriar.textContent="✓ Salvo!";
-      cpState.mostraForm = false; cpState._nfBase64 = null; cpState._nfNome = null;
-      setTimeout(() => renderContasPagar(mainPanel), 1000);
-    } catch(e) {
+        const r=await fetch(`${BLING_PROXY}/api/bling-produtos?action=criar-conta-pagar`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({fornecedor:campos.fornecedor.value,cnpj:campos.cnpj.value,valor,vencimento,historico:campos.historico.value,categoriaId:catId,numeroDoc:campos.numeroDoc.value,portador:PORTADOR_ITAU})});
+        const d=await r.json();
+        if(d.ok&&d.id) await set(ref(db,`/contas_pagar/${mesPath}/${id}/blingId`),d.id);
+      }catch(e){}
+      btnCriar.textContent="✓ Salvo!";
+      cpState._nfBase64=null; cpState._nfNome=null; cpState.mes=mes;
+      if(overlay) overlay.remove();
+      await carregarContasFirebase();
+      renderContasPagar(mainPanel);
+    }catch(e){
       btnCriar.style.background="#ff3d3d"; btnCriar.style.color="#fff";
       btnCriar.textContent=`Erro: ${e.message}`;
-      setTimeout(() => { btnCriar.disabled=false; btnCriar.textContent="Criar no Bling"; btnCriar.style.background="#2dce89"; btnCriar.style.color="#000"; }, 3000);
+      setTimeout(()=>{btnCriar.disabled=false;btnCriar.textContent="Criar no Bling";btnCriar.style.background="#2dce89";btnCriar.style.color="#000";},3000);
     }
   });
   card.appendChild(btnCriar);
