@@ -8769,6 +8769,7 @@ const CATEGORIAS_CP = [
 ];
 
 const PORTADOR_ITAU = 14893332147;
+const CNPJ_FILIAL = "40981026000344";
 
 let cpState = { mostraForm: false, contas: [], carregando: false, filtroSituacao: "", filtroCategoria: "", mes: new Date().toISOString().slice(0,7) };
 
@@ -8960,6 +8961,12 @@ function renderCpFormulario(card, mainPanel, overlay) {
   badge.style.cssText="font-size:11px;color:#2dce89;margin-top:-8px;margin-bottom:12px;display:none;";
   card.appendChild(badge);
 
+  // Badge Filial
+  const filialBadge=document.createElement("div");
+  filialBadge.style.cssText="display:none;align-items:center;gap:6px;margin-bottom:12px;";
+  filialBadge.innerHTML=`<span style="background:#5e72e422;color:#5e72e4;border-radius:20px;padding:3px 12px;font-size:11px;font-weight:600;">🏢 Filial SP</span><span style="font-size:11px;color:${T.text3};">NF emitida pela filial de São Paulo</span>`;
+  card.appendChild(filialBadge);
+
   const preencherCampos = (dados) => {
     if(dados.fornecedor) campos.fornecedor.value=dados.fornecedor;
     if(dados.cnpj) campos.cnpj.value=dados.cnpj;
@@ -8970,6 +8977,13 @@ function renderCpFormulario(card, mainPanel, overlay) {
     if(dados.categoria_sugerida){
       const match=CATEGORIAS_CP.find(c=>c.label.toLowerCase().includes(dados.categoria_sugerida.toLowerCase()));
       if(match){campos.categoriaId.value=match.id; badge.textContent=`✦ IA sugeriu: ${dados.categoria_sugerida}`; badge.style.display="block";}
+    }
+    const cnpjLimpo = (dados.cnpj||"").replace(/\D/g,"");
+    if(cnpjLimpo === CNPJ_FILIAL) {
+      filialBadge.style.display = "flex";
+      campos.cnpj.value = dados.cnpj; // mantém o cnpj mesmo sendo filial
+    } else {
+      filialBadge.style.display = "none";
     }
   };
 
@@ -8993,6 +9007,7 @@ function renderCpFormulario(card, mainPanel, overlay) {
         numeroDoc:campos.numeroDoc.value, valor, vencimento,
         historico:campos.historico.value, categoriaId:catId, categoriaLabel:catLabel,
         situacao:"aberto", criadoEm:new Date().toISOString(),
+        filial: (campos.cnpj.value.replace(/\D/g,"") === CNPJ_FILIAL),
       };
       if(cpState._nfBase64){entrada.nfBase64=cpState._nfBase64; entrada.nfNome=cpState._nfNome;}
       await set(ref(db,`/contas_pagar/${mesPath}/${id}`),entrada);
@@ -9151,10 +9166,11 @@ async function renderCpLista(panel) {
     const valor = Number(c.valor||0);
     if (sit !== "cancelado") total += valor;
 
+    const filialTag = c.filial ? `<span style="background:#5e72e422;color:#5e72e4;border-radius:20px;padding:1px 7px;font-size:10px;font-weight:600;margin-left:6px;">Filial</span>` : "";
     const row = document.createElement("div");
     row.style.cssText = `display:grid;grid-template-columns:2fr 1.5fr 1fr 1fr 100px;padding:11px 16px;border-bottom:0.5px solid ${T.border};${i%2===1?"background:"+T.bg3+";":""}cursor:pointer;`;
     row.innerHTML = `
-      <div style="font-size:13px;color:${T.text};font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.fornecedor||"—"}</div>
+      <div style="font-size:13px;color:${T.text};font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;">${c.fornecedor||"—"}${filialTag}</div>
       <div style="font-size:12px;color:${T.text2};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.historico||"—"}</div>
       <div style="font-size:13px;color:${T.text};text-align:right;font-family:'IBM Plex Mono',monospace;">R$ ${valor.toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
       <div style="font-size:12px;color:${T.text2};text-align:center;">${c.vencimento||"—"}</div>
