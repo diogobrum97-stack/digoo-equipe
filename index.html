@@ -8944,7 +8944,15 @@ function renderCpFormulario(card, mainPanel, overlay) {
     const lc=document.createElement("div"); lc.style.cssText=`font-size:10px;font-weight:600;color:${T.text3};margin-bottom:4px;letter-spacing:.4px;`; lc.textContent="COMPETÊNCIA";
     const ic=document.createElement("input"); ic.type="month";
     ic.style.cssText=`width:100%;padding:8px 10px;background:${T.bg};border:0.5px solid ${T.border};border-radius:8px;color:${T.text};font-size:13px;font-family:'Inter',sans-serif;box-sizing:border-box;outline:none;`;
-    campos["competencia"]=ic; wc.appendChild(lc); wc.appendChild(ic); gridComp.appendChild(wc);
+    campos["competencia"]=ic;
+    ic.addEventListener("change", () => {
+      if(!campos.vencimento.value && ic.value) {
+        const [y,m]=ic.value.split("-");
+        const ultimoDia=new Date(parseInt(y),parseInt(m),0).getDate();
+        campos.vencimento.value=`${y}-${m}-${String(ultimoDia).padStart(2,"0")}`;
+      }
+    });
+    wc.appendChild(lc); wc.appendChild(ic); gridComp.appendChild(wc);
     // Vencimento
     const wv=document.createElement("div");
     const lv=document.createElement("div"); lv.style.cssText=lc.style.cssText; lv.textContent="VENCIMENTO";
@@ -8984,7 +8992,15 @@ function renderCpFormulario(card, mainPanel, overlay) {
     if(dados.fornecedor) campos.fornecedor.value=dados.fornecedor;
     if(dados.cnpj) campos.cnpj.value=dados.cnpj;
     if(dados.valor) campos.valor.value=dados.valor;
-    if(dados.competencia) campos.competencia.value=dados.competencia;
+    if(dados.competencia) {
+      campos.competencia.value=dados.competencia;
+      // Copia competência para vencimento se não tiver data de vencimento
+      if(!dados.dataVencimento && !campos.vencimento.value) {
+        const [y,m]=dados.competencia.split("-");
+        const ultimoDia=new Date(parseInt(y),parseInt(m),0).getDate();
+        campos.vencimento.value=`${y}-${m}-${String(ultimoDia).padStart(2,"0")}`;
+      }
+    }
     if(dados.dataVencimento) campos.vencimento.value=dados.dataVencimento;
     if(dados.discriminacao) campos.historico.value=dados.discriminacao;
     if(dados.numeroDoc) campos.numeroDoc.value=dados.numeroDoc;
@@ -9006,9 +9022,17 @@ function renderCpFormulario(card, mainPanel, overlay) {
   btnCriar.textContent="Criar no Bling";
   btnCriar.style.cssText="width:100%;padding:12px;background:#2dce89;border:none;border-radius:10px;color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;margin-top:8px;";
   btnCriar.addEventListener("click", async () => {
-    const valor=parseFloat(campos.valor.value);
-    const vencimento=campos.vencimento.value;
-    if(!valor||!vencimento){alert("Preencha valor e vencimento.");return;}
+    const valor=parseFloat(String(campos.valor.value).replace(",","."));
+    const competencia=campos.competencia.value;
+    // Vencimento: usa o que foi preenchido, senão pega último dia do mês de competência
+    let vencimento=campos.vencimento.value;
+    if(!vencimento && competencia){
+      const [y,m]=competencia.split("-");
+      const ultimoDia=new Date(parseInt(y),parseInt(m),0).getDate();
+      vencimento=`${y}-${m}-${String(ultimoDia).padStart(2,"0")}`;
+    }
+    if(!valor){alert("Preencha o valor.");return;}
+    if(!competencia){alert("Preencha a competência.");return;}
     btnCriar.disabled=true; btnCriar.textContent="Salvando...";
     try {
       const competencia=campos.competencia.value || vencimento.slice(0,7);
