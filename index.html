@@ -7965,7 +7965,7 @@ window._openIdeiasModal = function() {
         <option value="Gestão">Gestão</option>
         <option value="Outro">Outro</option>
       </select>
-      <button id="ideias-add" style="background:#ffffff;border:none;border-radius:8px;padding:10px 18px;color:#000;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">+ Adicionar</button>
+      <button id="ideias-add" style="background:#2dce89;border:none;border-radius:8px;padding:10px 18px;color:#000;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">+ Adicionar</button>
     </div>
     <div id="ideias-abas" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;"></div>
     <div id="ideias-lista"></div>
@@ -8010,7 +8010,7 @@ function renderIdeiasLista() {
       if (cat !== "Todas" && contagens[cat] === 0) return;
       const ativo = window._ideiasFiltroCategoria === cat;
       const tab = document.createElement("button");
-      tab.style.cssText = `background:${ativo ? "#ffffff" : "#141414"};border:1px solid ${ativo ? "#ffffff" : "#333"};border-radius:15px;padding:6px 14px;color:${ativo ? "#000" : "#888"};font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap;`;
+      tab.style.cssText = `background:${ativo ? "#2dce89" : T.bg3};border:0.5px solid ${ativo ? "#2dce89" : T.border};border-radius:15px;padding:6px 14px;color:${ativo ? "#000" : T.text2};font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap;`;
       tab.textContent = `${cat} ${contagens[cat]}`;
       tab.onclick = () => { window._ideiasFiltroCategoria = cat; renderIdeiasLista(); };
       abasEl.appendChild(tab);
