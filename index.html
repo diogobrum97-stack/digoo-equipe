@@ -9344,21 +9344,11 @@ async function renderListaCompras(panel) {
   btnCalc.style.cssText = `background:#2dce89;border:none;border-radius:8px;padding:8px 16px;color:#000;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;`;
   btnCalc.addEventListener("click", async () => {
     lcState.carregando = true; lcState.dados = null; lcState.editados = {};
-    renderListaCompras(panel);
-  });
-  headerRight.appendChild(btnCalc);
-
-  header.appendChild(headerLeft);
-  header.appendChild(headerRight);
-  panel.appendChild(header);
-
-  // Carrega dados se necessário
-  if (lcState.carregando) {
+    panel.innerHTML = "";
     const loading = document.createElement("div");
     loading.style.cssText = `color:${T.text3};font-size:12px;padding:40px;text-align:center;`;
     loading.innerHTML = `<div style="font-size:24px;margin-bottom:8px;">↻</div>Buscando vendas e estoque... pode levar ~30 segundos`;
     panel.appendChild(loading);
-
     try {
       const token = state.ml_token?.access_token || "";
       const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=lista-compras&token=${encodeURIComponent(token)}&dias=${lcState.dias}&transito=${lcState.transito}&seguranca=30`);
@@ -9367,11 +9357,24 @@ async function renderListaCompras(panel) {
       lcState.dados = d;
     } catch(e) {
       lcState.carregando = false;
-      panel.innerHTML = `<div style="color:#ff3d3d;padding:20px;font-size:12px;">Erro: ${e.message}</div>`;
+      panel.innerHTML = `<div style="color:#ff3d3d;padding:20px;font-size:12px;font-family:'Inter',sans-serif;">Erro: ${e.message}</div>`;
       return;
     }
     lcState.carregando = false;
     renderListaCompras(panel);
+  });
+  headerRight.appendChild(btnCalc);
+
+  header.appendChild(headerLeft);
+  header.appendChild(headerRight);
+  panel.appendChild(header);
+
+  // Mostra loading se estiver carregando
+  if (lcState.carregando) {
+    const loading = document.createElement("div");
+    loading.style.cssText = `color:${T.text3};font-size:12px;padding:40px;text-align:center;`;
+    loading.innerHTML = `<div style="font-size:24px;margin-bottom:8px;">↻</div>Buscando vendas e estoque... pode levar ~30 segundos`;
+    panel.appendChild(loading);
     return;
   }
 
