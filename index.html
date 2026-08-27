@@ -5159,7 +5159,7 @@ function render(){
             { label: "Tarefas", tab: "tarefas", subs: [] },
             { label: "Equipe", tab: null, subs: [{label:"Concluídas",tab:"concluidas"},{label:"Conversas",tab:"conversas"}] },
             { label: "Mercado Livre", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência de Compra",tab:"experiencia"},{label:"Clonar Anúncio",tab:"clonar"},{label:"Perguntas",tab:"perguntas"},{label:"Picking & Packing",tab:"picking"}] },
-            { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"},{label:"NF Transferência Full",tab:"nf-full"},{label:"Contas a Pagar",tab:"contas-pagar"}] },
+            { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"},{label:"NF Transferência Full",tab:"nf-full"},{label:"Contas a Pagar",tab:"contas-pagar"},{label:"Lista de Compras",tab:"lista-compras"}] },
           ];
 
           const currentTab = window._diogotab;
@@ -5731,6 +5731,11 @@ function render(){
             let confContainer = panel.querySelector(".conf-container");
             if(!confContainer){ confContainer = document.createElement("div"); confContainer.className="conf-container"; panel.appendChild(confContainer); }
             renderConferencia(confContainer, color);
+          }else if(window._diogotab==="lista-compras"){
+            panel.style.maxHeight="none"; panel.style.overflowY="auto";
+            let lcContainer = panel.querySelector(".lc-container");
+            if(!lcContainer){ lcContainer=document.createElement("div"); lcContainer.className="lc-container"; panel.appendChild(lcContainer); }
+            renderListaCompras(lcContainer);
           }else if(window._diogotab==="contas-pagar"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto"; panel.style.flex="1";
             // Limpa containers de outras abas para evitar conflito
@@ -9278,6 +9283,303 @@ async function carregarContasFirebase() {
   // Ordena por vencimento
   contas.sort((a,b) => (a.vencimento||"").localeCompare(b.vencimento||""));
   cpState.contas = contas;
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// LISTA DE COMPRAS
+// ══════════════════════════════════════════════════════════════════════════════
+
+// Mapeamento fornecedor por SKU prefix
+const FORNECEDOR_MAP = {
+  iris: { nome: "Iris / HHT", skus: ["C1","C2","C3","C4","C5","C6","C7","C8","C9","C10","C11","C12","C13","C14","C15","C16","C17","G1","G2","G3","GVT1","GVT2","GVT3","R1P3F12","KIT-TAM","TAM-PAR","ADD SKU"] },
+  jimmy: { nome: "Jimmy / Qifeng", skus: ["WINDX","ZOLOE","AURORA","COSMIQ","GALE","2P","WC-","ATRIX","AQUAR","D-CUBE","COLDEN","GELID","FROST","MANG","CABO-COSMIQ"] },
+};
+
+const getFornecedor = (sku) => {
+  for (const [key, f] of Object.entries(FORNECEDOR_MAP)) {
+    if (f.skus.some(p => sku.startsWith(p) || sku === p)) return key;
+  }
+  return "outros";
+};
+
+let lcState = { dados: null, carregando: false, editados: {}, dias: 90, transito: 70 };
+
+async function renderListaCompras(panel) {
+  try {
+  panel.innerHTML = "";
+  panel.style.cssText = "padding:16px 20px;font-family:'Inter',sans-serif;";
+
+  // Header
+  const header = document.createElement("div");
+  header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;";
+  const headerLeft = document.createElement("div");
+  headerLeft.innerHTML = `<div style="font-size:16px;font-weight:600;color:${T.text};">Lista de Compras</div><div style="font-size:12px;color:${T.text3};margin-top:2px;">Sugestão baseada em vendas ML + estoque Bling</div>`;
+
+  const headerRight = document.createElement("div");
+  headerRight.style.cssText = "display:flex;align-items:center;gap:8px;flex-wrap:wrap;";
+
+  // Configurações inline
+  const cfgWrap = document.createElement("div");
+  cfgWrap.style.cssText = `display:flex;align-items:center;gap:8px;background:${T.card};border:0.5px solid ${T.border};border-radius:20px;padding:5px 14px;font-size:12px;color:${T.text2};`;
+  cfgWrap.innerHTML = `<span>Base:</span>`;
+  const selDias = document.createElement("select");
+  selDias.style.cssText = `border:none;background:none;font-size:12px;color:${T.text};outline:none;cursor:pointer;font-family:inherit;`;
+  selDias.innerHTML = "<option value='60'>60 dias</option><option value='90' selected>90 dias</option><option value='120'>120 dias</option>";
+  selDias.value = lcState.dias;
+  selDias.addEventListener("change", () => { lcState.dias = parseInt(selDias.value); });
+  cfgWrap.appendChild(selDias);
+  cfgWrap.innerHTML += `<span style="margin-left:8px;">Trânsito:</span>`;
+  const inpTransito = document.createElement("input");
+  inpTransito.type = "number"; inpTransito.value = lcState.transito; inpTransito.min = 30; inpTransito.max = 120;
+  inpTransito.style.cssText = `border:none;background:none;font-size:12px;color:${T.text};outline:none;width:36px;font-family:inherit;`;
+  inpTransito.addEventListener("change", () => { lcState.transito = parseInt(inpTransito.value)||70; });
+  cfgWrap.appendChild(inpTransito);
+  cfgWrap.innerHTML += `<span>dias</span>`;
+  headerRight.appendChild(cfgWrap);
+
+  // Botão calcular
+  const btnCalc = document.createElement("button");
+  btnCalc.textContent = lcState.carregando ? "↻ Calculando..." : "⟳ Calcular";
+  btnCalc.style.cssText = `background:#2dce89;border:none;border-radius:8px;padding:8px 16px;color:#000;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;`;
+  btnCalc.addEventListener("click", async () => {
+    lcState.carregando = true; lcState.dados = null; lcState.editados = {};
+    renderListaCompras(panel);
+  });
+  headerRight.appendChild(btnCalc);
+
+  header.appendChild(headerLeft);
+  header.appendChild(headerRight);
+  panel.appendChild(header);
+
+  // Carrega dados se necessário
+  if (lcState.carregando) {
+    const loading = document.createElement("div");
+    loading.style.cssText = `color:${T.text3};font-size:12px;padding:40px;text-align:center;`;
+    loading.innerHTML = `<div style="font-size:24px;margin-bottom:8px;">↻</div>Buscando vendas e estoque... pode levar ~30 segundos`;
+    panel.appendChild(loading);
+
+    try {
+      const token = state.ml_token?.access_token || "";
+      const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=lista-compras&token=${encodeURIComponent(token)}&dias=${lcState.dias}&transito=${lcState.transito}&seguranca=30`);
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.erro || "Erro ao calcular");
+      lcState.dados = d;
+    } catch(e) {
+      lcState.carregando = false;
+      panel.innerHTML = `<div style="color:#ff3d3d;padding:20px;font-size:12px;">Erro: ${e.message}</div>`;
+      return;
+    }
+    lcState.carregando = false;
+    renderListaCompras(panel);
+    return;
+  }
+
+  if (!lcState.dados) {
+    const vazio = document.createElement("div");
+    vazio.style.cssText = `color:${T.text3};font-size:12px;padding:60px;text-align:center;`;
+    vazio.innerHTML = `<div style="font-size:32px;margin-bottom:12px;">🛒</div><div>Clique em "⟳ Calcular" para gerar a lista de compras</div><div style="margin-top:6px;font-size:11px;">Analisa vendas de ${lcState.dias} dias + estoque atual + ${lcState.transito} dias de trânsito</div>`;
+    panel.appendChild(vazio);
+    return;
+  }
+
+  const { resultado, totalPedidos, diasBase } = lcState.dados;
+
+  // Resumo
+  const resumo = document.createElement("div");
+  resumo.style.cssText = `display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;`;
+  [
+    [`${totalPedidos}`, "pedidos analisados"],
+    [`${resultado.length}`, "SKUs com venda"],
+    [`${resultado.filter(r=>(lcState.editados[r.sku]??r.sugestao)>0).length}`, "SKUs a pedir"],
+    [`${diasBase} dias`, "base de análise"],
+  ].forEach(([val, label]) => {
+    const card = document.createElement("div");
+    card.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:10px 16px;`;
+    card.innerHTML = `<div style="font-size:18px;font-weight:700;color:${T.text};">${val}</div><div style="font-size:11px;color:${T.text3};margin-top:2px;">${label}</div>`;
+    resumo.appendChild(card);
+  });
+  panel.appendChild(resumo);
+
+  // Tabs fornecedor
+  const tabs = ["iris","jimmy","outros"];
+  const tabWrap = document.createElement("div");
+  tabWrap.style.cssText = `display:flex;gap:3px;background:${T.card};border:0.5px solid ${T.border};border-radius:20px;padding:3px;width:fit-content;margin-bottom:16px;`;
+  if (!lcState.tabAtiva) lcState.tabAtiva = "iris";
+
+  tabs.forEach(tab => {
+    const count = resultado.filter(r => getFornecedor(r.sku) === tab).length;
+    if (count === 0 && tab === "outros") return;
+    const btn = document.createElement("button");
+    const ativo = lcState.tabAtiva === tab;
+    const nome = tab === "iris" ? "🧱 Iris / HHT" : tab === "jimmy" ? "🌀 Jimmy / Qifeng" : "Outros";
+    btn.textContent = `${nome} (${count})`;
+    btn.style.cssText = `background:${ativo?"#2dce89":"none"};border:none;border-radius:20px;padding:5px 16px;font-size:12px;font-weight:${ativo?"600":"400"};color:${ativo?"#000":T.text2};cursor:pointer;font-family:inherit;`;
+    btn.addEventListener("click", () => { lcState.tabAtiva = tab; renderListaCompras(panel); });
+    tabWrap.appendChild(btn);
+  });
+  panel.appendChild(tabWrap);
+
+  // Tabela
+  const itens = resultado.filter(r => getFornecedor(r.sku) === lcState.tabAtiva);
+  const tabWrap2 = document.createElement("div");
+  tabWrap2.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:12px;overflow:hidden;margin-bottom:16px;`;
+
+  const thead = document.createElement("div");
+  thead.style.cssText = `display:grid;grid-template-columns:160px 1fr 80px 80px 80px 100px 110px;padding:8px 16px;border-bottom:0.5px solid ${T.border};background:${T.bg3};`;
+  thead.innerHTML = `
+    <div style="font-size:11px;font-weight:500;color:${T.text3};">SKU</div>
+    <div style="font-size:11px;font-weight:500;color:${T.text3};">PRODUTO</div>
+    <div style="font-size:11px;font-weight:500;color:${T.text3};text-align:right;">VENDIDO</div>
+    <div style="font-size:11px;font-weight:500;color:${T.text3};text-align:right;">MÉD/MÊS</div>
+    <div style="font-size:11px;font-weight:500;color:${T.text3};text-align:right;">ESTOQUE</div>
+    <div style="font-size:11px;font-weight:500;color:${T.text3};text-align:right;">COBERTURA</div>
+    <div style="font-size:11px;font-weight:500;color:${T.text3};text-align:right;">PEDIR</div>`;
+  tabWrap2.appendChild(thead);
+
+  itens.forEach((r, i) => {
+    const editado = lcState.editados[r.sku];
+    const qtdPedir = editado !== undefined ? editado : r.sugestao;
+    const row = document.createElement("div");
+    row.style.cssText = `display:grid;grid-template-columns:160px 1fr 80px 80px 80px 100px 110px;padding:10px 16px;border-bottom:0.5px solid ${T.border};align-items:center;${i%2===1?"background:"+T.bg3+";":""}`;
+
+    const nomeEl = document.createElement("div");
+    nomeEl.style.cssText = `font-size:11px;color:${T.text3};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;`;
+    nomeEl.textContent = r.sku;
+
+    const descEl = document.createElement("div");
+    descEl.style.cssText = `font-size:12px;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:8px;`;
+    descEl.textContent = ""; // será preenchido se tiver nome
+
+    const vendidoEl = document.createElement("div");
+    vendidoEl.style.cssText = `font-size:12px;color:${T.text2};text-align:right;`;
+    vendidoEl.textContent = r.totalVendido;
+
+    const medEl = document.createElement("div");
+    medEl.style.cssText = `font-size:12px;color:${T.text2};text-align:right;`;
+    medEl.textContent = r.mediaMensal;
+
+    const estEl = document.createElement("div");
+    estEl.style.cssText = `font-size:12px;color:${r.estoque < r.mediaMensal ? "#f0b400" : T.text2};text-align:right;font-weight:${r.estoque < r.mediaMensal ? "600" : "400"};`;
+    estEl.textContent = r.estoque;
+
+    const cobEl = document.createElement("div");
+    cobEl.style.cssText = `font-size:12px;color:${T.text2};text-align:right;`;
+    cobEl.textContent = r.coberturaNecessaria;
+
+    // Campo editável de quantidade
+    const pedirWrap = document.createElement("div");
+    pedirWrap.style.cssText = "display:flex;justify-content:flex-end;";
+    const pedirInp = document.createElement("input");
+    pedirInp.type = "number"; pedirInp.value = qtdPedir; pedirInp.min = 0;
+    pedirInp.style.cssText = `width:80px;padding:4px 8px;background:${qtdPedir>0?"#2dce8918":T.bg3};border:0.5px solid ${qtdPedir>0?"#2dce8944":T.border};border-radius:6px;color:${qtdPedir>0?"#2dce89":T.text};font-size:12px;font-weight:${qtdPedir>0?"700":"400"};text-align:right;font-family:'Inter',sans-serif;outline:none;`;
+    pedirInp.addEventListener("change", () => {
+      lcState.editados[r.sku] = parseInt(pedirInp.value)||0;
+      pedirInp.style.background = (parseInt(pedirInp.value)||0)>0?"#2dce8918":T.bg3;
+      pedirInp.style.borderColor = (parseInt(pedirInp.value)||0)>0?"#2dce8944":T.border;
+      pedirInp.style.color = (parseInt(pedirInp.value)||0)>0?"#2dce89":T.text;
+    });
+    pedirWrap.appendChild(pedirInp);
+
+    row.appendChild(nomeEl); row.appendChild(descEl); row.appendChild(vendidoEl);
+    row.appendChild(medEl); row.appendChild(estEl); row.appendChild(cobEl);
+    row.appendChild(pedirWrap);
+    tabWrap2.appendChild(row);
+  });
+  panel.appendChild(tabWrap2);
+
+  // Botão gerar invoice
+  const btnInvoice = document.createElement("button");
+  btnInvoice.textContent = `📄 Gerar Invoice ${lcState.tabAtiva === "iris" ? "Iris / HHT" : "Jimmy / Qifeng"}`;
+  btnInvoice.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:8px;padding:9px 18px;color:${T.text};font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;`;
+  btnInvoice.addEventListener("click", () => gerarInvoice(lcState.tabAtiva, resultado, lcState.editados));
+  panel.appendChild(btnInvoice);
+
+  } catch(err) {
+    panel.innerHTML = `<div style="color:#ff3d3d;padding:20px;font-size:12px;">Erro: ${err.message}</div>`;
+  }
+}
+
+async function gerarInvoice(fornecedor, resultado, editados) {
+  const itens = resultado
+    .filter(r => getFornecedor(r.sku) === fornecedor)
+    .map(r => ({ sku: r.sku, qtd: editados[r.sku] !== undefined ? editados[r.sku] : r.sugestao }))
+    .filter(r => r.qtd > 0);
+
+  if (!itens.length) { alert("Nenhum item com quantidade > 0 para este fornecedor."); return; }
+
+  const numInvoice = prompt("Número da Invoice:", fornecedor === "iris" ? "HHT2026" : "DGJM2026");
+  if (!numInvoice) return;
+
+  const hoje = new Date().toLocaleDateString("en-US", { year:"numeric", month:"short", day:"numeric" });
+  const isIris = fornecedor === "iris";
+
+  // Carrega SheetJS dinamicamente
+  if (!window.XLSX) {
+    await new Promise((res, rej) => {
+      const s = document.createElement("script");
+      s.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+      s.onload = res; s.onerror = rej;
+      document.head.appendChild(s);
+    });
+  }
+
+  const wb = window.XLSX.utils.book_new();
+  const wsData = [];
+
+  // Cabeçalho conforme modelo original
+  if (isIris) {
+    wsData.push(["", "", "", "", "", "", "", "", ""]);
+    wsData.push(["", "", "", "", "", "", "", "", ""]);
+    wsData.push(["", "PROFORMA INVOICE", "", "", "", "", "", "", ""]);
+    wsData.push(["", "", "", "", "", "", "", "", ""]);
+    wsData.push(["", "", "", "Customer:", "", "Digoo Brasil Importacao e Distribuicao LTDA", "", "Date:", hoje]);
+    wsData.push(["", "", "", "Delivery address:", "", "Rua Doutor Campos Velho 696 - Sala 501 / Porto Alegre - RS, Brazil", "", "Invoice no:", numInvoice]);
+    wsData.push(["", "", "", "Country:", "", "Brazil", "", "Sales:", "Iris Zhou"]);
+    wsData.push(["", "", "", "Phone:", "", "55 51 981482213", "", "Mobile:", "0086-15820496926"]);
+    wsData.push(["", "", "", "Attention:", "", "Diogo Silveira Brum 85208795000", "", "CNPJ", "40.981.026/0001-82"]);
+    wsData.push(["", "", "", "", "", "", "", "", ""]);
+    wsData.push(["", "", "SKU", "ITEM N°", "QTY", "MODEL", "", "UNIT / (USD)", "TOTAL / (USD)"]);
+  } else {
+    wsData.push(["Dongguan Qifeng Electronic Technology Co., Ltd.", "", "", "", "", "", "", "", ""]);
+    wsData.push(["", "", "", "PROFORMA INVOICE", "", "", "", "", ""]);
+    wsData.push(["", "", "", "Customer:", "Digoo Brasil Importacao e Distribuicao LTDA", "", "Date:", hoje, ""]);
+    wsData.push(["", "", "", "Address:", "Rua Doutor Campos Velho 700, Conj 1 / Porto Alegre - RS, Brazil", "", "Invoice no:", numInvoice, ""]);
+    wsData.push(["", "", "", "Country:", "Brazil", "", "Sales:", "Jimmy Zeng", ""]);
+    wsData.push(["", "", "", "Tel:", "55 51 981482213", "", "Mobile:", "86 18925895246", ""]);
+    wsData.push(["", "", "", "Att:", "Diogo Silveira Brum 85208795000", "", "CNPJ", "", ""]);
+    wsData.push(["", "", "", "", "", "", "", "", ""]);
+    wsData.push(["", "", "SKU", "QTY", "ITEM MODEL", "PHOTO", "UNIT / (USD)", "TOTAL / (USD)", "CBM"]);
+  }
+
+  // Itens
+  itens.forEach(it => {
+    if (isIris) {
+      wsData.push(["", "", it.sku, "", it.qtd, "", "", "", ""]);
+    } else {
+      wsData.push(["", "", it.sku, it.qtd, "", "", "", "", ""]);
+    }
+  });
+
+  // Totais
+  const totalQtd = itens.reduce((s, i) => s + i.qtd, 0);
+  wsData.push(["", "", "", "", "", "", "", "", ""]);
+  wsData.push(["", "", "", "", totalQtd, "", "", "Total", ""]);
+  wsData.push(["", "", "", "", "", "", "", "", ""]);
+  wsData.push(["", "", "", "Payment term:", "", "Antecipado", "", "", ""]);
+  wsData.push(["", "", "", "Delivery time:", "", isIris ? "15 working days" : "35-45 working days", "", "", ""]);
+  wsData.push(["", "", "", "Incoterm:", "", "TT", "", "", ""]);
+
+  const ws = window.XLSX.utils.aoa_to_sheet(wsData);
+  ws["!cols"] = [{wch:4},{wch:4},{wch:22},{wch:14},{wch:8},{wch:30},{wch:10},{wch:14},{wch:14}];
+  window.XLSX.utils.book_append_sheet(wb, ws, "PI");
+
+  const buf = window.XLSX.write(wb, { bookType:"xlsx", type:"array" });
+  const blob = new Blob([buf], { type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = `Invoice_${numInvoice}.xlsx`; a.click();
+  URL.revokeObjectURL(url);
 }
 
 async function renderConferencia(panel, color) {
