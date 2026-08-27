@@ -5734,8 +5734,10 @@ function render(){
           }else if(window._diogotab==="lista-compras"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
             let lcContainer = panel.querySelector(".lc-container");
-            if(!lcContainer){ lcContainer=document.createElement("div"); lcContainer.className="lc-container"; panel.appendChild(lcContainer); }
-            renderListaCompras(lcContainer);
+            if(!lcContainer){
+              lcContainer=document.createElement("div"); lcContainer.className="lc-container"; panel.appendChild(lcContainer);
+              renderListaCompras(lcContainer); // só renderiza na primeira vez
+            }
           }else if(window._diogotab==="contas-pagar"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto"; panel.style.flex="1";
             // Limpa containers de outras abas para evitar conflito
