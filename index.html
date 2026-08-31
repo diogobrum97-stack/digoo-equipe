@@ -6473,8 +6473,10 @@ async function fetchBlingProdutos() {
 
     if (data.erro) {
       // Se expirou, mostrar botão de reconectar
-      if(data.erro.includes("expirado")) {
-        estoqueBlingErro = "Token expirado";
+      if(data.erro.includes("expirado") || data.erro.includes("reconecte")) {
+        estoqueBlingErro = "Token Bling — tentando renovar...";
+        // Tenta de novo após 3s (backend pode ter renovado)
+        setTimeout(() => { estoqueBlingErro = null; fetchBlingProdutos(); }, 3000);
       } else {
         throw new Error(data.erro);
       }
@@ -7932,7 +7934,8 @@ if(urlParams.get("ml_error")){alert("Erro ao conectar ML: "+urlParams.get("ml_er
 function tokenValido(t) {
   if(!t?.access_token) return false;
   if(t.expires_at) return Date.now() < t.expires_at; // ML: timestamp absoluto
-  if(t.saved_at && t.expires_in) return (Date.now() - t.saved_at) < (t.expires_in * 1000 * 0.9); // Bling
+  // Bling: não valida expiração no frontend — o backend renova via refresh_token automaticamente
+  if(t.saved_at && t.expires_in) return true;
   return true;
 }
 
