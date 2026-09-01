@@ -6506,6 +6506,8 @@ async function fetchBlingProdutos() {
     window._blingTokenInvalido = false;
   } catch (e) {
     estoqueBlingErro = e.message;
+    // Para o loop em qualquer erro (401, 500, etc)
+    window._blingTokenInvalido = true;
   }
 
   estoqueBlingLoading = false;
