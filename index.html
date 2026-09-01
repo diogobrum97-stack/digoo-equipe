@@ -582,6 +582,8 @@ onValue(ref(db,"/"),snap=>{
     estoqueAutoCheckDone = false;
     estoqueExcelData = null;
     fetchEstoqueAutomatico();
+    // Se dashboard ainda não carregou, tenta agora que o token chegou
+    if(!dashData && !dashLoading) fetchDashboard();
   }
   if(!cmpSalvando)render();
   if(document.getElementById("ideias-modal-overlay")) renderIdeiasLista();
@@ -2286,7 +2288,9 @@ function renderDashboard(panel, color) {
   // Rebuscar se dados têm mais de 5 minutos
   const agora = Date.now();
   const dashErroRecente = dashData?.erro && (agora - (dashData._fetchedAt||0)) < 30000;
-  if(!dashLoading && !dashErroRecente && (!dashData || dashData.erro || (agora - (dashData._fetchedAt||0)) > 150*1000)) {
+  // Só tenta buscar se o token ML Filial já carregou do Firebase
+  const tokenFilialPronto = !!state.ml_token_filial?.access_token;
+  if(!dashLoading && !dashErroRecente && tokenFilialPronto && (!dashData || dashData.erro || (agora - (dashData._fetchedAt||0)) > 150*1000)) {
     fetchDashboard();
   }
 
