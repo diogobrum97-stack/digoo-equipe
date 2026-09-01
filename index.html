@@ -6462,25 +6462,34 @@ async function checkPriceChangesAuto() {
 
 async function fetchBlingProdutos() {
   if (window._fetchBlingProdutosRunning) return; // evita loop
+  if (window._blingTokenInvalido) return; // token inválido, não tenta mais
   window._fetchBlingProdutosRunning = true;
   estoqueBlingLoading = true;
   estoqueBlingErro = null;
 
   try {
     const r = await fetch(`${BLING_PROXY}/api/bling-produtos`);
+    if (r.status === 401) {
+      // Token expirado — para o loop e mostra aviso
+      window._blingTokenInvalido = true;
+      estoqueBlingErro = "Token Bling expirado — reconecte em Config → APIs";
+      estoqueBlingLoading = false;
+      window._fetchBlingProdutosRunning = false;
+      render();
+      return;
+    }
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const data = await r.json();
 
     if (data.erro) {
-      // Se expirou, mostrar botão de reconectar
       if(data.erro.includes("expirado") || data.erro.includes("reconecte")) {
-        estoqueBlingErro = "Token Bling — tentando renovar...";
-        // Tenta de novo após 3s (backend pode ter renovado)
-        setTimeout(() => { estoqueBlingErro = null; fetchBlingProdutos(); }, 3000);
+        window._blingTokenInvalido = true;
+        estoqueBlingErro = "Token Bling expirado — reconecte em Config → APIs";
       } else {
         throw new Error(data.erro);
       }
       estoqueBlingLoading = false;
+      window._fetchBlingProdutosRunning = false;
       render();
       return;
     }
@@ -6494,6 +6503,7 @@ async function fetchBlingProdutos() {
     });
 
     estoqueBlingData = mapa;
+    window._blingTokenInvalido = false;
   } catch (e) {
     estoqueBlingErro = e.message;
   }
