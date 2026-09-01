@@ -5182,7 +5182,7 @@ function render(){
             { label: "Tarefas", tab: "tarefas", subs: [] },
             { label: "Equipe", tab: null, subs: [{label:"Concluídas",tab:"concluidas"},{label:"Conversas",tab:"conversas"}] },
             { label: "Mercado Livre", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência de Compra",tab:"experiencia"},{label:"Clonar Anúncio",tab:"clonar"},{label:"Perguntas",tab:"perguntas"},{label:"Picking & Packing",tab:"picking"}] },
-            { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"},{label:"NF Transferência Full",tab:"nf-full"},{label:"Contas a Pagar",tab:"contas-pagar"}] },
+            { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"},{label:"NF Transferência Full",tab:"nf-full"},{label:"Contas a Pagar",tab:"contas-pagar"},{label:"NFs Emitidas",tab:"nfs-emitidas"}] },
           ];
 
           const currentTab = window._diogotab;
@@ -5754,6 +5754,10 @@ function render(){
             let confContainer = panel.querySelector(".conf-container");
             if(!confContainer){ confContainer = document.createElement("div"); confContainer.className="conf-container"; panel.appendChild(confContainer); }
             renderConferencia(confContainer, color);
+          }else if(window._diogotab==="nfs-emitidas"){
+            panel.style.maxHeight="none"; panel.style.overflowY="auto";
+            let nfsContainer = panel.querySelector(".nfs-emitidas-container");
+            if(!nfsContainer){ nfsContainer=document.createElement("div"); nfsContainer.className="nfs-emitidas-container"; panel.appendChild(nfsContainer); renderNfsEmitidas(nfsContainer); }
           }else if(window._diogotab==="contas-pagar"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto"; panel.style.flex="1";
             // Limpa containers de outras abas para evitar conflito
@@ -9342,6 +9346,121 @@ async function carregarContasFirebase() {
   contas.sort((a,b) => (a.vencimento||"").localeCompare(b.vencimento||""));
   cpState.contas = contas;
 }
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// NFs EMITIDAS
+// ══════════════════════════════════════════════════════════════════════════════
+async function renderNfsEmitidas(panel) {
+  panel.innerHTML = "";
+  panel.style.cssText = "padding:16px 20px;font-family:'Inter',sans-serif;";
+
+  // Header
+  const header = document.createElement("div");
+  header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;";
+  header.innerHTML = `
+    <div>
+      <div style="font-size:16px;font-weight:600;color:${T.text};">NFs Emitidas</div>
+      <div style="font-size:12px;color:${T.text3};margin-top:2px;">Notas fiscais geradas pelo sistema</div>
+    </div>`;
+  panel.appendChild(header);
+
+  // Carrega do Firebase
+  const snap = await get(ref(db, "/nfes_processadas"));
+  const dados = snap.val() || {};
+
+  const nfs = Object.entries(dados).map(([chave, v]) => ({
+    chave,
+    ...v,
+  })).sort((a, b) => (b.processedAt || 0) - (a.processedAt || 0));
+
+  if (!nfs.length) {
+    const vazio = document.createElement("div");
+    vazio.style.cssText = `color:${T.text3};font-size:12px;padding:60px;text-align:center;`;
+    vazio.innerHTML = `<div style="font-size:32px;margin-bottom:12px;">📄</div><div>Nenhuma NF emitida ainda.</div>`;
+    panel.appendChild(vazio);
+    return;
+  }
+
+  // Tabela
+  const tabWrap = document.createElement("div");
+  tabWrap.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:12px;overflow:hidden;`;
+
+  const thead = document.createElement("div");
+  thead.style.cssText = `display:grid;grid-template-columns:100px 140px 1fr 90px 90px 80px;padding:8px 16px;border-bottom:0.5px solid ${T.border};background:${T.bg3};`;
+  thead.innerHTML = `
+    <div style="font-size:11px;font-weight:500;color:${T.text3};">NÚMERO</div>
+    <div style="font-size:11px;font-weight:500;color:${T.text3};">DATA</div>
+    <div style="font-size:11px;font-weight:500;color:${T.text3};">NATUREZA</div>
+    <div style="font-size:11px;font-weight:500;color:${T.text3};text-align:center;">ITENS</div>
+    <div style="font-size:11px;font-weight:500;color:${T.text3};text-align:center;">COMPLEMENTAR</div>
+    <div style="font-size:11px;font-weight:500;color:${T.text3};text-align:right;">CHAVE</div>`;
+  tabWrap.appendChild(thead);
+
+  nfs.forEach((nf, i) => {
+    const data = nf.processedAt ? new Date(nf.processedAt).toLocaleDateString("pt-BR") : "—";
+    const hora = nf.processedAt ? new Date(nf.processedAt).toLocaleTimeString("pt-BR", {hour:"2-digit",minute:"2-digit"}) : "";
+    const natureza = nf.natureza || "Transferência Full";
+    const itens = Array.isArray(nf.itens) ? nf.itens.length : "—";
+    const temComp = !!nf.nfComplementarNumero;
+    const numero = nf.chave?.replace(/_/g, "/") || "—";
+
+    const row = document.createElement("div");
+    row.style.cssText = `display:grid;grid-template-columns:100px 140px 1fr 90px 90px 80px;padding:11px 16px;border-bottom:0.5px solid ${T.border};align-items:center;${i%2===1?"background:"+T.bg3+";":""}cursor:pointer;`;
+    row.innerHTML = `
+      <div style="font-size:13px;color:${T.text};font-weight:600;font-family:'IBM Plex Mono',monospace;">${numero}</div>
+      <div style="font-size:12px;color:${T.text2};">${data} <span style="color:${T.text3};">${hora}</span></div>
+      <div style="font-size:12px;color:${T.text2};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${natureza}</div>
+      <div style="font-size:12px;color:${T.text2};text-align:center;">${itens}</div>
+      <div style="text-align:center;">${temComp
+        ? `<span style="font-size:11px;background:#2dce8918;color:#2dce89;border-radius:20px;padding:2px 10px;font-weight:600;">✓ NF ${nf.nfComplementarNumero}</span>`
+        : `<span style="font-size:11px;color:${T.text3};">—</span>`
+      }</div>
+      <div style="text-align:right;">${nf.chaveAcesso
+        ? `<button onclick="navigator.clipboard.writeText('${nf.chaveAcesso}');this.textContent='✓';setTimeout(()=>this.textContent='Copiar',1500);" style="background:none;border:0.5px solid ${T.border};border-radius:4px;padding:3px 8px;font-size:10px;color:${T.text2};cursor:pointer;font-family:'Inter',sans-serif;">Copiar</button>`
+        : `<span style="font-size:11px;color:${T.text3};">—</span>`
+      }</div>`;
+
+    // Expande ao clicar
+    row.addEventListener("click", (e) => {
+      if (e.target.tagName === "BUTTON") return;
+      const existing = tabWrap.querySelector(".nf-detail-row");
+      if (existing && existing.dataset.chave === nf.chave) { existing.remove(); return; }
+      if (existing) existing.remove();
+
+      const detail = document.createElement("div");
+      detail.className = "nf-detail-row";
+      detail.dataset.chave = nf.chave;
+      detail.style.cssText = `padding:14px 16px;background:${T.bg3};border-bottom:0.5px solid ${T.border};`;
+
+      // Lista de itens
+      const itensHtml = Array.isArray(nf.itens) && nf.itens.length
+        ? `<div style="font-size:11px;font-weight:500;color:${T.text3};margin-bottom:8px;">Itens da NF</div>
+           <div style="display:flex;flex-wrap:wrap;gap:6px;">
+             ${nf.itens.map(it => `<span style="background:${T.card};border:0.5px solid ${T.border};border-radius:6px;padding:3px 10px;font-size:11px;color:${T.text2};">${it.sku || it.codigo || it} ${it.quantidade ? `× ${it.quantidade}` : ""}</span>`).join("")}
+           </div>`
+        : `<div style="font-size:11px;color:${T.text3};">Sem itens registrados.</div>`;
+
+      const chaveHtml = nf.chaveAcesso
+        ? `<div style="margin-top:10px;"><div style="font-size:10px;color:${T.text3};margin-bottom:3px;">Chave de Acesso</div><div style="font-size:10px;font-family:'IBM Plex Mono',monospace;color:${T.text};word-break:break-all;">${nf.chaveAcesso}</div></div>`
+        : "";
+
+      detail.innerHTML = itensHtml + chaveHtml;
+      row.insertAdjacentElement("afterend", detail);
+    });
+
+    tabWrap.appendChild(row);
+  });
+
+  // Rodapé
+  const tfoot = document.createElement("div");
+  tfoot.style.cssText = `padding:10px 16px;background:${T.bg3};border-top:0.5px solid ${T.border};font-size:12px;color:${T.text3};`;
+  tfoot.textContent = `${nfs.length} nota${nfs.length !== 1 ? "s" : ""} emitida${nfs.length !== 1 ? "s" : ""}`;
+  tabWrap.appendChild(tfoot);
+
+  panel.appendChild(tabWrap);
+}
+
 
 async function renderConferencia(panel, color) {
   panel.innerHTML = "";
