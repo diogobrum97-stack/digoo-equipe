@@ -3925,7 +3925,7 @@ async function renderNfComplementarPreview(container, task, calc) {
   // Referência NF original
   const refBlock = document.createElement("div");
   refBlock.style.cssText = `background:${T.bg3};border:1px solid ${T.border};border-radius:8px;padding:12px 14px;margin-bottom:16px;`;
-  const nfRef = calc.nfUsada || task.nfNumero || "";
+  const nfRef = calc.nfUsada || task?.nfNumero || "";
   const chaveRef = calc.chaveAcesso || "";
   refBlock.innerHTML = `
     <div style="font-size:11px;color:${T.text3};margin-bottom:8px;">Referência à NF original</div>
@@ -3950,7 +3950,9 @@ async function renderNfComplementarPreview(container, task, calc) {
   const produtosComIpi = (calc.produtos || []).filter(p => p.aliquotaValor > 0 && p.qtd > 0 && p.precoVenda != null).map(p => { const r = calcularLinhaIpi(p, calc.freteComponentes?.[p.sku] || 0); return { ...p, aliquota: p.aliquotaValor, quantidade: p.qtd, ipiUnitario: p.qtd > 0 ? r.ipi / p.qtd : 0, produto: p.produto || p.sku }; });
 
   if (!produtosComIpi.length) {
-    itensBlock.innerHTML += `<div style="font-size:12px;color:${T.errText};padding:10px;background:${T.errBg};border:1px solid ${T.errBor};border-radius:6px;">Nenhum produto com IPI calculado. Calcule o IPI antes de gerar a NF complementar.</div>`;
+    // Se veio da NF de transferência sem dados de IPI, mostra aviso diferente
+    const semCalc = !calc.produtos?.length;
+    itensBlock.innerHTML += `<div style="font-size:12px;color:${T.text2};padding:10px;background:${T.bg3};border:1px solid ${T.border};border-radius:6px;">${semCalc ? "Informe o número da NF acima e acesse a calculadora de IPI na tarefa para calcular os valores antes de emitir." : "Nenhum produto com IPI calculado. Calcule o IPI antes de gerar a NF complementar."}</div>`;
     box.appendChild(itensBlock);
   } else {
     const tbl = document.createElement("table");
@@ -4066,6 +4068,22 @@ ${JSON.stringify(data.detalhe||data.raw||"",null,2)}</div>`;
         if (data.chaveAcesso && calc.nfUsada) {
           const chaveKey = String(calc.nfUsada).replace(/[.#$\[\]\/]/g, "_");
           await update(ref(db, `/nfes_processadas/${chaveKey}`), { chaveAcesso: data.chaveAcesso, nfComplementarNumero: data.numero });
+        }
+
+        // Marca subtarefa "Gerar complemento de IPI" como feita na tarefa correspondente
+        const nfRef = document.getElementById("nf-comp-numero-ref")?.value?.trim() || calc.nfUsada || "";
+        if (nfRef) {
+          const tarefas = Object.entries(state.tasks || {});
+          const taskAlvo = tarefas.find(([id, t]) =>
+            t.subtarefas && String(t.nfNumero || t.text || "").includes(String(nfRef))
+          );
+          if (taskAlvo) {
+            const [taskId, taskObj] = taskAlvo;
+            const idx = (taskObj.subtarefas || []).findIndex(s => s.texto?.toLowerCase().includes("complemento"));
+            if (idx >= 0) {
+              update(ref(db, `/tasks/${taskId}/subtarefas/${idx}`), { feito: true });
+            }
+          }
         }
 
       } catch (e) {
@@ -8761,6 +8779,31 @@ function renderNfFullEmitirModal(itens) {
       btn.disabled = true;
       nfFullState.fase = "concluido";
       nfFullState.nfEmitida = { numero: data.numero, chave: data.chaveAcesso, status: data.status };
+
+      // ── Botão Complementar de IPI ──
+      const btnComplementar = document.createElement("button");
+      btnComplementar.textContent = "⊕ Gerar NF Complementar de IPI";
+      btnComplementar.style.cssText = `width:100%;padding:12px;border-radius:6px;background:none;border:1px solid #00dfc366;color:#00dfc3;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:8px;transition:all .15s;`;
+      btnComplementar.addEventListener("click", () => {
+        // Fecha o modal da transferência
+        overlay.remove();
+        // Abre o painel de complementar na aba NF Transferência Full
+        const container = document.querySelector(".nf-full-container");
+        if (container) {
+          // Monta um calc fake com a chave da NF gerada
+          const calcFake = {
+            produtos: [],
+            nfUsada: data.numero,
+            chaveAcesso: data.chaveAcesso,
+          };
+          renderNfComplementarPreview(container, null, calcFake);
+        } else {
+          // Fallback: abre modal direto
+          renderNfComplementarPreview(document.body, null, { produtos: [], nfUsada: data.numero, chaveAcesso: data.chaveAcesso });
+        }
+      });
+      document.getElementById("nf-full-status").appendChild(btnComplementar);
+
     } catch(e) {
       statusEl.innerHTML = `<div style="background:${T.errBg};border:1px solid ${T.errBor};border-radius:6px;padding:10px;font-size:11px;color:${T.errText};margin-bottom:12px;">${e.message}</div>`;
       btn.disabled = false;
