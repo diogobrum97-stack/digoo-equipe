@@ -2327,7 +2327,7 @@ function renderDashboard(panel, color) {
 
   const header = document.createElement("div");
   header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;";
-  header.innerHTML = `<div><div style="font-size:20px;font-weight:700;color:${T.text};letter-spacing:-0.3px;">${saudacao}, Diogo 👋</div><div style="font-size:11px;color:${T.text3};margin-top:3px;font-family:'Inter',sans-serif;">${dias[now.getDay()]} · ${now.getDate()} ${meses[now.getMonth()]} ${now.getFullYear()}</div></div><div style="display:flex;align-items:center;gap:10px;"><div style="font-size:11px;font-weight:600;color:${T.text};">${dashData.hora}</div><button onclick="dashData=null;fetchDashboard();" style="background:none;border:none;color:${T.isLight?'#111':'#444'};font-size:16px;cursor:pointer;padding:4px;line-height:1;transition:color .15s;" title="Atualizar">↻</button></div>`;
+  header.innerHTML = `<div><div style="font-size:20px;font-weight:700;color:${T.text};letter-spacing:-0.3px;">${saudacao}, Diogo 👋</div><div style="font-size:11px;color:${T.text3};margin-top:3px;font-family:'Inter',sans-serif;">${dias[now.getDay()]} · ${now.getDate()} ${meses[now.getMonth()]} ${now.getFullYear()}</div></div><div style="display:flex;align-items:center;gap:10px;"><div style="font-size:11px;font-weight:600;color:${T.text};">${dashData.hora}</div><button onclick="this.style.opacity='0.4';dashData=null;dashLoading=false;fetchDashboard();" style="background:none;border:none;color:${T.text2};font-size:16px;cursor:pointer;padding:4px;line-height:1;transition:opacity .2s;" title="Atualizar">↻</button></div>`;
   wrap.appendChild(header);
 
   const grid = document.createElement("div");
