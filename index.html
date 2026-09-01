@@ -698,7 +698,7 @@ async function fetchDashboard() {
     // Buscar experiência em background (mais lento — não bloqueia)
     if(!dashExperiencia) fetchExperiencia();
   } catch(e) {
-    dashData = { erro: e.message };
+    dashData = { erro: e.message, _fetchedAt: Date.now() }; // _fetchedAt evita retry imediato
   }
   clearTimeout(loadingTimeout);
   dashLoading = false;
@@ -2285,7 +2285,8 @@ function renderExperienciaTab(container) {
 function renderDashboard(panel, color) {
   // Rebuscar se dados têm mais de 5 minutos
   const agora = Date.now();
-  if(!dashLoading && (!dashData || dashData.erro || (agora - (dashData._fetchedAt||0)) > 150*1000)) {
+  const dashErroRecente = dashData?.erro && (agora - (dashData._fetchedAt||0)) < 30000;
+  if(!dashLoading && !dashErroRecente && (!dashData || dashData.erro || (agora - (dashData._fetchedAt||0)) > 150*1000)) {
     fetchDashboard();
   }
 
