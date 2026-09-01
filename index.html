@@ -2588,7 +2588,7 @@ function renderDashboard(panel, color) {
   const statusBar = document.createElement("div");
   statusBar.style.cssText = "grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px;align-items:start;";
   statusBar.innerHTML = `
-    <div id="sbar-card-tasks" onclick="window._sbarToggle('tasks')" style="background:${T.isLight?"#ffffff":"linear-gradient(to top,#252525 0%,#000 100%)"};border:1px solid ${T.border};border-radius:10px;overflow:hidden;cursor:pointer;box-shadow:${T.cardShadow};transition:border-color .15s;">
+    <div id="sbar-card-tasks" onclick="window._sbarToggle('tasks')" style="background:${T.card};border:0.5px solid ${T.border};border-radius:10px;overflow:hidden;cursor:pointer;box-shadow:${T.cardShadow};transition:border-color .15s;">
       <div style="padding:13px 16px;display:flex;align-items:center;gap:14px;">
         <div style="font-size:10px;color:${T.text2};white-space:nowrap;">Tarefas</div>
         <div style="display:flex;align-items:center;gap:8px;flex:1;">
