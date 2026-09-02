@@ -5188,7 +5188,7 @@ function render(){
             { label: "Tarefas", tab: "tarefas", subs: [] },
             { label: "Equipe", tab: null, subs: [{label:"Concluídas",tab:"concluidas"},{label:"Conversas",tab:"conversas"}] },
             { label: "Mercado Livre", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência de Compra",tab:"experiencia"},{label:"Clonar Anúncio",tab:"clonar"},{label:"Perguntas",tab:"perguntas"},{label:"Picking & Packing",tab:"picking"}] },
-            { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"},{label:"NF Transferência Full",tab:"nf-full"},{label:"Contas a Pagar",tab:"contas-pagar"},{label:"NFs Emitidas",tab:"nfs-emitidas"}] },
+            { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"},{label:"NF Transferência Full",tab:"nf-full"},{label:"Contas a Pagar",tab:"contas-pagar"},{label:"NFs Emitidas",tab:"nfs-emitidas"},{label:"Painel Fiscal",tab:"painel-fiscal"}] },
           ];
 
           const currentTab = window._diogotab;
@@ -5760,6 +5760,10 @@ function render(){
             let confContainer = panel.querySelector(".conf-container");
             if(!confContainer){ confContainer = document.createElement("div"); confContainer.className="conf-container"; panel.appendChild(confContainer); }
             renderConferencia(confContainer, color);
+          }else if(window._diogotab==="painel-fiscal"){
+            panel.style.maxHeight="none"; panel.style.overflowY="auto";
+            let pfContainer = panel.querySelector(".pf-container");
+            if(!pfContainer){ pfContainer=document.createElement("div"); pfContainer.className="pf-container"; panel.appendChild(pfContainer); renderPainelFiscal(pfContainer); }
           }else if(window._diogotab==="nfs-emitidas"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
             let nfsContainer = panel.querySelector(".nfs-emitidas-container");
@@ -9380,6 +9384,170 @@ async function carregarContasFirebase() {
 // ══════════════════════════════════════════════════════════════════════════════
 // NFs EMITIDAS
 // ══════════════════════════════════════════════════════════════════════════════
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PAINEL FISCAL
+// ══════════════════════════════════════════════════════════════════════════════
+async function renderPainelFiscal(panel) {
+  panel.innerHTML = "";
+  panel.style.cssText = "padding:16px 20px;font-family:'Inter',sans-serif;";
+
+  // Header
+  const header = document.createElement("div");
+  header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;";
+  header.innerHTML = `
+    <div>
+      <div style="font-size:16px;font-weight:600;color:${T.text};">Painel Fiscal</div>
+      <div style="font-size:12px;color:${T.text3};margin-top:2px;">NFS-e · NF-e · CT-e dos últimos 3 meses</div>
+    </div>`;
+  const btnRef = document.createElement("button");
+  btnRef.textContent = "↻ Atualizar";
+  btnRef.style.cssText = `background:none;border:0.5px solid ${T.border};border-radius:8px;padding:6px 14px;font-size:12px;color:${T.text2};cursor:pointer;font-family:inherit;`;
+  btnRef.addEventListener("click", () => { panel.querySelector(".pf-container") && renderPainelFiscal(panel); });
+  header.appendChild(btnRef);
+  panel.appendChild(header);
+
+  // Calcula meses (últimos 3)
+  const meses = [];
+  const agora = new Date();
+  for (let i = 0; i < 3; i++) {
+    const d = new Date(agora.getFullYear(), agora.getMonth() - i, 1);
+    meses.push(d.getFullYear() + "/" + String(d.getMonth() + 1).padStart(2, "0"));
+  }
+
+  // Busca dados dos 3 tipos no Firebase
+  const loading = document.createElement("div");
+  loading.style.cssText = `color:${T.text3};font-size:12px;padding:40px;text-align:center;`;
+  loading.textContent = "↻ Carregando dados fiscais...";
+  panel.appendChild(loading);
+
+  const [snapNfse, snapCte, snapNfe] = await Promise.all([
+    get(ref(db, "/nfse_tomadas")),
+    get(ref(db, "/cte_tomados")),
+    get(ref(db, "/nfe_tomadas")),
+  ]);
+
+  loading.remove();
+
+  const nfseData = snapNfse.val() || {};
+  const cteData = snapCte.val() || {};
+  const nfeData = snapNfe.val() || {};
+
+  // Agrega totais
+  let totalNfse = 0, valorNfse = 0;
+  let totalCte = 0, valorCte = 0;
+  let totalNfe = 0, valorNfe = 0;
+
+  // Por mês para gráfico
+  const porMes = {};
+
+  const agregar = (dados, tipo) => {
+    Object.entries(dados).forEach(([ano, mesesObj]) => {
+      Object.entries(mesesObj || {}).forEach(([mes, notas]) => {
+        const mesKey = ano + "/" + mes;
+        if (!porMes[mesKey]) porMes[mesKey] = {nfse:0, cte:0, nfe:0, vNfse:0, vCte:0, vNfe:0};
+        Object.values(notas || {}).forEach(n => {
+          const v = Number(n.valorServicos || n.valorTotal || n.valor || 0);
+          if (tipo === "nfse") { totalNfse++; valorNfse += v; porMes[mesKey].nfse++; porMes[mesKey].vNfse += v; }
+          if (tipo === "cte")  { totalCte++;  valorCte  += v; porMes[mesKey].cte++;  porMes[mesKey].vCte  += v; }
+          if (tipo === "nfe")  { totalNfe++;  valorNfe  += v; porMes[mesKey].nfe++;  porMes[mesKey].vNfe  += v; }
+        });
+      });
+    });
+  };
+
+  agregar(nfseData, "nfse");
+  agregar(cteData, "cte");
+  agregar(nfeData, "nfe");
+
+  const fmt = v => "R$ " + Number(v).toLocaleString("pt-BR", {minimumFractionDigits: 2});
+
+  // Cards de totais
+  const cardsWrap = document.createElement("div");
+  cardsWrap.style.cssText = "display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;";
+
+  [
+    { label: "NFS-e Recebidas", icon: "📄", total: totalNfse, valor: valorNfse, cor: "#3B82F6" },
+    { label: "CT-e Recebidos", icon: "🚛", total: totalCte, valor: valorCte, cor: "#f0b400" },
+    { label: "NF-e Recebidas", icon: "📦", total: totalNfe, valor: valorNfe, cor: "#2dce89" },
+  ].forEach(c => {
+    const card = document.createElement("div");
+    card.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:12px;padding:16px;`;
+    card.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <span style="font-size:18px;">${c.icon}</span>
+        <span style="font-size:12px;font-weight:500;color:${T.text2};">${c.label}</span>
+      </div>
+      <div style="font-size:28px;font-weight:700;color:${c.cor};margin-bottom:4px;">${c.total.toLocaleString("pt-BR")}</div>
+      <div style="font-size:12px;color:${T.text2};">${fmt(c.valor)}</div>`;
+    cardsWrap.appendChild(card);
+  });
+  panel.appendChild(cardsWrap);
+
+  // Card total geral
+  const totalCard = document.createElement("div");
+  totalCard.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:12px;padding:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;`;
+  totalCard.innerHTML = `
+    <div>
+      <div style="font-size:11px;color:${T.text3};margin-bottom:4px;">TOTAL DE DOCUMENTOS</div>
+      <div style="font-size:22px;font-weight:700;color:${T.text};">${(totalNfse+totalCte+totalNfe).toLocaleString("pt-BR")}</div>
+    </div>
+    <div>
+      <div style="font-size:11px;color:${T.text3};margin-bottom:4px;">VOLUME FINANCEIRO</div>
+      <div style="font-size:22px;font-weight:700;color:${T.text};">${fmt(valorNfse+valorCte+valorNfe)}</div>
+    </div>
+    <div>
+      <div style="font-size:11px;color:${T.text3};margin-bottom:4px;">PERÍODO</div>
+      <div style="font-size:16px;font-weight:600;color:${T.text};">Últimos 3 meses</div>
+    </div>`;
+  panel.appendChild(totalCard);
+
+  // Tabela por mês
+  const tabelaWrap = document.createElement("div");
+  tabelaWrap.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:12px;overflow:hidden;`;
+
+  const thead = document.createElement("div");
+  thead.style.cssText = `display:grid;grid-template-columns:120px 1fr 1fr 1fr 1fr;padding:8px 16px;border-bottom:0.5px solid ${T.border};background:${T.bg3};`;
+  thead.innerHTML = `
+    <div style="font-size:11px;font-weight:500;color:${T.text3};">MÊS</div>
+    <div style="font-size:11px;font-weight:500;color:#3B82F6;text-align:right;">NFS-e</div>
+    <div style="font-size:11px;font-weight:500;color:#f0b400;text-align:right;">CT-e</div>
+    <div style="font-size:11px;font-weight:500;color:#2dce89;text-align:right;">NF-e</div>
+    <div style="font-size:11px;font-weight:500;color:${T.text3};text-align:right;">TOTAL</div>`;
+  tabelaWrap.appendChild(thead);
+
+  const nomesMes = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+
+  Object.entries(porMes).sort((a,b) => b[0].localeCompare(a[0])).forEach(([ mesKey, d], i) => {
+    const [ano, mes] = mesKey.split("/");
+    const label = nomesMes[parseInt(mes)-1] + " " + ano;
+    const totalV = d.vNfse + d.vCte + d.vNfe;
+    const row = document.createElement("div");
+    row.style.cssText = `display:grid;grid-template-columns:120px 1fr 1fr 1fr 1fr;padding:11px 16px;border-bottom:0.5px solid ${T.border};${i%2===1?"background:"+T.bg3+";":""}`;
+    row.innerHTML = `
+      <div style="font-size:13px;font-weight:500;color:${T.text};">${label}</div>
+      <div style="text-align:right;">
+        <div style="font-size:12px;color:#3B82F6;font-weight:600;">${d.nfse}</div>
+        <div style="font-size:10px;color:${T.text3};">${fmt(d.vNfse)}</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:12px;color:#f0b400;font-weight:600;">${d.cte}</div>
+        <div style="font-size:10px;color:${T.text3};">${fmt(d.vCte)}</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:12px;color:#2dce89;font-weight:600;">${d.nfe}</div>
+        <div style="font-size:10px;color:${T.text3};">${fmt(d.vNfe)}</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:13px;font-weight:600;color:${T.text};">${fmt(totalV)}</div>
+      </div>`;
+    tabelaWrap.appendChild(row);
+  });
+
+  panel.appendChild(tabelaWrap);
+}
+
+
 async function renderNfsEmitidas(panel) {
   panel.innerHTML = "";
   panel.style.cssText = "padding:16px 20px;font-family:'Inter',sans-serif;";
