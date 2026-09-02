@@ -9405,13 +9405,22 @@ async function renderNfsEmitidas(panel) {
     numBloco.title = "Clique para copiar";
     numBloco.innerHTML = `
       <div style="font-size:8px;font-weight:600;color:${T.text3};letter-spacing:.8px;margin-bottom:1px;">NF</div>
-      <div style="font-size:12px;font-weight:700;color:#3B82F6;font-family:'IBM Plex Mono',monospace;">${numero}</div>`;
+      <div style="font-size:12px;font-weight:700;color:#3B82F6;font-family:'Inter',sans-serif;">${numero}</div>`;
     numBloco.addEventListener("click", (e) => {
       e.stopPropagation();
       navigator.clipboard.writeText(numero);
-      const orig = numBloco.innerHTML;
-      numBloco.innerHTML = `<div style="font-size:12px;font-weight:600;color:#2dce89;padding:4px 0;">✓</div>`;
-      setTimeout(() => { numBloco.innerHTML = orig; }, 1200);
+      // Mostra toast de copiado sem esconder o número
+      let toast = document.getElementById("nf-copy-toast");
+      if (!toast) {
+        toast = document.createElement("div");
+        toast.id = "nf-copy-toast";
+        toast.style.cssText = `position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#2dce89;color:#000;font-size:12px;font-weight:600;padding:7px 18px;border-radius:20px;z-index:9999;font-family:'Inter',sans-serif;pointer-events:none;opacity:0;transition:opacity .15s;`;
+        document.body.appendChild(toast);
+      }
+      toast.textContent = `NF ${numero} copiada`;
+      toast.style.opacity = "1";
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => { toast.style.opacity = "0"; }, 1500);
     });
 
     // Info central
