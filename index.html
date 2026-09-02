@@ -9384,7 +9384,7 @@ async function renderNfsEmitidas(panel) {
   }
 
   const lista = document.createElement("div");
-  lista.style.cssText = "display:flex;flex-direction:column;gap:10px;";
+  lista.style.cssText = "display:flex;flex-direction:column;gap:8px;";
 
   nfs.forEach(nf => {
     const data = nf.processedAt ? new Date(nf.processedAt).toLocaleDateString("pt-BR") : "—";
@@ -9395,47 +9395,49 @@ async function renderNfsEmitidas(panel) {
     const numero = nf.chave?.replace(/_/g, "/") || "—";
 
     const card = document.createElement("div");
-    card.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:16px;cursor:pointer;transition:border-color .15s;`;
-    card.addEventListener("mouseenter", () => card.style.borderColor = T.border2);
+    card.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:border-color .15s;`;
+    card.addEventListener("mouseenter", () => card.style.borderColor = T.border2 || "#3a3a3a");
     card.addEventListener("mouseleave", () => card.style.borderColor = T.border);
 
     // Bloco número
     const numBloco = document.createElement("div");
-    numBloco.style.cssText = `background:${T.bg3};border:0.5px solid ${T.border};border-radius:8px;padding:8px 12px;text-align:center;min-width:72px;flex-shrink:0;`;
+    numBloco.style.cssText = `text-align:center;min-width:64px;flex-shrink:0;`;
     numBloco.innerHTML = `
-      <div style="font-size:10px;font-weight:500;color:${T.text3};letter-spacing:.5px;">NF</div>
-      <div style="font-size:18px;font-weight:700;color:${T.accent||"#5e72e4"};font-family:'IBM Plex Mono',monospace;">${numero}</div>`;
+      <div style="font-size:9px;font-weight:600;color:${T.text3};letter-spacing:.8px;margin-bottom:2px;">NF</div>
+      <div style="font-size:16px;font-weight:700;color:#5e72e4;font-family:'IBM Plex Mono',monospace;">${numero}</div>`;
 
     // Info central
     const info = document.createElement("div");
     info.style.cssText = "flex:1;min-width:0;";
     info.innerHTML = `
-      <div style="font-size:13px;font-weight:500;color:${T.text};margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${natureza}</div>
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <div style="font-size:13px;font-weight:500;color:${T.text};margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${natureza}</div>
+      <div style="display:flex;align-items:center;gap:8px;">
         <span style="font-size:12px;color:${T.text2};">${data} · ${hora}</span>
-        <span style="font-size:12px;color:${T.text3};">${itens} ${itens === 1 ? "item" : "itens"}</span>
+        <span style="font-size:11px;color:${T.text3};">${itens} ${itens === 1 ? "item" : "itens"}</span>
       </div>`;
 
-    // Direita: badge + botão
+    // Direita
     const direita = document.createElement("div");
-    direita.style.cssText = "display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0;";
+    direita.style.cssText = "display:flex;align-items:center;gap:10px;flex-shrink:0;";
 
+    // Badge complementar
     if (temComp) {
       const badge = document.createElement("span");
-      badge.style.cssText = `font-size:11px;font-weight:600;background:#2dce8918;color:#2dce89;border-radius:20px;padding:3px 12px;border:0.5px solid #2dce8944;`;
+      badge.style.cssText = "font-size:11px;font-weight:600;background:#2dce8918;color:#2dce89;border-radius:20px;padding:3px 12px;border:0.5px solid #2dce8944;white-space:nowrap;";
       badge.textContent = `✓ Complementar NF ${nf.nfComplementarNumero}`;
       direita.appendChild(badge);
     } else {
       const badge = document.createElement("span");
-      badge.style.cssText = `font-size:11px;color:${T.text3};`;
+      badge.style.cssText = "font-size:11px;font-weight:500;background:#ff3d3d14;color:#ff3d3d;border-radius:20px;padding:3px 12px;border:0.5px solid #ff3d3d33;white-space:nowrap;";
       badge.textContent = "Sem complementar";
       direita.appendChild(badge);
     }
 
+    // Botão copiar chave
     if (nf.chaveAcesso) {
       const btnCopy = document.createElement("button");
       btnCopy.textContent = "Copiar chave";
-      btnCopy.style.cssText = `background:none;border:0.5px solid ${T.border};border-radius:6px;padding:4px 10px;font-size:11px;color:${T.text2};cursor:pointer;font-family:inherit;`;
+      btnCopy.style.cssText = `background:none;border:0.5px solid ${T.border};border-radius:6px;padding:4px 10px;font-size:11px;color:${T.text2};cursor:pointer;font-family:inherit;white-space:nowrap;`;
       btnCopy.addEventListener("click", (e) => {
         e.stopPropagation();
         navigator.clipboard.writeText(nf.chaveAcesso);
@@ -9452,15 +9454,13 @@ async function renderNfsEmitidas(panel) {
     // Expande itens ao clicar
     card.addEventListener("click", () => {
       const existing = card.nextElementSibling;
-      if (existing?.classList.contains("nf-itens-detail")) {
-        existing.remove(); return;
-      }
+      if (existing?.classList.contains("nf-itens-detail")) { existing.remove(); return; }
       if (!Array.isArray(nf.itens) || !nf.itens.length) return;
       const detail = document.createElement("div");
       detail.className = "nf-itens-detail";
-      detail.style.cssText = `background:${T.bg3};border:0.5px solid ${T.border};border-radius:10px;padding:12px 16px;margin-top:-4px;`;
+      detail.style.cssText = `background:${T.bg3};border:0.5px solid ${T.border};border-radius:8px;padding:12px 16px;`;
       detail.innerHTML = `
-        <div style="font-size:11px;font-weight:500;color:${T.text3};margin-bottom:8px;">Itens da NF</div>
+        <div style="font-size:11px;font-weight:500;color:${T.text3};margin-bottom:8px;">Itens</div>
         <div style="display:flex;flex-wrap:wrap;gap:6px;">
           ${nf.itens.map(it => `<span style="background:${T.card};border:0.5px solid ${T.border};border-radius:6px;padding:3px 10px;font-size:11px;color:${T.text2};">${it.sku||it.codigo||it}${it.quantidade ? ` × ${it.quantidade}` : ""}</span>`).join("")}
         </div>
@@ -9474,7 +9474,7 @@ async function renderNfsEmitidas(panel) {
   panel.appendChild(lista);
 
   const rodape = document.createElement("div");
-  rodape.style.cssText = `font-size:12px;color:${T.text3};margin-top:12px;`;
+  rodape.style.cssText = `font-size:12px;color:${T.text3};margin-top:10px;`;
   rodape.textContent = `${nfs.length} nota${nfs.length !== 1 ? "s" : ""} emitida${nfs.length !== 1 ? "s" : ""}`;
   panel.appendChild(rodape);
 }
