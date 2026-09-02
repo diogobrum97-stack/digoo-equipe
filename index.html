@@ -9401,10 +9401,18 @@ async function renderNfsEmitidas(panel) {
 
     // Bloco número
     const numBloco = document.createElement("div");
-    numBloco.style.cssText = `background:${T.bg3};border:0.5px solid ${T.border};border-radius:6px;padding:5px 10px;text-align:center;min-width:56px;flex-shrink:0;`;
+    numBloco.style.cssText = `background:${T.bg3};border:0.5px solid ${T.border};border-radius:6px;padding:5px 10px;text-align:center;min-width:56px;flex-shrink:0;cursor:pointer;transition:border-color .15s;`;
+    numBloco.title = "Clique para copiar";
     numBloco.innerHTML = `
       <div style="font-size:9px;font-weight:600;color:${T.text3};letter-spacing:.8px;margin-bottom:2px;">NF</div>
       <div style="font-size:16px;font-weight:700;color:#3B82F6;font-family:'IBM Plex Mono',monospace;">${numero}</div>`;
+    numBloco.addEventListener("click", (e) => {
+      e.stopPropagation();
+      navigator.clipboard.writeText(numero);
+      const orig = numBloco.innerHTML;
+      numBloco.innerHTML = `<div style="font-size:12px;font-weight:600;color:#2dce89;padding:4px 0;">✓</div>`;
+      setTimeout(() => { numBloco.innerHTML = orig; }, 1200);
+    });
 
     // Info central
     const info = document.createElement("div");
