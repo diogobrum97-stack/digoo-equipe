@@ -7990,7 +7990,7 @@ window._openIdeiasModal = function() {
   overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.remove(); });
 
   const box = document.createElement("div");
-  box.style.cssText = `background:${T.bg2};border:1px solid ${T.border};border-radius:14px;padding:24px;max-width:640px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,${T.isLight?0.15:0.6});`;
+  box.style.cssText = `background:${T.bg2};border:1px solid ${T.border};border-radius:14px;padding:24px;max-width:640px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,${T.isLight?0.15:0.6});font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;`;
   box.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
       <div style="font-size:16px;font-weight:700;color:${T.text};">Ideias & Melhorias</div>
@@ -8104,7 +8104,7 @@ function renderIdeiasLista() {
       row.innerHTML = `
         <div style="width:8px;height:8px;border-radius:50%;background:${corCat};flex-shrink:0;margin-top:5px;"></div>
         <div style="flex:1;min-width:0;">
-          <select data-catedit="${item.id}" style="display:inline-block;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:600;background:${corCat}22;color:${corCat};border:1px solid ${corCat}44;margin-bottom:5px;font-family:Inter,sans-serif;cursor:pointer;outline:none;">${opcoesCategoria}</select>
+          <select data-catedit="${item.id}" style="display:inline-block;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:600;background:${corCat}22;color:${corCat};border:1px solid ${corCat}44;margin-bottom:5px;font-family:'Inter',sans-serif;cursor:pointer;outline:none;">${opcoesCategoria}</select>
           <div style="font-size:12px;color:${T.text};line-height:1.4;">${item.texto}</div>
           <div style="font-size:10px;color:${T.text3};margin-top:3px;">${fmtData(item.createdAt)}</div>
         </div>
