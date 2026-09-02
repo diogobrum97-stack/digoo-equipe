@@ -2279,7 +2279,7 @@ function renderExperienciaTab(container) {
     panel.dataset.idx = idx;
     panel.style.display = 'block';
     panel.innerHTML = window._expPageDetailsCache[idx] || '';
-    const corAtual = listaFiltrada[idx].color === 'red' ? '#e8432d' : '#f59e0b';
+    const corAtual = listaFiltrada[idx].color === 'red' ? '#e8432d' : '#f77614';
     if(cards[idx]) { cards[idx].style.borderLeftColor = corAtual; }
   };
 }
@@ -2693,7 +2693,7 @@ function renderDashboard(panel, color) {
 
       const circPrev = 2 * Math.PI * 20;
       const previewRows = preview.map(p => {
-        const cor = p.color === 'red' ? '#e8432d' : '#f59e0b';
+        const cor = p.color === 'red' ? '#e8432d' : '#f77614';
         const score = p.value || 0;
         const dashPrev = ((score/100)*circPrev).toFixed(1);
         const nome = (p.title || p.sku || '');
