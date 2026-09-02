@@ -8857,7 +8857,28 @@ async function renderContasPagar(panel) {
   btnNova.style.cssText = "background:#2dce89;border:none;border-radius:8px;padding:7px 14px;color:#000;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;";
   btnNova.addEventListener("click", () => abrirModalNovaConta(panel));
   header.appendChild(headerLeft);
-  header.appendChild(btnNova);
+  const btnImportar = document.createElement("button");
+  btnImportar.textContent = "⬇ Importar NFS-e";
+  btnImportar.style.cssText = `background:none;border:0.5px solid ${T.border};border-radius:8px;padding:7px 14px;color:${T.text2};font-size:12px;cursor:pointer;font-family:inherit;`;
+  btnImportar.addEventListener("click", async () => {
+    btnImportar.disabled = true; btnImportar.textContent = "↻ Importando...";
+    try {
+      const mes = cpState.mes || new Date().toISOString().slice(0,7);
+      const r = await fetch(`${BLING_PROXY}/api/bling-produtos?action=importar-nfse&competencia=${mes}&pagina=1`);
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.erro || "Erro ao importar");
+      btnImportar.textContent = `✓ ${d.importadas} importadas`;
+      setTimeout(async () => { await carregarContasFirebase(); renderContasPagar(panel); }, 500);
+    } catch(e) {
+      btnImportar.textContent = `Erro: ${e.message}`;
+      setTimeout(() => { btnImportar.disabled=false; btnImportar.textContent="⬇ Importar NFS-e"; }, 3000);
+    }
+  });
+  const headerBtns = document.createElement("div");
+  headerBtns.style.cssText = "display:flex;gap:8px;align-items:center;";
+  headerBtns.appendChild(btnImportar);
+  headerBtns.appendChild(btnNova);
+  header.appendChild(headerBtns);
   panel.appendChild(header);
 
   // ── Filtros pills ──
