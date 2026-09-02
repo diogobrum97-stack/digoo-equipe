@@ -32,7 +32,7 @@ async function processarNfse(nfse) {
   const chave = limparChave(nfse.chaveAcesso || nfse.numero);
   const mp = mesPath(nfse.competencia || nfse.dataEmissao);
   if (await jaExiste("nfse_tomadas/" + mp + "/" + chave)) return false;
-  const historico = (nfse.descricaoServico || nfse.discriminacao || "").split("|").join("").trim();
+  const historico = (nfse.descricaoServico || nfse.discriminacao || "").split("|").join("").trim().toUpperCase();
   const entrada = {
     chaveAcesso: nfse.chaveAcesso || "",
     numero: nfse.numero || "",
