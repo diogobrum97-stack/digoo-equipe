@@ -67,7 +67,10 @@ async function processarNfse(nfse) {
 async function processarCte(cte) {
   const chave = limparChave(cte.chaveAcesso || cte.numero);
   const mp = mesPath(cte.dataEmissao);
-  if (await jaExiste("cte_tomados/" + mp + "/" + chave)) return false;
+  // CT-e só vai pro cte_tomados, verifica lá diretamente
+  const r = await fetch(FIREBASE_URL + "/cte_tomados/" + mp + "/" + chave + "/chaveAcesso.json");
+  const existe = await r.json();
+  if (existe) return false;
   const entrada = {
     chaveAcesso: cte.chaveAcesso || "",
     numero: cte.numero || "",
