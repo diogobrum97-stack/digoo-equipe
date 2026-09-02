@@ -42,7 +42,7 @@ async function processarNfse(nfse) {
     prestadorRazaoSocial: nfse.prestadorRazaoSocial || "",
     tomadorCnpj: (nfse.tomadorCnpj || "").split(".").join("").split("/").join("").split("-").join(""),
     tomadorRazaoSocial: nfse.tomadorRazaoSocial || "",
-    valorServicos: Number(nfse.valorServicos || 0),
+    valorServicos: Number(nfse.valorServico || nfse.valorServicos || 0),
     discriminacao: historico,
     criadoEm: Date.now(),
   };
@@ -52,7 +52,7 @@ async function processarNfse(nfse) {
     fornecedor: entrada.prestadorRazaoSocial,
     cnpj: entrada.prestadorCnpj,
     numeroDoc: entrada.numero,
-    valor: entrada.valorServicos,
+    valor: Number(nfse.valorServico || nfse.valorServicos || 0),
     competencia: entrada.competencia,
     vencimento: entrada.dataEmissao,
     historico: historico,
