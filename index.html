@@ -2228,7 +2228,7 @@ function renderExperienciaTab(container) {
   window._expPageDetailsCache = [];
 
   listaFiltrada.forEach((p, i) => {
-    const cor = p.color === 'red' ? '#e8432d' : '#f59e0b';
+    const cor = p.color === 'red' ? '#e8432d' : '#f0a060';
     const score = p.value || 0;
     const dash = ((score/100)*circ).toFixed(1);
     const label = p.level || (p.color === 'red' ? 'Ruim' : 'Regular');
