@@ -66,7 +66,7 @@ async function processarNfse(nfse) {
     vencimento: entrada.dataEmissao,
     historico: historico,
     categoriaId: "", categoriaLabel: "",
-    situacao: "rascunho", origem: "fiscal-defender",
+    situacao: "pendente", origem: "fiscal-defender",
     chaveAcesso: entrada.chaveAcesso, criadoEm: Date.now(),
   });
   cache["nfse_tomadas/" + mp] = cache["nfse_tomadas/" + mp] || {};
@@ -118,7 +118,7 @@ async function processarNfe(nfe) {
     vencimento: (nfe.dataEmissao || "").slice(0, 10),
     historico: (nfe.naturezaOperacao || "COMPRA DE MERCADORIA").toUpperCase(),
     categoriaId: "", categoriaLabel: "",
-    situacao: "rascunho", origem: "fiscal-defender-nfe",
+    situacao: "pendente", origem: "fiscal-defender-nfe",
     chaveAcesso: nfe.chaveAcesso || "", criadoEm: Date.now(),
   });
   cache["nfe_tomadas/" + mp] = cache["nfe_tomadas/" + mp] || {};
