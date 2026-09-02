@@ -8070,6 +8070,7 @@ function renderIdeiasLista() {
   const grupos = {
     afazer: { titulo: "A FAZER", cor: T.text, itens: [] },
     andamento: { titulo: "EM ANDAMENTO", cor: "#5e8ce6", itens: [] },
+    teste: { titulo: "EM TESTE", cor: "#f0b400", itens: [] },
     concluido: { titulo: "CONCLUÍDO", cor: "#2dce89", itens: [] },
   };
   entradas.forEach(([id, item]) => {
@@ -8085,7 +8086,7 @@ function renderIdeiasLista() {
     return `Adicionado há ${diffDias} dias`;
   };
 
-  ["afazer", "andamento", "concluido"].forEach((key) => {
+  ["afazer", "andamento", "teste", "concluido"].forEach((key) => {
     const grupo = grupos[key];
     if (grupo.itens.length === 0) return;
 
@@ -8110,6 +8111,7 @@ function renderIdeiasLista() {
         <div style="display:flex;gap:4px;flex-shrink:0;">
           ${key !== "afazer" ? `<button data-move="afazer" data-id="${item.id}" title="Mover para A fazer" style="background:none;border:1px solid ${T.border};border-radius:5px;color:${T.text2};font-size:10px;padding:4px 7px;cursor:pointer;">A fazer</button>` : ""}
           ${key !== "andamento" ? `<button data-move="andamento" data-id="${item.id}" title="Mover para Em andamento" style="background:none;border:1px solid ${T.border};border-radius:5px;color:${T.text2};font-size:10px;padding:4px 7px;cursor:pointer;">Andamento</button>` : ""}
+          ${key !== "teste" ? `<button data-move="teste" data-id="${item.id}" title="Mover para Em teste" style="background:none;border:1px solid ${T.border};border-radius:5px;color:${T.text2};font-size:10px;padding:4px 7px;cursor:pointer;">Em teste</button>` : ""}
           ${key !== "concluido" ? `<button data-move="concluido" data-id="${item.id}" title="Mover para Concluído" style="background:none;border:1px solid ${T.border};border-radius:5px;color:${T.text2};font-size:10px;padding:4px 7px;cursor:pointer;">Concluído</button>` : ""}
           <button data-del="${item.id}" title="Excluir" style="background:none;border:none;color:${T.text3};font-size:13px;padding:4px 6px;cursor:pointer;">×</button>
         </div>
