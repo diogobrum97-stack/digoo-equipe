@@ -21,18 +21,29 @@ async function salvarFirebase(caminho, dados) {
   });
 }
 
-async function jaExiste(caminho) {
-  const r = await fetch(FIREBASE_URL + "/" + caminho + ".json");
+// Carrega índice do mês inteiro de uma vez (muito mais rápido)
+const cache = {};
+async function carregarCache(no, mp) {
+  const key = no + "/" + mp;
+  if (cache[key] !== undefined) return cache[key];
+  const r = await fetch(FIREBASE_URL + "/" + no + "/" + mp + ".json?shallow=true");
   const d = await r.json();
-  return d && (d.chaveAcesso || d.valor || d.chave);
+  cache[key] = d || {};
+  return cache[key];
 }
 
-// ── NFS-e ──────────────────────────────────────────────────────────────────
+async function jaExisteRapido(no, mp, chave) {
+  const idx = await carregarCache(no, mp);
+  return !!idx[chave];
+}
+
+// ── NFS-e → Contas a Pagar + nfse_tomadas ─────────────────────────────────
 async function processarNfse(nfse) {
   const chave = limparChave(nfse.chaveAcesso || nfse.numero);
   const mp = mesPath(nfse.competencia || nfse.dataEmissao);
-  if (await jaExiste("nfse_tomadas/" + mp + "/" + chave)) return false;
+  if (await jaExisteRapido("nfse_tomadas", mp, chave)) return false;
   const historico = (nfse.descricaoServico || nfse.discriminacao || "").split("|").join("").trim().toUpperCase();
+  const valor = parseFloat(String(nfse.valorServico || nfse.valorServicos || 0).replace(",", ".")) || 0;
   const entrada = {
     chaveAcesso: nfse.chaveAcesso || "",
     numero: nfse.numero || "",
@@ -41,18 +52,16 @@ async function processarNfse(nfse) {
     prestadorCnpj: (nfse.prestadorCnpj || "").split(".").join("").split("/").join("").split("-").join(""),
     prestadorRazaoSocial: nfse.prestadorRazaoSocial || "",
     tomadorCnpj: (nfse.tomadorCnpj || "").split(".").join("").split("/").join("").split("-").join(""),
-    tomadorRazaoSocial: nfse.tomadorRazaoSocial || "",
-    valorServicos: parseFloat(String(nfse.valorServico || nfse.valorServicos || 0).replace(",", ".")) || 0,
+    valorServicos: valor,
     discriminacao: historico,
     criadoEm: Date.now(),
   };
   await salvarFirebase("nfse_tomadas/" + mp + "/" + chave, entrada);
-  // Salva também no contas_pagar como rascunho
   await salvarFirebase("contas_pagar/" + mp + "/" + chave, {
     fornecedor: entrada.prestadorRazaoSocial,
     cnpj: entrada.prestadorCnpj,
     numeroDoc: entrada.numero,
-    valor: parseFloat(String(nfse.valorServico || nfse.valorServicos || 0).replace(",", ".")) || 0,
+    valor: valor,
     competencia: entrada.competencia,
     vencimento: entrada.dataEmissao,
     historico: historico,
@@ -60,55 +69,63 @@ async function processarNfse(nfse) {
     situacao: "rascunho", origem: "fiscal-defender",
     chaveAcesso: entrada.chaveAcesso, criadoEm: Date.now(),
   });
+  cache["nfse_tomadas/" + mp] = cache["nfse_tomadas/" + mp] || {};
+  cache["nfse_tomadas/" + mp][chave] = true;
   return true;
 }
 
-// ── CT-e ───────────────────────────────────────────────────────────────────
+// ── CT-e → só cte_tomados ─────────────────────────────────────────────────
 async function processarCte(cte) {
   const chave = limparChave(cte.chaveAcesso || cte.numero);
   const mp = mesPath(cte.dataEmissao);
-  // CT-e só vai pro cte_tomados, verifica lá diretamente
-  const r = await fetch(FIREBASE_URL + "/cte_tomados/" + mp + "/" + chave + "/chaveAcesso.json");
-  const existe = await r.json();
-  if (existe) return false;
-  const entrada = {
+  if (await jaExisteRapido("cte_tomados", mp, chave)) return false;
+  await salvarFirebase("cte_tomados/" + mp + "/" + chave, {
     chaveAcesso: cte.chaveAcesso || "",
     numero: cte.numero || "",
     dataEmissao: (cte.dataEmissao || "").slice(0, 10),
     emitenteCnpj: (cte.emitenteCnpj || cte.remetenteCnpj || "").split(".").join("").split("/").join("").split("-").join(""),
     emitenteRazaoSocial: cte.emitenteRazaoSocial || cte.remetenteRazaoSocial || "",
-    destinatarioCnpj: (cte.destinatarioCnpj || "").split(".").join("").split("/").join("").split("-").join(""),
-    destinatarioRazaoSocial: cte.destinatarioRazaoSocial || "",
-    valorTotal: Number(cte.valorTotal || cte.valor || 0),
-    cfop: cte.cfop || "",
+    valorTotal: parseFloat(String(cte.valorTotal || cte.valor || 0).replace(",", ".")) || 0,
     criadoEm: Date.now(),
-  };
-  await salvarFirebase("cte_tomados/" + mp + "/" + chave, entrada);
+  });
+  cache["cte_tomados/" + mp] = cache["cte_tomados/" + mp] || {};
+  cache["cte_tomados/" + mp][chave] = true;
   return true;
 }
 
-// ── NF-e ───────────────────────────────────────────────────────────────────
+// ── NF-e → Contas a Pagar + nfe_tomadas ───────────────────────────────────
 async function processarNfe(nfe) {
   const chave = limparChave(nfe.chaveAcesso || nfe.numero);
   const mp = mesPath(nfe.dataEmissao);
-  if (await jaExiste("nfe_tomadas/" + mp + "/" + chave)) return false;
-  const entrada = {
+  if (await jaExisteRapido("nfe_tomadas", mp, chave)) return false;
+  const valor = parseFloat(String(nfe.valorTotal || nfe.valor || 0).replace(",", ".")) || 0;
+  await salvarFirebase("nfe_tomadas/" + mp + "/" + chave, {
     chaveAcesso: nfe.chaveAcesso || "",
     numero: nfe.numero || "",
     dataEmissao: (nfe.dataEmissao || "").slice(0, 10),
     emitenteCnpj: (nfe.emitenteCnpj || "").split(".").join("").split("/").join("").split("-").join(""),
     emitenteRazaoSocial: nfe.emitenteRazaoSocial || "",
-    destinatarioCnpj: (nfe.destinatarioCnpj || "").split(".").join("").split("/").join("").split("-").join(""),
-    destinatarioRazaoSocial: nfe.destinatarioRazaoSocial || "",
-    valorTotal: Number(nfe.valorTotal || nfe.valor || 0),
+    valorTotal: valor,
     naturezaOperacao: nfe.naturezaOperacao || "",
     criadoEm: Date.now(),
-  };
-  await salvarFirebase("nfe_tomadas/" + mp + "/" + chave, entrada);
+  });
+  await salvarFirebase("contas_pagar/" + mp + "/" + chave, {
+    fornecedor: nfe.emitenteRazaoSocial || "",
+    cnpj: (nfe.emitenteCnpj || "").split(".").join("").split("/").join("").split("-").join(""),
+    numeroDoc: nfe.numero || "",
+    valor: valor,
+    competencia: (nfe.dataEmissao || "").slice(0, 7),
+    vencimento: (nfe.dataEmissao || "").slice(0, 10),
+    historico: (nfe.naturezaOperacao || "COMPRA DE MERCADORIA").toUpperCase(),
+    categoriaId: "", categoriaLabel: "",
+    situacao: "rascunho", origem: "fiscal-defender-nfe",
+    chaveAcesso: nfe.chaveAcesso || "", criadoEm: Date.now(),
+  });
+  cache["nfe_tomadas/" + mp] = cache["nfe_tomadas/" + mp] || {};
+  cache["nfe_tomadas/" + mp][chave] = true;
   return true;
 }
 
-// ── Busca paginada genérica ─────────────────────────────────────────────────
 async function buscarTipo(tipo, processarFn, meses) {
   let totalNovas = 0;
   for (const mes of meses) {
@@ -142,11 +159,9 @@ async function sincronizar() {
     meses.push(d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"));
   }
   console.log("[" + new Date().toISOString() + "] Sincronizando: " + meses.join(", "));
-
   const nfse = await buscarTipo("nfse", processarNfse, meses);
   const cte = await buscarTipo("cte", processarCte, meses);
   const nfe = await buscarTipo("nfe", processarNfe, meses);
-
   console.log("[" + new Date().toISOString() + "] Concluido — NFS-e:" + nfse + " CT-e:" + cte + " NF-e:" + nfe);
 }
 
