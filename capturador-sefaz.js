@@ -116,15 +116,28 @@ async function processarDoc(doc, empresa) {
     console.log("  XML amostra:", xml.slice(0, 300));
   }
 
-  // Extrai campos
-  const prestadorNome = extrairXml("RazaoSocial", xml) || extrairXml("xNome", xml) || "";
-  const prestadorCnpj = extrairXml("Cnpj", xml) || extrairXml("CNPJ", xml) || "";
-  const valorStr = extrairXml("ValorServicos", xml) || extrairXml("Valor", xml) || "0";
+  // Extrai campos conforme estrutura real do PNFS-e
+  // Prestador: dentro de <emit> ou <prest>
+  const emitMatch = xml.match(/<emit[^>]*>([\s\S]*?)<\/emit>/i) || xml.match(/<prest[^>]*>([\s\S]*?)<\/prest>/i);
+  const emitXml = emitMatch ? emitMatch[1] : xml;
+  const prestadorNome = extrairXml("xNome", emitXml) || extrairXml("xNome", xml) || "";
+  const prestadorCnpj = extrairXml("CNPJ", emitXml) || extrairXml("Cnpj", emitXml) || extrairXml("CNPJ", xml) || "";
+
+  // Valor: vLiq ou vBC dentro de <valores>
+  const valoresMatch = xml.match(/<valores[^>]*>([\s\S]*?)<\/valores>/i);
+  const valoresXml = valoresMatch ? valoresMatch[1] : xml;
+  const valorStr = extrairXml("vLiq", valoresXml) || extrairXml("vBC", valoresXml) || extrairXml("ValorServicos", xml) || "0";
   const valor = parseFloat(valorStr.replace(",", ".")) || 0;
-  const discriminacao = (extrairXml("Discriminacao", xml) || extrairXml("xDiscriminacao", xml) || "").split("|").join("").trim().toUpperCase().slice(0, 300);
-  const dataEmissao = (extrairXml("DataEmissao", xml) || extrairXml("dhEmi", xml) || "").slice(0, 10);
-  const competencia = (extrairXml("Competencia", xml) || dataEmissao).slice(0, 7);
-  const numero = extrairXml("Numero", xml) || extrairXml("nNFS", xml) || String(doc.NSU);
+
+  // Serviço: dentro de <serv> ou <xDescServ>
+  const servMatch = xml.match(/<serv[^>]*>([\s\S]*?)<\/serv>/i);
+  const servXml = servMatch ? servMatch[1] : xml;
+  const discriminacao = (extrairXml("xDescServ", servXml) || extrairXml("Discriminacao", xml) || extrairXml("xTribNac", xml) || "").split("|").join("").trim().toUpperCase().slice(0, 300);
+
+  // Data e competência
+  const dataEmissao = (extrairXml("dhEmi", xml) || extrairXml("DataEmissao", xml) || "").slice(0, 10);
+  const competencia = (extrairXml("dCompet", xml) || dataEmissao).slice(0, 7);
+  const numero = extrairXml("nNFSe", xml) || extrairXml("nDFSe", xml) || extrairXml("Numero", xml) || String(doc.NSU);
 
   const mp = mesPath(competencia || dataEmissao);
 
