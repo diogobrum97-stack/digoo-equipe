@@ -1,7 +1,6 @@
 const https = require('https');
 const fs = require('fs');
 const zlib = require('zlib');
-const { DOMParser } = require('@xmldom/xmldom');
 
 const FIREBASE_URL = "https://digoo-equipe-default-rtdb.firebaseio.com";
 const PASSPHRASE = "Digoo7560";
@@ -19,9 +18,32 @@ function limparChave(str) {
 }
 
 function mesPath(dataStr) {
-  const mes = (dataStr || "").slice(0, 7);
-  if (!mes || mes.length < 7) return "2026/09";
-  return mes.slice(0, 4) + "/" + mes.slice(5, 7);
+  const s = (dataStr || "").replace("T", " ").trim();
+  const ano = s.slice(0, 4);
+  const mes = s.slice(5, 7);
+  if (!ano || !mes) return "2026/09";
+  return ano + "/" + mes;
+}
+
+function extrairXml(tag, xml) {
+  // Tenta com namespace e sem
+  const patterns = [
+    new RegExp("<" + tag + ">([\\s\\S]*?)<\\/" + tag + ">", "i"),
+    new RegExp("<[^:>]+:" + tag + ">([\\s\\S]*?)<\\/[^:>]+:" + tag + ">", "i"),
+  ];
+  for (const re of patterns) {
+    const m = xml.match(re);
+    if (m) return m[1].trim();
+  }
+  return "";
+}
+
+function descomprimirXml(base64) {
+  const buf = Buffer.from(base64, "base64");
+  try { return zlib.gunzipSync(buf).toString("utf-8"); } catch(e) {}
+  try { return zlib.inflateSync(buf).toString("utf-8"); } catch(e) {}
+  try { return zlib.inflateRawSync(buf).toString("utf-8"); } catch(e) {}
+  return buf.toString("utf-8");
 }
 
 async function fbGet(path) {
@@ -53,12 +75,6 @@ async function fbPut(path, dados) {
   });
 }
 
-function extrairCampoXml(xml, tag) {
-  const re = new RegExp("<(?:[^:>]+:)?" + tag + "[^>]*>([^<]*)<", "i");
-  const m = xml.match(re);
-  return m ? m[1].trim() : "";
-}
-
 function buscarSefaz(pfxPath, nsu) {
   return new Promise((resolve, reject) => {
     const pfx = fs.readFileSync(pfxPath);
@@ -66,45 +82,50 @@ function buscarSefaz(pfxPath, nsu) {
       hostname: "adn.nfse.gov.br",
       path: "/contribuintes/DFe/" + nsu,
       method: "GET",
-      pfx: pfx,
-      passphrase: PASSPHRASE,
-      headers: { "Accept": "application/json" }
+      pfx, passphrase: PASSPHRASE,
+      headers: { "Accept": "application/json" },
+      timeout: 30000
     };
     const req = https.request(opts, res => {
       const chunks = [];
       res.on("data", d => chunks.push(d));
       res.on("end", () => {
-        try {
-          const raw = Buffer.concat(chunks).toString("utf-8");
-          resolve(JSON.parse(raw));
-        } catch(e) { reject(e); }
+        try { resolve(JSON.parse(Buffer.concat(chunks).toString("utf-8"))); }
+        catch(e) { reject(e); }
       });
     });
+    req.on("timeout", () => { req.destroy(); reject(new Error("timeout")); });
     req.on("error", reject);
     req.end();
   });
 }
 
-async function processarNota(nsu, chaveAcesso, xmlGz, empresa) {
-  // Descomprime o XML (base64 → buffer → gunzip)
-  const buf = Buffer.from(xmlGz, "base64");
-  let xml;
-  try {
-    xml = zlib.gunzipSync(buf).toString("utf-8");
-  } catch(e) {
-    xml = buf.toString("utf-8");
+async function processarDoc(doc, empresa) {
+  if (doc.TipoDocumento !== "NFSE") return false; // só NFS-e no Contas a Pagar
+
+  const chave = limparChave(doc.ChaveAcesso || String(doc.NSU));
+  const xml = descomprimirXml(doc.ArquivoXml || "");
+
+  if (!xml || xml.length < 50) {
+    console.log("  XML vazio para NSU", doc.NSU);
+    return false;
   }
 
-  const chave = limparChave(chaveAcesso || String(nsu));
+  // Debug: mostra trecho do XML na primeira nota
+  if (doc.NSU === 1) {
+    console.log("  XML amostra:", xml.slice(0, 300));
+  }
 
-  // Extrai campos do XML
-  const prestadorCnpj = extrairCampoXml(xml, "Cnpj") || extrairCampoXml(xml, "CPFCNPJPrestador");
-  const prestadorNome = extrairCampoXml(xml, "RazaoSocial") || extrairCampoXml(xml, "NomeRazaoSocial");
-  const valorServico = parseFloat(extrairCampoXml(xml, "ValorServicos") || extrairCampoXml(xml, "Valor") || "0");
-  const discriminacao = extrairCampoXml(xml, "Discriminacao").toUpperCase();
-  const dataEmissao = extrairCampoXml(xml, "DataEmissao") || extrairCampoXml(xml, "Competencia") || "";
-  const numero = extrairCampoXml(xml, "Numero") || String(nsu);
-  const competencia = (extrairCampoXml(xml, "Competencia") || dataEmissao).slice(0, 7);
+  // Extrai campos
+  const prestadorNome = extrairXml("RazaoSocial", xml) || extrairXml("xNome", xml) || "";
+  const prestadorCnpj = extrairXml("Cnpj", xml) || extrairXml("CNPJ", xml) || "";
+  const valorStr = extrairXml("ValorServicos", xml) || extrairXml("Valor", xml) || "0";
+  const valor = parseFloat(valorStr.replace(",", ".")) || 0;
+  const discriminacao = (extrairXml("Discriminacao", xml) || extrairXml("xDiscriminacao", xml) || "").split("|").join("").trim().toUpperCase().slice(0, 300);
+  const dataEmissao = (extrairXml("DataEmissao", xml) || extrairXml("dhEmi", xml) || "").slice(0, 10);
+  const competencia = (extrairXml("Competencia", xml) || dataEmissao).slice(0, 7);
+  const numero = extrairXml("Numero", xml) || extrairXml("nNFS", xml) || String(doc.NSU);
+
   const mp = mesPath(competencia || dataEmissao);
 
   // Verifica se já existe
@@ -112,25 +133,31 @@ async function processarNota(nsu, chaveAcesso, xmlGz, empresa) {
   if (existe && existe.nsu) return false;
 
   const entrada = {
-    nsu, chaveAcesso: chaveAcesso || "",
-    numero, dataEmissao: dataEmissao.slice(0, 10),
-    competencia, prestadorCnpj, prestadorRazaoSocial: prestadorNome,
-    tomadorCnpj: empresa.cnpj, tomadorRazaoSocial: empresa.nome === "Matriz"
-      ? "DIGOO BRASIL IMPORTACAO E DISTRIBUICAO LTDA"
-      : "DIGOO BRASIL IMPORTACAO E DISTRIBUICAO LTDA",
-    valorServicos: valorServico, discriminacao,
+    nsu: doc.NSU,
+    chaveAcesso: doc.ChaveAcesso || "",
+    numero, dataEmissao, competencia,
+    prestadorCnpj: prestadorCnpj.replace(/\D/g, ""),
+    prestadorRazaoSocial: prestadorNome,
+    tomadorCnpj: empresa.cnpj,
+    valorServicos: valor,
+    discriminacao,
     criadoEm: Date.now(),
   };
 
   await fbPut("nfse_tomadas/" + mp + "/" + chave, entrada);
   await fbPut("contas_pagar/" + mp + "/" + chave, {
-    fornecedor: prestadorNome, cnpj: prestadorCnpj,
-    numeroDoc: numero, valor: valorServico,
-    competencia, vencimento: dataEmissao.slice(0, 10),
-    historico: discriminacao.slice(0, 200),
+    fornecedor: prestadorNome,
+    cnpj: prestadorCnpj.replace(/\D/g, ""),
+    numeroDoc: numero,
+    valor,
+    competencia,
+    vencimento: dataEmissao,
+    historico: discriminacao,
     categoriaId: "", categoriaLabel: "",
-    situacao: "pendente", origem: "sefaz-pnfse",
-    chaveAcesso: chaveAcesso || "", criadoEm: Date.now(),
+    situacao: "pendente",
+    origem: "sefaz-pnfse",
+    chaveAcesso: doc.ChaveAcesso || "",
+    criadoEm: Date.now(),
   });
 
   return true;
@@ -138,53 +165,41 @@ async function processarNota(nsu, chaveAcesso, xmlGz, empresa) {
 
 async function sincronizarEmpresa(empresa) {
   console.log("\n[" + empresa.nome + "] Sincronizando...");
-
-  // Lê último NSU processado
   const ultimoNsu = (await fbGet("capturador_nsu/" + empresa.cnpj)) || 0;
   console.log("  Último NSU: " + ultimoNsu);
 
   let nsuAtual = ultimoNsu;
   let totalNovas = 0;
-  let continuar = true;
 
-  while (continuar) {
+  while (true) {
     let resp;
     try {
       resp = await buscarSefaz(empresa.pfx, nsuAtual);
     } catch(e) {
-      console.error("  Erro na SEFAZ:", e.message);
+      console.error("  Erro SEFAZ:", e.message);
       break;
     }
 
-    if (resp.StatusProcessamento === "SEM_DOCUMENTOS") {
-      console.log("  Sem novos documentos.");
-      break;
-    }
-
-    if (resp.StatusProcessamento === "CONSUMO_INDEVIDO") {
-      console.log("  Limite SEFAZ — aguardar 1 hora.");
-      break;
-    }
+    if (resp.StatusProcessamento === "SEM_DOCUMENTOS") { console.log("  Sem novos."); break; }
+    if (resp.StatusProcessamento === "CONSUMO_INDEVIDO") { console.log("  Limite SEFAZ — aguardar 1h."); break; }
 
     const lote = resp.LoteDFe || [];
     if (!lote.length) break;
 
+    const tipos = {};
+    lote.forEach(d => tipos[d.TipoDocumento] = (tipos[d.TipoDocumento] || 0) + 1);
+    console.log("  Tipos:", JSON.stringify(tipos));
+
     for (const doc of lote) {
-      if (doc.TipoDocumento === "NFSE") {
-        const ok = await processarNota(doc.NSU, doc.ChaveAcesso, doc.ArquivoXml, empresa);
-        if (ok) totalNovas++;
-      }
+      const ok = await processarDoc(doc, empresa);
+      if (ok) totalNovas++;
       nsuAtual = Math.max(nsuAtual, doc.NSU);
     }
 
-    // Salva NSU mais alto
     await fbPut("capturador_nsu/" + empresa.cnpj, nsuAtual);
-    console.log("  NSU atual: " + nsuAtual + " | Novas: " + totalNovas);
+    console.log("  NSU: " + nsuAtual + " | Novas: " + totalNovas);
 
-    // Se veio menos de 50, chegou no fim
     if (lote.length < 50) break;
-
-    // Pausa entre páginas
     await new Promise(r => setTimeout(r, 500));
   }
 
@@ -192,7 +207,7 @@ async function sincronizarEmpresa(empresa) {
 }
 
 async function main() {
-  console.log("[" + new Date().toISOString() + "] Capturador SEFAZ PNFS-e iniciando...");
+  console.log("[" + new Date().toISOString() + "] Capturador SEFAZ PNFS-e v2");
   let total = 0;
   for (const empresa of EMPRESAS) {
     total += await sincronizarEmpresa(empresa);
