@@ -161,6 +161,8 @@ async function processarDoc(doc, empresa) {
   await fbPut("contas_pagar/" + mp + "/" + chave, {
     fornecedor: prestadorNome,
     cnpj: prestadorCnpj.replace(/\D/g, ""),
+    tomadorCnpj: empresa.cnpj,
+    empresa: empresa.nome,
     numeroDoc: numero,
     valor,
     competencia,
