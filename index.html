@@ -9328,16 +9328,16 @@ async function renderCpLista(panel) {
     const isFilial = c.empresa === "Filial" || tomCnpj === "40981026000344";
     const isMatriz = c.empresa === "Matriz" || tomCnpj === "40981026000182";
     const empresaTag = isFilial
-      ? `<span style="background:#5e72e418;color:#5e72e4;border-radius:20px;padding:1px 8px;font-size:10px;font-weight:600;margin-left:6px;border:0.5px solid #5e72e433;flex-shrink:0;">Filial SP</span>`
+      ? `<span style="background:#6952B818;color:#6952B8;border-radius:20px;padding:1px 8px;font-size:10px;font-weight:600;margin-left:6px;border:0.5px solid #6952B844;flex-shrink:0;">Filial SP</span>`
       : isMatriz
-      ? `<span style="background:#6952B818;color:#6952B8;border-radius:20px;padding:1px 8px;font-size:10px;font-weight:600;margin-left:6px;border:0.5px solid #6952B844;flex-shrink:0;">Matriz RS</span>`
+      ? `<span style="background:#00606c18;color:#00606c;border-radius:20px;padding:1px 8px;font-size:10px;font-weight:600;margin-left:6px;border:0.5px solid #00606c44;flex-shrink:0;">Matriz RS</span>`
       : "";
     const row = document.createElement("div");
-    row.style.cssText = `display:grid;grid-template-columns:2fr 1.5fr 1fr 1fr 120px;align-items:center;padding:11px 16px;border-bottom:0.5px solid ${T.border};${i%2===1?"background:"+T.bg3+";":""}cursor:pointer;`;
+    row.style.cssText = `display:grid;grid-template-columns:2fr 1.5fr 1fr 1fr 120px;align-items:center;padding:0 16px;border-bottom:0.5px solid ${T.border};${i%2===1?"background:"+T.bg3+";":""}cursor:pointer;min-height:44px;`;
     row.innerHTML = `
-      <div style="font-size:13px;color:${T.text};font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:4px;">${c.fornecedor||"—"}${empresaTag}</div>
+      <div style="font-size:13px;color:${T.text};font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:4px;padding:11px 0;">${c.fornecedor||"—"}${empresaTag}</div>
       <div style="font-size:12px;color:${T.text2};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.historico||"—"}</div>
-      <div style="font-size:13px;color:${T.text};text-align:right;width:100%;font-family:'IBM Plex Mono',monospace;">R$ ${valor.toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
+      <div style="font-size:13px;color:${T.text};text-align:right;font-family:'IBM Plex Mono',monospace;display:block;width:100%;box-sizing:border-box;">R$ ${valor.toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
       <div style="font-size:12px;color:${T.text2};text-align:center;">${c.competencia ? c.competencia.slice(5,7)+"/"+c.competencia.slice(0,4) : "—"}</div>
       <div style="text-align:center;"><span style="font-size:11px;font-weight:600;padding:3px 12px;border-radius:20px;background:${sitCor};color:${sit==="pago"?"#000":"#000"};letter-spacing:.2px;">${sit}</span></div>`;
 
