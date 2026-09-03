@@ -9324,8 +9324,9 @@ async function renderCpLista(panel) {
     const valor = Number(c.valor||0);
     if (sit !== "cancelado") total += valor;
 
-    const isFilial = c.cnpj === "40981026000344" || (c.tomadorCnpj && c.tomadorCnpj.replace(/\D/g,"") === "40981026000344");
-    const isMatriz = c.cnpj === "40981026000182" || (c.tomadorCnpj && c.tomadorCnpj.replace(/\D/g,"") === "40981026000182");
+    const tomCnpj = (c.tomadorCnpj || "").replace(/\D/g,"");
+    const isFilial = c.empresa === "Filial" || tomCnpj === "40981026000344";
+    const isMatriz = c.empresa === "Matriz" || tomCnpj === "40981026000182";
     const empresaTag = isFilial
       ? `<span style="background:#5e72e418;color:#5e72e4;border-radius:20px;padding:1px 8px;font-size:10px;font-weight:600;margin-left:6px;border:0.5px solid #5e72e433;flex-shrink:0;">Filial SP</span>`
       : isMatriz
