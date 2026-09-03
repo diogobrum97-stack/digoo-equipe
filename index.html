@@ -8850,7 +8850,7 @@ const CATEGORIAS_CP = [
 const PORTADOR_ITAU = 14893332147;
 const CNPJ_FILIAL = "40981026000344";
 
-let cpState = { mostraForm: false, contas: [], carregando: false, filtroSituacao: "", filtroCategoria: "", mes: new Date().toISOString().slice(0,7), _filial: false };
+let cpState = { mostraForm: false, contas: [], carregando: false, filtroSituacao: "", filtroCategoria: "", filtroEmpresa: "", mes: new Date().toISOString().slice(0,7), _filial: false };
 
 async function renderContasPagar(panel) {
   try {
@@ -8894,6 +8894,20 @@ async function renderContasPagar(panel) {
   // ── Filtros pills ──
   const filtrosWrap = document.createElement("div");
   filtrosWrap.style.cssText = "display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap;";
+
+
+  // Filtro empresa
+  const empresaWrap = document.createElement("div");
+  empresaWrap.style.cssText = `display:flex;gap:3px;background:${T.card};border:0.5px solid ${T.border};border-radius:20px;padding:3px;`;
+  [["","Ambas"],["matriz","Matriz RS"],["filial","Filial SP"]].forEach(([val, label]) => {
+    const p = document.createElement("button");
+    p.textContent = label;
+    const ativo = (cpState.filtroEmpresa || "") === val;
+    p.style.cssText = `background:${ativo?"#2dce89":"none"};border:none;border-radius:20px;padding:5px 12px;font-size:12px;font-weight:${ativo?"600":"400"};color:${ativo?"#000":T.text2};cursor:pointer;font-family:inherit;white-space:nowrap;`;
+    p.addEventListener("click", () => { cpState.filtroEmpresa = val; renderContasPagar(panel); });
+    empresaWrap.appendChild(p);
+  });
+  filtrosWrap.appendChild(empresaWrap);
 
   const pillsWrap = document.createElement("div");
   pillsWrap.style.cssText = `display:flex;gap:3px;background:${T.card};border:0.5px solid ${T.border};border-radius:20px;padding:3px;`;
@@ -9310,11 +9324,17 @@ async function renderCpLista(panel) {
     const valor = Number(c.valor||0);
     if (sit !== "cancelado") total += valor;
 
-    const filialTag = c.filial ? `<span style="background:#5e72e422;color:#5e72e4;border-radius:20px;padding:1px 7px;font-size:10px;font-weight:600;margin-left:6px;">Filial</span>` : "";
+    const isFilial = c.cnpj === "40981026000344" || (c.tomadorCnpj && c.tomadorCnpj.replace(/\D/g,"") === "40981026000344");
+    const isMatriz = c.cnpj === "40981026000182" || (c.tomadorCnpj && c.tomadorCnpj.replace(/\D/g,"") === "40981026000182");
+    const empresaTag = isFilial
+      ? `<span style="background:#5e72e418;color:#5e72e4;border-radius:20px;padding:1px 8px;font-size:10px;font-weight:600;margin-left:6px;border:0.5px solid #5e72e433;flex-shrink:0;">Filial SP</span>`
+      : isMatriz
+      ? `<span style="background:#f0b40018;color:#f0b400;border-radius:20px;padding:1px 8px;font-size:10px;font-weight:600;margin-left:6px;border:0.5px solid #f0b40033;flex-shrink:0;">Matriz RS</span>`
+      : "";
     const row = document.createElement("div");
-    row.style.cssText = `display:grid;grid-template-columns:2fr 1.5fr 1fr 1fr 100px;padding:11px 16px;border-bottom:0.5px solid ${T.border};${i%2===1?"background:"+T.bg3+";":""}cursor:pointer;`;
+    row.style.cssText = `display:grid;grid-template-columns:2fr 1.5fr 1fr 1fr 120px;padding:11px 16px;border-bottom:0.5px solid ${T.border};${i%2===1?"background:"+T.bg3+";":""}cursor:pointer;`;
     row.innerHTML = `
-      <div style="font-size:13px;color:${T.text};font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;">${c.fornecedor||"—"}${filialTag}</div>
+      <div style="font-size:13px;color:${T.text};font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:4px;">${c.fornecedor||"—"}${empresaTag}</div>
       <div style="font-size:12px;color:${T.text2};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.historico||"—"}</div>
       <div style="font-size:13px;color:${T.text};text-align:right;font-family:'IBM Plex Mono',monospace;">R$ ${valor.toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
       <div style="font-size:12px;color:${T.text2};text-align:center;">${c.competencia ? c.competencia.slice(5,7)+"/"+c.competencia.slice(0,4) : "—"}</div>
@@ -9376,6 +9396,15 @@ async function carregarContasFirebase() {
   if (cpState.filtroSituacao === "aberto") contas = contas.filter(c => c.situacao === "aberto");
   if (cpState.filtroSituacao === "pago") contas = contas.filter(c => c.situacao === "pago");
   if (cpState.filtroSituacao === "cancelado") contas = contas.filter(c => c.situacao === "cancelado");
+  // Filtro empresa
+  if (cpState.filtroEmpresa === "matriz") contas = contas.filter(c => {
+    const cnpj = (c.tomadorCnpj || c.cnpj || "").replace(/\D/g,"");
+    return !cnpj || cnpj === "40981026000182";
+  });
+  if (cpState.filtroEmpresa === "filial") contas = contas.filter(c => {
+    const cnpj = (c.tomadorCnpj || c.cnpj || "").replace(/\D/g,"");
+    return cnpj === "40981026000344";
+  });
   // Ordena por vencimento
   contas.sort((a,b) => (a.vencimento||"").localeCompare(b.vencimento||""));
   cpState.contas = contas;
