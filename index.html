@@ -9394,7 +9394,7 @@ async function renderCpLista(panel) {
   const naoPageis = cpState.contas.filter(c => c.situacao !== "pago" && c.situacao !== "cancelado");
   btnMarcarTodos.innerHTML = `<svg viewBox="0 0 24 24" width="13" height="13" style="stroke:#2dce89;stroke-width:3;fill:none;"><polyline points="20 6 9 17 4 12"/></svg>`;
   btnMarcarTodos.title = "Marcar todos como pago";
-  btnMarcarTodos.style.cssText = `width:28px;height:28px;border-radius:50%;background:transparent;border:2px solid #2dce89;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s,transform .15s;padding:0;`;
+  btnMarcarTodos.style.cssText = `width:28px;height:28px;border-radius:50%;background:transparent;border:2px solid #2dce89;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s,transform .15s;padding:0;justify-self:center;margin:0 auto;`;
   btnMarcarTodos.innerHTML = `<svg viewBox="0 0 24 24" width="13" height="13" style="stroke:#2dce89;stroke-width:3;fill:none;"><polyline points="20 6 9 17 4 12"/></svg>`;
   btnMarcarTodos.addEventListener("mouseenter", () => { btnMarcarTodos.style.background="#2dce8918"; btnMarcarTodos.style.transform="scale(1.1)"; });
   btnMarcarTodos.addEventListener("mouseleave", () => { btnMarcarTodos.style.background="transparent"; btnMarcarTodos.style.transform="scale(1)"; });
