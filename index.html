@@ -5205,7 +5205,7 @@ function render(){
     const _displayInitials = _isResicon ? "RS" : member.initials;
     const _displayColor = _isResicon ? "#ffffff" : color;
     const avatar=document.createElement("div");avatar.className="avatar";avatar.style.cssText=`background:${_displayColor}22;border:1.5px solid ${_displayColor};color:${_displayColor};`;avatar.textContent=_displayInitials;
-    const nameWrap=document.createElement("div");nameWrap.style.flex="1";
+    const nameWrap=document.createElement("div");nameWrap.style.cssText="flex:1;display:flex;align-items:center;";
     const nameEl=document.createElement("div");nameEl.className="member-name";nameEl.style.color=_displayColor;nameEl.textContent=_displayName;
     const dotsEl=document.createElement("div");dotsEl.className="dots";
     if((active.length>0||done.length>0) && currentUser !== "Resicon"){
