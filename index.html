@@ -9357,7 +9357,7 @@ async function renderCpLista(panel) {
 
       const menu = document.createElement("div");
       menu.className = "cp-dropdown";
-      menu.style.cssText = `position:absolute;right:0;top:100%;z-index:999;background:${T.card};border:0.5px solid ${T.border};border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.18);min-width:170px;padding:4px 0;margin-top:4px;`;
+      menu.style.cssText = `position:fixed;z-index:9999;background:${T.card};border:0.5px solid ${T.border};border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.25);min-width:170px;padding:4px 0;`;
 
       const opcoes = [];
       if (c.xmlBase64 || c.nfBase64) {
@@ -9399,9 +9399,7 @@ async function renderCpLista(panel) {
 
       // Posicionar o menu no body para sobrepor o overflow:hidden do tabWrap
       const dotsRect = dotsBtn.getBoundingClientRect();
-      menu.style.position = "fixed";
       menu.style.top = (dotsRect.bottom + 4) + "px";
-      menu.style.left = "auto";
       menu.style.right = (window.innerWidth - dotsRect.right) + "px";
       document.body.appendChild(menu);
       setTimeout(() => document.addEventListener("click", () => menu.remove(), {once:true}), 0);
