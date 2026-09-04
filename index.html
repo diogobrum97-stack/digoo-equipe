@@ -10275,7 +10275,7 @@ Digoo Brasil`;
   <script src="claude-chat.js"></script>
 <script>
 // ── Gerador de PDF DANFSe v2.0 — layout oficial PNFS-e ───────────────────────
-async function gerarPdfNfse(c) {
+window.gerarPdfNfse = async function gerarPdfNfse(c) {
   try {
     const bin = atob(c.xmlBase64);
     const bytes = new Uint8Array(bin.length);
