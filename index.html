@@ -39,7 +39,7 @@
 
 <header>
   <div class="sub">Digoo Brasil</div>
-  <h1>EQUIPE <span class="sync" id="sync-dot"></span></h1>
+  <h1 id="equipe-titulo">EQUIPE <span class="sync" id="sync-dot"></span></h1>
 </header>
 
 <div id="identity-screen"></div>
@@ -230,7 +230,7 @@ function overdueBadgeHtml(task){
 }
 
 function themeColor(name) {
-  if(name==="Resicon") return "#C9A227";
+  if(name==="Resicon") return currentUser==="Resicon" ? "#ffffff" : "#C9A227";
   const light = document.body.classList.contains("light");
   return ({Diogo:light?"#555555":"#cccccc",Bruno:light?"#6d28d9":"#9d7fff",Larissa:light?"#be185d":"#ff1f7a"})[name]||"#fff";
 }
@@ -368,6 +368,13 @@ function setupIdentityScreen() {
       diogoAutoFullscreen = true;
       diogoCardFullscreen = true;
       window._diogotab = "contas-pagar";
+      // Ocultar elementos que não devem aparecer para Resicon
+      setTimeout(() => {
+        const t = document.getElementById("equipe-titulo");
+        if(t) t.style.display = "none";
+        // Ocultar texto "LOGADO COMO RESICON · TROCAR" e "DIGOO BRASIL · PORTO ALEGRE"
+        document.querySelectorAll(".ov-footer, [id^=ov-]").forEach(el => el.style.display = "none");
+      }, 200);
     }
     requestNotif();
     render();
@@ -5131,7 +5138,8 @@ function render(){
   }
   const pendingMembers=MEMBERS.filter(m=>!m.locked&&Object.values(state.tasks||{}).some(t=>t!=null&&t.member===m.name&&!t.done));
   if(pendingMembers.length>0)startFaviconCycle(pendingMembers.map(m=>themeColor(m.name)));else stopFaviconFlash();
-  const lbl=document.getElementById("user-label");if(lbl)lbl.textContent=currentUser?`logado como ${currentUser} · trocar`:"";
+  const lbl=document.getElementById("user-label");if(lbl){ lbl.textContent=currentUser&&currentUser!=="Resicon"?`logado como ${currentUser} · trocar`:""; }
+  const footer=document.querySelector("footer");if(footer) footer.style.display=currentUser==="Resicon"?"none":"";
 
   // Esconde outros cards quando Diogo está em Mercado Livre
   const diogoPinOk = diogoPinUnlocked;
@@ -5164,9 +5172,7 @@ function render(){
     if(diogIsFullAuto && member.name==="Diogo") card.style.gridColumn="1 / -1";
     if(diogoCardFullscreen && member.name==="Diogo") {
       card.classList.add("card-fullscreen");
-      if(currentUser === "Resicon") {
-        card.style.background = themeHbg("Resicon");
-      }
+
     }
     if(brunoEmPicking && member.name==="Bruno") {
       card.classList.add("card-fullscreen");
@@ -5178,12 +5184,12 @@ function render(){
     }
 
     const _isResicon = currentUser === "Resicon" && member.name === "Diogo";
-    const _resHbg = themeHbg("Resicon");
+    const _resHbg = themeHbg("Diogo"); // Resicon usa mesmo fundo do Diogo (preto)
     const header=document.createElement("div");header.className="card-header";header.style.background=_isResicon ? _resHbg : hbg;
     // Se Resicon está logado e abrimos o card do Diogo, mostrar identidade da Resicon
     const _displayName = _isResicon ? "Resicon" : member.name;
     const _displayInitials = _isResicon ? "RS" : member.initials;
-    const _displayColor = _isResicon ? "#C9A227" : color;
+    const _displayColor = _isResicon ? "#ffffff" : color;
     const avatar=document.createElement("div");avatar.className="avatar";avatar.style.cssText=`background:${_displayColor}22;border:1.5px solid ${_displayColor};color:${_displayColor};`;avatar.textContent=_displayInitials;
     const nameWrap=document.createElement("div");nameWrap.style.flex="1";
     const nameEl=document.createElement("div");nameEl.className="member-name";nameEl.style.color=_displayColor;nameEl.textContent=_displayName;
