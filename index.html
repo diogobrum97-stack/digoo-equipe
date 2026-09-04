@@ -9476,10 +9476,12 @@ async function renderCpLista(panel) {
     const menuWrap = row.querySelector(".cp-menu-wrap");
     dotsBtn.addEventListener("click", (e) => {
       e.stopPropagation();
-      // Toggle: se já está aberto, fecha
-      const jaAberto = menuWrap.querySelector(".cp-dropdown");
+      // Toggle: verificar pelo data attribute se este botão já tem menu aberto
+      const jaAberto = dotsBtn.dataset.menuOpen === "1";
       document.querySelectorAll(".cp-dropdown").forEach(m => m.remove());
+      document.querySelectorAll(".cp-dots").forEach(b => delete b.dataset.menuOpen);
       if (jaAberto) return;
+      dotsBtn.dataset.menuOpen = "1";
 
       const menu = document.createElement("div");
       menu.className = "cp-dropdown";
@@ -9549,7 +9551,10 @@ async function renderCpLista(panel) {
       menu.style.top = (dotsRect.bottom + 4) + "px";
       menu.style.right = (window.innerWidth - dotsRect.right) + "px";
       document.body.appendChild(menu);
-      setTimeout(() => document.addEventListener("click", () => menu.remove(), {once:true}), 0);
+      setTimeout(() => document.addEventListener("click", () => {
+        menu.remove();
+        delete dotsBtn.dataset.menuOpen;
+      }, {once:true}), 0);
     });
 
     // Clique na linha expande detalhe (info básica)
