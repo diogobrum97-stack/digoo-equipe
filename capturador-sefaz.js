@@ -172,6 +172,7 @@ async function processarDoc(doc, empresa) {
     situacao: "pendente",
     origem: "sefaz-pnfse",
     chaveAcesso: doc.ChaveAcesso || "",
+    xmlBase64: doc.ArquivoXml || "",
     criadoEm: Date.now(),
   });
 
