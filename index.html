@@ -10996,7 +10996,7 @@ window._exportarExcelResicon = async function(contas, mes) {
     if (!lista.length) return null;
 
     const titulo = `SERVIÇOS TOMADOS - ${empresa.toUpperCase()} ${mesLabel}`;
-    const cabecalho = ["Dt Inicial", "Lanç. Cont.", "Número", "Nome Fornecedor", "Discriminação do Serviço", "Valor do Documento"];
+    const cabecalho = ["Dt Inicial", "Número", "Nome Fornecedor", "Discriminação do Serviço", "Valor do Documento"];
 
     let total = 0;
     const rows = lista.map(c => {
@@ -11004,14 +11004,13 @@ window._exportarExcelResicon = async function(contas, mes) {
       if (c.situacao !== "cancelado") total += valor;
       return [
         dataCompet,
-        201,
         c.numeroDoc || "",
         c.fornecedor || "",
         c.historico || "",
         valor
       ];
     });
-    rows.push(["", "", "", "", "TOTAL", total]);
+    rows.push(["", "", "", "TOTAL", total]);
 
     // Montar worksheet
     const wsData = [
@@ -11025,15 +11024,14 @@ window._exportarExcelResicon = async function(contas, mes) {
     // Larguras das colunas
     ws["!cols"] = [
       { wch: 14 }, // Data
-      { wch: 12 }, // Lanç
       { wch: 14 }, // Número
-      { wch: 42 }, // Fornecedor
-      { wch: 55 }, // Discriminação
+      { wch: 48 }, // Fornecedor
+      { wch: 75 }, // Discriminação (alargada)
       { wch: 20 }, // Valor
     ];
 
     // Mesclar título
-    ws["!merges"] = [{ s:{r:0,c:0}, e:{r:0,c:5} }];
+    ws["!merges"] = [{ s:{r:0,c:0}, e:{r:0,c:4} }];
 
     // Estilo do título (negrito, fundo)
     const tituloCell = ws["A1"];
@@ -11053,7 +11051,7 @@ window._exportarExcelResicon = async function(contas, mes) {
 
     // Formatar coluna valor como número BR
     rows.forEach((_, ri) => {
-      const addr = utils.encode_cell({ r: ri+2, c: 5 });
+      const addr = utils.encode_cell({ r: ri+2, c: 4 });
       if (ws[addr] && typeof ws[addr].v === "number") {
         ws[addr].t = "n";
         ws[addr].z = "#,##0.00";
