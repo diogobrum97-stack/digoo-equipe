@@ -589,7 +589,7 @@ function setupIdentityScreen() {
     const r = document.createElement("div");
     r.style.cssText = `${_isMobile ? "flex:1;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 20px;overflow-y:auto;gap:16px;box-sizing:border-box;" : "flex:0 0 30%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 40px;height:100vh;overflow-y:auto;gap:16px;"}background:${T.isLight?"#f7f7f7":"#000"};`;
     r.innerHTML =
-      `<div style="width:52px;height:52px;border-radius:50%;background:${T.bg3};border:1px solid ${T.border};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:${T.text};">`+initials+`</div>`
+      `<div style="width:52px;height:52px;border-radius:50%;background:${savedUser==='Resicon'?'#C9A22722':T.bg3};border:1px solid ${savedUser==='Resicon'?'#C9A22766':T.border};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:${savedUser==='Resicon'?'#C9A227':T.text};">`+initials+`</div>`
       +'<div style="text-align:center;">'
         +`<div style="font-size:16px;font-weight:700;color:${T.isLight?"#111":"#fff"};font-family:Inter,sans-serif;">Bem-vindo, ${savedUser}</div>`
         +`<div style="font-size:11px;color:${T.isLight?"#888":"#555"};margin-top:4px;font-family:Inter,sans-serif;">Entrando automaticamente...</div>`
@@ -5174,9 +5174,13 @@ function render(){
     }
 
     const header=document.createElement("div");header.className="card-header";header.style.background=hbg;
-    const avatar=document.createElement("div");avatar.className="avatar";avatar.style.cssText=`background:${color}22;border:1.5px solid ${color};color:${color};`;avatar.textContent=member.initials;
+    // Se Resicon está logado e abrimos o card do Diogo, mostrar identidade da Resicon
+    const _displayName = (currentUser==="Resicon" && member.name==="Diogo") ? "Resicon" : member.name;
+    const _displayInitials = (currentUser==="Resicon" && member.name==="Diogo") ? "RS" : member.initials;
+    const _displayColor = (currentUser==="Resicon" && member.name==="Diogo") ? "#C9A227" : color;
+    const avatar=document.createElement("div");avatar.className="avatar";avatar.style.cssText=`background:${_displayColor}22;border:1.5px solid ${_displayColor};color:${_displayColor};`;avatar.textContent=_displayInitials;
     const nameWrap=document.createElement("div");nameWrap.style.flex="1";
-    const nameEl=document.createElement("div");nameEl.className="member-name";nameEl.style.color=color;nameEl.textContent=member.name;
+    const nameEl=document.createElement("div");nameEl.className="member-name";nameEl.style.color=_displayColor;nameEl.textContent=_displayName;
     const dotsEl=document.createElement("div");dotsEl.className="dots";
     if(active.length>0||done.length>0){
       ["superurgente","urgente","importante","normal"].forEach(p=>{active.filter(t=>t.prio===p).slice(0,5).forEach(()=>{const d=document.createElement("span");d.className="dot";const pc=themePrio(p);d.style.cssText=`background:${pc};box-shadow:0 0 8px ${pc};${p==="superurgente"?"animation:siren 0.6s infinite;":""}`;dotsEl.appendChild(d);});});
@@ -9565,6 +9569,7 @@ async function renderCpLista(panel) {
   const naoPageis = cpState.contas.filter(c => c.situacao !== "pago" && c.situacao !== "cancelado");
   btnMarcarTodos.innerHTML = `<svg viewBox="0 0 24 24" width="13" height="13" style="stroke:#2dce89;stroke-width:3;fill:none;"><polyline points="20 6 9 17 4 12"/></svg>`;
   btnMarcarTodos.title = "Marcar todos como pago";
+  if (currentUser === "Resicon") btnMarcarTodos.style.display = "none";
   btnMarcarTodos.style.cssText = `width:28px;height:28px;border-radius:50%;background:transparent;border:2px solid #2dce89;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s,transform .15s;padding:0;justify-self:center;margin:0 auto;`;
   btnMarcarTodos.innerHTML = `<svg viewBox="0 0 24 24" width="13" height="13" style="stroke:#2dce89;stroke-width:3;fill:none;"><polyline points="20 6 9 17 4 12"/></svg>`;
   btnMarcarTodos.addEventListener("mouseenter", () => { btnMarcarTodos.style.background="#2dce8918"; btnMarcarTodos.style.transform="scale(1.1)"; });
