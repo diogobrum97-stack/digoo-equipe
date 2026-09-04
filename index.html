@@ -9340,8 +9340,8 @@ async function renderCpLista(panel) {
       <div style="font-size:12px;color:${T.text2};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.historico||"—"}</div>
       <div style="font-size:13px;color:${T.text};font-family:'IBM Plex Mono',monospace;text-align:center;">R$ ${valor.toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
       <div style="font-size:12px;color:${T.text2};text-align:center;">${c.competencia ? c.competencia.slice(5,7)+"/"+c.competencia.slice(0,4) : "—"}</div>
-      <div style="position:relative;display:flex;align-items:center;justify-content:center;">
-        <span title="${c.vencimento ? 'BOLETO COM VENCIMENTO ' + c.vencimento.slice(8,10) + '/' + c.vencimento.slice(5,7) + '/' + c.vencimento.slice(0,4) : ''}" style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;background:${sitCor};color:#000;letter-spacing:.2px;cursor:default;">${sit}${c.vencimento && sit !== 'pago' ? ' · ' + c.vencimento.slice(8,10) + '/' + c.vencimento.slice(5,7) : ''}</span>
+      <div style="position:relative;display:flex;align-items:center;justify-content:center;padding-right:20px;">
+        <span title="${c.dataVencimento ? 'BOLETO COM VENCIMENTO ' + c.dataVencimento.slice(8,10) + '/' + c.dataVencimento.slice(5,7) + '/' + c.dataVencimento.slice(0,4) : ''}" style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;background:${sitCor};color:#000;letter-spacing:.2px;cursor:default;">${sit}${c.dataVencimento && sit !== 'pago' ? ' · ' + c.dataVencimento.slice(8,10) + '/' + c.dataVencimento.slice(5,7) : ''}</span>
         <div class="cp-menu-wrap" style="position:absolute;right:-4px;">
           <button class="cp-dots" style="background:none;border:none;cursor:pointer;padding:2px 4px;border-radius:4px;color:${T.text2};font-size:16px;line-height:1;display:flex;align-items:center;">⋮</button>
         </div>
@@ -9390,7 +9390,7 @@ async function renderCpLista(panel) {
           const nova = box.querySelector("#cp-date-input").value;
           overlay.remove();
           if (!nova) return;
-          await set(ref(db, `/contas_pagar/${cpState.mes.replace("-","/")}/${c.id}/vencimento`), nova);
+          await set(ref(db, `/contas_pagar/${cpState.mes.replace("-","/")}/${c.id}/dataVencimento`), nova);
           await carregarContasFirebase();
           renderContasPagar(panel.closest(".cp-container")||panel.parentElement);
         };
