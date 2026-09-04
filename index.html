@@ -237,9 +237,10 @@ function themeColor(name) {
 function themeHbg(name) {
   const light = document.body.classList.contains("light");
   return ({
-    Diogo:  light?"linear-gradient(135deg,#cccccc55,#efefef)":"linear-gradient(135deg,#ffffff44,#000)",
-    Bruno:  light?"linear-gradient(135deg,#7c3aed44,#efefef)":"linear-gradient(135deg,#9d7fff44,#000)",
-    Larissa:light?"linear-gradient(135deg,#db277766,#efefef)":"linear-gradient(135deg,#f472b644,#000)"
+    Diogo:   light?"linear-gradient(135deg,#cccccc55,#efefef)":"linear-gradient(135deg,#ffffff44,#000)",
+    Bruno:   light?"linear-gradient(135deg,#7c3aed44,#efefef)":"linear-gradient(135deg,#9d7fff44,#000)",
+    Larissa: light?"linear-gradient(135deg,#db277766,#efefef)":"linear-gradient(135deg,#f472b644,#000)",
+    Resicon: light?"linear-gradient(135deg,#C9A22744,#efefef)":"linear-gradient(135deg,#C9A22744,#000)"
   })[name]||"#111";
 }
 function themePrio(p) {
@@ -5164,7 +5165,7 @@ function render(){
     if(diogoCardFullscreen && member.name==="Diogo") {
       card.classList.add("card-fullscreen");
       if(currentUser === "Resicon") {
-        card.style.background = "linear-gradient(160deg, #1a1500 0%, #0a0a00 50%, #141000 100%)";
+        card.style.background = themeHbg("Resicon");
       }
     }
     if(brunoEmPicking && member.name==="Bruno") {
@@ -5177,7 +5178,7 @@ function render(){
     }
 
     const _isResicon = currentUser === "Resicon" && member.name === "Diogo";
-    const _resHbg = "linear-gradient(135deg, #1a1500 0%, #0d0d00 60%, #1a1200 100%)";
+    const _resHbg = themeHbg("Resicon");
     const header=document.createElement("div");header.className="card-header";header.style.background=_isResicon ? _resHbg : hbg;
     // Se Resicon está logado e abrimos o card do Diogo, mostrar identidade da Resicon
     const _displayName = _isResicon ? "Resicon" : member.name;
@@ -9574,9 +9575,9 @@ async function renderCpLista(panel) {
   const naoPageis = cpState.contas.filter(c => c.situacao !== "pago" && c.situacao !== "cancelado");
   btnMarcarTodos.innerHTML = `<svg viewBox="0 0 24 24" width="13" height="13" style="stroke:#2dce89;stroke-width:3;fill:none;"><polyline points="20 6 9 17 4 12"/></svg>`;
   btnMarcarTodos.title = "Marcar todos como pago";
-  if (currentUser === "Resicon") btnMarcarTodos.style.display = "none";
   btnMarcarTodos.style.cssText = `width:28px;height:28px;border-radius:50%;background:transparent;border:2px solid #2dce89;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s,transform .15s;padding:0;justify-self:center;margin:0 auto;`;
   btnMarcarTodos.innerHTML = `<svg viewBox="0 0 24 24" width="13" height="13" style="stroke:#2dce89;stroke-width:3;fill:none;"><polyline points="20 6 9 17 4 12"/></svg>`;
+  if (currentUser === "Resicon") { btnMarcarTodos.style.display = "none"; }
   btnMarcarTodos.addEventListener("mouseenter", () => { btnMarcarTodos.style.background="#2dce8918"; btnMarcarTodos.style.transform="scale(1.1)"; });
   btnMarcarTodos.addEventListener("mouseleave", () => { btnMarcarTodos.style.background="transparent"; btnMarcarTodos.style.transform="scale(1)"; });
   if (!naoPageis.length) {
