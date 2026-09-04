@@ -9342,7 +9342,7 @@ async function renderCpLista(panel) {
       <div style="font-size:12px;color:${T.text2};text-align:center;">${c.competencia ? c.competencia.slice(5,7)+"/"+c.competencia.slice(0,4) : "—"}</div>
       <div style="position:relative;display:flex;align-items:center;justify-content:center;">
         <span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;background:${sitCor};color:#000;letter-spacing:.2px;">${sit}</span>
-        <div class="cp-menu-wrap" style="position:absolute;right:0;">
+        <div class="cp-menu-wrap" style="position:absolute;right:-4px;">
           <button class="cp-dots" style="background:none;border:none;cursor:pointer;padding:2px 4px;border-radius:4px;color:${T.text2};font-size:16px;line-height:1;display:flex;align-items:center;">⋮</button>
         </div>
       </div>`;
@@ -9397,7 +9397,13 @@ async function renderCpLista(panel) {
         menu.appendChild(item);
       });
 
-      menuWrap.appendChild(menu);
+      // Posicionar o menu no body para sobrepor o overflow:hidden do tabWrap
+      const dotsRect = dotsBtn.getBoundingClientRect();
+      menu.style.position = "fixed";
+      menu.style.top = (dotsRect.bottom + 4) + "px";
+      menu.style.left = "auto";
+      menu.style.right = (window.innerWidth - dotsRect.right) + "px";
+      document.body.appendChild(menu);
       setTimeout(() => document.addEventListener("click", () => menu.remove(), {once:true}), 0);
     });
 
