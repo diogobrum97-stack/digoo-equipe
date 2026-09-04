@@ -10306,7 +10306,7 @@ window._gerarPdfById = async function(id) {
     } catch { xml = new TextDecoder().decode(bytes); }
 
     // Chama o servidor PHP na VPS
-    const resp = await fetch("http://179.199.140.133:3457", {
+    const resp = await fetch("https://api.digoo.com.br", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ xml })
