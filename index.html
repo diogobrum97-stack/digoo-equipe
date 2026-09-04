@@ -372,8 +372,22 @@ function setupIdentityScreen() {
       setTimeout(() => {
         const t = document.getElementById("equipe-titulo");
         if(t) t.style.display = "none";
-        // Ocultar texto "LOGADO COMO RESICON · TROCAR" e "DIGOO BRASIL · PORTO ALEGRE"
         document.querySelectorAll(".ov-footer, [id^=ov-]").forEach(el => el.style.display = "none");
+        // Botão Sair — criado uma vez no body, persiste entre renders
+        if (!document.getElementById("resicon-sair-btn")) {
+          const sairBtn = document.createElement("button");
+          sairBtn.id = "resicon-sair-btn";
+          sairBtn.textContent = "Sair";
+          sairBtn.style.cssText = "position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:none;border:0.5px solid #444;border-radius:8px;padding:8px 32px;color:#666;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;z-index:9999;letter-spacing:1px;transition:color .15s,border-color .15s;";
+          sairBtn.addEventListener("mouseenter", () => { sairBtn.style.color="#fff"; sairBtn.style.borderColor="#888"; });
+          sairBtn.addEventListener("mouseleave", () => { sairBtn.style.color="#666"; sairBtn.style.borderColor="#444"; });
+          sairBtn.addEventListener("click", () => {
+            localStorage.removeItem("digoo_device_v1");
+            localStorage.removeItem("digoo_pin_v1_Resicon");
+            location.reload();
+          });
+          document.body.appendChild(sairBtn);
+        }
       }, 200);
     }
     requestNotif();
@@ -9619,24 +9633,7 @@ async function renderCpLista(panel) {
   tabWrap.appendChild(tfoot);
   panel.appendChild(tabWrap);
 
-  // Botão Sair para Resicon — fixo no centro inferior da tela
-  if (currentUser === "Resicon") {
-    const existing = document.getElementById("resicon-sair-btn");
-    if (!existing) {
-      const sairBtn = document.createElement("button");
-      sairBtn.id = "resicon-sair-btn";
-      sairBtn.textContent = "Sair";
-      sairBtn.style.cssText = `position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:none;border:0.5px solid #444;border-radius:8px;padding:8px 32px;color:#666;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;z-index:100;letter-spacing:1px;transition:color .15s,border-color .15s;`;
-      sairBtn.addEventListener("mouseenter", () => { sairBtn.style.color="#fff"; sairBtn.style.borderColor="#888"; });
-      sairBtn.addEventListener("mouseleave", () => { sairBtn.style.color="#666"; sairBtn.style.borderColor="#444"; });
-      sairBtn.addEventListener("click", () => {
-        localStorage.removeItem("digoo_device_v1");
-        localStorage.removeItem("digoo_pin_v1_Resicon");
-        location.reload();
-      });
-      document.body.appendChild(sairBtn);
-    }
-  }
+
 }
 
 async function carregarContasFirebase() {
