@@ -13,6 +13,7 @@
 <title>Digoo · Equipe</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=Bebas+Neue&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
   <script>
@@ -9352,42 +9353,8 @@ async function renderCpLista(panel) {
       detail.style.cssText = `grid-column:1/-1;padding:12px 16px;background:${T.bg3};border-bottom:0.5px solid ${T.border};display:flex;gap:16px;align-items:flex-start;`;
       let nfBtn = "";
       if (c.nfBase64) nfBtn = `<button onclick="(()=>{const b=atob('${c.nfBase64}');const bytes=new Uint8Array(b.length);for(let i=0;i<b.length;i++)bytes[i]=b.charCodeAt(i);const blob=new Blob([bytes],{type:'application/pdf'});window.open(URL.createObjectURL(blob),'_blank');})()" style="background:${T.bg3};border:0.5px solid ${T.border};border-radius:6px;padding:6px 14px;font-size:11px;font-weight:500;color:${T.text};cursor:pointer;font-family:'Inter',sans-serif;">📄 Ver NF</button>`;
-      // Botão NFS-e via XML do capturador SEFAZ
-      if (c.xmlBase64 && !c.nfBase64) nfBtn = `<button onclick="(()=>{
-        try {
-          // XML vem gzip+base64 do PNFS-e — descomprime via DecompressionStream
-          const b64 = '${c.xmlBase64}';
-          const bin = atob(b64);
-          const bytes = new Uint8Array(bin.length);
-          for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
-          // Tenta descomprimir gzip
-          const ds = new DecompressionStream('gzip');
-          const writer = ds.writable.getWriter();
-          const reader = ds.readable.getReader();
-          writer.write(bytes);
-          writer.close();
-          const chunks = [];
-          const pump = () => reader.read().then(({done,value}) => { if(!done){chunks.push(value);return pump();} });
-          pump().then(() => {
-            const xml = new TextDecoder().decode(new Uint8Array(chunks.flatMap(c=>[...c])));
-            const blob = new Blob([xml], {type:'application/xml'});
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = 'nfse_${c.numeroDoc||c.id}.xml';
-            a.click();
-          }).catch(() => {
-            // Se não for gzip, é XML puro em base64
-            const xml = new TextDecoder().decode(bytes);
-            const blob = new Blob([xml], {type:'application/xml'});
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = 'nfse_${c.numeroDoc||c.id}.xml';
-            a.click();
-          });
-        } catch(e) { alert('Erro ao abrir XML: '+e.message); }
-      })()" style="background:${T.bg3};border:0.5px solid ${T.border};border-radius:6px;padding:6px 14px;font-size:11px;font-weight:500;color:${T.text};cursor:pointer;font-family:'Inter',sans-serif;">📄 Baixar NFS-e</button>`;
-      // Botão de visualização SEFAZ pela chave de acesso (fallback)
-      if (c.chaveAcesso && !c.xmlBase64 && !c.nfBase64) nfBtn = `<button onclick="window.open('https://www.nfse.gov.br/ConsultarNfse/?chave=${c.chaveAcesso}','_blank')" style="background:${T.bg3};border:0.5px solid ${T.border};border-radius:6px;padding:6px 14px;font-size:11px;font-weight:500;color:${T.text};cursor:pointer;font-family:'Inter',sans-serif;">🔗 Ver na SEFAZ</button>`;
+      // Botão NFS-e via XML do capturador SEFAZ — gera PDF formatado
+      if (c.xmlBase64 && !c.nfBase64) nfBtn = `<button onclick="gerarPdfNfse(${JSON.stringify(c).replace(/`/g,'\`')})" style="background:${T.bg3};border:0.5px solid ${T.border};border-radius:6px;padding:6px 14px;font-size:11px;font-weight:500;color:${T.text};cursor:pointer;font-family:'Inter',sans-serif;">📄 Baixar NFS-e</button>`;
       detail.innerHTML = `
         <div style="flex:1;font-size:12px;color:${T.text2};line-height:1.8;">
           <div><b style="color:${T.text};font-weight:500;">CNPJ:</b> ${c.cnpj||"—"}</div>
@@ -10305,7 +10272,163 @@ Digoo Brasil`;
 // ─── FIM CONFERÊNCIA FINANCEIRA ────────────────────────────────────────────
 
 </script>
-  <script src="claude-chat.js"></script>
+  <script src="claude-chat.js">
+// ── Gerador de PDF para NFS-e capturada pelo SEFAZ ───────────────────────
+async function gerarPdfNfse(c) {
+  try {
+    // Descomprimir XML (gzip base64)
+    const bin = atob(c.xmlBase64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+
+    let xml = "";
+    try {
+      const ds = new DecompressionStream("gzip");
+      const writer = ds.writable.getWriter();
+      const reader = ds.readable.getReader();
+      writer.write(bytes); writer.close();
+      const chunks = [];
+      let done = false;
+      while (!done) { const r = await reader.read(); if (r.done) { done = true; } else { chunks.push(r.value); } }
+      xml = new TextDecoder().decode(new Uint8Array(chunks.reduce((a,b) => [...a,...b], [])));
+    } catch {
+      xml = new TextDecoder().decode(bytes);
+    }
+
+    // Extrair campos do XML
+    const get = (tag) => {
+      const patterns = [
+        new RegExp("<" + tag + ">([\s\S]*?)<\/" + tag + ">", "i"),
+        new RegExp("<[^:>]+:" + tag + ">([\s\S]*?)<\/[^:>]+:" + tag + ">", "i"),
+      ];
+      for (const re of patterns) { const m = xml.match(re); if (m) return m[1].trim(); }
+      return "";
+    };
+
+    const emitXml  = (xml.match(/<emit[^>]*>([\s\S]*?)<\/emit>/i) || xml.match(/<prest[^>]*>([\s\S]*?)<\/prest>/i) || ["",""])[1];
+    const destXml  = (xml.match(/<dest[^>]*>([\s\S]*?)<\/dest>/i)  || xml.match(/<toma[^>]*>([\s\S]*?)<\/toma>/i)  || ["",""])[1];
+    const servXml  = (xml.match(/<serv[^>]*>([\s\S]*?)<\/serv>/i)  || ["",""])[1];
+    const valXml   = (xml.match(/<valores[^>]*>([\s\S]*?)<\/valores>/i) || ["",""])[1];
+
+    const getE = (tag) => { for (const x of [emitXml, xml]) { const v = (new RegExp("<"+tag+">([^<]*)<\/"+tag+">","i")).exec(x); if (v) return v[1].trim(); } return ""; };
+    const getD = (tag) => { for (const x of [destXml,  xml]) { const v = (new RegExp("<"+tag+">([^<]*)<\/"+tag+">","i")).exec(x); if (v) return v[1].trim(); } return ""; };
+    const getV = (tag) => { for (const x of [valXml,   xml]) { const v = (new RegExp("<"+tag+">([^<]*)<\/"+tag+">","i")).exec(x); if (v) return v[1].trim(); } return ""; };
+    const getS = (tag) => { for (const x of [servXml,  xml]) { const v = (new RegExp("<"+tag+">([^<]*)<\/"+tag+">","i")).exec(x); if (v) return v[1].trim(); } return ""; };
+
+    const prestNome  = getE("xNome") || c.fornecedor || "";
+    const prestCnpj  = getE("CNPJ")  || c.cnpj || "";
+    const prestEnder = [getE("xLgr"), getE("nro"), getE("xBairro"), getE("xMun"), getE("UF")].filter(Boolean).join(", ");
+    const tomaNome   = getD("xNome") || "";
+    const tomaCnpj   = getD("CNPJ")  || c.tomadorCnpj || "";
+    const numero     = get("nNFSe")  || get("nDFSe") || c.numeroDoc || "";
+    const dataEmi    = (get("dhEmi") || c.vencimento || "").slice(0,10).split("-").reverse().join("/");
+    const competencia = (c.competencia || "").slice(0,7).split("-").join("/");
+    const discriminacao = getS("xDescServ") || get("Discriminacao") || c.historico || "";
+    const vlLiq      = getV("vLiq") || getV("vBC") || String(c.valor || 0);
+    const vlServicos = getV("vServ") || vlLiq;
+    const vlIss      = getV("vISSQN") || getV("vISS") || "0";
+    const aliqIss    = getV("pISSQN") || "";
+    const chave      = c.chaveAcesso || "";
+
+    const fmt = (v) => "R$ " + parseFloat(v||0).toLocaleString("pt-BR", {minimumFractionDigits:2});
+
+    // Gerar PDF
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit:"mm", format:"a4" });
+    const W = 210, M = 14;
+    let y = 14;
+
+    const linha = (h=0.3) => { doc.setDrawColor(200); doc.setLineWidth(h); doc.line(M, y, W-M, y); y += 3; };
+    const titulo = (txt, sz=9) => { doc.setFontSize(sz); doc.setFont("helvetica","bold"); doc.setTextColor(60,60,60); doc.text(txt, M, y); y += 5; };
+    const campo = (label, valor, x=M, largura=W-M*2) => {
+      doc.setFontSize(7); doc.setFont("helvetica","bold"); doc.setTextColor(120,120,120);
+      doc.text(label, x, y);
+      doc.setFont("helvetica","normal"); doc.setTextColor(30,30,30);
+      const linhas = doc.splitTextToSize(valor || "—", largura);
+      doc.text(linhas, x, y+3.5);
+      return linhas.length * 4;
+    };
+    const campoLinha = (pares) => {
+      const w = (W - M*2) / pares.length;
+      let maxH = 6;
+      pares.forEach(([label, valor], i) => { const h = campo(label, valor, M + i*w, w-2); if (h > maxH) maxH = h; });
+      y += maxH + 2;
+    };
+
+    // Cabeçalho
+    doc.setFillColor(20, 20, 20);
+    doc.rect(M, y, W-M*2, 12, "F");
+    doc.setFontSize(13); doc.setFont("helvetica","bold"); doc.setTextColor(255,255,255);
+    doc.text("NOTA FISCAL DE SERVIÇOS ELETRÔNICA", W/2, y+7.5, {align:"center"});
+    doc.setFontSize(8); doc.setTextColor(180,180,180);
+    doc.text("NFS-e  •  PNFS-e Nacional", W/2, y+11, {align:"center"});
+    y += 18;
+
+    // Número e data
+    doc.setFillColor(245,245,245);
+    doc.rect(M, y, W-M*2, 10, "F");
+    doc.setFontSize(10); doc.setFont("helvetica","bold"); doc.setTextColor(30,30,30);
+    doc.text("Nº " + numero, M+4, y+6.5);
+    doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(80,80,80);
+    doc.text("Emissão: " + dataEmi + "   Competência: " + competencia, W-M-4, y+6.5, {align:"right"});
+    y += 14;
+
+    // Prestador
+    titulo("PRESTADOR DE SERVIÇOS");
+    linha();
+    campoLinha([["Razão Social", prestNome], ["CNPJ", prestCnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,"$1.$2.$3/$4-$5")]]);
+    if (prestEnder) { campoLinha([["Endereço", prestEnder]]); }
+
+    // Tomador
+    titulo("TOMADOR DE SERVIÇOS");
+    linha();
+    campoLinha([["Razão Social", tomaNome || "DIGOO BRASIL IMPORTAÇÃO E DISTRIBUIÇÃO LTDA"], ["CNPJ", tomaCnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,"$1.$2.$3/$4-$5")]]);
+
+    // Serviço
+    titulo("DESCRIÇÃO DO SERVIÇO");
+    linha();
+    doc.setFontSize(7); doc.setFont("helvetica","normal"); doc.setTextColor(30,30,30);
+    const linhasDesc = doc.splitTextToSize(discriminacao || c.historico || "—", W-M*2);
+    doc.text(linhasDesc, M, y);
+    y += linhasDesc.length * 4 + 4;
+
+    // Valores
+    titulo("VALORES");
+    linha();
+    campoLinha([
+      ["Valor dos Serviços", fmt(vlServicos)],
+      ["Alíquota ISS", aliqIss ? aliqIss + "%" : "—"],
+      ["Valor ISS", fmt(vlIss)],
+      ["Valor Líquido", fmt(vlLiq)],
+    ]);
+
+    // Total destaque
+    y += 2;
+    doc.setFillColor(20,20,20);
+    doc.rect(M, y, W-M*2, 10, "F");
+    doc.setFontSize(11); doc.setFont("helvetica","bold"); doc.setTextColor(255,255,255);
+    doc.text("VALOR TOTAL LÍQUIDO: " + fmt(vlLiq), W/2, y+6.5, {align:"center"});
+    y += 14;
+
+    // Chave de acesso
+    if (chave) {
+      titulo("CHAVE DE ACESSO");
+      linha();
+      doc.setFontSize(7); doc.setFont("courier","normal"); doc.setTextColor(60,60,60);
+      doc.text(chave, M, y); y += 6;
+    }
+
+    // Rodapé
+    doc.setFontSize(6); doc.setFont("helvetica","italic"); doc.setTextColor(150,150,150);
+    doc.text("Documento gerado pelo Digoo OPS a partir do XML capturado via PNFS-e • " + new Date().toLocaleString("pt-BR"), W/2, 290, {align:"center"});
+
+    doc.save("NFS-e_" + numero + "_" + (c.fornecedor||"").slice(0,20).replace(/\s+/g,"_") + ".pdf");
+  } catch(e) {
+    alert("Erro ao gerar PDF: " + e.message);
+    console.error(e);
+  }
+}
+</script>
 </body>
 </html>
 
