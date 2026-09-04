@@ -374,21 +374,7 @@ function setupIdentityScreen() {
         const t = document.getElementById("equipe-titulo");
         if(t) t.style.display = "none";
         document.querySelectorAll(".ov-footer, [id^=ov-]").forEach(el => el.style.display = "none");
-        // Botão Sair — criado uma vez no body, persiste entre renders
-        if (!document.getElementById("resicon-sair-btn")) {
-          const sairBtn = document.createElement("button");
-          sairBtn.id = "resicon-sair-btn";
-          sairBtn.textContent = "Sair";
-          sairBtn.style.cssText = "position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:none;border:0.5px solid #444;border-radius:8px;padding:8px 32px;color:#666;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;z-index:9999;letter-spacing:1px;transition:color .15s,border-color .15s;";
-          sairBtn.addEventListener("mouseenter", () => { sairBtn.style.color="#fff"; sairBtn.style.borderColor="#888"; });
-          sairBtn.addEventListener("mouseleave", () => { sairBtn.style.color="#666"; sairBtn.style.borderColor="#444"; });
-          sairBtn.addEventListener("click", () => {
-            localStorage.removeItem("digoo_device_v1");
-            localStorage.removeItem("digoo_pin_v1_Resicon");
-            location.reload();
-          });
-          document.body.appendChild(sairBtn);
-        }
+
       }, 200);
     }
     requestNotif();
@@ -9638,8 +9624,13 @@ async function renderCpLista(panel) {
 
   // Botões de ação para Resicon
   if (currentUser === "Resicon") {
+    // Container geral
     const btnsWrap = document.createElement("div");
-    btnsWrap.style.cssText = "display:flex;gap:12px;justify-content:center;margin-top:20px;padding:0 60px;";
+    btnsWrap.style.cssText = "display:flex;flex-direction:column;align-items:center;gap:14px;margin-top:24px;margin-bottom:40px;";
+
+    // Linha de botões principais
+    const btnRow = document.createElement("div");
+    btnRow.style.cssText = "display:flex;gap:12px;justify-content:center;flex-wrap:wrap;";
 
     const btnBaixarTodas = document.createElement("button");
     btnBaixarTodas.textContent = "Baixar todas as NFS-e";
@@ -9663,8 +9654,23 @@ async function renderCpLista(panel) {
     btnExportar.addEventListener("mouseleave", () => { btnExportar.style.borderColor=T.border; btnExportar.style.color=T.text2; });
     btnExportar.addEventListener("click", () => window._exportarExcelResicon(cpState.contas, cpState.mes));
 
-    btnsWrap.appendChild(btnBaixarTodas);
-    btnsWrap.appendChild(btnExportar);
+    btnRow.appendChild(btnBaixarTodas);
+    btnRow.appendChild(btnExportar);
+
+    // Botão Sair discreto abaixo
+    const sairBtn = document.createElement("button");
+    sairBtn.textContent = "Sair";
+    sairBtn.style.cssText = "background:none;border:none;color:#444;font-size:11px;cursor:pointer;font-family:'Inter',sans-serif;letter-spacing:1px;padding:4px 12px;transition:color .15s;";
+    sairBtn.addEventListener("mouseenter", () => sairBtn.style.color="#888");
+    sairBtn.addEventListener("mouseleave", () => sairBtn.style.color="#444");
+    sairBtn.addEventListener("click", () => {
+      localStorage.removeItem("digoo_device_v1");
+      localStorage.removeItem("digoo_pin_v1_Resicon");
+      location.reload();
+    });
+
+    btnsWrap.appendChild(btnRow);
+    btnsWrap.appendChild(sairBtn);
     panel.appendChild(btnsWrap);
   }
 
