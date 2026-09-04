@@ -9361,12 +9361,12 @@ async function renderCpLista(panel) {
 
       const opcoes = [];
       if (c.xmlBase64 || c.nfBase64) {
-        opcoes.push({ label: "Baixar NFS-e", icon: "↓", fn: () => {
+        opcoes.push({ label: "Baixar NFS-e", icon: "", fn: () => {
           if (c.xmlBase64) window._gerarPdfById(c.id);
           else if (c.nfBase64) { const b=atob(c.nfBase64);const bytes=new Uint8Array(b.length);for(let i=0;i<b.length;i++)bytes[i]=b.charCodeAt(i);const blob=new Blob([bytes],{type:"application/pdf"});window.open(URL.createObjectURL(blob),"_blank"); }
         }});
       }
-      opcoes.push({ label: "Data de vencimento", icon: "📅", fn: async () => {
+      opcoes.push({ label: "Data de vencimento", icon: "", fn: async () => {
         const atual = c.vencimento ? c.vencimento.slice(0,10) : "";
         const nova = prompt("Data de vencimento (AAAA-MM-DD):", atual);
         if (nova === null) return;
@@ -9374,13 +9374,13 @@ async function renderCpLista(panel) {
         await carregarContasFirebase();
         renderContasPagar(panel.closest(".cp-container")||panel.parentElement);
       }});
-      opcoes.push({ label: sit==="pago" ? "Reabrir" : "Marcar como pago", icon: sit==="pago"?"↩":"✓", fn: async () => {
+      opcoes.push({ label: sit==="pago" ? "Reabrir" : "Marcar como pago", icon: "", fn: async () => {
         const novaSit = sit==="pago"?"aberto":"pago";
         await set(ref(db, `/contas_pagar/${cpState.mes.replace("-","/")}/${c.id}/situacao`), novaSit);
         await carregarContasFirebase();
         renderContasPagar(panel.closest(".cp-container")||panel.parentElement);
       }});
-      opcoes.push({ label: "Excluir", icon: "✕", cor: "#e74c3c", fn: async () => {
+      opcoes.push({ label: "Excluir", icon: "", cor: "#e74c3c", fn: async () => {
         if (!confirm(`Excluir "${c.fornecedor||c.id}"?`)) return;
         await set(ref(db, `/contas_pagar/${cpState.mes.replace("-","/")}/${c.id}`), null);
         await carregarContasFirebase();
@@ -9389,8 +9389,8 @@ async function renderCpLista(panel) {
 
       opcoes.forEach(op => {
         const item = document.createElement("div");
-        item.style.cssText = `display:flex;align-items:center;gap:10px;padding:9px 14px;font-size:12px;cursor:pointer;color:${op.cor||T.text};font-family:'Inter',sans-serif;transition:background .1s;`;
-        item.innerHTML = `<span style="font-size:13px;width:16px;text-align:center;">${op.icon}</span><span>${op.label}</span>`;
+        item.style.cssText = `display:flex;align-items:center;padding:9px 14px;font-size:12px;cursor:pointer;color:${op.cor||T.text};font-family:'Inter',sans-serif;transition:background .1s;`;
+        item.innerHTML = `<span>${op.label}</span>`;
         item.addEventListener("mouseenter", () => item.style.background=T.bg3);
         item.addEventListener("mouseleave", () => item.style.background="transparent");
         item.addEventListener("click", (e) => { e.stopPropagation(); menu.remove(); op.fn(); });
