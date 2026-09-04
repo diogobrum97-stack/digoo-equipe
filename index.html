@@ -14,6 +14,7 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=Bebas+Neue&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body>
   <script>
@@ -9635,6 +9636,30 @@ async function renderCpLista(panel) {
   tabWrap.appendChild(tfoot);
   panel.appendChild(tabWrap);
 
+  // Botões de ação para Resicon
+  if (currentUser === "Resicon") {
+    const btnsWrap = document.createElement("div");
+    btnsWrap.style.cssText = "display:flex;gap:12px;justify-content:center;margin-top:20px;padding:0 60px;";
+
+    const btnBaixarTodas = document.createElement("button");
+    btnBaixarTodas.textContent = "Baixar todas as NFS-e";
+    btnBaixarTodas.style.cssText = `background:none;border:0.5px solid ${T.border};border-radius:8px;padding:10px 28px;color:${T.text2};font-size:12px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;transition:all .15s;`;
+    btnBaixarTodas.addEventListener("mouseenter", () => { btnBaixarTodas.style.borderColor="#fff"; btnBaixarTodas.style.color="#fff"; });
+    btnBaixarTodas.addEventListener("mouseleave", () => { btnBaixarTodas.style.borderColor=T.border; btnBaixarTodas.style.color=T.text2; });
+    btnBaixarTodas.addEventListener("click", () => window._baixarTodasNfse(cpState.contas, cpState.mes));
+
+    const btnExportar = document.createElement("button");
+    btnExportar.textContent = "Exportar relatório Excel";
+    btnExportar.style.cssText = `background:none;border:0.5px solid ${T.border};border-radius:8px;padding:10px 28px;color:${T.text2};font-size:12px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;transition:all .15s;`;
+    btnExportar.addEventListener("mouseenter", () => { btnExportar.style.borderColor="#2dce89"; btnExportar.style.color="#2dce89"; });
+    btnExportar.addEventListener("mouseleave", () => { btnExportar.style.borderColor=T.border; btnExportar.style.color=T.text2; });
+    btnExportar.addEventListener("click", () => window._exportarExcelResicon(cpState.contas, cpState.mes));
+
+    btnsWrap.appendChild(btnBaixarTodas);
+    btnsWrap.appendChild(btnExportar);
+    panel.appendChild(btnsWrap);
+  }
+
 
 }
 
@@ -10870,6 +10895,123 @@ window.gerarPdfNfse = async function gerarPdfNfse(c) {
   }
 }
 
+
+
+// ── Download em lote — ZIP com todos os DANFSe do mês ────────────────────────
+window._baixarTodasNfse = async function(contas, mes) {
+  const comXml = contas.filter(c => c.xmlBase64 || c.nfBase64);
+  if (!comXml.length) { alert("Nenhuma nota disponível para download neste mês."); return; }
+
+  const btn = document.querySelector("[data-acao='baixar-todas']") || null;
+  const setStatus = (txt) => { if(btn) btn.textContent = txt; };
+
+  try {
+    const zip = new JSZip();
+    let ok = 0, erro = 0;
+
+    for (const c of comXml) {
+      setStatus ? setStatus(`Gerando ${ok+1}/${comXml.length}...`) : null;
+
+      try {
+        if (c.xmlBase64) {
+          // Descomprime XML e envia para api.digoo.com.br
+          const bin = atob(c.xmlBase64);
+          const bytes = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+          let xml = "";
+          try {
+            const ds = new DecompressionStream("gzip");
+            const writer = ds.writable.getWriter();
+            const reader = ds.readable.getReader();
+            writer.write(bytes); writer.close();
+            const chunks = [];
+            let done = false;
+            while (!done) { const r = await reader.read(); if (r.done) done = true; else chunks.push(r.value); }
+            xml = new TextDecoder().decode(new Uint8Array(chunks.reduce((a,b)=>[...a,...b],[])));
+          } catch { xml = new TextDecoder().decode(bytes); }
+
+          const resp = await fetch("https://api.digoo.com.br", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ xml })
+          });
+          if (resp.ok) {
+            const pdf = await resp.arrayBuffer();
+            const nome = `DANFSe_${c.numeroDoc||c.id}_${(c.fornecedor||"").slice(0,25).replace(/[^a-zA-Z0-9]/g,"_")}.pdf`;
+            zip.file(nome, pdf);
+            ok++;
+          } else { erro++; }
+        } else if (c.nfBase64) {
+          const b = atob(c.nfBase64);
+          const bytes = new Uint8Array(b.length);
+          for (let i = 0; i < b.length; i++) bytes[i] = b.charCodeAt(i);
+          const nome = `NF_${c.numeroDoc||c.id}_${(c.fornecedor||"").slice(0,25).replace(/[^a-zA-Z0-9]/g,"_")}.pdf`;
+          zip.file(nome, bytes);
+          ok++;
+        }
+      } catch(e) { erro++; }
+    }
+
+    if (!ok) { alert("Nenhum PDF foi gerado. Tente novamente."); return; }
+
+    const mesLabel = mes ? mes.replace("-","-") : "mes";
+    const blob = await zip.generateAsync({ type: "blob" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `NFS-e_${mesLabel}.zip`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    if (erro) alert(`${ok} PDF(s) baixados com sucesso. ${erro} nota(s) não puderam ser geradas.`);
+  } catch(e) {
+    alert("Erro ao gerar ZIP: " + e.message);
+  }
+};
+
+// ── Exportar relatório Excel no formato da Resicon ───────────────────────────
+window._exportarExcelResicon = function(contas, mes) {
+  if (!contas.length) { alert("Nenhuma nota para exportar."); return; }
+
+  // Montar CSV no formato da planilha da Resicon
+  const mesLabel = mes ? mes.slice(5,7) + "-" + mes.slice(0,4) : "";
+  const empresa = contas[0]?.empresa || "Filial";
+
+  const linhas = [
+    [`SERVIÇOS TOMADOS - ${empresa.toUpperCase()} ${mesLabel}`, "", "", "", "", ""],
+    ["Dt Inicial", "Lanç Cont. Valor Documento", "Número", "Nome Fornecedor", "Discriminação do Serviço", "Valor do Documento"],
+  ];
+
+  let total = 0;
+  contas.forEach(c => {
+    const valor = Number(c.valor || 0);
+    if (c.situacao !== "cancelado") total += valor;
+    linhas.push([
+      c.vencimento ? c.vencimento.slice(0,10) : (mes ? mes + "-01" : ""),
+      "201",
+      c.numeroDoc || c.id || "",
+      c.fornecedor || "",
+      c.historico || "",
+      valor.toFixed(2).replace(".", ",")
+    ]);
+  });
+
+  linhas.push(["", "", "", "", "", total.toFixed(2).replace(".", ",")]);
+
+  // Gerar CSV (Excel abre nativamente)
+  const bom = "\uFEFF";
+  const csv = bom + linhas.map(row =>
+    row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(";")
+  ).join("\r\n");
+
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `Serviços_tomados_${mesLabel}_${empresa}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
 
 </script>
 </body>
