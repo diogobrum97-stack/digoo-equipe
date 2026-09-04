@@ -120,6 +120,7 @@ const MEMBERS = [
   { name:"Diogo",   initials:"DG", locked:true,  phone:null },
   { name:"Bruno",   initials:"BR", locked:false, phone:null },
   { name:"Larissa", initials:"LA", locked:false, phone:"55991774483" },
+  { name:"Resicon", initials:"RS", locked:true,  phone:null },
 ];
 const PRIO = { superurgente:{label:"Super Urgente"}, urgente:{label:"Urgente"}, importante:{label:"Importante"}, normal:{label:"Normal"} };
 function normSku(s){ return String(s||"").trim().toUpperCase(); }
@@ -229,6 +230,7 @@ function overdueBadgeHtml(task){
 }
 
 function themeColor(name) {
+  if(name==="Resicon") return "#00606c";
   const light = document.body.classList.contains("light");
   return ({Diogo:light?"#555555":"#cccccc",Bruno:light?"#6d28d9":"#9d7fff",Larissa:light?"#be185d":"#ff1f7a"})[name]||"#fff";
 }
@@ -413,11 +415,23 @@ function setupIdentityScreen() {
         +'<div><div style="font-size:12px;font-weight:600;color:#777;font-family:Inter,sans-serif;">Larissa</div>'
         +'<div style="font-size:11px;color:#333;margin-top:2px;font-family:Inter,sans-serif;">Atendimento</div></div>'
         +'<span style="font-size:9px;padding:2px 7px;border-radius:3px;font-weight:600;background:rgba(233,30,140,.08);color:#e91e8c;border:1px solid #e91e8c22;font-family:Inter,sans-serif;">EQUIPE</span>'
+      +'</div>'
+      +'<div style="display:flex;align-items:center;gap:8px;margin:4px 0;">'
+        +'<div style="flex:1;height:1px;background:#1a1a1a;"></div>'
+        +'<div style="font-size:10px;color:#1e1e1e;font-family:Inter,sans-serif;">contabilidade</div>'
+        +'<div style="flex:1;height:1px;background:#1a1a1a;"></div>'
+      +'</div>'
+      +'<div id="ov-resicon" style="border-left:2px solid #00606c;padding:12px 16px;background:#080808;border-radius:0 9px 9px 0;display:flex;align-items:center;justify-content:space-between;cursor:pointer;">'
+        +'<div><div style="font-size:12px;font-weight:600;color:#777;font-family:Inter,sans-serif;">Resicon</div>'
+        +'<div style="font-size:11px;color:#333;margin-top:2px;font-family:Inter,sans-serif;">Contabilidade</div></div>'
+        +'<span style="font-size:9px;padding:2px 7px;border-radius:3px;font-weight:600;background:rgba(0,96,108,.08);color:#00606c;border:1px solid #00606c22;font-family:Inter,sans-serif;">CONTAB</span>'
       +'</div>';
     screen.appendChild(r);
     document.getElementById("ov-admin").onclick = showPin;
     document.getElementById("ov-bruno").onclick = () => { localStorage.setItem(DEVICE_KEY,"Bruno"); localStorage.setItem("digoo_pin_v1_Bruno","1"); loginAs("Bruno"); };
     document.getElementById("ov-larissa").onclick = () => { localStorage.setItem(DEVICE_KEY,"Larissa"); localStorage.setItem("digoo_pin_v1_Larissa","1"); loginAs("Larissa"); };
+    document.getElementById("ov-resicon").onclick = () => showPinFor("Resicon", "#00606c");
+    document.getElementById("ov-resicon").onclick = () => showPinFor("Resicon", "#00606c");
   }
 
   function showPin() {
@@ -485,6 +499,76 @@ function setupIdentityScreen() {
       if(!document.getElementById("pk-dots")) { document.removeEventListener("keydown",_kbd); return; }
       const err = document.getElementById("pk-err"); if(err) err.textContent = "";
       if(e.key>="0"&&e.key<="9"&&entered.length<6) { entered+=e.key; updateDots(); if(entered.length===6) checkPin(); }
+      else if(e.key==="Backspace") { entered=entered.slice(0,-1); updateDots(); }
+      else if(e.key==="Enter") checkPin();
+    }
+    document.addEventListener("keydown",_kbd);
+  }
+
+  // PIN genérico para qualquer perfil
+  function showPinFor(userName, color) {
+    screen.innerHTML = "";
+    screen.appendChild(buildLeft());
+    const r = document.createElement("div");
+    r.style.cssText = _isMobile
+      ? "flex:1;width:100%;display:flex;flex-direction:column;justify-content:center;overflow-y:auto;box-sizing:border-box;"
+      : "flex:0 0 30%;display:flex;flex-direction:column;justify-content:center;height:100vh;overflow-y:auto;";
+    const W = _isMobile ? "min(260px,80vw)" : "220px";
+    const initials = MEMBERS.find(m=>m.name===userName)?.initials || userName[0];
+    const keys = [1,2,3,4,5,6,7,8,9,"\u232b",0,"\u2192"].map(k=>
+      '<div class="pk" data-k="'+k+'" style="background:#0f0f0f;border:1px solid #1a1a1a;border-radius:7px;height:44px;display:flex;align-items:center;justify-content:center;font-size:'+(k==="⌫"||k==="→"?"12":"15")+'px;color:'+(k==="→"?color:k==="⌫"?"#555":"#888")+';cursor:pointer;font-weight:500;font-family:Inter,sans-serif;">'+k+'</div>'
+    ).join("");
+    const inner = document.createElement("div");
+    inner.style.cssText = "display:flex;flex-direction:column;width:"+W+";margin:0 auto;padding:32px 20px;box-sizing:border-box;";
+    inner.innerHTML =
+      '<div id="pk-back" style="font-size:11px;color:#333;cursor:pointer;margin-bottom:20px;font-family:Inter,sans-serif;text-align:left;width:100%;">← voltar</div>'
+      +'<div style="display:flex;flex-direction:column;align-items:center;width:100%;margin-bottom:16px;gap:6px;">'
+        +'<div style="width:40px;height:40px;border-radius:50%;background:'+color+'22;border:1px solid '+color+'44;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:'+color+';">'+initials+'</div>'
+        +'<div style="font-size:14px;font-weight:700;color:#fff;font-family:Inter,sans-serif;">'+userName+'</div>'
+        +'<div style="font-size:11px;color:#444;font-family:Inter,sans-serif;">Digite o PIN</div>'
+      +'</div>'
+      +'<div id="pk-dots" style="display:flex;gap:10px;margin-bottom:16px;justify-content:center;width:100%;">'
+        +[0,1,2,3,4,5].map(()=>'<div class="pkd" style="width:10px;height:10px;border-radius:50%;background:#1e1e1e;border:1px solid #333;transition:all .1s;"></div>').join("")
+      +'</div>'
+      +'<div id="pk-err" style="font-size:11px;color:#e91e8c;min-height:16px;margin-bottom:10px;font-family:Inter,sans-serif;text-align:center;width:100%;"></div>'
+      +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;width:100%;">'+keys+'</div>';
+    r.appendChild(inner);
+    screen.appendChild(r);
+    document.getElementById("pk-back").onclick = showSelecao;
+    let entered = "";
+    // PINs por perfil — armazenados aqui para facilidade
+    const PINS = { "Resicon": "1234" };
+    const CORRECT = PINS[userName] || "000000";
+    function updateDots() {
+      document.querySelectorAll(".pkd").forEach((dot,i) => {
+        dot.style.background = i < entered.length ? color : "#1e1e1e";
+        dot.style.borderColor = i < entered.length ? color : "#333";
+      });
+    }
+    function checkPin() {
+      if(entered === CORRECT) {
+        localStorage.setItem(DEVICE_KEY, userName);
+        localStorage.setItem("digoo_pin_v1_"+userName, "1");
+        loginAs(userName);
+      } else {
+        const err = document.getElementById("pk-err"); if(err) err.textContent = "PIN incorreto.";
+        entered = ""; updateDots();
+      }
+    }
+    document.querySelectorAll(".pk").forEach(el => {
+      el.onclick = () => {
+        const k = el.dataset.k;
+        const err = document.getElementById("pk-err"); if(err) err.textContent = "";
+        if(k === "⌫") { entered = entered.slice(0,-1); }
+        else if(k === "→") { checkPin(); return; }
+        else if(entered.length < 6) { entered += k; if(entered.length === CORRECT.length) { checkPin(); return; } }
+        updateDots();
+      };
+    });
+    function _kbd(e) {
+      if(!document.getElementById("pk-dots")) { document.removeEventListener("keydown",_kbd); return; }
+      const err = document.getElementById("pk-err"); if(err) err.textContent = "";
+      if(e.key>="0"&&e.key<="9"&&entered.length<6) { entered+=e.key; updateDots(); if(entered.length===CORRECT.length) checkPin(); }
       else if(e.key==="Backspace") { entered=entered.slice(0,-1); updateDots(); }
       else if(e.key==="Enter") checkPin();
     }
@@ -5186,7 +5270,18 @@ function render(){
             { label: "Equipe", tab: null, subs: [{label:"Concluídas",tab:"concluidas"},{label:"Conversas",tab:"conversas"}] },
             { label: "Mercado Livre", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência de Compra",tab:"experiencia"},{label:"Clonar Anúncio",tab:"clonar"},{label:"Perguntas",tab:"perguntas"},{label:"Picking & Packing",tab:"picking"}] },
             { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"},{label:"NF Transferência Full",tab:"nf-full"},{label:"Contas a Pagar",tab:"contas-pagar"},{label:"NFs Emitidas",tab:"nfs-emitidas"},{label:"Painel Fiscal",tab:"painel-fiscal"}] },
-          ];
+          ].filter(g => {
+            // Resicon só vê Gestão → Contas a Pagar
+            if(currentUser === "Resicon") {
+              if(g.label === "Gestão") g.subs = g.subs.filter(s => s.tab === "contas-pagar");
+              return g.label === "Gestão";
+            }
+            return true;
+          });
+          // Redirecionar Resicon para Contas a Pagar na entrada
+          if(currentUser === "Resicon" && !["contas-pagar"].includes(window._diogotab)) {
+            window._diogotab = "contas-pagar";
+          }
 
           const currentTab = window._diogotab;
 
