@@ -10280,10 +10280,55 @@ function _indexarContas(contas) {
   if (!contas) return;
   contas.forEach(c => { if (c.id) window._cpContasMap[c.id] = c; });
 }
-window._gerarPdfById = function(id) {
+window._gerarPdfById = async function(id) {
   const c = window._cpContasMap[id];
   if (!c) { alert("Conta não encontrada. Recarregue a página."); return; }
-  window.gerarPdfNfse(c);
+  if (!c.xmlBase64) { alert("XML não disponível para esta nota."); return; }
+
+  const btn = document.querySelector(`[data-cp-id="${id}"]`);
+  if (btn) { btn.textContent = "⏳ Gerando..."; btn.disabled = true; }
+
+  try {
+    // Descomprime o XML
+    const bin = atob(c.xmlBase64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    let xml = "";
+    try {
+      const ds = new DecompressionStream("gzip");
+      const writer = ds.writable.getWriter();
+      const reader = ds.readable.getReader();
+      writer.write(bytes); writer.close();
+      const chunks = [];
+      let done = false;
+      while (!done) { const r = await reader.read(); if (r.done) done = true; else chunks.push(r.value); }
+      xml = new TextDecoder().decode(new Uint8Array(chunks.reduce((a,b)=>[...a,...b],[])));
+    } catch { xml = new TextDecoder().decode(bytes); }
+
+    // Chama o servidor PHP na VPS
+    const resp = await fetch("http://179.199.140.133:3457", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ xml })
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.erro || "Erro " + resp.status);
+    }
+
+    const pdf = await resp.blob();
+    const url = URL.createObjectURL(pdf);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "DANFSe_" + (c.numeroDoc || c.id) + "_" + (c.fornecedor||"").slice(0,20).replace(/\s+/g,"_") + ".pdf";
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch(e) {
+    alert("Erro ao gerar PDF: " + e.message);
+  } finally {
+    if (btn) { btn.textContent = "📄 Baixar NFS-e"; btn.disabled = false; }
+  }
 };
 
 </script>
