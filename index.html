@@ -10969,46 +10969,116 @@ window._baixarTodasNfse = async function(contas, mes) {
   }
 };
 
-// ── Exportar relatório Excel no formato da Resicon ───────────────────────────
-window._exportarExcelResicon = function(contas, mes) {
+// ── Exportar relatório Excel no formato da Resicon — duas abas ──────────────
+window._exportarExcelResicon = async function(contas, mes) {
   if (!contas.length) { alert("Nenhuma nota para exportar."); return; }
 
-  // Montar CSV no formato da planilha da Resicon
   const mesLabel = mes ? mes.slice(5,7) + "-" + mes.slice(0,4) : "";
-  const empresa = contas[0]?.empresa || "Filial";
+  const dataCompet = mes ? "01/" + mes.slice(5,7) + "/" + mes.slice(0,4) : "";
 
-  const linhas = [
-    [`SERVIÇOS TOMADOS - ${empresa.toUpperCase()} ${mesLabel}`, "", "", "", "", ""],
-    ["Dt Inicial", "Lanç Cont. Valor Documento", "Número", "Nome Fornecedor", "Discriminação do Serviço", "Valor do Documento"],
-  ];
+  // Separar por empresa
+  const matriz = contas.filter(c => c.empresa === "Matriz" || (c.tomadorCnpj||"").replace(/\D/g,"") === "40981026000182");
+  const filial = contas.filter(c => c.empresa === "Filial" || (c.tomadorCnpj||"").replace(/\D/g,"") === "40981026000344");
 
-  let total = 0;
-  contas.forEach(c => {
-    const valor = Number(c.valor || 0);
-    if (c.situacao !== "cancelado") total += valor;
-    linhas.push([
-      c.vencimento ? c.vencimento.slice(0,10) : (mes ? mes + "-01" : ""),
-      "201",
-      c.numeroDoc || c.id || "",
-      c.fornecedor || "",
-      c.historico || "",
-      valor.toFixed(2).replace(".", ",")
-    ]);
-  });
+  // SheetJS via CDN se não carregado
+  if (!window.XLSX) {
+    await new Promise((res, rej) => {
+      const s = document.createElement("script");
+      s.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+      s.onload = res; s.onerror = rej;
+      document.head.appendChild(s);
+    });
+  }
 
-  linhas.push(["", "", "", "", "", total.toFixed(2).replace(".", ",")]);
+  const { utils, write } = window.XLSX;
 
-  // Gerar CSV (Excel abre nativamente)
-  const bom = "\uFEFF";
-  const csv = bom + linhas.map(row =>
-    row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(";")
-  ).join("\r\n");
+  function montarAba(lista, empresa) {
+    if (!lista.length) return null;
 
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const titulo = `SERVIÇOS TOMADOS - ${empresa.toUpperCase()} ${mesLabel}`;
+    const cabecalho = ["Dt Inicial", "Lanç. Cont.", "Número", "Nome Fornecedor", "Discriminação do Serviço", "Valor do Documento"];
+
+    let total = 0;
+    const rows = lista.map(c => {
+      const valor = Number(c.valor || 0);
+      if (c.situacao !== "cancelado") total += valor;
+      return [
+        dataCompet,
+        201,
+        c.numeroDoc || "",
+        c.fornecedor || "",
+        c.historico || "",
+        valor
+      ];
+    });
+    rows.push(["", "", "", "", "TOTAL", total]);
+
+    // Montar worksheet
+    const wsData = [
+      [titulo, "", "", "", "", ""],
+      cabecalho,
+      ...rows
+    ];
+
+    const ws = utils.aoa_to_sheet(wsData);
+
+    // Larguras das colunas
+    ws["!cols"] = [
+      { wch: 14 }, // Data
+      { wch: 12 }, // Lanç
+      { wch: 14 }, // Número
+      { wch: 42 }, // Fornecedor
+      { wch: 55 }, // Discriminação
+      { wch: 20 }, // Valor
+    ];
+
+    // Mesclar título
+    ws["!merges"] = [{ s:{r:0,c:0}, e:{r:0,c:5} }];
+
+    // Estilo do título (negrito, fundo)
+    const tituloCell = ws["A1"];
+    if (tituloCell) {
+      tituloCell.s = {
+        font: { bold: true, sz: 12 },
+        fill: { fgColor: { rgb: "1A1A1A" } },
+        alignment: { horizontal: "center" }
+      };
+    }
+
+    // Estilo do cabeçalho
+    cabecalho.forEach((_, ci) => {
+      const addr = utils.encode_cell({ r:1, c:ci });
+      if (ws[addr]) ws[addr].s = { font: { bold: true }, fill: { fgColor: { rgb: "F0F0F0" } } };
+    });
+
+    // Formatar coluna valor como número BR
+    rows.forEach((_, ri) => {
+      const addr = utils.encode_cell({ r: ri+2, c: 5 });
+      if (ws[addr] && typeof ws[addr].v === "number") {
+        ws[addr].t = "n";
+        ws[addr].z = "#,##0.00";
+      }
+    });
+
+    return ws;
+  }
+
+  const wb = utils.book_new();
+
+  const wsMatriz = montarAba(matriz, "Matriz");
+  const wsFilial = montarAba(filial, "Filial");
+
+  if (wsMatriz) utils.book_append_sheet(wb, wsMatriz, "Matriz RS");
+  if (wsFilial) utils.book_append_sheet(wb, wsFilial, "Filial SP");
+
+  if (!wb.SheetNames.length) { alert("Nenhuma nota para exportar."); return; }
+
+  const buf = write(wb, { bookType: "xlsx", type: "array", cellStyles: true });
+  const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `Serviços_tomados_${mesLabel}_${empresa}.csv`;
+  a.download = `Serviços_tomados_${mesLabel}.xlsx`;
   a.click();
   URL.revokeObjectURL(url);
 };
