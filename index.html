@@ -9354,7 +9354,7 @@ async function renderCpLista(panel) {
       let nfBtn = "";
       if (c.nfBase64) nfBtn = `<button onclick="(()=>{const b=atob('${c.nfBase64}');const bytes=new Uint8Array(b.length);for(let i=0;i<b.length;i++)bytes[i]=b.charCodeAt(i);const blob=new Blob([bytes],{type:'application/pdf'});window.open(URL.createObjectURL(blob),'_blank');})()" style="background:${T.bg3};border:0.5px solid ${T.border};border-radius:6px;padding:6px 14px;font-size:11px;font-weight:500;color:${T.text};cursor:pointer;font-family:'Inter',sans-serif;">📄 Ver NF</button>`;
       // Botão NFS-e via XML do capturador SEFAZ — gera PDF formatado
-      if (c.xmlBase64 && !c.nfBase64) nfBtn = `<button onclick="gerarPdfNfse(${JSON.stringify(c).replace(/`/g,'\`')})" style="background:${T.bg3};border:0.5px solid ${T.border};border-radius:6px;padding:6px 14px;font-size:11px;font-weight:500;color:${T.text};cursor:pointer;font-family:'Inter',sans-serif;">📄 Baixar NFS-e</button>`;
+      if (c.xmlBase64 && !c.nfBase64) nfBtn = `<button data-cp-id="${c.id}" onclick="window._gerarPdfById(this.dataset.cpId)" style="background:${T.bg3};border:0.5px solid ${T.border};border-radius:6px;padding:6px 14px;font-size:11px;font-weight:500;color:${T.text};cursor:pointer;font-family:'Inter',sans-serif;">📄 Baixar NFS-e</button>`;
       detail.innerHTML = `
         <div style="flex:1;font-size:12px;color:${T.text2};line-height:1.8;">
           <div><b style="color:${T.text};font-weight:500;">CNPJ:</b> ${c.cnpj||"—"}</div>
@@ -9450,6 +9450,7 @@ async function carregarContasFirebase() {
   // Ordena por vencimento
   contas.sort((a,b) => (a.vencimento||"").localeCompare(b.vencimento||""));
   cpState.contas = contas;
+  _indexarContas(cpState.contas);
 }
 
 
@@ -10270,6 +10271,20 @@ Digoo Brasil`;
   if(panel._actBar) panel.appendChild(panel._actBar);
 }
 // ─── FIM CONFERÊNCIA FINANCEIRA ────────────────────────────────────────────
+
+// Mapa global de contas para acesso pelo gerador de PDF
+window._cpContasMap = window._cpContasMap || {};
+const _origCarregarContas = typeof carregarContasFirebase === 'function' ? carregarContasFirebase : null;
+// Indexa contas pelo id após carregamento
+function _indexarContas(contas) {
+  if (!contas) return;
+  contas.forEach(c => { if (c.id) window._cpContasMap[c.id] = c; });
+}
+window._gerarPdfById = function(id) {
+  const c = window._cpContasMap[id];
+  if (!c) { alert("Conta não encontrada. Recarregue a página."); return; }
+  window.gerarPdfNfse(c);
+};
 
 </script>
   <script src="claude-chat.js"></script>
