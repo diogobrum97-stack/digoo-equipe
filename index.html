@@ -9392,8 +9392,12 @@ async function renderCpLista(panel) {
 
   const btnMarcarTodos = document.createElement("button");
   const naoPageis = cpState.contas.filter(c => c.situacao !== "pago" && c.situacao !== "cancelado");
-  btnMarcarTodos.textContent = "✓ Marcar todos como pago";
-  btnMarcarTodos.style.cssText = `background:none;border:0.5px solid ${T.border};border-radius:8px;padding:5px 12px;color:${T.text2};font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap;justify-self:end;`;
+  btnMarcarTodos.innerHTML = `<svg viewBox="0 0 24 24" width="13" height="13" style="stroke:#2dce89;stroke-width:3;fill:none;"><polyline points="20 6 9 17 4 12"/></svg>`;
+  btnMarcarTodos.title = "Marcar todos como pago";
+  btnMarcarTodos.style.cssText = `width:28px;height:28px;border-radius:50%;background:transparent;border:2px solid #2dce89;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s,transform .15s;padding:0;`;
+  btnMarcarTodos.innerHTML = `<svg viewBox="0 0 24 24" width="13" height="13" style="stroke:#2dce89;stroke-width:3;fill:none;"><polyline points="20 6 9 17 4 12"/></svg>`;
+  btnMarcarTodos.addEventListener("mouseenter", () => { btnMarcarTodos.style.background="#2dce8918"; btnMarcarTodos.style.transform="scale(1.1)"; });
+  btnMarcarTodos.addEventListener("mouseleave", () => { btnMarcarTodos.style.background="transparent"; btnMarcarTodos.style.transform="scale(1)"; });
   if (!naoPageis.length) {
     btnMarcarTodos.disabled = true;
     btnMarcarTodos.style.opacity = "0.4";
@@ -9404,7 +9408,7 @@ async function renderCpLista(panel) {
     const confirma = confirm(`Marcar ${naoPageis.length} conta(s) como paga(s)?`);
     if (!confirma) return;
     btnMarcarTodos.disabled = true;
-    btnMarcarTodos.textContent = "↻ Salvando...";
+    btnMarcarTodos.style.opacity = "0.5";
     const mesPath = cpState.mes.replace("-","/");
     try {
       await Promise.all(naoPageis.map(c =>
@@ -9413,8 +9417,8 @@ async function renderCpLista(panel) {
       await carregarContasFirebase();
       renderContasPagar(panel.closest(".cp-container") || panel.parentElement);
     } catch(e) {
-      btnMarcarTodos.textContent = "Erro: "+e.message;
-      setTimeout(() => { btnMarcarTodos.disabled=false; btnMarcarTodos.textContent="✓ Marcar todos como pago"; }, 3000);
+      btnMarcarTodos.title = "Erro: "+e.message;
+      setTimeout(() => { btnMarcarTodos.disabled=false; btnMarcarTodos.style.opacity="1"; btnMarcarTodos.title="Marcar todos como pago"; }, 3000);
     }
   });
 
