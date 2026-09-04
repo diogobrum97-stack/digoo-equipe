@@ -360,6 +360,12 @@ function setupIdentityScreen() {
       diogoAutoFullscreen = true;
       diogoCardFullscreen = true;
       window._diogotab = "dashboard";
+    } else if(name === "Resicon") {
+      // Resicon vai direto para Contas a Pagar em tela cheia
+      openCard = "Resicon";
+      diogoAutoFullscreen = true;
+      diogoCardFullscreen = true;
+      window._diogotab = "contas-pagar";
     }
     requestNotif();
     render();
@@ -537,7 +543,7 @@ function setupIdentityScreen() {
     document.getElementById("pk-back").onclick = showSelecao;
     let entered = "";
     // PINs por perfil — armazenados aqui para facilidade
-    const PINS = { "Resicon": "030303" };
+    const PINS = { "Resicon": "1234" };
     const CORRECT = PINS[userName] || "000000";
     function updateDots() {
       document.querySelectorAll(".pkd").forEach((dot,i) => {
