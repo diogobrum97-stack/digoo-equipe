@@ -9476,8 +9476,10 @@ async function renderCpLista(panel) {
     const menuWrap = row.querySelector(".cp-menu-wrap");
     dotsBtn.addEventListener("click", (e) => {
       e.stopPropagation();
-      // Fechar outros menus abertos
+      // Toggle: se já está aberto, fecha
+      const jaAberto = menuWrap.querySelector(".cp-dropdown");
       document.querySelectorAll(".cp-dropdown").forEach(m => m.remove());
+      if (jaAberto) return;
 
       const menu = document.createElement("div");
       menu.className = "cp-dropdown";
