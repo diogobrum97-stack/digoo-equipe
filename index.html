@@ -8931,9 +8931,11 @@ async function renderContasPagar(panel) {
     return ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"][parseInt(m)-1]+" "+y;
   };
   const navMes = async (delta) => {
-    const d = new Date((cpState.mes||new Date().toISOString().slice(0,7))+"-01");
-    d.setMonth(d.getMonth()+delta);
-    cpState.mes = d.toISOString().slice(0,7);
+    const [ano, mes] = (cpState.mes||new Date().toISOString().slice(0,7)).split("-").map(Number);
+    const d = new Date(ano, mes - 1 + delta, 1);
+    const novoAno = d.getFullYear();
+    const novoMes = String(d.getMonth() + 1).padStart(2, "0");
+    cpState.mes = `${novoAno}-${novoMes}`;
     await carregarContasFirebase();
     renderContasPagar(panel);
   };
