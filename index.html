@@ -5244,6 +5244,7 @@ function render(){
     if(member.locked&&isOpen&&diogoPinOk){
       const minBtn=document.createElement("button");
       minBtn.style.cssText=`background:none;border:0.5px solid ${T.isLight?"rgba(0,0,0,0.2)":"rgba(255,255,255,0.25)"};border-radius:50%;width:22px;height:22px;color:${T.isLight?"#111":"rgba(255,255,255,0.4)"};font-size:12px;cursor:pointer;font-family:inherit;margin-right:6px;display:flex;align-items:center;justify-content:center;`;
+      if(currentUser === "Resicon") minBtn.style.display = "none";
       // 3 estados: 0=normal, 1=médio (grid full), 2=fullscreen real
       const _expandState = diogoCardFullscreen ? 2 : diogoAutoFullscreen ? 1 : 0;
       minBtn.textContent = ["⤢","⤡","✕"][_expandState];
@@ -9617,6 +9618,19 @@ async function renderCpLista(panel) {
   tfoot.appendChild(btnMarcarTodos);
   tabWrap.appendChild(tfoot);
   panel.appendChild(tabWrap);
+
+  // Botão Sair para Resicon
+  if (currentUser === "Resicon") {
+    const sairBtn = document.createElement("button");
+    sairBtn.textContent = "Sair";
+    sairBtn.style.cssText = `margin-top:20px;background:none;border:0.5px solid ${T.border};border-radius:8px;padding:8px 24px;color:${T.text2};font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;display:block;`;
+    sairBtn.addEventListener("click", () => {
+      localStorage.removeItem("digoo_device_v1");
+      localStorage.removeItem("digoo_pin_v1_Resicon");
+      location.reload();
+    });
+    panel.appendChild(sairBtn);
+  }
 }
 
 async function carregarContasFirebase() {
