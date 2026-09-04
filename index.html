@@ -9340,40 +9340,84 @@ async function renderCpLista(panel) {
       <div style="font-size:12px;color:${T.text2};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.historico||"—"}</div>
       <div style="font-size:13px;color:${T.text};font-family:'IBM Plex Mono',monospace;text-align:center;">R$ ${valor.toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
       <div style="font-size:12px;color:${T.text2};text-align:center;">${c.competencia ? c.competencia.slice(5,7)+"/"+c.competencia.slice(0,4) : "—"}</div>
-      <div style="text-align:center;"><span style="font-size:11px;font-weight:600;padding:3px 12px;border-radius:20px;background:${sitCor};color:${sit==="pago"?"#000":"#000"};letter-spacing:.2px;">${sit}</span></div>`;
+      <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
+        <span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;background:${sitCor};color:#000;letter-spacing:.2px;">${sit}</span>
+        <div class="cp-menu-wrap" style="position:relative;">
+          <button class="cp-dots" style="background:none;border:none;cursor:pointer;padding:2px 5px;border-radius:4px;color:${T.text2};font-size:18px;line-height:1;display:flex;align-items:center;">⋮</button>
+        </div>
+      </div>`;
 
-    // Clique expande preview com NF
-    row.addEventListener("click", () => {
+    // Menu 3 pontos
+    const dotsBtn = row.querySelector(".cp-dots");
+    const menuWrap = row.querySelector(".cp-menu-wrap");
+    dotsBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      // Fechar outros menus abertos
+      document.querySelectorAll(".cp-dropdown").forEach(m => m.remove());
+
+      const menu = document.createElement("div");
+      menu.className = "cp-dropdown";
+      menu.style.cssText = `position:absolute;right:0;top:100%;z-index:999;background:${T.card};border:0.5px solid ${T.border};border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.18);min-width:170px;padding:4px 0;margin-top:4px;`;
+
+      const opcoes = [];
+      if (c.xmlBase64 || c.nfBase64) {
+        opcoes.push({ label: "Baixar NFS-e", icon: "↓", fn: () => {
+          if (c.xmlBase64) window._gerarPdfById(c.id);
+          else if (c.nfBase64) { const b=atob(c.nfBase64);const bytes=new Uint8Array(b.length);for(let i=0;i<b.length;i++)bytes[i]=b.charCodeAt(i);const blob=new Blob([bytes],{type:"application/pdf"});window.open(URL.createObjectURL(blob),"_blank"); }
+        }});
+      }
+      opcoes.push({ label: "Data de vencimento", icon: "📅", fn: async () => {
+        const atual = c.vencimento ? c.vencimento.slice(0,10) : "";
+        const nova = prompt("Data de vencimento (AAAA-MM-DD):", atual);
+        if (nova === null) return;
+        await set(ref(db, `/contas_pagar/${cpState.mes.replace("-","/")}/${c.id}/vencimento`), nova);
+        await carregarContasFirebase();
+        renderContasPagar(panel.closest(".cp-container")||panel.parentElement);
+      }});
+      opcoes.push({ label: sit==="pago" ? "Reabrir" : "Marcar como pago", icon: sit==="pago"?"↩":"✓", fn: async () => {
+        const novaSit = sit==="pago"?"aberto":"pago";
+        await set(ref(db, `/contas_pagar/${cpState.mes.replace("-","/")}/${c.id}/situacao`), novaSit);
+        await carregarContasFirebase();
+        renderContasPagar(panel.closest(".cp-container")||panel.parentElement);
+      }});
+      opcoes.push({ label: "Excluir", icon: "✕", cor: "#e74c3c", fn: async () => {
+        if (!confirm(`Excluir "${c.fornecedor||c.id}"?`)) return;
+        await set(ref(db, `/contas_pagar/${cpState.mes.replace("-","/")}/${c.id}`), null);
+        await carregarContasFirebase();
+        renderContasPagar(panel.closest(".cp-container")||panel.parentElement);
+      }});
+
+      opcoes.forEach(op => {
+        const item = document.createElement("div");
+        item.style.cssText = `display:flex;align-items:center;gap:10px;padding:9px 14px;font-size:12px;cursor:pointer;color:${op.cor||T.text};font-family:'Inter',sans-serif;transition:background .1s;`;
+        item.innerHTML = `<span style="font-size:13px;width:16px;text-align:center;">${op.icon}</span><span>${op.label}</span>`;
+        item.addEventListener("mouseenter", () => item.style.background=T.bg3);
+        item.addEventListener("mouseleave", () => item.style.background="transparent");
+        item.addEventListener("click", (e) => { e.stopPropagation(); menu.remove(); op.fn(); });
+        menu.appendChild(item);
+      });
+
+      menuWrap.appendChild(menu);
+      setTimeout(() => document.addEventListener("click", () => menu.remove(), {once:true}), 0);
+    });
+
+    // Clique na linha expande detalhe (info básica)
+    row.addEventListener("click", (e) => {
+      if (e.target.closest(".cp-menu-wrap")) return;
       const existing = tabWrap.querySelector(".cp-row-detail");
       if (existing && existing.dataset.id === c.id) { existing.remove(); return; }
       if (existing) existing.remove();
       const detail = document.createElement("div");
       detail.className = "cp-row-detail";
       detail.dataset.id = c.id;
-      detail.style.cssText = `grid-column:1/-1;padding:12px 16px;background:${T.bg3};border-bottom:0.5px solid ${T.border};display:flex;gap:16px;align-items:flex-start;`;
-      let nfBtn = "";
-      if (c.nfBase64) nfBtn = `<button onclick="(()=>{const b=atob('${c.nfBase64}');const bytes=new Uint8Array(b.length);for(let i=0;i<b.length;i++)bytes[i]=b.charCodeAt(i);const blob=new Blob([bytes],{type:'application/pdf'});window.open(URL.createObjectURL(blob),'_blank');})()" style="background:${T.bg3};border:0.5px solid ${T.border};border-radius:6px;padding:6px 14px;font-size:11px;font-weight:500;color:${T.text};cursor:pointer;font-family:'Inter',sans-serif;">📄 Ver NF</button>`;
-      // Botão NFS-e via XML do capturador SEFAZ — gera PDF formatado
-      if (c.xmlBase64 && !c.nfBase64) nfBtn = `<button data-cp-id="${c.id}" onclick="window._gerarPdfById(this.dataset.cpId)" style="background:${T.bg3};border:0.5px solid ${T.border};border-radius:6px;padding:6px 14px;font-size:11px;font-weight:500;color:${T.text};cursor:pointer;font-family:'Inter',sans-serif;">Baixar NFS-e</button>`;
+      detail.style.cssText = `grid-column:1/-1;padding:12px 16px;background:${T.bg3};border-bottom:0.5px solid ${T.border};`;
       detail.innerHTML = `
-        <div style="flex:1;font-size:12px;color:${T.text2};line-height:1.8;">
-          <div><b style="color:${T.text};font-weight:500;">CNPJ:</b> ${c.cnpj||"—"}</div>
-          <div><b style="color:${T.text};font-weight:500;">Nº Doc:</b> ${c.numeroDoc||"—"}</div>
-          <div><b style="color:${T.text};font-weight:500;">Categoria:</b> ${c.categoriaLabel||"—"}</div>
-          <div><b style="color:${T.text};font-weight:500;">Bling ID:</b> ${c.blingId||"não enviado"}</div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:6px;">
-          ${nfBtn}
-          <button data-sit="${c.id}" style="background:${sit==="pago"?"#f0b40018":"#2dce8918"};border:0.5px solid ${sit==="pago"?"#f0b40044":"#2dce8944"};border-radius:6px;padding:6px 14px;font-size:11px;font-weight:500;color:${sit==="pago"?"#f0b400":"#2dce89"};cursor:pointer;font-family:'Inter',sans-serif;">${sit==="pago"?"↩ Reabrir":"✓ Pago"}</button>
+        <div style="font-size:12px;color:${T.text2};line-height:2;">
+          <span style="margin-right:24px;"><b style="color:${T.text};font-weight:500;">CNPJ:</b> ${c.cnpj||"—"}</span>
+          <span style="margin-right:24px;"><b style="color:${T.text};font-weight:500;">Nº Doc:</b> ${c.numeroDoc||"—"}</span>
+          <span style="margin-right:24px;"><b style="color:${T.text};font-weight:500;">Vencimento:</b> ${c.vencimento?c.vencimento.slice(0,10):"—"}</span>
+          <span><b style="color:${T.text};font-weight:500;">Bling ID:</b> ${c.blingId||"não enviado"}</span>
         </div>`;
-      detail.querySelector("[data-sit]")?.addEventListener("click", async (e) => {
-        e.stopPropagation();
-        const novaSit = sit==="pago"?"aberto":"pago";
-        await set(ref(db, `/contas_pagar/${cpState.mes.replace("-","/")}/${c.id}/situacao`), novaSit);
-        detail.remove();
-        await carregarContasFirebase();
-        renderContasPagar(panel.closest(".cp-container")||panel.parentElement);
-      });
       row.insertAdjacentElement("afterend", detail);
     });
     tabWrap.appendChild(row);
