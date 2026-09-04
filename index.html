@@ -9646,7 +9646,15 @@ async function renderCpLista(panel) {
     btnBaixarTodas.style.cssText = `background:none;border:0.5px solid ${T.border};border-radius:8px;padding:10px 28px;color:${T.text2};font-size:12px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;transition:all .15s;`;
     btnBaixarTodas.addEventListener("mouseenter", () => { btnBaixarTodas.style.borderColor="#fff"; btnBaixarTodas.style.color="#fff"; });
     btnBaixarTodas.addEventListener("mouseleave", () => { btnBaixarTodas.style.borderColor=T.border; btnBaixarTodas.style.color=T.text2; });
-    btnBaixarTodas.addEventListener("click", () => window._baixarTodasNfse(cpState.contas, cpState.mes));
+    btnBaixarTodas.addEventListener("click", async () => {
+      btnBaixarTodas.textContent = "Gerando arquivo. Aguarde...";
+      btnBaixarTodas.disabled = true;
+      btnBaixarTodas.style.opacity = "0.6";
+      await window._baixarTodasNfse(cpState.contas, cpState.mes);
+      btnBaixarTodas.textContent = "Baixar todas as NFS-e";
+      btnBaixarTodas.disabled = false;
+      btnBaixarTodas.style.opacity = "1";
+    });
 
     const btnExportar = document.createElement("button");
     btnExportar.textContent = "Exportar relatório Excel";
