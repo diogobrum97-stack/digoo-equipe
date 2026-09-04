@@ -5259,7 +5259,7 @@ function render(){
       header.appendChild(minBtn);
     }
     header.appendChild(chev);
-    header.addEventListener("click",()=>{openCard=openCard===member.name?null:member.name;if(!isOpen&&member.locked){diogoPinUnlocked=false;diogoAutoFullscreen=false;diogoCardFullscreen=false;}if(flashQueue[member.name]){delete flashQueue[member.name];remove(ref(db,`/flashes/${member.name}`));}render();});
+    if(currentUser !== "Resicon") header.addEventListener("click",()=>{openCard=openCard===member.name?null:member.name;if(!isOpen&&member.locked){diogoPinUnlocked=false;diogoAutoFullscreen=false;diogoCardFullscreen=false;}if(flashQueue[member.name]){delete flashQueue[member.name];remove(ref(db,`/flashes/${member.name}`));}render();});
     card.appendChild(header);
 
     if(isOpen){
@@ -9619,17 +9619,23 @@ async function renderCpLista(panel) {
   tabWrap.appendChild(tfoot);
   panel.appendChild(tabWrap);
 
-  // Botão Sair para Resicon
+  // Botão Sair para Resicon — fixo no centro inferior da tela
   if (currentUser === "Resicon") {
-    const sairBtn = document.createElement("button");
-    sairBtn.textContent = "Sair";
-    sairBtn.style.cssText = `margin-top:20px;background:none;border:0.5px solid ${T.border};border-radius:8px;padding:8px 24px;color:${T.text2};font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;display:block;`;
-    sairBtn.addEventListener("click", () => {
-      localStorage.removeItem("digoo_device_v1");
-      localStorage.removeItem("digoo_pin_v1_Resicon");
-      location.reload();
-    });
-    panel.appendChild(sairBtn);
+    const existing = document.getElementById("resicon-sair-btn");
+    if (!existing) {
+      const sairBtn = document.createElement("button");
+      sairBtn.id = "resicon-sair-btn";
+      sairBtn.textContent = "Sair";
+      sairBtn.style.cssText = `position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:none;border:0.5px solid #444;border-radius:8px;padding:8px 32px;color:#666;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;z-index:100;letter-spacing:1px;transition:color .15s,border-color .15s;`;
+      sairBtn.addEventListener("mouseenter", () => { sairBtn.style.color="#fff"; sairBtn.style.borderColor="#888"; });
+      sairBtn.addEventListener("mouseleave", () => { sairBtn.style.color="#666"; sairBtn.style.borderColor="#444"; });
+      sairBtn.addEventListener("click", () => {
+        localStorage.removeItem("digoo_device_v1");
+        localStorage.removeItem("digoo_pin_v1_Resicon");
+        location.reload();
+      });
+      document.body.appendChild(sairBtn);
+    }
   }
 }
 
