@@ -230,7 +230,7 @@ function overdueBadgeHtml(task){
 }
 
 function themeColor(name) {
-  if(name==="Resicon") return "#00606c";
+  if(name==="Resicon") return "#C9A227";
   const light = document.body.classList.contains("light");
   return ({Diogo:light?"#555555":"#cccccc",Bruno:light?"#6d28d9":"#9d7fff",Larissa:light?"#be185d":"#ff1f7a"})[name]||"#fff";
 }
@@ -421,17 +421,17 @@ function setupIdentityScreen() {
         +'<div style="font-size:10px;color:#1e1e1e;font-family:Inter,sans-serif;">contabilidade</div>'
         +'<div style="flex:1;height:1px;background:#1a1a1a;"></div>'
       +'</div>'
-      +'<div id="ov-resicon" style="border-left:2px solid #00606c;padding:12px 16px;background:#080808;border-radius:0 9px 9px 0;display:flex;align-items:center;justify-content:space-between;cursor:pointer;">'
+      +'<div id="ov-resicon" style="border-left:2px solid #C9A227;padding:12px 16px;background:#080808;border-radius:0 9px 9px 0;display:flex;align-items:center;justify-content:space-between;cursor:pointer;">'
         +'<div><div style="font-size:12px;font-weight:600;color:#777;font-family:Inter,sans-serif;">Resicon</div>'
         +'<div style="font-size:11px;color:#333;margin-top:2px;font-family:Inter,sans-serif;">Contabilidade</div></div>'
-        +'<span style="font-size:9px;padding:2px 7px;border-radius:3px;font-weight:600;background:rgba(0,96,108,.08);color:#00606c;border:1px solid #00606c22;font-family:Inter,sans-serif;">CONTAB</span>'
+        +'<span style="font-size:9px;padding:2px 7px;border-radius:3px;font-weight:600;background:rgba(201,162,39,.08);color:#C9A227;border:1px solid #C9A22722;font-family:Inter,sans-serif;">CONTAB</span>'
       +'</div>';
     screen.appendChild(r);
     document.getElementById("ov-admin").onclick = showPin;
     document.getElementById("ov-bruno").onclick = () => { localStorage.setItem(DEVICE_KEY,"Bruno"); localStorage.setItem("digoo_pin_v1_Bruno","1"); loginAs("Bruno"); };
     document.getElementById("ov-larissa").onclick = () => { localStorage.setItem(DEVICE_KEY,"Larissa"); localStorage.setItem("digoo_pin_v1_Larissa","1"); loginAs("Larissa"); };
-    document.getElementById("ov-resicon").onclick = () => showPinFor("Resicon", "#00606c");
-    document.getElementById("ov-resicon").onclick = () => showPinFor("Resicon", "#00606c");
+    document.getElementById("ov-resicon").onclick = () => showPinFor("Resicon", "#C9A227");
+    document.getElementById("ov-resicon").onclick = () => showPinFor("Resicon", "#C9A227");
   }
 
   function showPin() {
@@ -537,7 +537,7 @@ function setupIdentityScreen() {
     document.getElementById("pk-back").onclick = showSelecao;
     let entered = "";
     // PINs por perfil — armazenados aqui para facilidade
-    const PINS = { "Resicon": "1234" };
+    const PINS = { "Resicon": "030303" };
     const CORRECT = PINS[userName] || "000000";
     function updateDots() {
       document.querySelectorAll(".pkd").forEach((dot,i) => {
