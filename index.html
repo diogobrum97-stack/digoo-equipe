@@ -10337,9 +10337,9 @@ window.gerarPdfNfse = async function gerarPdfNfse(c) {
     const emitLgr   = get("xLgr",    emitXml);
     const emitNro   = get("nro",     emitXml);
     const emitBairro= get("xBairro", emitXml);
-    const emitMun   = get("xMun",    emitXml) || "Porto Alegre";
-    const emitUF    = get("UF",      emitXml) || "RS";
-    const emitCEP   = fmtCep(get("CEP", emitXml));
+    const emitMun   = get("xMun", emitXml) || get("xMun", xml) || "";
+    const emitUF    = get("UF",   emitXml) || get("UF",   xml) || "";
+    const emitCEP   = fmtCep(get("CEP", emitXml) || get("CEP", xml));
     const emitEnder = [emitLgr, emitNro, emitBairro].filter(Boolean).join(", ");
     const opSN      = get("opSimpNac", regTrib);
     const simpNac   = opSN==="3"?"Optante - Microempresa ou Empresa de Pequeno Porte (ME/EPP)":opSN==="1"?"Micro Empreendedor Individual":"-";
@@ -10353,7 +10353,7 @@ window.gerarPdfNfse = async function gerarPdfNfse(c) {
     const tomaNro   = get("nro",     tomaXml);
     const tomaCpl   = get("xCpl",    tomaXml);
     const tomaBairro= get("xBairro", tomaXml);
-    const tomaMun   = get("cMun",    tomaXml) || "Porto Alegre";
+    const tomaMun   = get("xMun",    tomaXml) || get("cMun", tomaXml) || "Porto Alegre";
     const tomaUF    = get("UF",      tomaXml) || "RS";
     const tomaCEP   = fmtCep(get("CEP", tomaXml));
     const tomaEnder = [tomaLgr, tomaNro, tomaCpl, tomaBairro].filter(Boolean).join(", ");
@@ -10373,7 +10373,8 @@ window.gerarPdfNfse = async function gerarPdfNfse(c) {
     const dhProc   = (get("dhProc")||get("dhEmi")||"").slice(0,16).replace("T"," ");
     const dCompet  = (get("dCompet")||c.competencia||"").replace(/-/g,"/");
     const chave    = c.chaveAcesso || "";
-    const ambGer   = get("ambGer")==="1"?"PRODUCAO":"HOMOLOGACAO";
+    const ambGerVal = get("ambGer") || get("tpAmb") || "1";
+    const ambGer   = ambGerVal==="1"?"PRODUCAO":"HOMOLOGACAO";
 
     const vServ    = get("vServ", valXml) || get("vLiq") || String(c.valor||0);
     const vLiq     = get("vLiq", valXml) || get("vLiq") || vServ;
@@ -10428,7 +10429,10 @@ window.gerarPdfNfse = async function gerarPdfNfse(c) {
     doc.text("Documento Auxiliar da NFS-e", W/2, y+10.5, {align:"center"});
     // Direita
     doc.setFontSize(6.5); doc.setFont("helvetica","normal"); doc.setTextColor(...CINZA);
-    doc.text("MUNICIPIO: "+xLocEmi.toUpperCase()+" / RS", W-M-2, y+5, {align:"right"});
+    // Cabeçalho mostra município do tomador (Digoo) — sempre Porto Alegre/RS
+    const tomaUFHeader = get("UF", tomaXml) || "RS";
+    const tomaMunHeader = get("xMun", tomaXml) || "Porto Alegre";
+    doc.text("MUNICIPIO: "+tomaMunHeader.toUpperCase()+" / "+tomaUFHeader, W-M-2, y+5, {align:"right"});
     doc.text("AMBIENTE GERADOR: EMISSOR MUNICIPAL", W-M-2, y+8.5, {align:"right"});
     doc.text("AMBIENTE: "+ambGer, W-M-2, y+12, {align:"right"});
     y += 16;
@@ -10500,7 +10504,7 @@ window.gerarPdfNfse = async function gerarPdfNfse(c) {
     borda(M+TW*0.6, y, TW*0.4, 8); lbl("E-mail", M+TW*0.6+1, y+3); val(tomaEmail, M+TW*0.6+1, y+6.5);
     y += 9;
     borda(M, y, TW*0.5, 8); lbl("Endereço", M+1, y+3); val(tomaEnder, M+1, y+6.5);
-    borda(M+TW*0.5, y, TW*0.3, 8); lbl("Município", M+TW*0.5+1, y+3); val("Porto Alegre - RS", M+TW*0.5+1, y+6.5);
+    borda(M+TW*0.5, y, TW*0.3, 8); lbl("Município", M+TW*0.5+1, y+3); val([tomaMun,tomaUF].filter(Boolean).join(" - "), M+TW*0.5+1, y+6.5);
     borda(M+TW*0.8, y, TW*0.2, 8); lbl("CEP", M+TW*0.8+1, y+3); val(tomaCEP, M+TW*0.8+1, y+6.5);
     y += 9;
     // Destinatário / Intermediário
