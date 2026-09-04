@@ -5163,6 +5163,9 @@ function render(){
     if(diogIsFullAuto && member.name==="Diogo") card.style.gridColumn="1 / -1";
     if(diogoCardFullscreen && member.name==="Diogo") {
       card.classList.add("card-fullscreen");
+      if(currentUser === "Resicon") {
+        card.style.background = "linear-gradient(160deg, #1a1500 0%, #0a0a00 50%, #141000 100%)";
+      }
     }
     if(brunoEmPicking && member.name==="Bruno") {
       card.classList.add("card-fullscreen");
@@ -5173,16 +5176,18 @@ function render(){
       card.style.cssText += "position:fixed;inset:0;z-index:1000;border-radius:0;overflow:hidden;margin:0;height:100vh;width:100vw;box-sizing:border-box;display:flex;flex-direction:column;";
     }
 
-    const header=document.createElement("div");header.className="card-header";header.style.background=hbg;
+    const _isResicon = currentUser === "Resicon" && member.name === "Diogo";
+    const _resHbg = "linear-gradient(135deg, #1a1500 0%, #0d0d00 60%, #1a1200 100%)";
+    const header=document.createElement("div");header.className="card-header";header.style.background=_isResicon ? _resHbg : hbg;
     // Se Resicon está logado e abrimos o card do Diogo, mostrar identidade da Resicon
-    const _displayName = (currentUser==="Resicon" && member.name==="Diogo") ? "Resicon" : member.name;
-    const _displayInitials = (currentUser==="Resicon" && member.name==="Diogo") ? "RS" : member.initials;
-    const _displayColor = (currentUser==="Resicon" && member.name==="Diogo") ? "#C9A227" : color;
+    const _displayName = _isResicon ? "Resicon" : member.name;
+    const _displayInitials = _isResicon ? "RS" : member.initials;
+    const _displayColor = _isResicon ? "#C9A227" : color;
     const avatar=document.createElement("div");avatar.className="avatar";avatar.style.cssText=`background:${_displayColor}22;border:1.5px solid ${_displayColor};color:${_displayColor};`;avatar.textContent=_displayInitials;
     const nameWrap=document.createElement("div");nameWrap.style.flex="1";
     const nameEl=document.createElement("div");nameEl.className="member-name";nameEl.style.color=_displayColor;nameEl.textContent=_displayName;
     const dotsEl=document.createElement("div");dotsEl.className="dots";
-    if(active.length>0||done.length>0){
+    if((active.length>0||done.length>0) && currentUser !== "Resicon"){
       ["superurgente","urgente","importante","normal"].forEach(p=>{active.filter(t=>t.prio===p).slice(0,5).forEach(()=>{const d=document.createElement("span");d.className="dot";const pc=themePrio(p);d.style.cssText=`background:${pc};box-shadow:0 0 8px ${pc};${p==="superurgente"?"animation:siren 0.6s infinite;":""}`;dotsEl.appendChild(d);});});
       if(done.length>0&&active.length===0){const s=document.createElement("span");s.style.cssText=`font-size:11px;color:${color}88;`;s.textContent="✓";dotsEl.appendChild(s);}
     }
