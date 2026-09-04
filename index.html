@@ -9440,7 +9440,7 @@ async function renderCpLista(panel) {
         <div style="font-size:12px;color:${T.text2};line-height:2;">
           <span style="margin-right:24px;"><b style="color:${T.text};font-weight:500;">CNPJ:</b> ${c.cnpj||"—"}</span>
           <span style="margin-right:24px;"><b style="color:${T.text};font-weight:500;">Nº Doc:</b> ${c.numeroDoc||"—"}</span>
-          <span style="margin-right:24px;"><b style="color:${T.text};font-weight:500;">Vencimento:</b> ${c.vencimento?c.vencimento.slice(0,10):"—"}</span>
+          <span style="margin-right:24px;"><b style="color:${T.text};font-weight:500;">Vencimento:</b> ${c.dataVencimento ? c.dataVencimento.slice(8,10)+"/"+c.dataVencimento.slice(5,7)+"/"+c.dataVencimento.slice(0,4) : c.vencimento ? c.vencimento.slice(8,10)+"/"+c.vencimento.slice(5,7)+"/"+c.vencimento.slice(0,4) : "—"}</span>
           <span><b style="color:${T.text};font-weight:500;">Bling ID:</b> ${c.blingId||"não enviado"}</span>
         </div>`;
       row.insertAdjacentElement("afterend", detail);
