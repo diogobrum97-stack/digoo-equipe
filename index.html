@@ -9075,10 +9075,12 @@ async function renderContasPagar(panel) {
   const catPill = document.createElement("div");
   catPill.style.cssText = `display:flex;align-items:center;background:${T.card};border:0.5px solid ${T.border};border-radius:20px;padding:5px 14px;`;
   const catSel = document.createElement("select");
-  catSel.style.cssText = `border:none;background:none;font-size:12px;color:${T.text2};outline:none;cursor:pointer;font-family:inherit;`;
-  catSel.innerHTML = "<option value=''>Categoria</option>";
+  catSel.style.cssText = `border:none;background:${T.bg3};color:${T.text2};font-size:12px;outline:none;cursor:pointer;font-family:inherit;border-radius:8px;padding:2px 4px;`;
+  catSel.innerHTML = `<option value='' style="background:${T.bg3};color:${T.text2};">Categoria</option>`;
   CATEGORIAS_CP.forEach(c => {
-    const o = document.createElement("option"); o.value = c.id; o.textContent = c.label;
+    const o = document.createElement("option");
+    o.value = c.id; o.textContent = c.label;
+    o.style.cssText = `background:${T.bg3};color:${T.text2};`;
     if (cpState.filtroCategoria == c.id) o.selected = true;
     catSel.appendChild(o);
   });
