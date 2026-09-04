@@ -10160,7 +10160,7 @@ async function renderConferencia(panel, color) {
     btnCSV.style.cssText = `background:none;border:1px dashed var(--border2);border-radius:6px;color:var(--text3);font-size:11px;letter-spacing:1px;padding:9px 0;cursor:pointer;font-family:inherit;flex:1;text-align:center;`;
     btnCSV.innerHTML = `↓ Gerar CSV Bling`;
     btnCSV.addEventListener("click", async () => {
-      btnCSV.textContent = "⏳ Gerando..."; btnCSV.disabled = true;
+      btnCSV.textContent = "Gerando..."; btnCSV.disabled = true;
       try {
         const nfses = [...confDocs.servicos, ...confDocs.impostos].map(d => ({
           fornecedor: d.prestador || d.nome,
@@ -10286,7 +10286,7 @@ window._gerarPdfById = async function(id) {
   if (!c.xmlBase64) { alert("XML não disponível para esta nota."); return; }
 
   const btn = document.querySelector(`[data-cp-id="${id}"]`);
-  if (btn) { btn.textContent = "⏳ Gerando..."; btn.disabled = true; }
+  if (btn) { btn.textContent = "Gerando..."; btn.disabled = true; }
 
   try {
     // Descomprime o XML
@@ -10327,7 +10327,7 @@ window._gerarPdfById = async function(id) {
   } catch(e) {
     alert("Erro ao gerar PDF: " + e.message);
   } finally {
-    if (btn) { btn.textContent = "📄 Baixar NFS-e"; btn.disabled = false; }
+    if (btn) { btn.textContent = "Baixar NFS-e"; btn.disabled = false; }
   }
 };
 
