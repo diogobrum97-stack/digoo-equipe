@@ -9354,7 +9354,7 @@ async function renderCpLista(panel) {
       let nfBtn = "";
       if (c.nfBase64) nfBtn = `<button onclick="(()=>{const b=atob('${c.nfBase64}');const bytes=new Uint8Array(b.length);for(let i=0;i<b.length;i++)bytes[i]=b.charCodeAt(i);const blob=new Blob([bytes],{type:'application/pdf'});window.open(URL.createObjectURL(blob),'_blank');})()" style="background:${T.bg3};border:0.5px solid ${T.border};border-radius:6px;padding:6px 14px;font-size:11px;font-weight:500;color:${T.text};cursor:pointer;font-family:'Inter',sans-serif;">📄 Ver NF</button>`;
       // Botão NFS-e via XML do capturador SEFAZ — gera PDF formatado
-      if (c.xmlBase64 && !c.nfBase64) nfBtn = `<button data-cp-id="${c.id}" onclick="window._gerarPdfById(this.dataset.cpId)" style="background:${T.bg3};border:0.5px solid ${T.border};border-radius:6px;padding:6px 14px;font-size:11px;font-weight:500;color:${T.text};cursor:pointer;font-family:'Inter',sans-serif;">📄 Baixar NFS-e</button>`;
+      if (c.xmlBase64 && !c.nfBase64) nfBtn = `<button data-cp-id="${c.id}" onclick="window._gerarPdfById(this.dataset.cpId)" style="background:${T.bg3};border:0.5px solid ${T.border};border-radius:6px;padding:6px 14px;font-size:11px;font-weight:500;color:${T.text};cursor:pointer;font-family:'Inter',sans-serif;">Baixar NFS-e</button>`;
       detail.innerHTML = `
         <div style="flex:1;font-size:12px;color:${T.text2};line-height:1.8;">
           <div><b style="color:${T.text};font-weight:500;">CNPJ:</b> ${c.cnpj||"—"}</div>
