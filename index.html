@@ -2799,7 +2799,7 @@ function renderDashboard(panel, color) {
         <div id="sbar-drawer-venc" style="max-height:0;overflow:hidden;transition:max-height .3s ease;">
           <div style="padding:8px 14px 10px;height:188px;display:flex;flex-direction:column;">
             <div style="flex:1;overflow-y:auto;">${vencDrawerRows || `<div style="font-size:11px;color:${T.text2};padding:6px 0;">Nenhum vencimento próximo ✓</div>`}</div>
-            ${proximos.length ? `<div onclick="window._diogotab='contas-pagar';render();" style="text-align:center;font-size:10px;color:${T.text};padding-top:8px;padding-bottom:2px;cursor:pointer;flex-shrink:0;border-top:0.5px solid ${T.border};margin-top:6px;">Ver todos →</div>` : ""}
+            ${proximos.length ? `<div onclick="window._diogotab='contas-pagar';render();" style="text-align:center;font-size:10px;color:${T.text};padding-top:12px;padding-bottom:4px;cursor:pointer;flex-shrink:0;margin-top:auto;">Ver todos →</div>` : ""}
           </div>
         </div>
       </div>`;
