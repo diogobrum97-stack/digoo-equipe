@@ -2653,7 +2653,7 @@ function renderDashboard(panel, color) {
   };
   if(!window._sbarState) window._sbarState = {open: null};
   window._sbarApply = function() {
-    ['tasks','stock','perguntas'].forEach(function(id) {
+    ['tasks','stock','perguntas','venc'].forEach(function(id) {
       const isOpen = window._sbarState.open === id;
       const d = document.getElementById('sbar-drawer-'+id);
       const c = document.getElementById('sbar-card-'+id);
@@ -2769,7 +2769,7 @@ function renderDashboard(panel, color) {
       const urgentes2 = proximos.filter(c => c.dias <= 1).length;
       const emBreve2  = proximos.filter(c => c.dias > 1 && c.dias <= 3).length;
       const statusTag = urgentes2
-        ? `<div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#E24B4A;"></div><div style="font-size:10px;color:#E24B4A;">${urgentes2} urgente${urgentes2>1?"s":""}</div></div>`
+        ? `<div style="display:flex;align-items:center;gap:4px;"><div class="venc-urgente-dot" style="width:6px;height:6px;border-radius:50%;background:#E24B4A;"></div><div style="font-size:10px;color:#E24B4A;">${urgentes2} urgente${urgentes2>1?"s":""}</div></div>`
         : emBreve2
           ? `<div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#f0b400;"></div><div style="font-size:10px;color:#f0b400;">${emBreve2} em breve</div></div>`
           : `<div style="font-size:10px;color:#2dce89;">Em dia ✓</div>`;
