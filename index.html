@@ -2777,13 +2777,13 @@ function renderDashboard(panel, color) {
       const vencDrawerRows = proximos.slice(0,5).map(c => {
         const isUrg = c.dias <= 1;
         const cor = isUrg ? "#E24B4A" : "#f0b400";
-        const diaLabel = c.dias===0?"Hoje":c.dias===1?"Amanhã":`${c.dias} dias`;
-        return `<div onclick="window._diogotab='contas-pagar';render();" style="display:flex;align-items:center;justify-content:space-between;padding:7px 8px;border-radius:6px;margin-bottom:3px;cursor:pointer;border:1px solid transparent;transition:background .12s;" onmouseover="this.style.background='${T.bg3}'" onmouseout="this.style.background='transparent'">
-          <div>
-            <div style="font-size:11px;font-weight:500;color:${T.text};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;">${c.fornecedor||"—"}</div>
-            <div style="font-size:10px;color:${cor};margin-top:1px;">${diaLabel} · ${c.dataVencimento.slice(8,10)}/${c.dataVencimento.slice(5,7)}</div>
+        const diaLabel = c.dias===0?"Vence hoje":c.dias===1?"Vence amanhã":`Vence em ${c.dias} dias`;
+        return `<div onclick="window._diogotab='contas-pagar';render();" style="display:flex;align-items:center;justify-content:space-between;padding:9px 10px 9px 12px;border-radius:7px;margin-bottom:6px;cursor:pointer;background:${T.bg3};border:0.5px solid ${T.border};border-left:2px solid ${cor};transition:opacity .12s;" onmouseover="this.style.opacity='0.75'" onmouseout="this.style.opacity='1'">
+          <div style="min-width:0;flex:1;margin-right:12px;">
+            <div style="font-size:11px;font-weight:500;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.fornecedor||"—"}</div>
+            <div style="font-size:10px;color:${cor};margin-top:2px;">${diaLabel} · ${c.dataVencimento.slice(8,10)}/${c.dataVencimento.slice(5,7)}</div>
           </div>
-          <div style="font-size:10px;font-weight:600;font-family:'IBM Plex Mono',monospace;color:${T.text2};">R$ ${Number(c.valor||0).toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
+          <div style="font-size:11px;font-weight:600;font-family:'IBM Plex Mono',monospace;color:${T.text};flex-shrink:0;">R$ ${Number(c.valor||0).toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
         </div>`;
       }).join("");
 
