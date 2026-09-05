@@ -2796,8 +2796,8 @@ function renderDashboard(panel, color) {
         </div>
         <div id="sbar-drawer-venc" style="max-height:0;overflow:hidden;transition:max-height .3s ease;">
           <div style="padding:8px 14px 10px;">
-            ${vencDrawerRows || '<div style="font-size:11px;color:'+T.text2+';padding:6px 0;">Nenhum vencimento próximo ✓</div>'}
-            ${proximos.length ? '<div onclick="window._diogotab='contas-pagar';render();" style="text-align:center;font-size:10px;color:'+T.text+';padding-top:8px;cursor:pointer;">Ver todos →</div>' : ""}
+            ${vencDrawerRows || `<div style="font-size:11px;color:${T.text2};padding:6px 0;">Nenhum vencimento próximo ✓</div>`}
+            ${proximos.length ? `<div onclick="window._diogotab='contas-pagar';render();" style="text-align:center;font-size:10px;color:${T.text};padding-top:8px;cursor:pointer;">Ver todos →</div>` : ""}
           </div>
         </div>
       </div>`;
