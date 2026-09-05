@@ -2745,7 +2745,7 @@ function renderDashboard(panel, color) {
       </div>
       <div id="sbar-drawer-perguntas" style="max-height:0;overflow:hidden;transition:max-height .3s ease;border-top:0px solid #1a1a1a;">
         <div style="padding:8px 14px 10px;">
-          <div style="max-height:240px;overflow-y:auto;">${perguntasDrawerRows || `<div style="font-size:11px;color:${T.text2};padding:6px 0;">Nenhuma pergunta pendente ✓</div>`}</div>
+          <div style="max-height:240px;min-height:80px;overflow-y:auto;">${perguntasDrawerRows || `<div style="font-size:11px;color:${T.text2};padding:6px 0;">Nenhuma pergunta pendente ✓</div>`}</div>
           ${perguntasTotal > 6 ? `<div onclick="window._goPerguntas()" style="text-align:center;font-size:10px;color:${T.text};padding-top:8px;cursor:pointer;">Ver todas (${perguntasTotal}) →</div>` : (perguntasTotal > 0 ? `<div onclick="window._goPerguntas()" style="text-align:center;font-size:10px;color:${T.text};padding-top:8px;cursor:pointer;">Ir para aba Perguntas →</div>` : "")}
         </div>
       </div>
@@ -2797,7 +2797,7 @@ function renderDashboard(panel, color) {
           <div id="sbar-arr-venc" style="font-size:10px;color:#2e2e2e;transition:transform .2s,color .2s;">▾</div>
         </div>
         <div id="sbar-drawer-venc" style="max-height:0;overflow:hidden;transition:max-height .3s ease;">
-          <div style="padding:8px 14px 10px;">
+          <div style="padding:8px 14px 10px;min-height:80px;">
             ${vencDrawerRows || `<div style="font-size:11px;color:${T.text2};padding:6px 0;">Nenhum vencimento próximo ✓</div>`}
             ${proximos.length ? `<div onclick="window._diogotab='contas-pagar';render();" style="text-align:center;font-size:10px;color:${T.text};padding-top:8px;cursor:pointer;">Ver todos →</div>` : ""}
           </div>
