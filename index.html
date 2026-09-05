@@ -2698,7 +2698,7 @@ function renderDashboard(panel, color) {
   }).join("");
 
   const statusBar = document.createElement("div");
-  statusBar.style.cssText = "grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px;align-items:start;";
+  statusBar.style.cssText = "grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-top:8px;align-items:start;";
   statusBar.innerHTML = `
     <div id="sbar-card-tasks" onclick="window._sbarToggle('tasks')" style="background:${T.card};border:0.5px solid ${T.border};border-radius:10px;overflow:hidden;cursor:pointer;box-shadow:${T.cardShadow};transition:border-color .15s;">
       <div style="padding:13px 16px;display:flex;align-items:center;gap:14px;">
@@ -2751,6 +2751,64 @@ function renderDashboard(panel, color) {
   `;
   grid.appendChild(statusBar);
   window._sbarApply();
+
+  // 4º card — Vencimentos próximos (async, adicionado depois)
+  (async () => {
+    const mesAtual = new Date().toISOString().slice(0,7);
+    const mesPath = mesAtual.replace("-","/");
+    try {
+      const snap = await get(ref(db, `/contas_pagar/${mesPath}`));
+      const dados = snap.val() || {};
+      const hoje = new Date(); hoje.setHours(0,0,0,0);
+      const proximos = Object.entries(dados)
+        .map(([id,c]) => ({...c,id}))
+        .filter(c => c.dataVencimento && c.situacao !== "pago" && c.situacao !== "cancelado")
+        .map(c => { const v=new Date(c.dataVencimento+"T00:00:00"); return {...c, dias:Math.ceil((v-hoje)/(1000*60*60*24))}; })
+        .filter(c => c.dias >= 0 && c.dias <= 7)
+        .sort((a,b) => a.dias - b.dias);
+      const urgentes2 = proximos.filter(c => c.dias <= 1).length;
+      const emBreve2  = proximos.filter(c => c.dias > 1 && c.dias <= 3).length;
+      const statusTag = urgentes2
+        ? `<div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#E24B4A;"></div><div style="font-size:10px;color:#E24B4A;">${urgentes2} urgente${urgentes2>1?"s":""}</div></div>`
+        : emBreve2
+          ? `<div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#f0b400;"></div><div style="font-size:10px;color:#f0b400;">${emBreve2} em breve</div></div>`
+          : `<div style="font-size:10px;color:#2dce89;">Em dia ✓</div>`;
+
+      const vencDrawerRows = proximos.slice(0,5).map(c => {
+        const isUrg = c.dias <= 1;
+        const cor = isUrg ? "#E24B4A" : "#f0b400";
+        const diaLabel = c.dias===0?"Hoje":c.dias===1?"Amanhã":`${c.dias} dias`;
+        return `<div onclick="window._diogotab='contas-pagar';render();" style="display:flex;align-items:center;justify-content:space-between;padding:7px 8px;border-radius:6px;margin-bottom:3px;cursor:pointer;border:1px solid transparent;transition:background .12s;" onmouseover="this.style.background='${T.bg3}'" onmouseout="this.style.background='transparent'">
+          <div>
+            <div style="font-size:11px;font-weight:500;color:${T.text};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;">${c.fornecedor||"—"}</div>
+            <div style="font-size:10px;color:${cor};margin-top:1px;">${diaLabel} · ${c.dataVencimento.slice(8,10)}/${c.dataVencimento.slice(5,7)}</div>
+          </div>
+          <div style="font-size:10px;font-weight:600;font-family:'IBM Plex Mono',monospace;color:${T.text2};">R$ ${Number(c.valor||0).toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
+        </div>`;
+      }).join("");
+
+      // Inserir o card na statusBar
+      const vencCardHtml = `<div id="sbar-card-venc" onclick="window._sbarToggle('venc')" style="background:${T.card};border:0.5px solid ${T.border};border-radius:10px;overflow:hidden;cursor:pointer;box-shadow:${T.cardShadow};transition:border-color .15s;">
+        <div style="padding:13px 16px;display:flex;align-items:center;gap:10px;">
+          <div style="font-size:10px;color:${T.text2};white-space:nowrap;">Vencimentos</div>
+          <div style="display:flex;align-items:center;gap:8px;flex:1;">${statusTag}</div>
+          <div id="sbar-arr-venc" style="font-size:10px;color:#2e2e2e;transition:transform .2s,color .2s;">▾</div>
+        </div>
+        <div id="sbar-drawer-venc" style="max-height:0;overflow:hidden;transition:max-height .3s ease;">
+          <div style="padding:8px 14px 10px;">
+            ${vencDrawerRows || '<div style="font-size:11px;color:'+T.text2+';padding:6px 0;">Nenhum vencimento próximo ✓</div>'}
+            ${proximos.length ? '<div onclick="window._diogotab='contas-pagar';render();" style="text-align:center;font-size:10px;color:'+T.text+';padding-top:8px;cursor:pointer;">Ver todos →</div>' : ""}
+          </div>
+        </div>
+      </div>`;
+
+      const sbar = document.getElementById("sbar-card-tasks")?.parentElement;
+      if (sbar) {
+        sbar.insertAdjacentHTML("beforeend", vencCardHtml);
+        window._sbarApply();
+      }
+    } catch(e) { console.log("venc-sbar:", e.message); }
+  })();
 
   // Buscar perguntas (com sugestão de IA) uma vez por sessão, reaproveitado pela aba dedicada
   if(perguntasState.lista === null && !perguntasState.carregando && !perguntasState.erro) {
