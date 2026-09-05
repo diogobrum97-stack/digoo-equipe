@@ -2621,11 +2621,12 @@ function renderDashboard(panel, color) {
   const tarefasDrawerRows = [...tarefasUrgentes, ...tarefasImp].slice(0,6).map(t => {
     const cor = (t.prio==="urgente"||t.prio==="superurgente") ? "#e8432d" : "#f77614";
     const label = (t.prio==="urgente"||t.prio==="superurgente") ? "urgente" : "importante";
-    return `<div onclick="window._sbarNavTask(event)" style="display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border-radius:6px;margin-bottom:3px;cursor:pointer;border:1px solid transparent;transition:background .12s,border-color .12s;" onmouseover="this.style.background=document.body.classList.contains('light')?'#e8e8e8':'#141414';this.style.borderColor=document.body.classList.contains('light')?'#d0d0d0':'#2a2a2a';this.querySelector('.tarr').style.opacity='1';this.querySelector('.tarr').style.color=document.body.classList.contains('light')?'#111':'#ffffff';" onmouseout="this.style.background='';this.style.borderColor='transparent';this.querySelector('.tarr').style.opacity='0';">
-      <div style="width:6px;height:6px;border-radius:50%;background:${cor};flex-shrink:0;margin-top:4px;"></div>
-      <div style="font-size:11px;color:${T.text2};flex:1;line-height:1.4;">${t.text||t.title||"—"}</div>
-      <div style="font-size:9px;color:${cor};background:${T.isLight?'#f5f5f5':'rgba(0,0,0,0.3)'};border:1px solid ${cor}44;border-radius:4px;padding:2px 6px;white-space:nowrap;flex-shrink:0;">${label}</div>
-      <div class="tarr" style="font-size:10px;color:#333;opacity:0;transition:opacity .12s,color .12s;flex-shrink:0;">→</div>
+    return `<div onclick="window._sbarNavTask(event)" style="display:flex;align-items:center;justify-content:space-between;padding:9px 10px 9px 12px;border-radius:7px;margin-bottom:6px;cursor:pointer;background:${T.bg3};border:0.5px solid ${T.border};border-left:2px solid ${cor};transition:opacity .12s;" onmouseover="this.style.opacity='0.75'" onmouseout="this.style.opacity='1'">
+      <div style="flex:1;min-width:0;margin-right:10px;">
+        <div style="font-size:11px;font-weight:500;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.text||t.title||"—"}</div>
+        <div style="font-size:10px;color:${cor};margin-top:2px;">${label}</div>
+      </div>
+      <div style="font-size:10px;color:#333;flex-shrink:0;">→</div>
     </div>`;
   }).join("");
 
@@ -2634,11 +2635,12 @@ function renderDashboard(panel, color) {
     const dias = v30>0 ? Math.round(r.aptas/(v30/30)) : 999;
     const cor = dias <= 7 ? "#c0392b" : "#f0b400";
     const pct = Math.min(100, Math.round((dias/30)*100));
-    return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #181818;">
-      <div style="width:6px;height:6px;border-radius:50%;background:${cor};flex-shrink:0;"></div>
-      <div style="font-size:10px;color:#777;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.sku}</div>
-      <div style="width:40px;height:2px;background:${T.border2};border-radius:2px;flex-shrink:0;"><div style="height:2px;border-radius:2px;background:${cor};width:${pct}%;"></div></div>
-      <div style="font-size:10px;font-weight:700;color:${T.text};background:${cor};border-radius:4px;padding:2px 7px;font-family:'Inter',sans-serif;flex-shrink:0;">${dias}d</div>
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 10px 9px 12px;border-radius:7px;margin-bottom:6px;background:${T.bg3};border:0.5px solid ${T.border};border-left:2px solid ${cor};">
+      <div style="flex:1;min-width:0;margin-right:10px;">
+        <div style="font-size:11px;font-weight:500;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.sku}</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:3px;"><div style="width:50px;height:2px;background:${T.border};border-radius:2px;"><div style="height:2px;border-radius:2px;background:${cor};width:${pct}%;"></div></div><span style="font-size:10px;color:${cor};">${dias} dias</span></div>
+      </div>
+      <div style="font-size:10px;font-weight:700;color:${T.text};background:${cor}22;border:0.5px solid ${cor}44;border-radius:4px;padding:2px 8px;font-family:'Inter',sans-serif;flex-shrink:0;">${dias}d</div>
     </div>`;
   }).join("");
 
@@ -2688,12 +2690,12 @@ function renderDashboard(panel, color) {
   const perguntasDrawerRows = (perguntasLista || []).slice(0, 6).map(p => {
     const cor = p.requires_attention ? "#c0392b" : "#2dce89";
     const nomeShort = (p.produto || "").length > 42 ? p.produto.slice(0,42)+"…" : (p.produto || "");
-    return `<div onclick="window._sbarNavPergunta(event)" style="display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border-radius:6px;margin-bottom:3px;cursor:pointer;border:1px solid transparent;transition:background .12s,border-color .12s;" onmouseover="this.style.background='var(--bg3,#1a1a1a)';this.style.borderColor='var(--border,#2a2a2a)';" onmouseout="this.style.background='';this.style.borderColor='transparent';">
-      <div style="width:6px;height:6px;border-radius:50%;background:${cor};flex-shrink:0;margin-top:4px;"></div>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:10px;color:${T.text2};margin-bottom:2px;">${nomeShort}</div>
-        <div style="font-size:11px;color:${T.text2};line-height:1.4;">${p.pergunta}</div>
+    return `<div onclick="window._sbarNavPergunta(event)" style="display:flex;align-items:center;justify-content:space-between;padding:9px 10px 9px 12px;border-radius:7px;margin-bottom:6px;cursor:pointer;background:${T.bg3};border:0.5px solid ${T.border};border-left:2px solid ${cor};transition:opacity .12s;" onmouseover="this.style.opacity='0.75'" onmouseout="this.style.opacity='1'">
+      <div style="flex:1;min-width:0;margin-right:10px;">
+        <div style="font-size:11px;font-weight:500;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nomeShort||"—"}</div>
+        <div style="font-size:10px;color:${T.text2};margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.pergunta}</div>
       </div>
+      <div style="font-size:10px;color:#333;flex-shrink:0;">→</div>
     </div>`;
   }).join("");
 
