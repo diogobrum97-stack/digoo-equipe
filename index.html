@@ -2771,7 +2771,7 @@ function renderDashboard(panel, color) {
       const urgentes2 = proximos.filter(c => c.dias <= 1).length;
       const emBreve2  = proximos.filter(c => c.dias > 1 && c.dias <= 3).length;
       const statusTag = urgentes2
-        ? `<div style="display:flex;align-items:center;gap:4px;"><div class="venc-urgente-dot" style="width:6px;height:6px;border-radius:50%;background:#E24B4A;"></div><div style="font-size:10px;color:#E24B4A;">${urgentes2} urgente${urgentes2>1?"s":""}</div></div>`
+        ? `<div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#E24B4A;animation:pulse-red 1s ease-in-out infinite;"></div><div style="font-size:10px;color:#E24B4A;">${urgentes2} urgente${urgentes2>1?"s":""}</div></div>`
         : emBreve2
           ? `<div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#f0b400;"></div><div style="font-size:10px;color:#f0b400;">${emBreve2} em breve</div></div>`
           : `<div style="font-size:10px;color:#2dce89;">Em dia ✓</div>`;
