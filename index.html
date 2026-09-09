@@ -2662,7 +2662,7 @@ function renderDashboard(panel, color) {
       const c = document.getElementById('sbar-card-'+id);
       const a = document.getElementById('sbar-arr-'+id);
       if(d) { d.style.maxHeight = isOpen ? '220px' : '0px'; d.style.height = isOpen ? '220px' : '0px'; d.style.borderTopWidth = isOpen ? '1px' : '0px'; }
-      if(c) c.style.borderColor = isOpen ? '#ffffff' : '#222';
+      if(c) c.style.borderColor = isOpen ? '#444' : T.border;
       if(a) { a.style.transform = isOpen ? 'rotate(180deg)' : ''; a.style.color = isOpen ? '#ffffff' : '#2e2e2e'; }
     });
   };
