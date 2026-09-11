@@ -10310,9 +10310,18 @@ async function renderNfsEmitidas(panel) {
           box.appendChild(titleDiv);
           // Calculadora completa
           renderCalcIpiPanel(box, taskFake);
-          // Botão de emitir complementar
-          const calcObj = calcIpiState[taskFake.id];
-          if (calcObj) renderNfComplementarPreview(box, taskFake, calcObj);
+
+          // Botão de gerar complementar — abre preview/emissão
+          const btnGerarComp = document.createElement("button");
+          btnGerarComp.textContent = "Gerar NF Complementar de IPI";
+          btnGerarComp.style.cssText = `width:100%;margin-top:20px;padding:12px;border-radius:8px;background:#00dfc3;border:none;color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;`;
+          btnGerarComp.addEventListener("click", () => {
+            const calcObj = calcIpiState[taskFake.id];
+            if (!calcObj || calcObj.carregando) { alert("Aguarde o carregamento dos dados."); return; }
+            renderNfComplementarPreview(document.body, taskFake, calcObj);
+          });
+          box.appendChild(btnGerarComp);
+
           overlay.appendChild(box);
           document.body.appendChild(overlay);
           overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
