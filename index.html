@@ -10310,6 +10310,9 @@ async function renderNfsEmitidas(panel) {
           box.appendChild(titleDiv);
           // Calculadora completa
           renderCalcIpiPanel(box, taskFake);
+          // Botão de emitir complementar
+          const calcObj = calcIpiState[taskFake.id];
+          if (calcObj) renderNfComplementarPreview(box, taskFake, calcObj);
           overlay.appendChild(box);
           document.body.appendChild(overlay);
           overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
