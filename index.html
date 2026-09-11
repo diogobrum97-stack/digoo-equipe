@@ -10306,7 +10306,8 @@ async function renderNfsEmitidas(panel) {
   lista.style.cssText = "display:flex;flex-direction:column;gap:8px;";
 
   nfs.forEach(nf => {
-    const data = nf.processedAt ? new Date(nf.processedAt).toLocaleDateString("pt-BR") : "—";
+    const tsDate = nf.processedAt ? new Date(nf.processedAt) : (nf.dataEmissao ? new Date(nf.dataEmissao + "T12:00:00") : null);
+    const data = tsDate ? tsDate.toLocaleDateString("pt-BR") : "—";
     const hora = nf.processedAt ? new Date(nf.processedAt).toLocaleTimeString("pt-BR", {hour:"2-digit",minute:"2-digit"}) : "";
     const natureza = nf.natureza || "Transferência Full";
     const itens = Array.isArray(nf.itens) ? nf.itens.length : "—";
@@ -10369,19 +10370,7 @@ async function renderNfsEmitidas(panel) {
       direita.appendChild(badge);
     }
 
-    // Botão copiar chave
-    if (nf.chaveAcesso) {
-      const btnCopy = document.createElement("button");
-      btnCopy.textContent = "Copiar chave";
-      btnCopy.style.cssText = `background:none;border:0.5px solid ${T.border};border-radius:6px;padding:4px 10px;font-size:11px;color:${T.text2};cursor:pointer;font-family:inherit;white-space:nowrap;`;
-      btnCopy.addEventListener("click", (e) => {
-        e.stopPropagation();
-        navigator.clipboard.writeText(nf.chaveAcesso);
-        btnCopy.textContent = "✓ Copiado";
-        setTimeout(() => btnCopy.textContent = "Copiar chave", 1500);
-      });
-      direita.appendChild(btnCopy);
-    }
+
 
     // Menu ⋮ com opção de emitir complementar
     const menuWrapNF = document.createElement("div");
