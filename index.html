@@ -7012,5 +7012,518 @@ function renderFilialSP(panel, color) {
 
 
 </script>
+<script>
+// ── Gerador de PDF DANFSe v2.0 — layout oficial PNFS-e ───────────────────────
+window.gerarPdfNfse = async function gerarPdfNfse(c) {
+  try {
+    const bin = atob(c.xmlBase64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    let xml = "";
+    try {
+      const ds = new DecompressionStream("gzip");
+      const writer = ds.writable.getWriter();
+      const reader = ds.readable.getReader();
+      writer.write(bytes); writer.close();
+      const chunks = [];
+      let done = false;
+      while (!done) { const r = await reader.read(); if (r.done) done = true; else chunks.push(r.value); }
+      xml = new TextDecoder().decode(new Uint8Array(chunks.reduce((a,b)=>[...a,...b],[])));
+    } catch { xml = new TextDecoder().decode(bytes); }
+
+    const get = (tag, scope) => {
+      const src = scope || xml;
+      for (const re of [
+        new RegExp("<"+tag+">([\\s\\S]*?)</"+tag+">","i"),
+        new RegExp("<[^:>]+:"+tag+">([\\s\\S]*?)</[^:>]+:"+tag+">","i"),
+      ]) { const m = src.match(re); if (m) return m[1].trim().replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">"); }
+      return "";
+    };
+    const scope = (tag) => { const m = xml.match(new RegExp("<"+tag+"[^>]*>([\\s\\S]*?)</"+tag+">","i")); return m ? m[1] : ""; };
+
+    const emitXml = scope("emit");
+    const tomaXml = scope("toma");
+    const servXml = scope("serv");
+    const valXml  = scope("valores");
+    const tribMun = scope("tribMun");
+    const totTrib = scope("totTrib");
+    const regTrib = scope("regTrib");
+
+    const fmtCnpj  = (v) => v.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,"$1.$2.$3/$4-$5");
+    const fmtFone  = (v) => v ? v.replace(/(\d{2})(\d{4,5})(\d{4})/,"($1) $2-$3") : "-";
+    const fmtCep   = (v) => v ? v.replace(/(\d{5})(\d{3})/,"$1-$2") : "-";
+    const fmt      = (v) => v && parseFloat(v) ? "R$ "+parseFloat(v).toLocaleString("pt-BR",{minimumFractionDigits:2}) : "-";
+
+    const emitCnpj  = fmtCnpj(get("CNPJ", emitXml));
+    const emitNome  = get("xNome", emitXml);
+    const emitFone  = fmtFone(get("fone", emitXml));
+    const emitEmail = get("email", emitXml);
+    const emitLgr   = get("xLgr",    emitXml);
+    const emitNro   = get("nro",     emitXml);
+    const emitBairro= get("xBairro", emitXml);
+    const emitMun   = get("xMun", emitXml) || get("xMun", xml) || "";
+    const emitUF    = get("UF",   emitXml) || get("UF",   xml) || "";
+    const emitCEP   = fmtCep(get("CEP", emitXml) || get("CEP", xml));
+    const emitEnder = [emitLgr, emitNro, emitBairro].filter(Boolean).join(", ");
+    const opSN      = get("opSimpNac", regTrib);
+    const simpNac   = opSN==="3"?"Optante - Microempresa ou Empresa de Pequeno Porte (ME/EPP)":opSN==="1"?"Micro Empreendedor Individual":"-";
+    const regApSN   = opSN ? "Regime de apuração dos tributos federais e municipal pelo Simples Nacional" : "-";
+
+    const tomaCnpj  = fmtCnpj(get("CNPJ", tomaXml));
+    const tomaNome  = get("xNome", tomaXml);
+    const tomaFone  = fmtFone(get("fone", tomaXml));
+    const tomaEmail = get("email", tomaXml);
+    const tomaLgr   = get("xLgr",    tomaXml);
+    const tomaNro   = get("nro",     tomaXml);
+    const tomaCpl   = get("xCpl",    tomaXml);
+    const tomaBairro= get("xBairro", tomaXml);
+    const tomaMun   = get("xMun",    tomaXml) || get("cMun", tomaXml) || "Porto Alegre";
+    const tomaUF    = get("UF",      tomaXml) || "RS";
+    const tomaCEP   = fmtCep(get("CEP", tomaXml));
+    const tomaEnder = [tomaLgr, tomaNro, tomaCpl, tomaBairro].filter(Boolean).join(", ");
+
+    const cTribNac  = get("cTribNac", servXml);
+    const xTribNac  = get("xTribNac") || "Contabilidade, inclusive serviços técnicos e auxiliares.";
+    const xDescServ = get("xDescServ", servXml) || c.historico || "";
+    const cNBS      = get("cNBS", servXml);
+    const xLocPrest = get("xLocPrestacao") || get("cLocPrestacao", servXml) ? "Porto Alegre" : "";
+    const xLocEmi   = get("xLocEmi") || "Porto Alegre";
+
+    const nNFSe    = get("nNFSe") || get("nDFSe") || c.numeroDoc || "";
+    const nDPS     = get("nDPS") || "";
+    const serieDPS = get("serie") || "";
+    const dhEmi    = (get("dhEmi")||"").slice(0,10).split("-").reverse().join("/");
+    const dhDPS    = (get("dhEmi")||"").slice(0,16).replace("T"," ");
+    const dhProc   = (get("dhProc")||get("dhEmi")||"").slice(0,16).replace("T"," ");
+    const dCompet  = (get("dCompet")||c.competencia||"").replace(/-/g,"/");
+    const chave    = c.chaveAcesso || "";
+    const ambGerVal = get("ambGer") || get("tpAmb") || "1";
+    const ambGer   = ambGerVal==="1"?"PRODUCAO":"HOMOLOGACAO";
+
+    const vServ    = get("vServ", valXml) || get("vLiq") || String(c.valor||0);
+    const vLiq     = get("vLiq", valXml) || get("vLiq") || vServ;
+    const vISS     = get("vISS", tribMun) || get("vISSQN", tribMun) || "";
+    const retISS   = get("tpRetISSQN", tribMun)==="1" ? "Não Retido" : get("tpRetISSQN",tribMun)==="2"?"Retido":"Não Retido";
+    const tribISSQN= get("tribISSQN", tribMun)==="1" ? "Operação Tributável" : "-";
+    const pTotTrib = get("pTotTribSN", totTrib);
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit:"mm", format:"a4" });
+    const W = 210, M = 10;
+    let y = 8;
+
+    const PRETO = [20,20,20];
+    const CINZA = [90,90,90];
+    const BGCIN = [240,240,240];
+
+    // ── Helpers ──────────────────────────────────────────────
+    const lbl = (txt, x, yy, cor=[100,100,100]) => {
+      doc.setFontSize(6); doc.setFont("helvetica","bold"); doc.setTextColor(...cor);
+      doc.text(txt, x, yy);
+    };
+    const val = (txt, x, yy, bold=false, sz=7.5) => {
+      doc.setFontSize(sz); doc.setFont("helvetica", bold?"bold":"normal"); doc.setTextColor(...PRETO);
+      doc.text(String(txt||"-"), x, yy);
+    };
+    const secao = (titulo) => {
+      doc.setFillColor(30,30,30);
+      doc.rect(M, y, W-M*2, 5.5, "F");
+      doc.setFontSize(7); doc.setFont("helvetica","bold"); doc.setTextColor(255,255,255);
+      doc.text(titulo, M+2, y+3.8);
+      y += 6;
+    };
+    const borda = (x, yy, w, h) => {
+      doc.setDrawColor(180,180,180); doc.setLineWidth(0.2);
+      doc.rect(x, yy, w, h, "S");
+    };
+
+    // ── Cabeçalho ─────────────────────────────────────────────
+    borda(M, y, W-M*2, 14);
+    // Logo NFS-e
+    doc.setFontSize(16); doc.setFont("helvetica","bold"); doc.setTextColor(0,90,160);
+    doc.text("NFS", M+2, y+9);
+    doc.setFontSize(10); doc.setTextColor(0,90,160);
+    doc.text("e", M+16, y+9);
+    doc.setFontSize(5.5); doc.setTextColor(60,60,60); doc.setFont("helvetica","normal");
+    doc.text("Nota Fiscal de\nServiço Eletrônica", M+18, y+6);
+    // Centro
+    doc.setFontSize(11); doc.setFont("helvetica","bold"); doc.setTextColor(...PRETO);
+    doc.text("DANFSe v2.0", W/2, y+6, {align:"center"});
+    doc.setFontSize(8); doc.setFont("helvetica","normal"); doc.setTextColor(...CINZA);
+    doc.text("Documento Auxiliar da NFS-e", W/2, y+10.5, {align:"center"});
+    // Direita
+    doc.setFontSize(6.5); doc.setFont("helvetica","normal"); doc.setTextColor(...CINZA);
+    // Cabeçalho mostra município do tomador (Digoo) — sempre Porto Alegre/RS
+    const tomaUFHeader = get("UF", tomaXml) || "RS";
+    const tomaMunHeader = get("xMun", tomaXml) || "Porto Alegre";
+    doc.text("MUNICIPIO: "+tomaMunHeader.toUpperCase()+" / "+tomaUFHeader, W-M-2, y+5, {align:"right"});
+    doc.text("AMBIENTE GERADOR: EMISSOR MUNICIPAL", W-M-2, y+8.5, {align:"right"});
+    doc.text("AMBIENTE: "+ambGer, W-M-2, y+12, {align:"right"});
+    y += 16;
+
+    // ── Chave de acesso ──────────────────────────────────────
+    borda(M, y, W-M*2-30, 8);
+    lbl("Chave de Acesso da NFS-e", M+1, y+3.5);
+    doc.setFontSize(6.8); doc.setFont("courier","normal"); doc.setTextColor(...PRETO);
+    doc.text(chave, M+1, y+6.5);
+    // QR placeholder
+    borda(W-M-28, y, 28, 28);
+    doc.setFontSize(5); doc.setTextColor(130,130,130);
+    doc.text("QR Code", W-M-14, y+14, {align:"center"});
+    const qrY = y;
+    y += 10;
+
+    // Linha: Nº NFS-e, Competência, Data emissão
+    const c4 = (W-M*2-30)/3;
+    borda(M, y, c4, 9); lbl("Número da NFS-e", M+1, y+3.5); val(nNFSe, M+1, y+7.5, true);
+    borda(M+c4, y, c4, 9); lbl("Competência da NFS-e", M+c4+1, y+3.5); val(dhEmi.slice(6)+"/"+dhEmi.slice(3,5)+"/"+dhEmi.slice(0,2), M+c4+1, y+7.5);
+    borda(M+c4*2, y, c4, 9); lbl("Data e Hora da emissão da NFS-e", M+c4*2+1, y+3.5); val(dhProc, M+c4*2+1, y+7.5);
+    y += 10;
+
+    // Linha: Nº DPS, Série, Data DPS
+    borda(M, y, c4, 9); lbl("Número da DPS", M+1, y+3.5); val(nDPS, M+1, y+7.5);
+    borda(M+c4, y, c4, 9); lbl("Série da DPS", M+c4+1, y+3.5); val(serieDPS, M+c4+1, y+7.5);
+    borda(M+c4*2, y, c4, 9); lbl("Data e Hora da emissão da DPS", M+c4*2+1, y+3.5); val(dhDPS, M+c4*2+1, y+7.5);
+    y += 10;
+
+    // Linha: Emitente, Situação, Finalidade
+    borda(M, y, c4, 9); lbl("EMITENTE DA NFS-e", M+1, y+3.5); val("Prestador", M+1, y+7.5);
+    borda(M+c4, y, c4, 9); lbl("SITUACAO DA NFS-e", M+c4+1, y+3.5); val("NFS-e Gerada", M+c4+1, y+7.5);
+    borda(M+c4*2, y, c4, 9); lbl("FINALIDADE", M+c4*2+1, y+3.5); val("-", M+c4*2+1, y+7.5);
+    // Texto autenticidade (ao lado do QR)
+    doc.setFontSize(5.2); doc.setFont("helvetica","normal"); doc.setTextColor(80,80,80);
+    const txtAuth = "A autenticidade desta NFS-e pode ser verificada pela leitura\ndeste código QR ou pela consulta da chave de acesso no\nportal nacional da NFS-e";
+    doc.text(txtAuth, W-M-28+1, qrY+20);
+    y += 10;
+
+    // ── PRESTADOR ─────────────────────────────────────────────
+    secao("PRESTADOR / FORNECEDOR");
+    const TW = W-M*2;
+    // CNPJ / Inscrição / Telefone
+    borda(M, y, TW*0.35, 8); lbl("CNPJ / CPF / NIF", M+1, y+3); val(emitCnpj, M+1, y+6.5);
+    borda(M+TW*0.35, y, TW*0.35, 8); lbl("Inscrição Municipal", M+TW*0.35+1, y+3); val("-", M+TW*0.35+1, y+6.5);
+    borda(M+TW*0.7, y, TW*0.3, 8); lbl("Telefone", M+TW*0.7+1, y+3); val(emitFone, M+TW*0.7+1, y+6.5);
+    y += 9;
+    // Nome / Email
+    borda(M, y, TW*0.6, 8); lbl("Nome / Nome Empresarial", M+1, y+3); val(emitNome, M+1, y+6.5);
+    borda(M+TW*0.6, y, TW*0.4, 8); lbl("E-mail", M+TW*0.6+1, y+3); val(emitEmail, M+TW*0.6+1, y+6.5);
+    y += 9;
+    // Endereço / Município / CEP
+    borda(M, y, TW*0.5, 8); lbl("Endereço", M+1, y+3); val(emitEnder, M+1, y+6.5);
+    borda(M+TW*0.5, y, TW*0.3, 8); lbl("Município", M+TW*0.5+1, y+3); val(emitMun+" - "+emitUF, M+TW*0.5+1, y+6.5);
+    borda(M+TW*0.8, y, TW*0.2, 8); lbl("CEP", M+TW*0.8+1, y+3); val(emitCEP, M+TW*0.8+1, y+6.5);
+    y += 9;
+    // Simples / Regime
+    borda(M, y, TW*0.4, 8); lbl("Simples Nacional na Data de Competência", M+1, y+3); val(simpNac, M+1, y+6.5);
+    borda(M+TW*0.4, y, TW*0.6, 8); lbl("Regime de Apuração Tributária pelo SN", M+TW*0.4+1, y+3); val(regApSN, M+TW*0.4+1, y+6.5);
+    y += 10;
+
+    // ── TOMADOR ───────────────────────────────────────────────
+    secao("TOMADOR / ADQUIRENTE");
+    borda(M, y, TW*0.35, 8); lbl("CNPJ / CPF / NIF", M+1, y+3); val(tomaCnpj, M+1, y+6.5);
+    borda(M+TW*0.35, y, TW*0.35, 8); lbl("Inscrição Municipal", M+TW*0.35+1, y+3); val("-", M+TW*0.35+1, y+6.5);
+    borda(M+TW*0.7, y, TW*0.3, 8); lbl("Telefone", M+TW*0.7+1, y+3); val(tomaFone, M+TW*0.7+1, y+6.5);
+    y += 9;
+    borda(M, y, TW*0.6, 8); lbl("Nome / Nome Empresarial", M+1, y+3); val(tomaNome, M+1, y+6.5);
+    borda(M+TW*0.6, y, TW*0.4, 8); lbl("E-mail", M+TW*0.6+1, y+3); val(tomaEmail, M+TW*0.6+1, y+6.5);
+    y += 9;
+    borda(M, y, TW*0.5, 8); lbl("Endereço", M+1, y+3); val(tomaEnder, M+1, y+6.5);
+    borda(M+TW*0.5, y, TW*0.3, 8); lbl("Município", M+TW*0.5+1, y+3); val([tomaMun,tomaUF].filter(Boolean).join(" - "), M+TW*0.5+1, y+6.5);
+    borda(M+TW*0.8, y, TW*0.2, 8); lbl("CEP", M+TW*0.8+1, y+3); val(tomaCEP, M+TW*0.8+1, y+6.5);
+    y += 9;
+    // Destinatário / Intermediário
+    doc.setFillColor(248,248,248);
+    doc.rect(M, y, TW, 5, "F");
+    borda(M, y, TW, 5);
+    doc.setFontSize(6.5); doc.setFont("helvetica","normal"); doc.setTextColor(...CINZA);
+    doc.text("DESTINATARIO DA OPERACAO NAO IDENTIFICADO NA NFS-e", M+TW/2, y+3.5, {align:"center"});
+    y += 6;
+    doc.setFillColor(248,248,248);
+    doc.rect(M, y, TW, 5, "F");
+    borda(M, y, TW, 5);
+    doc.text("INTERMEDIÁRIO DO SERVIÇO NÃO IDENTIFICADO NA NFS-e", M+TW/2, y+3.5, {align:"center"});
+    y += 7;
+
+    // ── SERVIÇO PRESTADO ─────────────────────────────────────
+    secao("SERVIÇO PRESTADO");
+    borda(M, y, TW*0.55, 8); lbl("Código de Tributação Nacional / Municipal", M+1, y+3); val(cTribNac+" - "+xTribNac, M+1, y+6.5);
+    borda(M+TW*0.55, y, TW*0.2, 8); lbl("Código NBS", M+TW*0.55+1, y+3); val(cNBS, M+TW*0.55+1, y+6.5);
+    borda(M+TW*0.75, y, TW*0.25, 8); lbl("Local da Prestação / UF / País", M+TW*0.75+1, y+3); val("Porto Alegre / RS", M+TW*0.75+1, y+6.5);
+    y += 9;
+    const hDesc = 8;
+    borda(M, y, TW, hDesc); lbl("Descrição do Serviço", M+1, y+3); val(xDescServ, M+1, y+6.5);
+    y += hDesc+1;
+
+    // ── TRIBUTAÇÃO MUNICIPAL ──────────────────────────────────
+    secao("TRIBUTACAO MUNICIPAL (ISSQN)");
+    borda(M, y, TW/4, 8); lbl("Tributação do ISSQN", M+1, y+3); val(tribISSQN, M+1, y+6.5);
+    borda(M+TW/4, y, TW/4, 8); lbl("País Resultado da Prestação do Serviço", M+TW/4+1, y+3); val("-", M+TW/4+1, y+6.5);
+    borda(M+TW/2, y, TW/4, 8); lbl("Município de Incidência do ISSQN", M+TW/2+1, y+3); val("Porto Alegre - RS", M+TW/2+1, y+6.5);
+    borda(M+TW*3/4, y, TW/4, 8); lbl("Regime Especial de Tributação", M+TW*3/4+1, y+3); val("Nenhum", M+TW*3/4+1, y+6.5);
+    y += 9;
+    borda(M, y, TW/4, 8); lbl("Tipo de Imunidade", M+1, y+3); val("-", M+1, y+6.5);
+    borda(M+TW/4, y, TW/4, 8); lbl("Suspensão da Exigibilidade do ISSQN", M+TW/4+1, y+3); val("Não", M+TW/4+1, y+6.5);
+    borda(M+TW/2, y, TW/4, 8); lbl("Número Processo Suspensão", M+TW/2+1, y+3); val("-", M+TW/2+1, y+6.5);
+    borda(M+TW*3/4, y, TW/4, 8); lbl("Benefício Municipal", M+TW*3/4+1, y+3); val("-", M+TW*3/4+1, y+6.5);
+    y += 9;
+    borda(M, y, TW/4, 8); lbl("Valor do Serviço", M+1, y+3); val(fmt(vServ), M+1, y+6.5);
+    borda(M+TW/4, y, TW/4, 8); lbl("Desconto Incondicionado", M+TW/4+1, y+3); val("-", M+TW/4+1, y+6.5);
+    borda(M+TW/2, y, TW/4, 8); lbl("Total Deduções/Reduções", M+TW/2+1, y+3); val("-", M+TW/2+1, y+6.5);
+    borda(M+TW*3/4, y, TW/4, 8); lbl("Cálculo do BM", M+TW*3/4+1, y+3); val("-", M+TW*3/4+1, y+6.5);
+    y += 9;
+    borda(M, y, TW/4, 8); lbl("BC ISSQN", M+1, y+3); val("-", M+1, y+6.5);
+    borda(M+TW/4, y, TW/4, 8); lbl("Alíquota Aplicada", M+TW/4+1, y+3); val("-", M+TW/4+1, y+6.5);
+    borda(M+TW/2, y, TW/4, 8); lbl("Retenção do ISSQN", M+TW/2+1, y+3); val(retISS, M+TW/2+1, y+6.5);
+    borda(M+TW*3/4, y, TW/4, 8); lbl("ISSQN Apurado", M+TW*3/4+1, y+3); val("-", M+TW*3/4+1, y+6.5);
+    y += 10;
+
+    // ── TRIBUTAÇÃO FEDERAL ────────────────────────────────────
+    secao("TRIBUTACAO FEDERAL (EXCETO CBS)");
+    borda(M, y, TW/4, 8); lbl("IRRF", M+1, y+3); val("-", M+1, y+6.5);
+    borda(M+TW/4, y, TW/4, 8); lbl("Contribuição Previdenciária - Retida", M+TW/4+1, y+3); val("-", M+TW/4+1, y+6.5);
+    borda(M+TW/2, y, TW/4, 8); lbl("Contribuições Sociais - Retidas", M+TW/2+1, y+3); val("-", M+TW/2+1, y+6.5);
+    borda(M+TW*3/4, y, TW/4, 8); lbl("Descrição Contrib. Sociais - Retidas", M+TW*3/4+1, y+3); val("-", M+TW*3/4+1, y+6.5);
+    y += 9;
+    borda(M, y, TW/2, 8); lbl("PIS - Débito Apuração Própria", M+1, y+3); val("-", M+1, y+6.5);
+    borda(M+TW/2, y, TW/2, 8); lbl("COFINS - Débito Apuração Própria", M+TW/2+1, y+3); val("-", M+TW/2+1, y+6.5);
+    y += 10;
+
+    // ── TRIBUTAÇÃO IBS / CBS ──────────────────────────────────
+    secao("TRIBUTACAO IBS / CBS");
+    borda(M, y, TW/2, 8); lbl("CST / cClassTrib", M+1, y+3); val("-", M+1, y+6.5);
+    borda(M+TW/2, y, TW/2, 8); lbl("Indicador de Operacao / Codigo IBGE / Municipio / UF", M+TW/2+1, y+3); val("-", M+TW/2+1, y+6.5);
+    y += 9;
+    borda(M, y, TW/4, 8); lbl("Exclusoes e Reducoes da Base de Calculo", M+1, y+3); val("-", M+1, y+6.5);
+    borda(M+TW/4, y, TW/4, 8); lbl("Base de Calculo Apos Exclusoes e Reducoes", M+TW/4+1, y+3); val("-", M+TW/4+1, y+6.5);
+    borda(M+TW/2, y, TW/4, 8); lbl("Red. Aliquota IBS UF / IBS Mun / CBS", M+TW/2+1, y+3); val("-", M+TW/2+1, y+6.5);
+    borda(M+TW*3/4, y, TW/4, 8); lbl("Aliquota IBS UF / IBS Mun", M+TW*3/4+1, y+3); val("-", M+TW*3/4+1, y+6.5);
+    y += 9;
+    borda(M, y, TW/4, 8); lbl("Aliq. Efetiva Municipal - IBS", M+1, y+3); val("-", M+1, y+6.5);
+    borda(M+TW/4, y, TW/4, 8); lbl("Valor Apurado Municipal - IBS", M+TW/4+1, y+3); val("-", M+TW/4+1, y+6.5);
+    borda(M+TW/2, y, TW/4, 8); lbl("Aliq. Efetiva Estadual - IBS", M+TW/2+1, y+3); val("-", M+TW/2+1, y+6.5);
+    borda(M+TW*3/4, y, TW/4, 8); lbl("Valor Apurado Estadual - IBS", M+TW*3/4+1, y+3); val("-", M+TW*3/4+1, y+6.5);
+    y += 9;
+    borda(M, y, TW/4, 8); lbl("Valor Total Apurado - IBS", M+1, y+3); val("-", M+1, y+6.5);
+    borda(M+TW/4, y, TW/4, 8); lbl("Aliquota - CBS", M+TW/4+1, y+3); val("-", M+TW/4+1, y+6.5);
+    borda(M+TW/2, y, TW/4, 8); lbl("Aliquota Efetiva - CBS", M+TW/2+1, y+3); val("-", M+TW/2+1, y+6.5);
+    borda(M+TW*3/4, y, TW/4, 8); lbl("Valor Total Apurado - CBS", M+TW*3/4+1, y+3); val("-", M+TW*3/4+1, y+6.5);
+    y += 10;
+
+    // ── VALOR TOTAL ───────────────────────────────────────────
+    secao("VALOR TOTAL DA NFS-E");
+    borda(M, y, TW/4, 8); lbl("Valor do Serviço", M+1, y+3); val(fmt(vServ), M+1, y+6.5);
+    borda(M+TW/4, y, TW/4, 8); lbl("Desconto Condicionado", M+TW/4+1, y+3); val("-", M+TW/4+1, y+6.5);
+    borda(M+TW/2, y, TW/4, 8); lbl("Desconto Incondicionado", M+TW/2+1, y+3); val("-", M+TW/2+1, y+6.5);
+    borda(M+TW*3/4, y, TW/4, 8); lbl("ISSQN Retido", M+TW*3/4+1, y+3); val("-", M+TW*3/4+1, y+6.5);
+    y += 9;
+    borda(M, y, TW/4, 8); lbl("Total das Retencoes (ISSQN / Federais)", M+1, y+3); val("-", M+1, y+6.5);
+    borda(M+TW/4, y, TW/4, 8); lbl("Valor Liquido da NFS-e", M+TW/4+1, y+3); val(fmt(vLiq), M+TW/4+1, y+6.5, true, 8);
+    borda(M+TW/2, y, TW/4, 8); lbl("Total do IBS/CBS", M+TW/2+1, y+3); val("-", M+TW/2+1, y+6.5);
+    borda(M+TW*3/4, y, TW/4, 8); lbl("Valor Liquido da NFS-e + IBS/CBS", M+TW*3/4+1, y+3); val("-", M+TW*3/4+1, y+6.5);
+    y += 10;
+
+    // ── INFORMAÇÕES COMPLEMENTARES ────────────────────────────
+    secao("INFORMAÇÕES COMPLEMENTARES");
+    const vTotTrib = pTotTrib ? (parseFloat(vLiq||0)*parseFloat(pTotTrib)/100) : 0;
+    const infoComp = "Totais Aproximados dos Tributos cfe. Lei 12.741/2012: Federais: "+(pTotTrib?fmt(vTotTrib):"-")+"; Estaduais: -; Municipais: -";
+    borda(M, y, TW, 10);
+    doc.setFontSize(7); doc.setFont("helvetica","normal"); doc.setTextColor(...PRETO);
+    doc.text(infoComp, M+2, y+6);
+    y += 12;
+
+    doc.save("DANFSe_"+nNFSe+"_"+emitNome.slice(0,20).replace(/\s+/g,"_")+".pdf");
+  } catch(e) {
+    alert("Erro ao gerar PDF: "+e.message);
+    console.error(e);
+  }
+}
+
+
+
+// ── Download em lote — ZIP com todos os DANFSe do mês ────────────────────────
+window._baixarTodasNfse = async function(contas, mes) {
+  const comXml = contas.filter(c => c.xmlBase64 || c.nfBase64);
+  if (!comXml.length) { alert("Nenhuma nota disponível para download neste mês."); return; }
+
+  const btn = document.querySelector("[data-acao='baixar-todas']") || null;
+  const setStatus = (txt) => { if(btn) btn.textContent = txt; };
+
+  try {
+    const zip = new JSZip();
+    let ok = 0, erro = 0;
+
+    for (const c of comXml) {
+      setStatus ? setStatus(`Gerando ${ok+1}/${comXml.length}...`) : null;
+
+      try {
+        if (c.xmlBase64) {
+          // Descomprime XML e envia para api.digoo.com.br
+          const bin = atob(c.xmlBase64);
+          const bytes = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+          let xml = "";
+          try {
+            const ds = new DecompressionStream("gzip");
+            const writer = ds.writable.getWriter();
+            const reader = ds.readable.getReader();
+            writer.write(bytes); writer.close();
+            const chunks = [];
+            let done = false;
+            while (!done) { const r = await reader.read(); if (r.done) done = true; else chunks.push(r.value); }
+            xml = new TextDecoder().decode(new Uint8Array(chunks.reduce((a,b)=>[...a,...b],[])));
+          } catch { xml = new TextDecoder().decode(bytes); }
+
+          const resp = await fetch("https://api.digoo.com.br", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ xml })
+          });
+          if (resp.ok) {
+            const pdf = await resp.arrayBuffer();
+            const nome = `DANFSe_${c.numeroDoc||c.id}_${(c.fornecedor||"").slice(0,25).replace(/[^a-zA-Z0-9]/g,"_")}.pdf`;
+            zip.file(nome, pdf);
+            ok++;
+          } else { erro++; }
+        } else if (c.nfBase64) {
+          const b = atob(c.nfBase64);
+          const bytes = new Uint8Array(b.length);
+          for (let i = 0; i < b.length; i++) bytes[i] = b.charCodeAt(i);
+          const nome = `NF_${c.numeroDoc||c.id}_${(c.fornecedor||"").slice(0,25).replace(/[^a-zA-Z0-9]/g,"_")}.pdf`;
+          zip.file(nome, bytes);
+          ok++;
+        }
+      } catch(e) { erro++; }
+    }
+
+    if (!ok) { alert("Nenhum PDF foi gerado. Tente novamente."); return; }
+
+    const mesLabel = mes ? mes.replace("-","-") : "mes";
+    const blob = await zip.generateAsync({ type: "blob" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `NFS-e_${mesLabel}.zip`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    if (erro) alert(`${ok} PDF(s) baixados com sucesso. ${erro} nota(s) não puderam ser geradas.`);
+  } catch(e) {
+    alert("Erro ao gerar ZIP: " + e.message);
+  }
+};
+
+// ── Exportar relatório Excel no formato da Resicon — duas abas ──────────────
+window._exportarExcelResicon = async function(contas, mes) {
+  if (!contas.length) { alert("Nenhuma nota para exportar."); return; }
+
+  const mesLabel = mes ? mes.slice(5,7) + "-" + mes.slice(0,4) : "";
+  const dataCompet = mes ? "01/" + mes.slice(5,7) + "/" + mes.slice(0,4) : "";
+
+  // Separar por empresa
+  const matriz = contas.filter(c => c.empresa === "Matriz" || (c.tomadorCnpj||"").replace(/\D/g,"") === "40981026000182");
+  const filial = contas.filter(c => c.empresa === "Filial" || (c.tomadorCnpj||"").replace(/\D/g,"") === "40981026000344");
+
+  // SheetJS via CDN se não carregado
+  if (!window.XLSX) {
+    await new Promise((res, rej) => {
+      const s = document.createElement("script");
+      s.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+      s.onload = res; s.onerror = rej;
+      document.head.appendChild(s);
+    });
+  }
+
+  const { utils, write } = window.XLSX;
+
+  function montarAba(lista, empresa) {
+    if (!lista.length) return null;
+
+    const titulo = `SERVIÇOS TOMADOS - ${empresa.toUpperCase()} ${mesLabel}`;
+    const cabecalho = ["Dt Inicial", "Número", "Nome Fornecedor", "Discriminação do Serviço", "Valor do Documento"];
+
+    let total = 0;
+    const rows = lista.map(c => {
+      const valor = Number(c.valor || 0);
+      if (c.situacao !== "cancelado") total += valor;
+      return [
+        dataCompet,
+        c.numeroDoc || "",
+        c.fornecedor || "",
+        c.historico || "",
+        valor
+      ];
+    });
+    rows.push(["", "", "", "TOTAL", total]);
+
+    // Montar worksheet
+    const wsData = [
+      [titulo, "", "", "", "", ""],
+      cabecalho,
+      ...rows
+    ];
+
+    const ws = utils.aoa_to_sheet(wsData);
+
+    // Larguras das colunas
+    ws["!cols"] = [
+      { wch: 14 }, // Data
+      { wch: 14 }, // Número
+      { wch: 48 }, // Fornecedor
+      { wch: 102 }, // Discriminação
+      { wch: 20 }, // Valor
+    ];
+
+    // Mesclar título
+    ws["!merges"] = [{ s:{r:0,c:0}, e:{r:0,c:4} }];
+
+    // Estilo do título (negrito, fundo)
+    const tituloCell = ws["A1"];
+    if (tituloCell) {
+      tituloCell.s = {
+        font: { bold: true, sz: 12 },
+        fill: { fgColor: { rgb: "1A1A1A" } },
+        alignment: { horizontal: "center" }
+      };
+    }
+
+    // Estilo do cabeçalho
+    cabecalho.forEach((_, ci) => {
+      const addr = utils.encode_cell({ r:1, c:ci });
+      if (ws[addr]) ws[addr].s = { font: { bold: true }, fill: { fgColor: { rgb: "F0F0F0" } } };
+    });
+
+    // Formatar coluna valor como número BR
+    rows.forEach((_, ri) => {
+      const addr = utils.encode_cell({ r: ri+2, c: 4 });
+      if (ws[addr] && typeof ws[addr].v === "number") {
+        ws[addr].t = "n";
+        ws[addr].z = "#,##0.00";
+      }
+    });
+
+    return ws;
+  }
+
+  const wb = utils.book_new();
+
+  const wsMatriz = montarAba(matriz, "Matriz");
+  const wsFilial = montarAba(filial, "Filial");
+
+  if (wsMatriz) utils.book_append_sheet(wb, wsMatriz, "Matriz RS");
+  if (wsFilial) utils.book_append_sheet(wb, wsFilial, "Filial SP");
+
+  if (!wb.SheetNames.length) { alert("Nenhuma nota para exportar."); return; }
+
+  const buf = write(wb, { bookType: "xlsx", type: "array", cellStyles: true });
+  const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `Serviços_tomados_${mesLabel}.xlsx`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+</script>
 </body>
 </html>
