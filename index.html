@@ -4167,6 +4167,109 @@ function renderCalcIpiPanel(container, task){
 }
 
 // ── Preview e emissão da NF complementar de IPI ──────────────────────────────
+function renderNfComplementarInline(box, taskFake, calc, nf, panel) {
+  const produtosComIpi = (calc.produtos || []).filter(p => p.aliquotaValor > 0 && p.qtd > 0 && p.precoVenda != null).map(p => {
+    const r = calcularLinhaIpi(p, calc.freteComponentes?.[p.sku] || 0);
+    return { ...p, aliquota: p.aliquotaValor, quantidade: p.qtd, ipiUnitario: p.qtd > 0 ? r.ipi / p.qtd : 0, produto: p.produto || p.sku };
+  });
+
+  if (!produtosComIpi.length) {
+    box.innerHTML += `<div style="font-size:12px;color:${T.text2};padding:10px;background:${T.bg3};border:1px solid ${T.border};border-radius:6px;">Nenhum produto com IPI calculado. Calcule o IPI antes de gerar a NF complementar.</div>`;
+    return;
+  }
+
+  const nfRef = calc.nfUsada || "";
+  const chaveRef = calc.chaveAcesso || nf?.chaveAcesso || "";
+  const totalIPI = produtosComIpi.reduce((s,p) => s + parseFloat(p.ipiUnitario||0)*Number(p.quantidade), 0);
+  const totalBC  = produtosComIpi.reduce((a,p) => { const r=calcularLinhaIpi(p, calc.freteComponentes?.[p.sku]||0); return a+r.baseTotal; }, 0);
+  const aliquota = produtosComIpi[0]?.aliquota || 0;
+
+  // Referência NF original
+  const refBlock = document.createElement("div");
+  refBlock.style.cssText = `background:${T.bg3};border:0.5px solid ${T.border};border-radius:8px;padding:12px 14px;margin-bottom:14px;`;
+  refBlock.innerHTML = `
+    <div style="font-size:11px;color:${T.text2};margin-bottom:8px;">Referência à NF original</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div>
+        <div style="font-size:10px;color:${T.text2};margin-bottom:3px;">Número da NF</div>
+        <input id="nfi-numero-ref" value="${nfRef}" placeholder="ex: 020673" style="width:100%;background:${T.bg3};border:0.5px solid ${T.border};border-radius:6px;padding:8px 10px;color:${T.text};font-size:12px;font-family:inherit;outline:none;box-sizing:border-box;">
+      </div>
+      <div>
+        <div style="font-size:10px;color:${T.text2};margin-bottom:3px;">Chave de Acesso (44 dígitos)</div>
+        <input id="nfi-chave-ref" value="${chaveRef}" placeholder="44 dígitos" style="width:100%;background:${T.bg3};border:0.5px solid ${T.border};border-radius:6px;padding:8px 10px;color:${T.text};font-size:11px;font-family:'IBM Plex Mono',monospace;outline:none;box-sizing:border-box;">
+      </div>
+    </div>`;
+  box.appendChild(refBlock);
+
+  // Tabela itens
+  const tblWrap = document.createElement("div");
+  tblWrap.style.cssText = "margin-bottom:14px;overflow-x:auto;";
+  tblWrap.innerHTML = `
+    <div style="font-size:11px;color:${T.text2};margin-bottom:8px;">Itens — valores de IPI a complementar</div>
+    <table style="width:100%;border-collapse:collapse;font-size:11px;">
+      <thead><tr style="border-bottom:0.5px solid ${T.border};">
+        <th style="text-align:left;padding:6px 8px;color:${T.text2};font-weight:500;">SKU</th>
+        <th style="text-align:center;padding:6px 8px;color:${T.text2};font-weight:500;">Qtd</th>
+        <th style="text-align:center;padding:6px 8px;color:${T.text2};font-weight:500;">Alíq</th>
+        <th style="text-align:right;padding:6px 8px;color:${T.text2};font-weight:500;">IPI Unit</th>
+        <th style="text-align:right;padding:6px 8px;color:${T.text2};font-weight:500;">IPI Total</th>
+      </tr></thead>
+      <tbody>
+        ${produtosComIpi.map(p => {
+          const u = parseFloat(p.ipiUnitario||0);
+          return `<tr style="border-bottom:0.5px solid ${T.border};">
+            <td style="padding:7px 8px;color:${T.text};">${p.sku}</td>
+            <td style="padding:7px 8px;text-align:center;color:${T.text2};">${p.quantidade}</td>
+            <td style="padding:7px 8px;text-align:center;color:${T.text2};">${(Number(p.aliquota)*100).toFixed(0)}%</td>
+            <td style="padding:7px 8px;text-align:right;font-family:'IBM Plex Mono',monospace;">R$ ${u.toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
+            <td style="padding:7px 8px;text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:600;">R$ ${(u*Number(p.quantidade)).toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
+          </tr>`;
+        }).join("")}
+      </tbody>
+      <tfoot><tr style="border-top:1px solid ${T.border};">
+        <td colspan="4" style="padding:10px 8px;text-align:right;color:${T.text2};font-size:11px;">Total IPI</td>
+        <td style="padding:10px 8px;text-align:right;color:#00dfc3;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:14px;">R$ ${totalIPI.toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
+      </tr></tfoot>
+    </table>`;
+  box.appendChild(tblWrap);
+
+  // Aviso
+  const aviso = document.createElement("div");
+  aviso.style.cssText = `background:${T.bg3};border:0.5px solid ${T.border};border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:11px;color:${T.text2};`;
+  aviso.innerHTML = `ℹ️ CFOP 6152 · Valor dos itens = R$ 0,00 · Apenas IPI destacado. Verifique antes de emitir.`;
+  box.appendChild(aviso);
+
+  // Status
+  const statusEl = document.createElement("div");
+  box.appendChild(statusEl);
+
+  // Botão emitir
+  const emitirBtn = document.createElement("button");
+  emitirBtn.textContent = "Emitir NF Complementar de IPI";
+  emitirBtn.style.cssText = `width:100%;padding:12px;border-radius:8px;background:#00dfc3;border:none;color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;`;
+  emitirBtn.addEventListener("click", async () => {
+    const chaveRefVal = box.querySelector("#nfi-chave-ref")?.value?.trim() || "";
+    const nNumVal = box.querySelector("#nfi-numero-ref")?.value?.trim() || "";
+    if (chaveRefVal.length !== 44) { statusEl.innerHTML = `<div style="color:#e8432d;font-size:12px;padding:6px 0;">Chave deve ter 44 dígitos.</div>`; return; }
+    emitirBtn.disabled = true; emitirBtn.textContent = "Emitindo...";
+    statusEl.innerHTML = `<div style="color:${T.text2};font-size:12px;padding:6px 0;">Enviando para a SEFAZ...</div>`;
+    try {
+      const r = await fetch("https://nfe.digoo.com.br", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ empresa:"matriz", chaveRef:chaveRefVal, nNF:nNumVal, xProd:"Complemento de IPI", cProd:"CFOP6152", ncm:produtosComIpi[0]?.ncm||"84145990", cfop:"6152", qCom:"1.0000", vBC_IPI:totalBC.toFixed(2), pIPI:Number(aliquota*100).toFixed(4), vIPI:totalIPI.toFixed(2) }),
+      });
+      const data = await r.json();
+      if (!data.ok) { statusEl.innerHTML = `<div style="color:#e8432d;font-size:12px;padding:6px 0;">Erro ${data.cStat}: ${data.xMotivo||data.erro}</div>`; emitirBtn.disabled=false; emitirBtn.textContent="Tentar novamente"; return; }
+      statusEl.innerHTML = `<div style="color:#2dce89;font-size:13px;font-weight:600;padding:10px 0;">✓ Autorizada! NF ${nNumVal}</div><div style="font-size:10px;color:${T.text2};font-family:'IBM Plex Mono',monospace;word-break:break-all;">${data.chave}</div>`;
+      emitirBtn.textContent="✓ Emitida"; emitirBtn.style.background="#2dce8922"; emitirBtn.style.color="#2dce89";
+      const chaveKey = nf?.chave || String(nfRef).replace(/[.#$\[\]\/]/g,"_");
+      if (chaveKey) await update(ref(db, `/nfes_processadas/${chaveKey}`), { nfComplementarNumero: nNumVal, chaveComplementar: data.chave });
+      setTimeout(() => { const p = panel?.closest?.(".nfs-emitidas-container")||panel; if(p) renderNfsEmitidas(p); }, 2000);
+    } catch(e) { statusEl.innerHTML = `<div style="color:#e8432d;font-size:12px;padding:6px 0;">${e.message}</div>`; emitirBtn.disabled=false; emitirBtn.textContent="Tentar novamente"; }
+  });
+  box.appendChild(emitirBtn);
+}
+
 async function renderNfComplementarPreview(container, task, calc) {
   // Remover botão e mostrar painel de preview
   const overlay = document.createElement("div");
@@ -10311,14 +10414,36 @@ async function renderNfsEmitidas(panel) {
           // Calculadora completa
           renderCalcIpiPanel(box, taskFake);
 
-          // Botão de gerar complementar — abre preview/emissão
+          // Botão de gerar complementar — troca calculadora pelo preview na mesma janela
           const btnGerarComp = document.createElement("button");
           btnGerarComp.textContent = "Gerar NF Complementar de IPI";
           btnGerarComp.style.cssText = `width:100%;margin-top:20px;padding:12px;border-radius:8px;background:#00dfc3;border:none;color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;`;
           btnGerarComp.addEventListener("click", () => {
             const calcObj = calcIpiState[taskFake.id];
             if (!calcObj || calcObj.carregando) { alert("Aguarde o carregamento dos dados."); return; }
-            renderNfComplementarPreview(document.body, taskFake, calcObj);
+            // Limpar box e mostrar preview no mesmo lugar
+            box.innerHTML = "";
+            box.style.maxWidth = "680px";
+            // Header com botão voltar
+            const hdr = document.createElement("div");
+            hdr.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;";
+            hdr.innerHTML = `<div><div style="font-size:15px;font-weight:700;color:${T.text};">NF Complementar de IPI</div><div style="font-size:11px;color:${T.text2};margin-top:2px;">CFOP 6.152 · Natureza: Complementar de IPI · Matriz RS → Filial SP</div></div>`;
+            const btnVoltar = document.createElement("button");
+            btnVoltar.textContent = "← Voltar";
+            btnVoltar.style.cssText = `background:none;border:0.5px solid ${T.border};border-radius:6px;padding:5px 12px;font-size:11px;color:${T.text2};cursor:pointer;font-family:inherit;`;
+            btnVoltar.addEventListener("click", () => {
+              // Voltar para a calculadora
+              box.innerHTML = "";
+              box.style.maxWidth = "900px";
+              titleDiv.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;";
+              box.appendChild(titleDiv);
+              renderCalcIpiPanel(box, taskFake);
+              box.appendChild(btnGerarComp);
+            });
+            hdr.appendChild(btnVoltar);
+            box.appendChild(hdr);
+            // Renderizar preview inline (sem criar outro overlay)
+            renderNfComplementarInline(box, taskFake, calcObj, nf, panel);
           });
           box.appendChild(btnGerarComp);
 
