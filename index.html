@@ -4298,20 +4298,44 @@ async function renderNfComplementarPreview(container, task, calc) {
           })),
         };
 
-        const r = await fetch(`${BLING_PROXY}/api/bling-produtos?action=emitir-complementar-ipi`, {
+        // Calcular totais para o emissor PHP
+        const totalBC  = produtosComIpi.reduce((a,p) => a + (Number(p.valorBase||p.baseIpi||0)), 0);
+        const totalIPI = produtosComIpi.reduce((a,p) => a + (Number(p.ipiTotal||p.valorIpi||0)), 0);
+        const aliquota = produtosComIpi[0]?.aliquota || 6.5;
+        const empresa  = calc.empresa || "matriz";
+
+        const payloadNFe = {
+          empresa:   empresa.toLowerCase().includes("filial") ? "filial" : "matriz",
+          chaveRef:  payload.chaveRefOriginal || "",
+          nNF:       String((calc.nfComplementarNumero || 0) + 1 || ""),
+          xProd:     "Complemento de IPI",
+          cProd:     "CFOP6152",
+          ncm:       produtosComIpi[0]?.ncm || "84145990",
+          cfop:      "6152",
+          qCom:      "1.0000",
+          vBC_IPI:   totalBC.toFixed(2),
+          pIPI:      Number(aliquota).toFixed(4),
+          vIPI:      totalIPI.toFixed(2),
+        };
+
+        const r = await fetch("https://nfe.digoo.com.br", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: JSON.stringify(payloadNFe),
         });
         const data = await r.json();
 
         if (!r.ok || !data.ok) {
-          statusEl.innerHTML = `<div style="background:${T.errBg};border:1px solid ${T.errBor};border-radius:6px;padding:10px 12px;font-size:11px;color:${T.errText};margin-bottom:12px;white-space:pre-wrap;">Erro: ${data.erro || "Falha ao emitir"}
-${JSON.stringify(data.detalhe||data.raw||"",null,2)}</div>`;
+          statusEl.innerHTML = `<div style="background:${T.errBg};border:1px solid ${T.errBor};border-radius:6px;padding:10px 12px;font-size:11px;color:${T.errText};margin-bottom:12px;white-space:pre-wrap;">Erro: ${data.erro || data.xMotivo || "Falha ao emitir"}
+cStat: ${data.cStat||""}</div>`;
           emitirBtn.disabled = false;
           emitirBtn.textContent = "Tentar novamente";
           return;
         }
+        // Mapear campos do retorno do nosso emissor
+        data.numero = data.chave ? data.chave.substring(25,34) : "";
+        data.chaveAcesso = data.chave || "";
+        data.status = data.xMotivo || "Autorizado";
 
         // Sucesso
         statusEl.innerHTML = `
