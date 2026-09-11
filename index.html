@@ -5669,7 +5669,103 @@ function render(){
               nfCompTopBtn.addEventListener("click", () => {
                 const calc = calcIpiState[taskFS.id];
                 if (!calc) { alert("Aguarde o carregamento dos dados."); return; }
-                renderNfComplementarPreview(document.body, taskFS, calc);
+                // Mostrar calculadora + emissor inline abaixo da topBar
+                const existingComp = panel.querySelector(".nf-comp-inline");
+                if (existingComp) { existingComp.remove(); return; }
+                const compSection = document.createElement("div");
+                compSection.className = "nf-comp-inline";
+                compSection.style.cssText = `border-top:0.5px solid ${T.border};margin-top:16px;padding-top:16px;`;
+                // Título
+                const compTitle = document.createElement("div");
+                compTitle.style.cssText = `font-size:13px;font-weight:600;color:${T.text};margin-bottom:12px;`;
+                compTitle.textContent = "NF Complementar de IPI";
+                compSection.appendChild(compTitle);
+                // Renderizar calculadora de IPI inline
+                renderCalcIpiPanel(compSection, taskFS);
+                // Botão emitir pelo nosso emissor
+                const emitirDiv = document.createElement("div");
+                emitirDiv.style.cssText = "margin-top:16px;";
+                const chaveInput = document.createElement("input");
+                chaveInput.placeholder = "Chave de acesso da NF original (44 dígitos)";
+                chaveInput.style.cssText = `width:100%;padding:10px 12px;border-radius:8px;border:0.5px solid ${T.border};background:${T.bg3};color:${T.text};font-size:12px;font-family:'IBM Plex Mono',monospace;outline:none;box-sizing:border-box;margin-bottom:10px;`;
+                if (calc.chaveAcesso) chaveInput.value = calc.chaveAcesso;
+                emitirDiv.appendChild(chaveInput);
+
+                const nNumInput = document.createElement("input");
+                nNumInput.placeholder = "Número desta complementar";
+                nNumInput.type = "number";
+                nNumInput.style.cssText = `width:100%;padding:10px 12px;border-radius:8px;border:0.5px solid ${T.border};background:${T.bg3};color:${T.text};font-size:12px;font-family:inherit;outline:none;box-sizing:border-box;margin-bottom:10px;`;
+                if (calc.nfComplementarNumero) nNumInput.value = Number(calc.nfComplementarNumero) + 1;
+                emitirDiv.appendChild(nNumInput);
+
+                const statusDiv = document.createElement("div");
+                emitirDiv.appendChild(statusDiv);
+
+                const emitirBtn = document.createElement("button");
+                emitirBtn.textContent = "Emitir NF Complementar";
+                emitirBtn.style.cssText = `width:100%;padding:12px;border-radius:8px;background:#00dfc3;border:none;color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;`;
+                emitirBtn.addEventListener("click", async () => {
+                  const chaveRef = chaveInput.value.trim();
+                  const nNF = nNumInput.value.trim();
+                  if (!chaveRef || chaveRef.length !== 44) { statusDiv.innerHTML = `<div style="color:#e8432d;font-size:12px;padding:8px 0;">Chave inválida — deve ter 44 dígitos.</div>`; return; }
+                  if (!nNF) { statusDiv.innerHTML = `<div style="color:#e8432d;font-size:12px;padding:8px 0;">Informe o número da complementar.</div>`; return; }
+                  const produtosComIpi = (calc.produtos || []).filter(p => Number(p.aliquota) > 0);
+                  if (!produtosComIpi.length) { statusDiv.innerHTML = `<div style="color:#e8432d;font-size:12px;padding:8px 0;">Nenhum produto com IPI calculado.</div>`; return; }
+                  const totalBC  = produtosComIpi.reduce((a,p) => a + Number(p.valorBase||p.baseIpi||0), 0);
+                  const totalIPI = produtosComIpi.reduce((a,p) => a + Number(p.ipiTotal||p.valorIpi||0), 0);
+                  const aliquota = produtosComIpi[0]?.aliquota || 6.5;
+                  emitirBtn.disabled = true; emitirBtn.textContent = "Emitindo...";
+                  statusDiv.innerHTML = `<div style="color:${T.text2};font-size:12px;padding:8px 0;">Enviando para a SEFAZ...</div>`;
+                  try {
+                    const r = await fetch("https://nfe.digoo.com.br", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        empresa: "matriz",
+                        chaveRef, nNF,
+                        xProd: "Complemento de IPI",
+                        cProd: "CFOP6152",
+                        ncm: produtosComIpi[0]?.ncm || "84145990",
+                        cfop: "6152",
+                        qCom: "1.0000",
+                        vBC_IPI: totalBC.toFixed(2),
+                        pIPI: Number(aliquota).toFixed(4),
+                        vIPI: totalIPI.toFixed(2),
+                      }),
+                    });
+                    const data = await r.json();
+                    if (!data.ok) {
+                      statusDiv.innerHTML = `<div style="color:#e8432d;font-size:12px;padding:8px 0;">Erro ${data.cStat}: ${data.xMotivo||data.erro}</div>`;
+                      emitirBtn.disabled = false; emitirBtn.textContent = "Tentar novamente";
+                      return;
+                    }
+                    statusDiv.innerHTML = `<div style="color:#2dce89;font-size:13px;font-weight:600;padding:10px 0;">✓ Autorizada! Chave: ${data.chave}</div>`;
+                    emitirBtn.textContent = "✓ Emitida";
+                    emitirBtn.style.background = "#2dce8922";
+                    emitirBtn.style.color = "#2dce89";
+                    // Salvar no Firebase
+                    if (data.chave && calc.nfUsada) {
+                      const chaveKey = String(calc.nfUsada).replace(/[.#$\[\]\/]/g,"_");
+                      await update(ref(db, `/nfes_processadas/${chaveKey}`), { chaveAcesso: data.chave, nfComplementarNumero: nNF });
+                    }
+                    // Marcar subtarefa como feita
+                    if (taskFS?.id) {
+                      const tarefas = Object.entries(state.tasks||{});
+                      const taskAlvo = tarefas.find(([,t]) => t?.subtarefas && String(t.nfNumero||t.text||"").includes(String(calc.nfUsada||"")));
+                      if (taskAlvo) {
+                        const [taskId, taskObj] = taskAlvo;
+                        const idx = (taskObj.subtarefas||[]).findIndex(s => s.texto?.toLowerCase().includes("complemento"));
+                        if (idx >= 0) update(ref(db, `/tasks/${taskId}/subtarefas/${idx}`), { feito: true });
+                      }
+                    }
+                  } catch(e) {
+                    statusDiv.innerHTML = `<div style="color:#e8432d;font-size:12px;padding:8px 0;">${e.message}</div>`;
+                    emitirBtn.disabled = false; emitirBtn.textContent = "Tentar novamente";
+                  }
+                });
+                emitirDiv.appendChild(emitirBtn);
+                compSection.appendChild(emitirDiv);
+                panel.appendChild(compSection);
               });
 
               // Botão expandir — cicla 3 estados
