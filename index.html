@@ -4254,9 +4254,19 @@ function renderNfComplementarInline(box, taskFake, calc, nf, panel) {
     emitirBtn.disabled = true; emitirBtn.textContent = "Emitindo...";
     statusEl.innerHTML = `<div style="color:${T.text2};font-size:12px;padding:6px 0;">Enviando para a SEFAZ...</div>`;
     try {
+      // Agrupar por alíquota
+      const gruposMapI = {};
+      produtosComIpi.forEach(p => {
+        const aliq = Number(p.aliquota||0).toFixed(4);
+        if (!gruposMapI[aliq]) gruposMapI[aliq] = { pIPI:aliq, vBC_IPI:0, vIPI:0, ncm:p.ncm||"84145990", cfop:"6152", xProd:"Complemento de IPI", cProd:"CFOP6152" };
+        const rr = calcularLinhaIpi(p, calc.freteComponentes?.[p.sku]||0);
+        gruposMapI[aliq].vBC_IPI += rr.baseTotal;
+        gruposMapI[aliq].vIPI    += rr.ipi;
+      });
+      const gruposI = Object.values(gruposMapI).filter(g => g.vIPI > 0).map(g => ({...g, vBC_IPI:g.vBC_IPI.toFixed(2), vIPI:g.vIPI.toFixed(2)}));
       const r = await fetch("https://nfe.digoo.com.br", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ empresa:"matriz", chaveRef:chaveRefVal, nNF:nNumVal, xProd:"Complemento de IPI", cProd:"CFOP6152", ncm:produtosComIpi[0]?.ncm||"84145990", cfop:"6152", qCom:"1.0000", vBC_IPI:totalBC.toFixed(2), pIPI:Number(aliquota*100).toFixed(4), vIPI:totalIPI.toFixed(2) }),
+        body: JSON.stringify({ empresa:"matriz", chaveRef:chaveRefVal, nNF:nNumVal, grupos:gruposI }),
       });
       const data = await r.json();
       if (!data.ok) { statusEl.innerHTML = `<div style="color:#e8432d;font-size:12px;padding:6px 0;">Erro ${data.cStat}: ${data.xMotivo||data.erro}</div>`; emitirBtn.disabled=false; emitirBtn.textContent="Tentar novamente"; return; }
@@ -5820,21 +5830,21 @@ function render(){
                   emitirBtn.disabled = true; emitirBtn.textContent = "Emitindo...";
                   statusDiv.innerHTML = `<div style="color:${T.text2};font-size:12px;padding:8px 0;">Enviando para a SEFAZ...</div>`;
                   try {
+                    // Agrupar por aliquota
+                    const gruposMapF = {};
+                    produtosComIpi.forEach(p => {
+                      const aliq = Number(p.aliquota||0).toFixed(4);
+                      if (!gruposMapF[aliq]) gruposMapF[aliq] = { pIPI: aliq, vBC_IPI: 0, vIPI: 0, ncm: p.ncm||"84145990", cfop:"6152", xProd:"Complemento de IPI", cProd:"CFOP6152" };
+                      gruposMapF[aliq].vBC_IPI += Number(p.valorBase||p.baseIpi||0);
+                      gruposMapF[aliq].vIPI    += Number(p.ipiTotal||p.valorIpi||0);
+                    });
+                    const gruposF = Object.values(gruposMapF).filter(g => g.vIPI > 0).map(g => ({
+                      ...g, vBC_IPI: g.vBC_IPI.toFixed(2), vIPI: g.vIPI.toFixed(2),
+                    }));
                     const r = await fetch("https://nfe.digoo.com.br", {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        empresa: "matriz",
-                        chaveRef, nNF,
-                        xProd: "Complemento de IPI",
-                        cProd: "CFOP6152",
-                        ncm: produtosComIpi[0]?.ncm || "84145990",
-                        cfop: "6152",
-                        qCom: "1.0000",
-                        vBC_IPI: totalBC.toFixed(2),
-                        pIPI: Number(aliquota).toFixed(4),
-                        vIPI: totalIPI.toFixed(2),
-                      }),
+                      body: JSON.stringify({ empresa:"matriz", chaveRef, nNF, grupos:gruposF }),
                     });
                     const data = await r.json();
                     if (!data.ok) {
