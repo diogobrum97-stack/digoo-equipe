@@ -10270,6 +10270,120 @@ async function renderNfsEmitidas(panel) {
       direita.appendChild(btnCopy);
     }
 
+    // Menu ⋮ com opção de emitir complementar
+    const menuWrapNF = document.createElement("div");
+    menuWrapNF.style.cssText = "position:relative;flex-shrink:0;";
+    const dotsNF = document.createElement("button");
+    dotsNF.textContent = "⋮";
+    dotsNF.style.cssText = `background:none;border:none;cursor:pointer;padding:2px 6px;border-radius:4px;color:${T.text2};font-size:18px;line-height:1;`;
+    dotsNF.addEventListener("click", (e) => {
+      e.stopPropagation();
+      document.querySelectorAll(".nf-dropdown").forEach(m => m.remove());
+      const menu = document.createElement("div");
+      menu.className = "nf-dropdown";
+      const dotsRect = dotsNF.getBoundingClientRect();
+      menu.style.cssText = `position:fixed;z-index:9999;background:${T.card};border:0.5px solid ${T.border};border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.25);min-width:200px;padding:4px 0;top:${dotsRect.bottom+4}px;right:${window.innerWidth-dotsRect.right}px;`;
+
+      const opcoes = [
+        { label: "Emitir NF Complementar de IPI", fn: () => {
+          // Abrir modal de emissão
+          const overlay = document.createElement("div");
+          overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;display:flex;align-items:center;justify-content:center;";
+          const box = document.createElement("div");
+          box.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:14px;padding:28px;width:480px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,.4);`;
+          box.innerHTML = `
+            <div style="font-size:15px;font-weight:600;color:${T.text};margin-bottom:4px;">NF Complementar de IPI</div>
+            <div style="font-size:11px;color:${T.text2};margin-bottom:20px;">CFOP 6152 · Matriz RS → Filial SP</div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <div>
+                <div style="font-size:11px;color:${T.text2};margin-bottom:4px;">Chave da NF original (44 dígitos)</div>
+                <input id="comp-chave" value="${nf.chaveAcesso||''}" placeholder="44 dígitos" style="width:100%;padding:10px 12px;border-radius:8px;border:0.5px solid ${T.border};background:${T.bg3};color:${T.text};font-size:11px;font-family:'IBM Plex Mono',monospace;outline:none;box-sizing:border-box;">
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <div>
+                  <div style="font-size:11px;color:${T.text2};margin-bottom:4px;">Número desta complementar</div>
+                  <input id="comp-nnum" type="number" value="${nf.nfComplementarNumero ? Number(nf.nfComplementarNumero)+1 : ''}" placeholder="Ex: 20614" style="width:100%;padding:10px 12px;border-radius:8px;border:0.5px solid ${T.border};background:${T.bg3};color:${T.text};font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;">
+                </div>
+                <div>
+                  <div style="font-size:11px;color:${T.text2};margin-bottom:4px;">Alíquota IPI (%)</div>
+                  <input id="comp-aliq" type="number" value="6.5" step="0.5" style="width:100%;padding:10px 12px;border-radius:8px;border:0.5px solid ${T.border};background:${T.bg3};color:${T.text};font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;">
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <div>
+                  <div style="font-size:11px;color:${T.text2};margin-bottom:4px;">Base de cálculo IPI (R$)</div>
+                  <input id="comp-bc" type="number" step="0.01" placeholder="Ex: 9979.92" style="width:100%;padding:10px 12px;border-radius:8px;border:0.5px solid ${T.border};background:${T.bg3};color:${T.text};font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;">
+                </div>
+                <div>
+                  <div style="font-size:11px;color:${T.text2};margin-bottom:4px;">Valor IPI (R$)</div>
+                  <input id="comp-vipi" type="number" step="0.01" placeholder="Calculado auto" style="width:100%;padding:10px 12px;border-radius:8px;border:0.5px solid ${T.border};background:${T.bg3};color:${T.text};font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;">
+                </div>
+              </div>
+            </div>
+            <div id="comp-status" style="margin-top:12px;"></div>
+            <div style="display:flex;gap:8px;margin-top:20px;">
+              <button id="comp-cancel" style="flex:1;padding:10px;border-radius:8px;border:0.5px solid ${T.border};background:none;color:${T.text2};font-size:13px;cursor:pointer;font-family:inherit;">Cancelar</button>
+              <button id="comp-emitir" style="flex:2;padding:10px;border-radius:8px;border:none;background:#00dfc3;color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">Emitir Complementar</button>
+            </div>`;
+          overlay.appendChild(box);
+          document.body.appendChild(overlay);
+          // Auto-calcular valor IPI ao digitar BC
+          box.querySelector("#comp-bc").addEventListener("input", () => {
+            const bc = parseFloat(box.querySelector("#comp-bc").value)||0;
+            const aliq = parseFloat(box.querySelector("#comp-aliq").value)||6.5;
+            box.querySelector("#comp-vipi").value = (bc * aliq / 100).toFixed(2);
+          });
+          box.querySelector("#comp-aliq").addEventListener("input", () => {
+            const bc = parseFloat(box.querySelector("#comp-bc").value)||0;
+            const aliq = parseFloat(box.querySelector("#comp-aliq").value)||6.5;
+            if (bc) box.querySelector("#comp-vipi").value = (bc * aliq / 100).toFixed(2);
+          });
+          box.querySelector("#comp-cancel").onclick = () => overlay.remove();
+          overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+          box.querySelector("#comp-emitir").addEventListener("click", async () => {
+            const chaveRef = box.querySelector("#comp-chave").value.trim();
+            const nNF = box.querySelector("#comp-nnum").value.trim();
+            const pIPI = box.querySelector("#comp-aliq").value.trim();
+            const vBC = box.querySelector("#comp-bc").value.trim();
+            const vIPI = box.querySelector("#comp-vipi").value.trim();
+            const statusEl = box.querySelector("#comp-status");
+            if (chaveRef.length !== 44) { statusEl.innerHTML = `<div style="color:#e8432d;font-size:12px;">Chave deve ter 44 dígitos.</div>`; return; }
+            if (!nNF || !vBC || !vIPI) { statusEl.innerHTML = `<div style="color:#e8432d;font-size:12px;">Preencha todos os campos.</div>`; return; }
+            const btn = box.querySelector("#comp-emitir");
+            btn.disabled = true; btn.textContent = "Emitindo...";
+            statusEl.innerHTML = `<div style="color:${T.text2};font-size:12px;">Enviando para a SEFAZ...</div>`;
+            try {
+              const r = await fetch("https://nfe.digoo.com.br", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ empresa:"matriz", chaveRef, nNF, xProd:"Complemento de IPI", cProd:"CFOP6152", ncm:"84145990", cfop:"6152", qCom:"1.0000", vBC_IPI:vBC, pIPI, vIPI }),
+              });
+              const data = await r.json();
+              if (!data.ok) { statusEl.innerHTML = `<div style="color:#e8432d;font-size:12px;">Erro ${data.cStat}: ${data.xMotivo||data.erro}</div>`; btn.disabled=false; btn.textContent="Tentar novamente"; return; }
+              statusEl.innerHTML = `<div style="color:#2dce89;font-size:13px;font-weight:600;">✓ Autorizada! NF ${nNF}</div><div style="font-size:10px;color:${T.text2};margin-top:4px;font-family:'IBM Plex Mono',monospace;word-break:break-all;">${data.chave}</div>`;
+              btn.textContent = "✓ Emitida"; btn.style.background="#2dce8922"; btn.style.color="#2dce89";
+              const chaveKey = nf.chave;
+              if (chaveKey) await update(ref(db, `/nfes_processadas/${chaveKey}`), { nfComplementarNumero: nNF, chaveComplementar: data.chave });
+              setTimeout(() => renderNfsEmitidas(panel.closest(".nfs-emitidas-container")||panel), 2000);
+            } catch(e) { statusEl.innerHTML = `<div style="color:#e8432d;font-size:12px;">${e.message}</div>`; btn.disabled=false; btn.textContent="Tentar novamente"; }
+          });
+        }},
+      ];
+
+      opcoes.forEach(op => {
+        const item = document.createElement("div");
+        item.style.cssText = `padding:9px 14px;font-size:12px;cursor:pointer;color:${T.text};font-family:'Inter',sans-serif;transition:background .1s;`;
+        item.textContent = op.label;
+        item.addEventListener("mouseenter", () => item.style.background=T.bg3);
+        item.addEventListener("mouseleave", () => item.style.background="transparent");
+        item.addEventListener("click", (e) => { e.stopPropagation(); menu.remove(); op.fn(); });
+        menu.appendChild(item);
+      });
+      document.body.appendChild(menu);
+      setTimeout(() => document.addEventListener("click", () => menu.remove(), {once:true}), 0);
+    });
+    menuWrapNF.appendChild(dotsNF);
+    direita.appendChild(menuWrapNF);
+
     card.appendChild(numBloco);
     card.appendChild(info);
     card.appendChild(direita);
