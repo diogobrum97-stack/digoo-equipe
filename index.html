@@ -9355,8 +9355,8 @@ function renderNfFullEmitirModal(itens) {
           });
           hdrComp.appendChild(btnVoltarComp);
           boxComp.appendChild(hdrComp);
-          // nf fake para o inline ter a chave
-          const nfFake = { chave: chaveNF, chaveAcesso: chaveNF };
+          // nf fake para o inline ter a chave — chave = número (key do Firebase), chaveAcesso = 44 dígitos
+          const nfFake = { chave: numeroNF, chaveAcesso: chaveNF };
           renderNfComplementarInline(boxComp, taskFake, calcObj, nfFake, overlayComp);
         });
         boxComp.appendChild(btnGerarComp);
