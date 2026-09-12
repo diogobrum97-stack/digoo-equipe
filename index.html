@@ -4167,7 +4167,7 @@ function renderCalcIpiPanel(container, task){
 }
 
 // ── Preview e emissão da NF complementar de IPI ──────────────────────────────
-async function renderNfComplementarInline(box, taskFake, calc, nf, panel) {
+function renderNfComplementarInline(box, taskFake, calc, nf, panel) {
   const produtosComIpi = (calc.produtos || []).filter(p => p.aliquotaValor > 0 && p.qtd > 0 && p.precoVenda != null).map(p => {
     const r = calcularLinhaIpi(p, calc.freteComponentes?.[p.sku] || 0);
     return { ...p, aliquota: p.aliquotaValor, quantidade: p.qtd, ipiUnitario: p.qtd > 0 ? r.ipi / p.qtd : 0, produto: p.produto || p.sku };
@@ -4180,12 +4180,7 @@ async function renderNfComplementarInline(box, taskFake, calc, nf, panel) {
 
   const nfRef = calc.nfUsada || "";
   const chaveRef = nf?.chaveAcesso || calc.chaveAcesso || "";
-  let numeroComplementar = nfRef ? String(Number(nfRef) + 1).padStart(nfRef.length, "0") : "";
-  try {
-    const rNum = await fetch(`${BLING_PROXY}/api/bling-produtos?action=proximo-numero-nfe`);
-    const dNum = await rNum.json();
-    if (dNum?.ok && dNum?.proximoNumero) numeroComplementar = dNum.proximoNumero;
-  } catch(e) { /* usa fallback nfRef+1 */ }
+  const numeroComplementar = nfRef ? String(Number(nfRef) + 1).padStart(nfRef.length, "0") : "";
   const totalIPI = produtosComIpi.reduce((s,p) => s + parseFloat(p.ipiUnitario||0)*Number(p.quantidade), 0);
   const totalBC  = produtosComIpi.reduce((a,p) => { const r=calcularLinhaIpi(p, calc.freteComponentes?.[p.sku]||0); return a+r.baseTotal; }, 0);
   const aliquota = produtosComIpi[0]?.aliquota || 0;
