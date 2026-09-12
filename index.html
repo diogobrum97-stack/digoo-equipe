@@ -10483,27 +10483,14 @@ async function renderNfsEmitidas(panel) {
           } catch(e) { alert("Erro: " + e.message); }
         }},
         { label: "Baixar DANFE (PDF)", fn: async () => {
-          const chave = nf.chaveComplementar || nf.chaveAcesso || "";
-          if (!chave) { alert("Chave de acesso não disponível."); return; }
+          const numeroNF = nf.nfComplementarNumero || nf.chave?.replace(/_/g, "/") || "";
+          if (!numeroNF) { alert("Número da NF não disponível."); return; }
           try {
-            // Buscar XML e gerar DANFE via api.digoo.com.br
-            const rxml = await fetch(`https://nfe.digoo.com.br/xml/${chave}-proc.xml`);
-            if (!rxml.ok) { alert("XML não encontrado. Não é possível gerar o DANFE."); return; }
-            const xml = await rxml.text();
-            const r = await fetch("https://api.digoo.com.br", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ xml })
-            });
-            if (r.ok) {
-              const pdf = await r.blob();
-              const url = URL.createObjectURL(pdf);
-              const a = document.createElement("a");
-              a.href = url; a.download = `DANFE_${chave}.pdf`; a.click();
-              URL.revokeObjectURL(url);
-            } else {
-              alert("Erro ao gerar DANFE.");
-            }
+            const r = await fetch(`${BLING_PROXY}/api/bling-produtos?notaCompleta=${encodeURIComponent(numeroNF)}`);
+            const d = await r.json();
+            const idNota = d?.raw?.id || d?.data?.id;
+            if (!idNota) { alert("Não foi possível encontrar a nota no Bling para gerar a DANFE."); return; }
+            window.open(`https://www.bling.com.br/relatorios/danfe.php?idNota1=${idNota}&fechaPopup=N`, "_blank");
           } catch(e) { alert("Erro: " + e.message); }
         }},
         { label: "Emitir NF Complementar de IPI", fn: async () => {
