@@ -8893,7 +8893,7 @@ async function renderNfTransferenciaFull(container, color) {
   container.innerHTML = "";
   await nfFullCarregarCmp();
   const wrap = document.createElement("div");
-  wrap.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch;min-height:calc(100vh - 280px);";
+  wrap.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch;min-height:calc(100vh - 180px);padding-top:16px;";
 
   // ── Card esquerdo: upload e controles ──
   const cardEsq = document.createElement("div");
