@@ -4179,7 +4179,8 @@ function renderNfComplementarInline(box, taskFake, calc, nf, panel) {
   }
 
   const nfRef = calc.nfUsada || "";
-  const chaveRef = calc.chaveAcesso || nf?.chaveAcesso || "";
+  const chaveRef = nf?.chaveAcesso || calc.chaveAcesso || "";
+  const numeroComplementar = nfRef ? String(Number(nfRef) + 1).padStart(nfRef.length, "0") : "";
   const totalIPI = produtosComIpi.reduce((s,p) => s + parseFloat(p.ipiUnitario||0)*Number(p.quantidade), 0);
   const totalBC  = produtosComIpi.reduce((a,p) => { const r=calcularLinhaIpi(p, calc.freteComponentes?.[p.sku]||0); return a+r.baseTotal; }, 0);
   const aliquota = produtosComIpi[0]?.aliquota || 0;
@@ -4189,15 +4190,19 @@ function renderNfComplementarInline(box, taskFake, calc, nf, panel) {
   refBlock.style.cssText = `background:${T.bg3};border:0.5px solid ${T.border};border-radius:8px;padding:12px 14px;margin-bottom:14px;`;
   refBlock.innerHTML = `
     <div style="font-size:11px;color:${T.text2};margin-bottom:8px;">Referência à NF original</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
       <div>
-        <div style="font-size:10px;color:${T.text2};margin-bottom:3px;">Número da NF</div>
+        <div style="font-size:10px;color:${T.text2};margin-bottom:3px;">Número da NF original</div>
         <input id="nfi-numero-ref" value="${nfRef}" placeholder="ex: 020673" style="width:100%;background:${T.bg3};border:0.5px solid ${T.border};border-radius:6px;padding:8px 10px;color:${T.text};font-size:12px;font-family:inherit;outline:none;box-sizing:border-box;">
       </div>
       <div>
-        <div style="font-size:10px;color:${T.text2};margin-bottom:3px;">Chave de Acesso (44 dígitos)</div>
-        <input id="nfi-chave-ref" value="${chaveRef}" placeholder="44 dígitos" style="width:100%;background:${T.bg3};border:0.5px solid ${T.border};border-radius:6px;padding:8px 10px;color:${T.text};font-size:11px;font-family:'IBM Plex Mono',monospace;outline:none;box-sizing:border-box;">
+        <div style="font-size:10px;color:${T.text2};margin-bottom:3px;">Número desta complementar</div>
+        <input id="nfi-numero-comp" value="${numeroComplementar}" placeholder="ex: 020674" style="width:100%;background:${T.bg3};border:0.5px solid ${T.border};border-radius:6px;padding:8px 10px;color:${T.text};font-size:12px;font-family:inherit;outline:none;box-sizing:border-box;">
       </div>
+    </div>
+    <div>
+      <div style="font-size:10px;color:${T.text2};margin-bottom:3px;">Chave de Acesso da NF original (44 dígitos)</div>
+      <input id="nfi-chave-ref" value="${chaveRef}" placeholder="44 dígitos" style="width:100%;background:${T.bg3};border:0.5px solid ${T.border};border-radius:6px;padding:8px 10px;color:${T.text};font-size:11px;font-family:'IBM Plex Mono',monospace;outline:none;box-sizing:border-box;">
     </div>`;
   box.appendChild(refBlock);
 
@@ -4249,7 +4254,7 @@ function renderNfComplementarInline(box, taskFake, calc, nf, panel) {
   emitirBtn.style.cssText = `width:100%;padding:12px;border-radius:8px;background:#00dfc3;border:none;color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;`;
   emitirBtn.addEventListener("click", async () => {
     const chaveRefVal = box.querySelector("#nfi-chave-ref")?.value?.trim() || "";
-    const nNumVal = box.querySelector("#nfi-numero-ref")?.value?.trim() || "";
+    const nNumVal = box.querySelector("#nfi-numero-comp")?.value?.trim() || "";
     if (chaveRefVal.length !== 44) { statusEl.innerHTML = `<div style="color:#e8432d;font-size:12px;padding:6px 0;">Chave deve ter 44 dígitos.</div>`; return; }
     emitirBtn.disabled = true; emitirBtn.textContent = "Emitindo...";
     statusEl.innerHTML = `<div style="color:${T.text2};font-size:12px;padding:6px 0;">Enviando para a SEFAZ...</div>`;
