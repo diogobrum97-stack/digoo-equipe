@@ -9307,23 +9307,42 @@ function renderNfFullEmitirModal(itens) {
       const btnComplementar = document.createElement("button");
       btnComplementar.textContent = "⊕ Gerar NF Complementar de IPI";
       btnComplementar.style.cssText = `width:100%;padding:12px;border-radius:6px;background:none;border:1px solid #00dfc366;color:#00dfc3;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:8px;transition:all .15s;`;
-      btnComplementar.addEventListener("click", () => {
+      btnComplementar.addEventListener("click", async () => {
         // Fecha o modal da transferência
         overlay.remove();
-        // Abre o painel de complementar na aba NF Transferência Full
-        const container = document.querySelector(".nf-full-container");
-        if (container) {
-          // Monta um calc fake com a chave da NF gerada
-          const calcFake = {
-            produtos: [],
-            nfUsada: data.numero,
-            chaveAcesso: data.chaveAcesso,
-          };
-          renderNfComplementarPreview(container, null, calcFake);
-        } else {
-          // Fallback: abre modal direto
-          renderNfComplementarPreview(document.body, null, { produtos: [], nfUsada: data.numero, chaveAcesso: data.chaveAcesso });
+        // Abre o mesmo modal da calculadora completa usado nas NFs Emitidas
+        const numeroNF = data.numero || "";
+        const chaveNF = data.chaveAcesso || "";
+        const taskFake = { id: "nf-emitida-" + chaveNF, text: "NF de transferência gerada — NF #" + numeroNF, subtarefas: [] };
+        if (!calcIpiState[taskFake.id]) {
+          await initCalcIpi(taskFake, numeroNF);
         }
+        const overlayComp = document.createElement("div");
+        overlayComp.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;overflow-y:auto;display:flex;align-items:flex-start;justify-content:center;padding:20px;";
+        const boxComp = document.createElement("div");
+        boxComp.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:14px;padding:28px;width:900px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,.4);margin:auto;`;
+        const titleDiv = document.createElement("div");
+        titleDiv.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;";
+        titleDiv.innerHTML = `<div><div style="font-size:15px;font-weight:600;color:${T.text};">NF Complementar de IPI</div><div style="font-size:11px;color:${T.text2};margin-top:2px;">NF #${numeroNF} · CFOP 6152 · Matriz RS → Filial SP</div></div>`;
+        const closeBtn = document.createElement("button");
+        closeBtn.textContent = "✕";
+        closeBtn.style.cssText = "background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;";
+        closeBtn.onclick = () => overlayComp.remove();
+        titleDiv.appendChild(closeBtn);
+        boxComp.appendChild(titleDiv);
+        renderCalcIpiPanel(boxComp, taskFake);
+        const btnGerarComp = document.createElement("button");
+        btnGerarComp.textContent = "Gerar NF Complementar de IPI";
+        btnGerarComp.style.cssText = `width:100%;margin-top:20px;padding:12px;border-radius:8px;background:#00dfc3;border:none;color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;`;
+        btnGerarComp.addEventListener("click", () => {
+          const calcObj = calcIpiState[taskFake.id];
+          if (!calcObj || calcObj.carregando) { alert("Aguarde o carregamento dos dados."); return; }
+          boxComp.innerHTML = "";
+          renderNfComplementarPreview(boxComp, taskFake, calcObj, { chaveKey: chaveNF, panel: overlayComp });
+        });
+        boxComp.appendChild(btnGerarComp);
+        overlayComp.appendChild(boxComp);
+        document.body.appendChild(overlayComp);
       });
       document.getElementById("nf-full-status").appendChild(btnComplementar);
 
