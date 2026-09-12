@@ -4263,7 +4263,7 @@ function renderNfComplementarInline(box, taskFake, calc, nf, panel) {
       const gruposMapI = {};
       produtosComIpi.forEach(p => {
         const aliq = Number(p.aliquota||0).toFixed(4);
-        if (!gruposMapI[aliq]) gruposMapI[aliq] = { pIPI:aliq, vBC_IPI:0, vIPI:0, ncm:p.ncm||"84145990", cfop:"6152", xProd:"Complemento de IPI", cProd:"CFOP6152" };
+        if (!gruposMapI[aliq]) gruposMapI[aliq] = { pIPI:aliq, vBC_IPI:0, vIPI:0, ncm:p.ncm||"84145990", cfop:"6152", xProd:"Complemento de IPI " + (parseFloat(aliq)*100).toFixed(2).replace('.',',') + "%", cProd:"CFOP6152" };
         const rr = calcularLinhaIpi(p, calc.freteComponentes?.[p.sku]||0);
         gruposMapI[aliq].vBC_IPI += rr.baseTotal;
         gruposMapI[aliq].vIPI    += rr.ipi;
@@ -4426,7 +4426,7 @@ async function renderNfComplementarPreview(container, task, calc) {
           empresa:   empresa.toLowerCase().includes("filial") ? "filial" : "matriz",
           chaveRef:  payload.chaveRefOriginal || "",
           nNF:       String((calc.nfComplementarNumero || 0) + 1 || ""),
-          xProd:     "Complemento de IPI",
+          xProd:     "Complemento de IPI " + (parseFloat(aliquota)*100).toFixed(2).replace('.',',') + "%",
           cProd:     "CFOP6152",
           ncm:       produtosComIpi[0]?.ncm || "84145990",
           cfop:      "6152",
@@ -5839,7 +5839,7 @@ function render(){
                     const gruposMapF = {};
                     produtosComIpi.forEach(p => {
                       const aliq = Number(p.aliquota||0).toFixed(4);
-                      if (!gruposMapF[aliq]) gruposMapF[aliq] = { pIPI: aliq, vBC_IPI: 0, vIPI: 0, ncm: p.ncm||"84145990", cfop:"6152", xProd:"Complemento de IPI", cProd:"CFOP6152" };
+                      if (!gruposMapF[aliq]) gruposMapF[aliq] = { pIPI: aliq, vBC_IPI: 0, vIPI: 0, ncm: p.ncm||"84145990", cfop:"6152", xProd:"Complemento de IPI " + (parseFloat(aliq)*100).toFixed(2).replace('.',',') + "%", cProd:"CFOP6152" };
                       gruposMapF[aliq].vBC_IPI += Number(p.valorBase||p.baseIpi||0);
                       gruposMapF[aliq].vIPI    += Number(p.ipiTotal||p.valorIpi||0);
                     });
