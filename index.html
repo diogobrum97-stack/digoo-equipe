@@ -4275,7 +4275,24 @@ function renderNfComplementarInline(box, taskFake, calc, nf, panel) {
       });
       const data = await r.json();
       if (!data.ok) { statusEl.innerHTML = `<div style="color:#e8432d;font-size:12px;padding:6px 0;">Erro ${data.cStat}: ${data.xMotivo||data.erro}</div>`; emitirBtn.disabled=false; emitirBtn.textContent="Tentar novamente"; return; }
-      statusEl.innerHTML = `<div style="color:#2dce89;font-size:13px;font-weight:600;padding:10px 0;">✓ Autorizada! NF ${nNumVal}</div><div style="font-size:10px;color:${T.text2};font-family:'IBM Plex Mono',monospace;word-break:break-all;">${data.chave}</div>`;
+      statusEl.innerHTML = `<div style="color:#2dce89;font-size:13px;font-weight:600;padding:10px 0;">✓ Autorizada! NF ${nNumVal}</div><div style="font-size:10px;color:${T.text2};font-family:'IBM Plex Mono',monospace;word-break:break-all;margin-bottom:10px;">${data.chave}</div>`;
+      // Botão download XML
+      const btnDlXml = document.createElement("button");
+      btnDlXml.textContent = "⬇ Baixar XML";
+      btnDlXml.style.cssText = `background:none;border:0.5px solid ${T.border};border-radius:6px;padding:6px 14px;font-size:11px;color:${T.text2};cursor:pointer;font-family:inherit;margin-top:4px;`;
+      btnDlXml.addEventListener("click", async () => {
+        try {
+          const rxml = await fetch(`https://nfe.digoo.com.br/xml/${data.chave}-proc.xml`);
+          if (!rxml.ok) { alert("XML ainda não disponível, aguarde alguns segundos."); return; }
+          const xml = await rxml.text();
+          const blob = new Blob([xml], { type: "application/xml" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url; a.download = `NFe_${data.chave}.xml`; a.click();
+          URL.revokeObjectURL(url);
+        } catch(e) { alert("Erro: " + e.message); }
+      });
+      statusEl.appendChild(btnDlXml);
       emitirBtn.textContent="✓ Emitida"; emitirBtn.style.background="#2dce8922"; emitirBtn.style.color="#2dce89";
       const chaveKey = nf?.chave || String(nfRef).replace(/[.#$\[\]\/]/g,"_");
       if (chaveKey) await update(ref(db, `/nfes_processadas/${chaveKey}`), { nfComplementarNumero: nNumVal, chaveComplementar: data.chave });
