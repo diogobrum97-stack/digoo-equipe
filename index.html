@@ -8999,6 +8999,37 @@ async function renderNfTransferenciaFull(container, color) {
   wrap.appendChild(cardDir);
   container.appendChild(wrap);
 
+  // ── Histórico de emissões ──
+  const histSnap = await get(ref(db, "/nfes_processadas"));
+  const histDados = histSnap.val() || {};
+  const histNfs = Object.entries(histDados)
+    .map(([k, v]) => ({ chave: k, ...v }))
+    .filter(v => v.processedAt && (v.itens?.length || v.natureza))
+    .sort((a, b) => (b.processedAt || 0) - (a.processedAt || 0))
+    .slice(0, 10);
+
+  if (histNfs.length) {
+    const histWrap = document.createElement("div");
+    histWrap.style.cssText = "margin-top:20px;";
+    histWrap.innerHTML = `<div style="font-size:12px;font-weight:600;color:${T.text2};margin-bottom:10px;">Emissões recentes</div>`;
+    histNfs.forEach(nf => {
+      const dt = new Date(nf.processedAt);
+      const dataStr = dt.toLocaleDateString("pt-BR") + " · " + dt.toLocaleTimeString("pt-BR", {hour:"2-digit",minute:"2-digit"});
+      const temComp = !!nf.nfComplementarNumero;
+      const row = document.createElement("div");
+      row.style.cssText = `display:flex;align-items:center;gap:12px;padding:8px 12px;background:${T.card};border:0.5px solid ${T.border};border-radius:6px;margin-bottom:6px;`;
+      row.innerHTML = `
+        <div style="font-size:13px;font-weight:700;color:#3B82F6;font-family:'IBM Plex Mono',monospace;min-width:56px;">NF ${nf.chave.replace(/_/g,"/")}</div>
+        <div style="flex:1;font-size:11px;color:${T.text2};">${dataStr}</div>
+        <div style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;white-space:nowrap;${temComp
+          ? `background:#2dce8918;color:#2dce89;border:0.5px solid #2dce8944;`
+          : `background:#ff3d3d14;color:#e8432d;border:0.5px solid #ff3d3d33;`
+        }">${temComp ? `✓ Compl. NF ${nf.nfComplementarNumero}` : "Sem complementar"}</div>`;
+      histWrap.appendChild(row);
+    });
+    container.appendChild(histWrap);
+  }
+
   // ── Event listeners ──
   const pdfInput = container.querySelector("#nf-full-pdf");
   const label = container.querySelector("#nf-full-label");
