@@ -4225,7 +4225,7 @@ function renderNfComplementarInline(box, taskFake, calc, nf, panel) {
           return `<tr style="border-bottom:0.5px solid ${T.border};">
             <td style="padding:7px 8px;color:${T.text};">${p.sku}</td>
             <td style="padding:7px 8px;text-align:center;color:${T.text2};">${p.quantidade}</td>
-            <td style="padding:7px 8px;text-align:center;color:${T.text2};">${(Number(p.aliquota)*100).toFixed(0)}%</td>
+            <td style="padding:7px 8px;text-align:center;color:${T.text2};">${parseFloat((Number(p.aliquota)*100).toFixed(2)).toString()}%</td>
             <td style="padding:7px 8px;text-align:right;font-family:'IBM Plex Mono',monospace;">R$ ${u.toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
             <td style="padding:7px 8px;text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:600;">R$ ${(u*Number(p.quantidade)).toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
           </tr>`;
