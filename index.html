@@ -9338,7 +9338,26 @@ function renderNfFullEmitirModal(itens) {
           const calcObj = calcIpiState[taskFake.id];
           if (!calcObj || calcObj.carregando) { alert("Aguarde o carregamento dos dados."); return; }
           boxComp.innerHTML = "";
-          renderNfComplementarPreview(boxComp, taskFake, calcObj, { chaveKey: chaveNF, panel: overlayComp });
+          boxComp.style.maxWidth = "680px";
+          // Header com botão voltar
+          const hdrComp = document.createElement("div");
+          hdrComp.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;";
+          hdrComp.innerHTML = `<div><div style="font-size:15px;font-weight:700;color:${T.text};">NF Complementar de IPI</div><div style="font-size:11px;color:${T.text2};margin-top:2px;">CFOP 6.152 · Natureza: Complementar de IPI · Matriz RS → Filial SP</div></div>`;
+          const btnVoltarComp = document.createElement("button");
+          btnVoltarComp.textContent = "← Voltar";
+          btnVoltarComp.style.cssText = `background:none;border:0.5px solid ${T.border};border-radius:6px;padding:5px 12px;font-size:11px;color:${T.text2};cursor:pointer;font-family:inherit;`;
+          btnVoltarComp.addEventListener("click", () => {
+            boxComp.innerHTML = "";
+            boxComp.style.maxWidth = "900px";
+            boxComp.appendChild(titleDiv);
+            renderCalcIpiPanel(boxComp, taskFake);
+            boxComp.appendChild(btnGerarComp);
+          });
+          hdrComp.appendChild(btnVoltarComp);
+          boxComp.appendChild(hdrComp);
+          // nf fake para o inline ter a chave
+          const nfFake = { chave: chaveNF, chaveAcesso: chaveNF };
+          renderNfComplementarInline(boxComp, taskFake, calcObj, nfFake, overlayComp);
         });
         boxComp.appendChild(btnGerarComp);
         overlayComp.appendChild(boxComp);
