@@ -7305,8 +7305,8 @@ function renderFilialSP(panel, color) {
       <th style="text-align:left;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">PRODUTO</th>
       <th style="text-align:center;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">APTAS</th>
       <th style="text-align:center;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">TRANSF</th>
-      <th style="text-align:right;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">CUSTO</th>
-      <th style="text-align:right;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">VALOR</th>
+      <th style="text-align:center;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">CUSTO</th>
+      <th style="text-align:center;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">VALOR</th>
       <th style="text-align:center;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">STATUS</th>
     </tr></thead><tbody id="estoque-tbody"></tbody>`;
     tableWrap.appendChild(table);
@@ -7336,8 +7336,8 @@ function renderFilialSP(panel, color) {
         <td style="padding:12px 10px;color:var(--text2);max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;">${r.produto}</td>
         <td style="padding:12px 10px;text-align:center;color:${r.aptas>0?"var(--text)":"var(--text3)"};font-weight:${r.aptas>0?"600":"400"};">${r.aptas||"—"}</td>
         <td style="padding:12px 10px;text-align:center;color:var(--text3);">${r.transf||"—"}</td>
-        <td style="padding:12px 10px;text-align:right;color:${semCusto?"#e91e8c":"var(--text2)"};">${custoStr}</td>
-        <td style="padding:12px 10px;text-align:right;color:${semCusto?"var(--text3)":r.valor>1000?"#10b981":"var(--text2)"};font-weight:500;">${valorStr}</td>
+        <td style="padding:12px 10px;text-align:center;color:${semCusto?"#e91e8c":"var(--text2)"};">${custoStr}</td>
+        <td style="padding:12px 10px;text-align:center;color:${semCusto?"var(--text3)":r.valor>1000?"#10b981":"var(--text2)"};font-weight:500;">${valorStr}</td>
         <td style="padding:12px 10px;text-align:center;">
           <span style="font-size:10px;font-weight:600;padding:3px 10px;border-radius:20px;white-space:nowrap;background:${statusInfo.bg};color:${statusInfo.color};border:0.5px solid ${statusInfo.border};">${statusInfo.label}</span>
           ${v30 > 0 ? `<div style="font-size:9px;color:var(--text3);margin-top:3px;">${v30}/mês</div>` : ""}
