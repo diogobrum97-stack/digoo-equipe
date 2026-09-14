@@ -7308,12 +7308,23 @@ function renderFilialSP(panel, color) {
       <th style="text-align:center;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">PEND</th>
       <th style="text-align:right;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">CUSTO</th>
       <th style="text-align:right;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">VALOR</th>
+      <th style="text-align:center;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">STATUS</th>
     </tr></thead><tbody id="estoque-tbody"></tbody>`;
     tableWrap.appendChild(table);
     panel.appendChild(tableWrap);
 
     const tbody = table.querySelector("#estoque-tbody");
     enriched.forEach(r => {
+      const v30 = r.vendas30 || 0;
+      const statusInfo = v30 === 0
+        ? { label: "Parado",      bg: "#ff3d3d22", color: "#e8432d", border: "#ff3d3d44" }
+        : v30 <= 10
+        ? { label: "Lento",       bg: "#f0b40022", color: "#f0b400", border: "#f0b40044" }
+        : v30 <= 30
+        ? { label: "Médio",       bg: "#f0b40011", color: "#c8960a", border: "#f0b40033" }
+        : v30 <= 60
+        ? { label: "Saudável",    bg: "#2dce8918", color: "#2dce89", border: "#2dce8944" }
+        : { label: "Subir preço", bg: "#3b82f622", color: "#3b82f6", border: "#3b82f644" };
       const semCusto = !r.custo;
       const custoStr = r.custo > 0 ? `R$ ${r.custo.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : `<span style="color:#e91e8c;font-size:11px;">sem custo</span>`;
       const valorStr = r.valor > 0 ? `R$ ${r.valor.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : "—";
@@ -7326,7 +7337,11 @@ function renderFilialSP(panel, color) {
         <td style="padding:8px 8px;text-align:center;color:var(--text3);">${r.transf||"—"}</td>
         <td style="padding:8px 8px;text-align:center;color:${r.pendente>0?"#f0b400":"var(--text3)"};font-weight:${r.pendente>0?"500":"400"};">${r.pendente||"—"}</td>
         <td style="padding:8px 8px;text-align:right;color:${semCusto?"#e91e8c":"var(--text2)"};">${custoStr}</td>
-        <td style="padding:8px 8px;text-align:right;color:${semCusto?"var(--text3)":r.valor>5000?"#00dfc3":r.valor>1000?"#00dfc3":"var(--text2)"};font-weight:500;">${valorStr}</td>`;
+        <td style="padding:8px 8px;text-align:right;color:${semCusto?"var(--text3)":r.valor>5000?"#00dfc3":r.valor>1000?"#00dfc3":"var(--text2)"};font-weight:500;">${valorStr}</td>
+        <td style="padding:8px 8px;text-align:center;">
+          <span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap;background:${statusInfo.bg};color:${statusInfo.color};border:0.5px solid ${statusInfo.border};">${statusInfo.label}</span>
+          ${v30 > 0 ? `<div style="font-size:9px;color:var(--text3);margin-top:2px;">${v30}/mês</div>` : ""}
+        </td>`;
       tbody.appendChild(tr);
     });
 
