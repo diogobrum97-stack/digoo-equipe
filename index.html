@@ -2632,58 +2632,62 @@ function renderDashboard(panel, color) {
 
   pendCard.innerHTML = `<div style="font-size:9px;color:${T.text2};text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;">Pendências</div>`;
 
-  // Tarefas — clica e vai para aba
-  pendCard.appendChild(mkClickRow(
-    "Tarefas", `${urgentes}u · ${importantes}i · ${normais}n`, "",
-    () => { window._diogotab = "tarefas"; render(); }
-  ));
-
-  // Perguntas — expansível com lista
-  const pergRow = document.createElement("div");
-  pergRow.style.cssText = `border-bottom:0.5px solid ${T.sep};`;
-  const pergHeader = document.createElement("div");
-  pergHeader.style.cssText = `display:flex;align-items:center;justify-content:space-between;padding:8px 0;cursor:pointer;transition:opacity .12s;`;
-  pergHeader.onmouseover = () => pergHeader.style.opacity = "0.7";
-  pergHeader.onmouseout  = () => pergHeader.style.opacity = "1";
-  const pergBg = perguntasTotal > 0 ? `background:#3b82f6;color:#fff;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:600;` : `font-size:11px;font-weight:600;color:${T.text};`;
-  const pergVal = perguntasTotal > 0 ? `${perguntasTotal}` + (perguntasSugeridas > 0 ? ` · ${perguntasSugeridas} sug.` : "") : "Em dia ✓";
-  pergHeader.innerHTML = `<div style="font-size:11px;color:${T.text};">Perguntas</div><div style="${pergBg}">${pergVal}</div>`;
-
-  const pergDrawer = document.createElement("div");
-  pergDrawer.style.cssText = "max-height:0;overflow:hidden;transition:max-height .3s ease;";
-  let pergOpen = false;
-
-  if (perguntasTotal > 0) {
-    const pergList = (perguntasState.lista || []).slice(0,5).map(p => {
-      const cor = p.requires_attention ? "#e8432d" : "#2dce89";
-      const nomeShort = (p.produto||"").length > 30 ? p.produto.slice(0,30)+"…" : (p.produto||"");
-      return `<div onclick="window._diogotab='perguntas';render();" style="padding:7px 8px 7px 10px;border-bottom:0.5px solid ${T.sep};cursor:pointer;border-left:3px solid ${cor};border-radius:6px;margin-bottom:4px;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
-        <div style="font-size:11px;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nomeShort||"—"}</div>
-        <div style="font-size:10px;color:${T.text2};margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.pergunta||""}</div>
-        <div style="font-size:9px;color:${cor};margin-top:1px;">${p.requires_attention ? "⚠ Atenção" : "✓ Sugerida"}</div>
-      </div>`;
-    }).join("");
-    pergDrawer.innerHTML = `<div style="padding-bottom:6px;max-height:280px;overflow-y:auto;">${pergList}
-      <div onclick="window._diogotab='perguntas';render();" style="text-align:center;font-size:10px;color:${T.text2};padding:6px 0;cursor:pointer;">Ver todas →</div>
-    </div>`;
+  // helper expansível genérico
+  function mkExpansivel(labelHtml, drawerHtml, maxH) {
+    const wrap = document.createElement("div");
+    wrap.style.cssText = "border-bottom:0.5px solid "+T.sep+";";
+    const hdr = document.createElement("div");
+    hdr.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:8px 0;cursor:pointer;transition:opacity .12s;";
+    hdr.onmouseover = () => hdr.style.opacity = "0.7";
+    hdr.onmouseout  = () => hdr.style.opacity = "1";
+    hdr.innerHTML = labelHtml;
+    const drw = document.createElement("div");
+    drw.style.cssText = "max-height:0;overflow:hidden;transition:max-height .35s ease;";
+    drw.innerHTML = drawerHtml;
+    let open = false;
+    hdr.addEventListener("click", () => { open = !open; drw.style.maxHeight = open ? maxH : "0"; });
+    wrap.appendChild(hdr); wrap.appendChild(drw);
+    return wrap;
   }
 
-  pergHeader.addEventListener("click", () => {
-    pergOpen = !pergOpen;
-    pergDrawer.style.maxHeight = pergOpen ? "320px" : "0";
-  });
+  // ── Tarefas ──
+  const tarefasLabelHtml = `<div style="font-size:11px;color:${T.text};">Tarefas</div>
+    <div style="display:flex;align-items:center;gap:5px;">
+      ${urgentes>0?`<span style="background:#e8432d;color:#fff;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600;">${urgentes}u</span>`:""}
+      ${importantes>0?`<span style="background:#f77614;color:#fff;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600;">${importantes}i</span>`:""}
+      ${normais>0?`<span style="background:${T.bg3};color:${T.text2};padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600;border:0.5px solid ${T.border};">${normais}n</span>`:""}
+    </div>`;
+  const tarefasDrawerHtml = tarefasDrawerRows
+    ? `<div style="max-height:260px;overflow-y:auto;padding-bottom:4px;">${tarefasDrawerRows}<div onclick="window._diogotab='tarefas';render();" style="text-align:center;font-size:10px;color:${T.text2};padding:6px 0;cursor:pointer;">Ver todas →</div></div>`
+    : `<div style="font-size:11px;color:${T.text2};padding:6px 0;">Nenhuma tarefa urgente ✓</div>`;
+  pendCard.appendChild(mkExpansivel(tarefasLabelHtml, tarefasDrawerHtml, "300px"));
 
-  pergRow.appendChild(pergHeader);
-  pergRow.appendChild(pergDrawer);
-  pendCard.appendChild(pergRow);
+  // ── Perguntas ──
+  const pergBg = perguntasTotal > 0 ? `background:#3b82f6;color:#fff;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:600;` : `font-size:11px;font-weight:600;color:${T.text};`;
+  const pergVal = perguntasTotal > 0 ? perguntasTotal+(perguntasSugeridas>0?" · "+perguntasSugeridas+" sug.":"") : "Em dia ✓";
+  const pergLabelHtml = `<div style="font-size:11px;color:${T.text};">Perguntas</div><div style="${pergBg}">${pergVal}</div>`;
+  const pergListHtml = (perguntasState.lista||[]).slice(0,10).map(p => {
+    const cor = p.requires_attention ? "#e8432d" : "#2dce89";
+    const ns = (p.produto||"").length>30 ? p.produto.slice(0,30)+"…" : (p.produto||"");
+    return `<div onclick="window._diogotab='perguntas';render();" style="padding:7px 8px 7px 10px;border-left:3px solid ${cor};border-radius:6px;margin-bottom:4px;cursor:pointer;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
+      <div style="font-size:11px;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ns||"—"}</div>
+      <div style="font-size:10px;color:${T.text2};margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.pergunta||""}</div>
+      <div style="font-size:9px;color:${cor};margin-top:1px;">${p.requires_attention?"⚠ Atenção":"✓ Sugerida"}</div>
+    </div>`;
+  }).join("");
+  const pergDrawerHtml = perguntasTotal>0
+    ? `<div style="max-height:280px;overflow-y:auto;padding-bottom:4px;">${pergListHtml}<div onclick="window._diogotab='perguntas';render();" style="text-align:center;font-size:10px;color:${T.text2};padding:6px 0;cursor:pointer;">Ver todas →</div></div>`
+    : `<div style="font-size:11px;color:${T.text2};padding:6px 0;">Nenhuma pergunta pendente ✓</div>`;
+  pendCard.appendChild(mkExpansivel(pergLabelHtml, pergDrawerHtml, "320px"));
 
-  // Estoque Full SP
-  pendCard.appendChild(mkClickRow(
-    "Estoque Full · SP",
-    alertasCount > 0 ? `${alertasCount} alertas` : "OK ✓",
-    alertasCount > 0 ? "#e8432d" : "",
-    () => { window._diogotab = "estoque"; render(); }
-  ));
+  // ── Estoque Full SP ──
+  const estBg = alertasCount>0 ? `background:#e8432d;color:#fff;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:600;` : `font-size:11px;font-weight:600;color:#2dce89;`;
+  const estLabelHtml = `<div style="font-size:11px;color:${T.text};">Estoque Full · SP</div><div style="${estBg}">${alertasCount>0?alertasCount+" alertas":"OK ✓"}</div>`;
+  const estListHtml = estDrawerRows || `<div style="font-size:11px;color:#2dce89;padding:6px 0;">Nenhum produto crítico ✓</div>`;
+  const estDrawerHtml = `<div style="max-height:260px;overflow-y:auto;padding-bottom:4px;">${estListHtml}${alertasCount>0?`<div onclick="window._diogotab='estoque';render();" style="text-align:center;font-size:10px;color:${T.text2};padding:6px 0;cursor:pointer;">Ver estoque →</div>`:""}</div>`;
+  const estRow = mkExpansivel(estLabelHtml, estDrawerHtml, "300px");
+  estRow.style.borderBottom = "none";
+  pendCard.appendChild(estRow);
 
   statusBar.appendChild(pendCard);
 
