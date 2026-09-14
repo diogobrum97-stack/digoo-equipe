@@ -366,7 +366,9 @@ function setupIdentityScreen() {
       const checkReady = setInterval(() => {
         const firebaseOk = !!state?.ml_token_filial;
         const dashOk = !!dashData && !dashLoading;
-        if (firebaseOk && dashOk) {
+        const estoqueOk = !!estoqueBlingData || !!estoqueBlingErro;
+        const perguntasOk = perguntasState.lista !== null || !!perguntasState.erro;
+        if (firebaseOk && dashOk && estoqueOk && perguntasOk) {
           clearInterval(checkReady);
           if(_s) _s.remove();
           render();
