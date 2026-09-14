@@ -2665,7 +2665,7 @@ function renderDashboard(panel, color) {
       const allVencRows = [
         ...(proximos.slice(0,3).map(c => {
           const cor = c.dias <= 1 ? "#E24B4A" : "#f0b400";
-          const diaLabel = c.dias===0?"Hoje":c.dias===1?"Amanhã":`${c.dias}d`;
+          const diaLabel = c.dias===0?"Hoje":c.dias===1?"Amanhã":(c.dias+"d");
           return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid ${T.sep};">
             <div style="font-size:11px;color:${T.text};flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.fornecedor||"—"}</div>
             <div style="font-size:10px;font-weight:600;color:${cor};margin-left:8px;flex-shrink:0;">${diaLabel}</div>
@@ -2680,9 +2680,11 @@ function renderDashboard(panel, color) {
         }))
       ].join("");
 
+      const vencEmpty = `<div style="font-size:11px;color:${T.text2};">Em dia ✓</div>`;
+      const vencTitulo = "Vencimentos · " + statusTag.replace(/<[^>]+>/g,' ').trim();
       const vencCardHtml = `<div id="sbar-card-venc" style="background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:14px 16px;">
-        <div style="font-size:9px;color:${T.text2};text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;">Vencimentos · ${statusTag.replace(/<[^>]+>/g,' ').trim()}</div>
-        ${allVencRows || `<div style="font-size:11px;color:${T.text2};">Em dia ✓</div>`}
+        <div style="font-size:9px;color:${T.text2};text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;">${vencTitulo}</div>
+        ${allVencRows || vencEmpty}
       </div>`;
 
       const sbar = document.getElementById("dash-sidebar");
@@ -2713,12 +2715,14 @@ function renderDashboard(panel, color) {
           <div style="font-size:11px;font-weight:600;font-family:'IBM Plex Mono',monospace;color:${T.text};flex-shrink:0;margin-left:8px;">${fmtVal(n.valorServicos||n.valor||0)}</div>
         </div>`).join("");
 
+      const nfseTitulo = total > 0 ? ("NFS-e hoje · " + total + " nota" + (total>1?"s":"")) : "NFS-e hoje";
+      const nfseEmpty = `<div style="font-size:11px;color:${T.text2};">Nenhuma hoje</div>`;
+      const nfseFooter = total > 3
+        ? `<div style="font-size:10px;color:${T.text2};padding-top:6px;">+${total-3} outras · ${fmtVal(valorTotal)}</div>`
+        : `<div style="font-size:10px;color:${T.text2};padding-top:4px;">Total: ${fmtVal(valorTotal)}</div>`;
       const nfseCardHtml = `<div id="sbar-card-nfse" style="background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:14px 16px;">
-        <div style="font-size:9px;color:${T.text2};text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;">NFS-e hoje${total > 0 ? ` · ${total} nota${total>1?"s":""}` : ""}</div>
-        ${total > 0
-          ? nfseRows + (total > 3 ? `<div style="font-size:10px;color:${T.text2};padding-top:6px;">+${total-3} outras · ${fmtVal(valorTotal)}</div>` : `<div style="font-size:10px;color:${T.text2};padding-top:4px;">Total: ${fmtVal(valorTotal)}</div>`)
-          : `<div style="font-size:11px;color:${T.text2};">Nenhuma hoje</div>`
-        }
+        <div style="font-size:9px;color:${T.text2};text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;">${nfseTitulo}</div>
+        ${total > 0 ? (nfseRows + nfseFooter) : nfseEmpty}
       </div>`;
 
       const sbar = document.getElementById("dash-sidebar");
