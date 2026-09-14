@@ -2692,14 +2692,14 @@ function renderDashboard(panel, color) {
   const pergListHtml = (perguntasState.lista||[]).slice(0,10).map(p => {
     const cor = p.requires_attention ? "#e8432d" : "#2dce89";
     const ns = (p.produto||"").length>30 ? p.produto.slice(0,30)+"…" : (p.produto||"");
-    return `<div onclick="window._diogotab='perguntas';render();" style="padding:7px 8px 7px 10px;border-left:3px solid ${cor};border-radius:6px;margin-bottom:4px;cursor:pointer;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
+    return `<div onclick="window._sbarNavPergunta(event)" style="padding:7px 8px 7px 10px;border-left:3px solid ${cor};border-radius:6px;margin-bottom:4px;cursor:pointer;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
       <div style="font-size:11px;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ns||"—"}</div>
       <div style="font-size:10px;color:${T.text2};margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.pergunta||""}</div>
       <div style="font-size:9px;color:${cor};margin-top:1px;">${p.requires_attention?"⚠ Atenção":"✓ Sugerida"}</div>
     </div>`;
   }).join("");
   const pergDrawerHtml = perguntasTotal>0
-    ? `<div style="max-height:280px;overflow-y:auto;padding-bottom:4px;">${pergListHtml}<div onclick="window._diogotab='perguntas';render();" style="text-align:center;font-size:10px;color:${T.text2};padding:6px 0;cursor:pointer;">Ver todas →</div></div>`
+    ? `<div style="max-height:280px;overflow-y:auto;padding-bottom:4px;">${pergListHtml}<div onclick="window._goPerguntas()" style="text-align:center;font-size:10px;color:${T.text2};padding:6px 0;cursor:pointer;">Ver todas →</div></div>`
     : `<div style="font-size:11px;color:${T.text2};padding:6px 0;">Nenhuma pergunta pendente ✓</div>`;
   pendCard.appendChild(mkExpansivel(pergLabelHtml, pergDrawerHtml, "320px"));
 
