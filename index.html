@@ -367,21 +367,23 @@ function setupIdentityScreen() {
       const checkReady = setInterval(() => {
         const firebaseOk = !!state?.ml_token_filial;
         const dashOk = !!dashData && !dashLoading;
-        if (firebaseOk && dashOk) {
+        const estoqueOk = !!estoqueBlingData || !!estoqueBlingErro;
+        const perguntasOk = perguntasState.lista !== null || !!perguntasState.erro;
+        if (firebaseOk && dashOk && estoqueOk && perguntasOk) {
           clearInterval(checkReady);
           if(_s) _s.remove();
           render();
           setTimeout(() => { window.scrollTo(0, 0); }, 100);
         }
       }, 200);
-      // Timeout de segurança: 8 segundos
+      // Timeout de segurança: 10 segundos
       setTimeout(() => {
         clearInterval(checkReady);
         if(document.getElementById("identity-screen")) {
           document.getElementById("identity-screen").remove();
           render();
         }
-      }, 8000);
+      }, 10000);
 
     } else if(name === "Resicon") {
       // Resicon vai direto para Contas a Pagar em tela cheia
@@ -716,6 +718,9 @@ onValue(ref(db,"/"),snap=>{
     fetchEstoqueAutomatico();
     // Se dashboard ainda não carregou, tenta agora que o token chegou
     if(!dashData && !dashLoading) window._fetchDashboard();
+    // Disparar fetches antecipados para o loading screen
+    if(!estoqueBlingData && !estoqueBlingLoading && tokenValido(d.bling_token)) fetchBlingProdutos();
+    if(perguntasState.lista === null && !perguntasState.carregando) fetchPerguntas();
   }
   if(!cmpSalvando)render();
   if(document.getElementById("ideias-modal-overlay")) renderIdeiasLista();
