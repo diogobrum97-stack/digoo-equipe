@@ -363,10 +363,19 @@ function setupIdentityScreen() {
 
       // Aguarda Firebase + dashData antes de remover a tela de entrada
       const _s = document.getElementById("identity-screen");
+      // Dispara os fetches imediatamente para não travar o loading
+      setTimeout(() => {
+        if (!dashData && !dashLoading) window._fetchDashboard();
+        if (perguntasState.lista === null && !perguntasState.carregando) fetchPerguntas();
+        if (!estoqueBlingData && !estoqueBlingLoading && tokenValido(state.bling_token)) fetchBlingProdutos();
+      }, 500);
+
       const checkReady = setInterval(() => {
         const firebaseOk = !!state?.ml_token_filial;
         const dashOk = !!dashData && !dashLoading;
-        if (firebaseOk && dashOk) {
+        const estoqueOk = !!estoqueBlingData || !!estoqueBlingErro;
+        const perguntasOk = perguntasState.lista !== null || !!perguntasState.erro;
+        if (firebaseOk && dashOk && estoqueOk && perguntasOk) {
           clearInterval(checkReady);
           if(_s) _s.remove();
           render();
@@ -2463,7 +2472,7 @@ function renderDashboard(panel, color) {
 
   const header = document.createElement("div");
   header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;";
-  header.innerHTML = `<div><div style="font-size:20px;font-weight:700;color:${T.text};letter-spacing:-0.3px;">${saudacao}, Diogo 👋</div><div style="font-size:11px;color:${T.text3};margin-top:3px;font-family:'Inter',sans-serif;">${dias[now.getDay()]} · ${now.getDate()} ${meses[now.getMonth()]} ${now.getFullYear()}</div></div><div style="display:flex;align-items:center;gap:10px;"><div style="font-size:11px;font-weight:600;color:${T.text};">${dashData.hora}</div><button onclick="this.style.opacity='0.4';dashData=null;dashLoading=false;window._fetchDashboard();" style="background:none;border:none;color:${T.text2};font-size:16px;cursor:pointer;padding:4px;line-height:1;" title="Atualizar">↻</button></div>`;
+  header.innerHTML = `<div><div style="font-size:20px;font-weight:700;color:${T.text};">${saudacao}, Diogo 👋</div><div style="font-size:11px;color:${T.text3};margin-top:3px;">${dias[now.getDay()]} · ${now.getDate()} ${meses[now.getMonth()]} ${now.getFullYear()}</div></div><div style="display:flex;align-items:center;gap:10px;"><div style="font-size:11px;font-weight:600;color:${T.text};">${dashData.hora}</div><button onclick="this.style.opacity='0.4';dashData=null;dashLoading=false;window._fetchDashboard();" style="background:none;border:none;color:${T.text2};font-size:16px;cursor:pointer;padding:4px;line-height:1;" title="Atualizar">↻</button></div>`;
   wrap.appendChild(header);
 
   const grid = document.createElement("div");
@@ -2479,7 +2488,7 @@ function renderDashboard(panel, color) {
     const d = document.createElement("div");
     d.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-top:3px solid ${borderColor};border-radius:10px;padding:14px 16px;`;
     d.innerHTML = `
-      <div style="font-size:9px;color:${T.text2};text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;">${label}</div>
+      <div style="font-size:11px;color:${T.text2};margin-bottom:8px;">${label}</div>
       <div style="font-size:22px;font-weight:700;color:${T.text};font-family:'IBM Plex Mono',monospace;">${valor}</div>
       <div style="margin-top:8px;"><span style="font-size:10px;font-weight:600;padding:3px 9px;border-radius:5px;background:${badgeBg};color:#fff;">${badge}</span></div>`;
     return d;
@@ -2497,7 +2506,7 @@ function renderDashboard(panel, color) {
   const top5 = dashData.top5hoje || [];
   const top5Card = document.createElement("div");
   top5Card.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:14px 16px;`;
-  top5Card.innerHTML = `<div style="font-size:9px;color:${T.text2};text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;">Top produtos hoje · Filial SP</div>`
+  top5Card.innerHTML = `<div style="font-size:11px;color:${T.text2};margin-bottom:10px;">Top produtos hoje · Filial SP</div>`
     + top5.slice(0,5).map(p => `
       <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid ${T.sep};">
         <div style="font-size:11px;font-weight:500;color:${T.text};flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.sku||"—"}</div>
@@ -2560,7 +2569,7 @@ function renderDashboard(panel, color) {
         <div style="font-size:11px;font-weight:500;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.sku}</div>
         <div style="display:flex;align-items:center;gap:6px;margin-top:3px;"><div style="width:50px;height:2px;background:${T.border};border-radius:2px;"><div style="height:2px;border-radius:2px;background:${cor};width:${pct}%;"></div></div><span style="font-size:10px;color:${cor};">${dias} dias</span></div>
       </div>
-      <div style="font-size:10px;font-weight:700;color:${T.text};background:${cor}22;border:0.5px solid ${cor}44;border-radius:4px;padding:2px 8px;font-family:'Inter',sans-serif;flex-shrink:0;">${dias}d</div>
+      <div style="font-size:10px;font-weight:700;color:${T.text};background:${cor}22;border:0.5px solid ${cor}44;border-radius:4px;padding:2px 8px;flex-shrink:0;">${dias}d</div>
     </div>`;
   }).join("");
 
@@ -2626,7 +2635,7 @@ function renderDashboard(panel, color) {
   function mkSideCard(title, rows) {
     const c = document.createElement("div");
     c.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:14px 16px;`;
-    c.innerHTML = `<div style="font-size:9px;color:${T.text2};text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;">${title}</div>` + rows;
+    c.innerHTML = `<div style="font-size:11px;color:${T.text2};margin-bottom:10px;">${title}</div>` + rows;
     return c;
   }
 
@@ -2653,7 +2662,7 @@ function renderDashboard(panel, color) {
     return row;
   }
 
-  pendCard.innerHTML = `<div style="font-size:9px;color:${T.text2};text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;">Pendências</div>`;
+  pendCard.innerHTML = `<div style="font-size:11px;color:${T.text2};margin-bottom:10px;">Pendências</div>`;
 
   // helper expansível genérico
   function mkExpansivel(labelHtml, drawerHtml, maxH) {
@@ -2773,7 +2782,7 @@ function renderDashboard(panel, color) {
       const vencEmpty = `<div style="font-size:11px;color:${T.text2};">Em dia ✓</div>`;
       const vencTitulo = "Vencimentos · " + statusTag.replace(/<[^>]+>/g,' ').trim();
       const vencCardHtml = `<div id="sbar-card-venc" style="background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:14px 16px;">
-        <div style="font-size:9px;color:${T.text2};text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;">${vencTitulo}</div>
+        <div style="font-size:11px;color:${T.text2};margin-bottom:10px;">${vencTitulo}</div>
         <div style="max-height:240px;overflow-y:auto;">${allVencRows || vencEmpty}</div>
       </div>`;
 
@@ -2811,7 +2820,7 @@ function renderDashboard(panel, color) {
         ? `<div style="font-size:10px;color:${T.text2};padding-top:6px;">+${total-3} outras · ${fmtVal(valorTotal)}</div>`
         : `<div style="font-size:10px;color:${T.text2};padding-top:4px;">Total: ${fmtVal(valorTotal)}</div>`;
       const nfseCardHtml = `<div id="sbar-card-nfse" style="background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:14px 16px;">
-        <div style="font-size:9px;color:${T.text2};text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;">${nfseTitulo}</div>
+        <div style="font-size:11px;color:${T.text2};margin-bottom:10px;">${nfseTitulo}</div>
         <div style="max-height:240px;overflow-y:auto;">${total > 0 ? (nfseRows + nfseFooter) : nfseEmpty}</div>
       </div>`;
 
@@ -2912,7 +2921,7 @@ function renderDashboard(panel, color) {
       const emBreve  = proximos.filter(c => c.dias > 1 && c.dias <= 3).length;
 
       const vencCard = document.createElement("div");
-      vencCard.style.cssText = `background:${T.isLight?"#ffffff":T.card};border:1px solid ${T.border};border-radius:14px;overflow:hidden;grid-column:1/-1;box-shadow:${T.cardShadow};`;
+      vencCard.style.cssText = `background:${T.isLight?"#ffffff":T.card};border:1px solid ${T.border};border-radius:14px;overflow:hidden;grid-column:1/-1;`;
 
       // Header
       const vencHeader = document.createElement("div");
@@ -2985,7 +2994,7 @@ function renderDashboard(panel, color) {
   topCard.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:14px;padding:16px;grid-column:1/-1;";
   const maxRevenue = dashData.top10mes[0]?.revenue || 1;
   topCard.innerHTML = `
-    <div style="font-size:11px;font-weight:500;color:${T.text3};font-family:'Inter',sans-serif;margin-bottom:14px;">Top 10 produtos · mês atual</div>
+    <div style="font-size:11px;font-weight:500;color:${T.text3};margin-bottom:14px;">Top 10 produtos · mês atual</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
       ${dashData.top10mes.map((p,i) => `<div style="display:flex;align-items:center;gap:10px;padding:9px 10px;background:var(--bg2);border-radius:8px;"><div style="font-size:11px;font-weight:700;color:${i===0?"#f0b400":"#ccc"};width:14px;text-align:center;flex-shrink:0;">${i+1}</div><div style="flex:1;min-width:0;"><div style="font-size:11px;font-weight:600;color:${T.text};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.sku||"—"}</div><div style="background:var(--bg3);border-radius:99px;height:2px;margin-top:4px;"><div style="height:2px;border-radius:99px;background:${i===0?"#f0b400":"#5e72e4"};width:${Math.round((p.revenue/maxRevenue)*100)}%;"></div></div></div><div style="text-align:right;flex-shrink:0;min-width:52px;"><div style="font-size:11px;color:#bbb;">${p.qty} un</div><div style="font-size:11px;font-weight:600;color:${T.text2};">${fmt(p.revenue||0)}</div></div></div>`).join("")}
     </div>
