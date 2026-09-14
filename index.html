@@ -363,33 +363,25 @@ function setupIdentityScreen() {
 
       // Aguarda Firebase + dashData antes de remover a tela de entrada
       const _s = document.getElementById("identity-screen");
-      // Dispara os fetches imediatamente para não travar o loading
-      setTimeout(() => {
-        if (!dashData && !dashLoading) window._fetchDashboard();
-        if (perguntasState.lista === null && !perguntasState.carregando) fetchPerguntas();
-        if (!estoqueBlingData && !estoqueBlingLoading && tokenValido(state.bling_token)) fetchBlingProdutos();
-      }, 500);
 
       const checkReady = setInterval(() => {
         const firebaseOk = !!state?.ml_token_filial;
         const dashOk = !!dashData && !dashLoading;
-        const estoqueOk = !!estoqueBlingData || !!estoqueBlingErro;
-        const perguntasOk = perguntasState.lista !== null || !!perguntasState.erro;
-        if (firebaseOk && dashOk && estoqueOk && perguntasOk) {
+        if (firebaseOk && dashOk) {
           clearInterval(checkReady);
           if(_s) _s.remove();
           render();
           setTimeout(() => { window.scrollTo(0, 0); }, 100);
         }
       }, 200);
-      // Timeout de segurança: 6 segundos — abre mesmo sem dados
+      // Timeout de segurança: 8 segundos
       setTimeout(() => {
         clearInterval(checkReady);
         if(document.getElementById("identity-screen")) {
           document.getElementById("identity-screen").remove();
           render();
         }
-      }, 6000);
+      }, 8000);
 
     } else if(name === "Resicon") {
       // Resicon vai direto para Contas a Pagar em tela cheia
