@@ -2494,19 +2494,58 @@ function renderDashboard(panel, color) {
     vendasGrid.appendChild(mkVendaCard("Mês · Matriz RS", fmt(dM.fatMes), (dM.pedidosMes||0)+" PEDIDOS", "#f59e0b", "#f59e0b"));
   }
 
+  // Top hoje + Top mês — lado a lado
   const top5 = dashData.top5hoje || [];
-  const top5Card = document.createElement("div");
-  top5Card.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:14px 16px;`;
-  top5Card.innerHTML = `<div style="font-size:9px;color:${T.text2};text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;">Top produtos hoje · Filial SP</div>`
-    + top5.slice(0,5).map(p => `
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid ${T.sep};">
-        <div style="font-size:11px;font-weight:500;color:${T.text};flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.sku||"—"}</div>
-        <div style="font-size:10px;color:${T.text2};margin:0 12px;">${p.qty} un</div>
-        <div style="font-size:11px;font-weight:600;font-family:'IBM Plex Mono',monospace;color:${T.text};flex-shrink:0;">${fmt(p.revenue||0)}</div>
-      </div>`).join("") + (top5.length===0 ? `<div style="font-size:11px;color:${T.text2};">Nenhuma venda hoje ainda</div>` : "");
+  const top10 = dashData.top10mes || [];
 
-  vendasCard.appendChild(vendasGrid);
-  vendasCard.appendChild(top5Card);
+  // Mesclar Matriz com Filial para top hoje
+  const top5Matriz = dashData.matriz?.top5hoje || [];
+  const mergedHoje = {};
+  [...top5, ...top5Matriz].forEach(p => {
+    const k = p.sku || p.title || "—";
+    if (!mergedHoje[k]) mergedHoje[k] = { sku: k, qty: 0, revenue: 0 };
+    mergedHoje[k].qty += Number(p.qty || 0);
+    mergedHoje[k].revenue += Number(p.revenue || 0);
+  });
+  const top5Merged = Object.values(mergedHoje).sort((a,b) => b.revenue - a.revenue).slice(0,5);
+
+  // Mesclar Matriz com Filial para top mês
+  const top10Matriz = dashData.matriz?.top10mes || [];
+  const mergedMes = {};
+  [...top10, ...top10Matriz].forEach(p => {
+    const k = p.sku || p.title || "—";
+    if (!mergedMes[k]) mergedMes[k] = { sku: k, qty: 0, revenue: 0 };
+    mergedMes[k].qty += Number(p.qty || 0);
+    mergedMes[k].revenue += Number(p.revenue || 0);
+  });
+  const top5MesMerged = Object.values(mergedMes).sort((a,b) => b.revenue - a.revenue).slice(0,5);
+
+  function mkTopCard(titulo, lista) {
+    const c = document.createElement("div");
+    c.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:14px 16px;`;
+    const rows = lista.map((p, i) => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;${i<lista.length-1?`border-bottom:0.5px solid ${T.sep};`:""}">
+        <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1;">
+          <span style="font-size:13px;font-weight:700;color:${i===0?"#3b82f6":T.text2};width:18px;flex-shrink:0;">${i+1}</span>
+          <span style="font-size:11px;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.sku||"—"}</span>
+        </div>
+        <div style="text-align:right;flex-shrink:0;margin-left:10px;">
+          <div style="font-size:12px;font-weight:600;color:${T.text};font-family:'IBM Plex Mono',monospace;">${fmt(p.revenue||0)}</div>
+          <div style="font-size:10px;color:${T.text2};">${p.qty} un</div>
+        </div>
+      </div>`).join("");
+    c.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <div style="font-size:11px;color:${T.text2};">${titulo}</div>
+      <div style="font-size:10px;color:${T.text3};">Matriz + Filial</div>
+    </div>${rows || `<div style="font-size:11px;color:${T.text2};">Sem dados</div>`}`;
+    return c;
+  }
+
+  const topGrid = document.createElement("div");
+  topGrid.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;";
+  topGrid.appendChild(mkTopCard("Top hoje", top5Merged));
+  topGrid.appendChild(mkTopCard("Top mês", top5MesMerged));
+  vendasCard.appendChild(topGrid);
   grid.appendChild(vendasCard);
 
   // Tarefas
@@ -2980,17 +3019,6 @@ function renderDashboard(panel, color) {
       console.log("vencimentos:", e.message);
     }
   })();
-
-  const topCard = document.createElement("div");
-  topCard.style.cssText = "background:var(--bg2);border:0.5px solid var(--border2);border-radius:14px;padding:16px;grid-column:1/-1;";
-  const maxRevenue = dashData.top10mes[0]?.revenue || 1;
-  topCard.innerHTML = `
-    <div style="font-size:11px;font-weight:500;color:${T.text3};font-family:'Inter',sans-serif;margin-bottom:14px;">Top 10 produtos · mês atual</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
-      ${dashData.top10mes.map((p,i) => `<div style="display:flex;align-items:center;gap:10px;padding:9px 10px;background:var(--bg2);border-radius:8px;"><div style="font-size:11px;font-weight:700;color:${i===0?"#f0b400":"#ccc"};width:14px;text-align:center;flex-shrink:0;">${i+1}</div><div style="flex:1;min-width:0;"><div style="font-size:11px;font-weight:600;color:${T.text};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.sku||"—"}</div><div style="background:var(--bg3);border-radius:99px;height:2px;margin-top:4px;"><div style="height:2px;border-radius:99px;background:${i===0?"#f0b400":"#5e72e4"};width:${Math.round((p.revenue/maxRevenue)*100)}%;"></div></div></div><div style="text-align:right;flex-shrink:0;min-width:52px;"><div style="font-size:11px;color:#bbb;">${p.qty} un</div><div style="font-size:11px;font-weight:600;color:${T.text2};">${fmt(p.revenue||0)}</div></div></div>`).join("")}
-    </div>
-  `;
-  grid.appendChild(topCard);
 
   wrap.appendChild(grid);
   panel.appendChild(wrap);
