@@ -2449,149 +2449,45 @@ function renderDashboard(panel, color) {
   // Vendas ML com abas Filial/Matriz
   const vendasCard = document.createElement("div");
   vendasCard.style.cssText = "";
-  function vendasTabContent(d, percDia) {
-    if(!d) return `<div style="text-align:center;padding:20px;color:var(--text3);font-size:11px;">Token não conectado</div>`;
-    const top5 = d.top5hoje || [];
-    const maxRev = top5[0]?.revenue || 1;
-    const miniBars = [100, 65, 47, 30, 18].map(h =>
-      `<div style="flex:1;height:${h}%;border-radius:2px 2px 0 0;background:#3b82f6;opacity:.35;"></div>`
-    ).join('');
-    const listRows = top5.map((p,i) => `
-      <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid ${T.sep};">
-        <div style="font-size:9px;color:${T.text3};width:10px;flex-shrink:0;">${i+1}</div>
-        <div style="font-size:10px;color:${T.text};flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.sku||"—"}</div>
-        <div style="font-size:9px;color:${T.text3};flex-shrink:0;">${p.qty} un</div>
-        <div style="width:32px;height:2px;background:${T.border2};border-radius:2px;flex-shrink:0;"><div style="height:2px;border-radius:2px;background:#ffffff;width:${i===0?100:Math.round((p.revenue/maxRev)*100)}%;"></div></div>
-        <div style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;font-family:'Inter',sans-serif;background:#ffffff;color:#000;flex-shrink:0;">${fmt(p.revenue||0)}</div>
-      </div>`).join('');
-    const ticketMedio = d.pedidosMes > 0 ? fmt(d.fatMes / d.pedidosMes) : 'R$ 0';
-    const rowStyle = `display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid ${T.sep};`;
-    const lStyle = `font-size:10px;color:${T.text3};`;
-    const vStyle = `font-size:11px;font-weight:600;color:${T.text};font-family:'IBM Plex Mono',monospace;`;
+  const dF = { fatHoje: dashData.fatHoje, projecaoDia: dashData.projecaoDia, fatMes: dashData.fatMes, pedidosMes: dashData.pedidosMes, percDia: dashData.percDia };
+  const dM = dashData.matriz;
 
-    const projRows = `
-      <div style="${rowStyle}"><div style="${lStyle}">Projeção do dia</div><div style="${vStyle}">${fmt(d.projecaoDia)}</div></div>
-      <div style="${rowStyle}"><div style="${lStyle}">% concluído</div><div style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;background:#8b5cf6;color:#fff;">${percDia}% DO DIA</div></div>
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;"><div style="${lStyle}">Faturado hoje</div><div style="${vStyle}">${fmtFull(d.fatHoje)}</div></div>`;
-
-    const mesRows = `
-      <div style="${rowStyle}"><div style="${lStyle}">Pedidos no mês</div><div style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;background:#8b5cf6;color:#ffffff;">${d.pedidosMes} PEDIDOS</div></div>
-      <div style="${rowStyle}"><div style="${lStyle}">Ticket médio</div><div style="${vStyle}">${ticketMedio}</div></div>
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;"><div style="${lStyle}">Faturamento mês</div><div style="${vStyle}">${fmt(d.fatMes)}</div></div>`;
-
-    return `
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;align-items:start;">
-        <div id="vdc-0" onclick="window._vdcActivate(0)" style="background:${T.isLight?"#ffffff":"linear-gradient(to top,#252525 0%,#000 100%)"};border-radius:10px;overflow:hidden;border:1px solid ${T.border};box-shadow:${T.cardShadow};cursor:pointer;transition:border-color .2s;">
-          <div id="vdc-top-0" style="height:3px;background:#3b82f6;"></div>
-          <div style="padding:12px 14px 13px;">
-            <div style="font-size:10px;color:${T.text2};margin-bottom:6px;">Hoje</div>
-            <div style="font-size:26px;font-weight:700;color:${T.text};font-family:'IBM Plex Mono',monospace;">${fmtFull(d.fatHoje)}</div>
-            <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;display:inline-block;background:#3b82f6;color:#ffffff;margin-top:8px;">↑ EM TEMPO REAL</div>
-            <div id="vdc-bars-0" style="display:flex;align-items:flex-end;gap:3px;height:22px;margin-top:12px;transition:opacity .25s;opacity:1;">${miniBars}</div>
-          </div>
-          <div id="vdc-list-0" style="display:none;overflow:hidden;">
-            <div style="padding:8px 14px 12px;border-top:1px solid ${T.sep};">${listRows}</div>
-          </div>
-        </div>
-        <div id="vdc-1" onclick="window._vdcActivate(1)" style="background:${T.isLight?"#ffffff":"linear-gradient(to top,#252525 0%,#000 100%)"};border-radius:10px;overflow:hidden;border:1px solid ${T.border};box-shadow:${T.cardShadow};cursor:pointer;transition:border-color .2s;">
-          <div id="vdc-top-1" style="height:3px;background:#8b5cf6;"></div>
-          <div style="padding:12px 14px 13px;">
-            <div style="font-size:10px;color:${T.text2};margin-bottom:6px;">Projeção</div>
-            <div style="font-size:26px;font-weight:700;color:${T.text};font-family:'IBM Plex Mono',monospace;">${fmt(d.projecaoDia)}</div>
-            <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;display:inline-block;background:#8b5cf6;color:#fff;margin-top:8px;">${percDia}% DO DIA</div>
-            <div style="display:flex;align-items:center;gap:10px;margin-top:12px;height:22px;">
-              <svg width="22" height="22" viewBox="0 0 36 36" style="flex-shrink:0;">
-                <circle cx="18" cy="18" r="14" fill="none" stroke="#e0e0e0" stroke-width="3"/>
-                <circle cx="18" cy="18" r="14" fill="none" stroke="#8b5cf6" stroke-width="3" stroke-opacity="0.7" stroke-dasharray="${(percDia*0.879).toFixed(1)} 87.9" stroke-dashoffset="21.975" stroke-linecap="round"/>
-              </svg>
-              <div style="font-size:10px;color:${T.text3};line-height:1.4;">falta <span style="color:${T.text};font-weight:600;">${100-percDia}%</span> pra meta</div>
-            </div>
-          </div>
-          <div id="vdc-list-1" style="display:none;overflow:hidden;">
-            <div style="padding:8px 14px 12px;border-top:1px solid ${T.sep};">${projRows}</div>
-          </div>
-        </div>
-        <div id="vdc-2" onclick="window._vdcActivate(2)" style="background:${T.isLight?"#ffffff":"linear-gradient(to top,#252525 0%,#000 100%)"};border-radius:10px;overflow:hidden;border:1px solid ${T.border};box-shadow:${T.cardShadow};cursor:pointer;transition:border-color .2s;">
-          <div id="vdc-top-2" style="height:3px;background:#10b981;"></div>
-          <div style="padding:12px 14px 13px;">
-            <div style="font-size:10px;color:${T.text2};margin-bottom:6px;">Mês atual</div>
-            <div style="font-size:26px;font-weight:700;color:${T.text};font-family:'IBM Plex Mono',monospace;">${fmt(d.fatMes)}</div>
-            <div style="padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;display:inline-block;background:#10b981;color:#ffffff;margin-top:8px;">${d.pedidosMes} PEDIDOS</div>
-            <div style="margin-top:12px;height:22px;">
-              <svg width="100%" height="22" viewBox="0 0 200 22" preserveAspectRatio="none">
-                <defs><linearGradient id="gGreen" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#10b981" stop-opacity="0.2"/><stop offset="100%" stop-color="#10b981" stop-opacity="0"/></linearGradient></defs>
-                <path d="M0,19 L30,16 L60,15 L90,11 L120,8 L150,6 L180,4 L200,2 L200,22 L0,22Z" fill="url(#gGreen)"/>
-                <polyline points="0,19 30,16 60,15 90,11 120,8 150,6 180,4 200,2" fill="none" stroke="#10b981" stroke-width="1.5" stroke-opacity="0.6" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="200" cy="2" r="2.5" fill="#10b981" opacity="0.8"/>
-              </svg>
-            </div>
-          </div>
-          <div id="vdc-list-2" style="display:none;overflow:hidden;">
-            <div style="padding:8px 14px 12px;border-top:1px solid ${T.sep};">${mesRows}</div>
-          </div>
-        </div>
-      </div>
-      <div style="background:${T.border};border-radius:99px;height:3px;margin-bottom:8px;overflow:hidden;"><div style="height:3px;border-radius:99px;background:linear-gradient(90deg,#3b82f6,#8b5cf6);width:${percDia}%;transition:width .4s;"></div></div>
-    `;
+  function mkVendaCard(label, valor, badge, badgeBg, borderColor) {
+    const d = document.createElement("div");
+    d.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-top:3px solid ${borderColor};border-radius:10px;padding:14px 16px;`;
+    d.innerHTML = `
+      <div style="font-size:9px;color:${T.text2};text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;">${label}</div>
+      <div style="font-size:22px;font-weight:700;color:${T.text};font-family:'IBM Plex Mono',monospace;">${valor}</div>
+      <div style="margin-top:8px;"><span style="font-size:10px;font-weight:600;padding:3px 9px;border-radius:5px;background:${badgeBg};color:#fff;">${badge}</span></div>`;
+    return d;
   }
 
-  let _vendasAba = 'filial';
-  // Função de toggle dos mini cards do dashboard — definida fora do innerHTML
-  (function(){
-    var _cur = -1;
-    var _open = false;
-    if(!window._vdcState) window._vdcState = {open: null};
-    window._vdcApply = function() {
-      [0,1,2].forEach(function(i) {
-        var l = document.getElementById('vdc-list-'+i);
-        var b = document.getElementById('vdc-bars-'+i);
-        var isOpen = (window._vdcState.open === i);
-        if(l) l.style.display = isOpen ? 'block' : 'none';
-        if(b) b.style.opacity = isOpen ? '0' : '1';
-      });
-    };
-    window._vdcActivate = function(n) {
-      window._vdcState.open = (window._vdcState.open === n) ? null : n;
-      window._vdcApply();
-    };
-  })();
-
-  function renderVendasAba() {
-    const tabFilial = document.getElementById('dash-aba-filial');
-    const tabMatriz = document.getElementById('dash-aba-matriz');
-    const body = document.getElementById('dash-vendas-body');
-    if(!tabFilial || !tabMatriz || !body) return;
-    const _vendasAba = window._vendasAba || 'filial';
-    if(_vendasAba === 'filial') {
-      tabFilial.style.cssText = "padding:6px 16px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;color:#000;background:#ffffff;border:1px solid #ffffff;transition:all .2s;white-space:nowrap;font-family:'Inter',sans-serif;";
-      tabMatriz.style.cssText = "padding:6px 16px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;color:#444;background:transparent;transition:all .2s;white-space:nowrap;font-family:'Inter',sans-serif;";
-      body.innerHTML = vendasTabContent({fatHoje:dashData.fatHoje, projecaoDia:dashData.projecaoDia, fatMes:dashData.fatMes, pedidosMes:dashData.pedidosMes, top5hoje:dashData.top5hoje}, dashData.percDia); setTimeout(function(){ if(window._vdcApply) window._vdcApply(); }, 0);
-    } else {
-      tabFilial.style.cssText = "padding:6px 16px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;color:#444;background:transparent;transition:all .2s;white-space:nowrap;font-family:'Inter',sans-serif;";
-      tabMatriz.style.cssText = "padding:6px 16px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;color:#000;background:#ffffff;border:1px solid #ffffff;transition:all .2s;white-space:nowrap;font-family:'Inter',sans-serif;";
-      body.innerHTML = vendasTabContent(dashData.matriz, dashData.percDia); setTimeout(function(){ if(window._vdcApply) window._vdcApply(); }, 0);
-    }
+  const vendasGrid = document.createElement("div");
+  vendasGrid.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;";
+  vendasGrid.appendChild(mkVendaCard("Hoje · Filial SP", fmtFull(dF.fatHoje), "↑ EM TEMPO REAL", "#3b82f6", "#3b82f6"));
+  vendasGrid.appendChild(mkVendaCard("Mês atual · Filial SP", fmt(dF.fatMes), `${dF.pedidosMes} PEDIDOS`, "#10b981", "#10b981"));
+  if (dM) {
+    vendasGrid.appendChild(mkVendaCard("Hoje · Matriz RS", fmtFull(dM.fatHoje), `${dF.percDia}% DO DIA`, "#8b5cf6", "#8b5cf6"));
+    vendasGrid.appendChild(mkVendaCard("Mês · Matriz RS", fmt(dM.fatMes), `${dM.pedidosMes} PEDIDOS`, "#10b981", "#10b981"));
   }
 
-  vendasCard.innerHTML = `
-    <div style="margin-bottom:10px;">
-      <div style="font-size:11px;font-weight:500;color:${T.text};font-family:'Inter',sans-serif;margin-bottom:10px;">Vendas Mercado Livre</div>
-      <div style="display:inline-flex;background:${T.bg3};border-radius:8px;padding:3px;gap:2px;border:1px solid ${T.border};">
-        <div id="dash-aba-filial" onclick="window._vendasAba='filial';window.renderVendasAba();" style="padding:6px 18px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;font-family:'Inter',sans-serif;color:${T.text};background:var(--bg2);border:1px solid ${T.border};white-space:nowrap;">Filial SP</div>
-        <div id="dash-aba-matriz" onclick="window._vendasAba='matriz';window.renderVendasAba();" style="padding:6px 18px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;font-family:'Inter',sans-serif;color:#444;background:transparent;white-space:nowrap;">${dashData.matriz ? "Matriz RS" : "Matriz (desconectado)"}</div>
-      </div>
-    </div>
-    <div id="dash-vendas-body"></div>
-  `;
+  const top5 = dashData.top5hoje || [];
+  const topCard = document.createElement("div");
+  topCard.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:14px 16px;`;
+  topCard.innerHTML = `<div style="font-size:9px;color:${T.text2};text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;">Top produtos hoje · Filial SP</div>`
+    + top5.slice(0,5).map(p => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid ${T.sep};">
+        <div style="font-size:11px;font-weight:500;color:${T.text};flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.sku||"—"}</div>
+        <div style="font-size:10px;color:${T.text2};margin:0 12px;">${p.qty} un</div>
+        <div style="font-size:11px;font-weight:600;font-family:'IBM Plex Mono',monospace;color:${T.text};flex-shrink:0;">${fmt(p.revenue||0)}</div>
+      </div>`).join("") + (top5.length===0 ? `<div style="font-size:11px;color:${T.text2};">Nenhuma venda hoje ainda</div>` : "");
 
-  // Expor função globalmente para os onclick
-  window._vendasAba = _vendasAba;
-  window.renderVendasAba = renderVendasAba;
-
-  // Renderizar aba inicial
-  setTimeout(() => renderVendasAba(), 0);
+  vendasCard.appendChild(vendasGrid);
+  vendasCard.appendChild(topCard);
   grid.appendChild(vendasCard);
 
+  // Tarefas
+  // Usar tasksFor igual ao resto do sistema
   // Tarefas
   // Usar tasksFor igual ao resto do sistema
   const allDiogoActive = tasksFor("Diogo").filter(t => !t.done);
@@ -2703,58 +2599,33 @@ function renderDashboard(panel, color) {
   const statusBar = document.createElement("div");
   statusBar.id = "dash-sidebar";
   statusBar.style.cssText = "display:flex;flex-direction:column;gap:10px;";
-  statusBar.innerHTML = `
-    <div id="sbar-card-tasks" onclick="window._sbarToggle('tasks')" style="background:${T.card};border:0.5px solid ${T.border};border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s;">
-      <div style="padding:13px 16px;display:flex;align-items:center;gap:14px;">
-        <div style="font-size:10px;color:${T.text2};white-space:nowrap;">Tarefas</div>
-        <div style="display:flex;align-items:center;gap:8px;flex:1;">
-          <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#e8432d;"></div><div style="font-size:11px;font-weight:700;color:#e8432d;">${urgentes}</div></div>
-          <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#f77614;"></div><div style="font-size:11px;font-weight:700;color:#f77614;">${importantes}</div></div>
-          <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#f0c000;"></div><div style="font-size:11px;font-weight:700;color:#f0c000;">${normais}</div></div>
-        </div>
-        <div id="sbar-arr-tasks" style="font-size:10px;color:${T.text2};transition:transform .2s,color .2s;">▾</div>
-      </div>
-      <div id="sbar-drawer-tasks" style="max-height:0;overflow:hidden;transition:max-height .3s ease;">
-        <div style="padding:8px 14px 10px;height:188px;overflow-y:auto;">${tarefasDrawerRows || `<div style="font-size:11px;color:${T.text2};padding:6px 0;">Nenhuma tarefa pendente ✓</div>`}</div>
-      </div>
-    </div>
-    <div id="sbar-card-stock" onclick="window._sbarToggle('stock')" style="background:${T.card};border:0.5px solid ${T.border};border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s;">
-      <div style="padding:13px 16px;display:flex;align-items:center;gap:10px;">
-        <div style="font-size:10px;color:${T.text2};white-space:nowrap;">Estoque Full · SP</div>
-        <div style="font-size:11px;font-weight:700;color:${T.text};font-family:'IBM Plex Mono',monospace;">${fmtFull(valorTotal)}</div>
-        <div style="font-size:10px;color:${T.text2};">${unidadesTotal} un</div>
-        ${alertasCount > 0 ? `<div style="margin-left:auto;display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#c0392b;"></div><div style="font-size:10px;color:#c0392b;">${alertasCount} alertas</div></div>` : `<div style="margin-left:auto;font-size:10px;color:#2dce89;">OK ✓</div>`}
-        <div id="sbar-arr-stock" style="font-size:10px;color:${T.text2};margin-left:8px;transition:transform .2s,color .2s;">▾</div>
-      </div>
-      <div id="sbar-drawer-stock" style="max-height:0;overflow:hidden;transition:max-height .3s ease;">
-        <div style="padding:8px 14px 10px;height:188px;overflow-y:auto;">${estDrawerRows || `<div style="font-size:11px;color:${T.text2};padding:6px 0;">Nenhum produto crítico ✓</div>`}</div>
-      </div>
-    </div>
-    <div id="sbar-card-perguntas" onclick="window._sbarToggle('perguntas')" style="background:${T.card};border:0.5px solid ${T.border};border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s;">
-      <div style="padding:13px 16px;display:flex;align-items:center;gap:10px;">
-        <div style="font-size:10px;color:${T.text2};white-space:nowrap;">Perguntas</div>
-        ${perguntasLista === null || perguntasLista === undefined
-          ? `<div style="font-size:11px;color:${T.text2};">${perguntasState.carregando ? "buscando..." : "..."}</div>`
-          : perguntasTotal > 0
-            ? `<div style="font-size:11px;font-weight:700;color:${T.text};font-family:'IBM Plex Mono',monospace;">${perguntasTotal}</div>
-               <div style="display:flex;align-items:center;gap:10px;flex:1;">
-                ${perguntasSugeridas > 0 ? `<div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#2dce89;"></div><div style="font-size:10px;color:#2dce89;">${perguntasSugeridas} sugerida${perguntasSugeridas>1?"s":""}</div></div>` : ""}
-                ${perguntasAtencao > 0 ? `<div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#c0392b;"></div><div style="font-size:10px;color:#c0392b;">${perguntasAtencao} atenção</div></div>` : ""}
-              </div>`
-            : `<div style="font-size:10px;color:#2dce89;">Em dia ✓</div>`
-        }
-        <div id="sbar-arr-perguntas" style="font-size:10px;color:${T.text2};transition:transform .2s,color .2s;">▾</div>
-      </div>
-      <div id="sbar-drawer-perguntas" style="max-height:0;overflow:hidden;transition:max-height .3s ease;">
-        <div style="padding:8px 14px 10px;">
-          <div style="height:188px;overflow-y:auto;">${perguntasDrawerRows || `<div style="font-size:11px;color:${T.text2};padding:6px 0;">Nenhuma pergunta pendente ✓</div>`}</div>
-          ${perguntasTotal > 6 ? `<div onclick="window._goPerguntas()" style="text-align:center;font-size:10px;color:${T.text};padding-top:8px;cursor:pointer;">Ver todas (${perguntasTotal}) →</div>` : (perguntasTotal > 0 ? `<div onclick="window._goPerguntas()" style="text-align:center;font-size:10px;color:${T.text};padding-top:8px;cursor:pointer;">Ir para aba Perguntas →</div>` : "")}
-        </div>
-      </div>
-    </div>
-  `;
+
+  function mkSideCard(title, rows) {
+    const c = document.createElement("div");
+    c.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:14px 16px;`;
+    c.innerHTML = `<div style="font-size:9px;color:${T.text2};text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;">${title}</div>` + rows;
+    return c;
+  }
+
+  function mkRow(label, value, valueBg) {
+    const bg = valueBg ? `background:${valueBg};color:#fff;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:600;` : `font-size:11px;font-weight:600;color:${T.text};`;
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid ${T.sep};">
+      <div style="font-size:11px;color:${T.text};">${label}</div>
+      <div style="${bg}">${value}</div>
+    </div>`;
+  }
+
+  // Card Pendências
+  const pendRows = [
+    mkRow("Tarefas", `${urgentes}u · ${importantes}i · ${normais}n`),
+    mkRow("Perguntas", perguntasTotal > 0 ? `${perguntasTotal}` + (perguntasSugeridas > 0 ? ` · ${perguntasSugeridas} sugeridas` : "") : "Em dia ✓", perguntasTotal > 0 ? "#3b82f6" : ""),
+    mkRow("Estoque Full · SP", alertasCount > 0 ? `${alertasCount} alertas` : "OK ✓", alertasCount > 0 ? "#e8432d" : ""),
+  ].join("");
+
+  statusBar.appendChild(mkSideCard("Pendências", pendRows));
+
   grid.appendChild(statusBar);
-  window._sbarApply();
+  window._sbarApply = function() {};
 
   // 4º card — Vencimentos próximos (async, adicionado depois)
   (async () => {
@@ -2791,35 +2662,30 @@ function renderDashboard(panel, color) {
         </div>`;
       }).join("");
 
-      const fiscalRows = (window._fiscalAgrupado||[]).map(e => {
-        const cor = e.diff <= 5 ? "#E24B4A" : e.diff <= 14 ? "#f0b400" : T.text2;
-        const dotCor = coresFiscal[e.tipo] || "#bbb";
-        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px 8px 12px;border-radius:7px;margin-bottom:5px;background:${T.bg3};border:0.5px solid ${T.border};border-left:2px solid ${dotCor};">
-          <div style="flex:1;min-width:0;margin-right:8px;">
-            <div style="font-size:11px;font-weight:500;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.nome}</div>
-            <div style="font-size:10px;color:${T.text2};margin-top:1px;">Fiscal</div>
-          </div>
-          <div style="font-size:10px;font-weight:600;color:${cor};flex-shrink:0;">em ${e.diff}d</div>
-        </div>`;
-      }).join("");
+      const allVencRows = [
+        ...(proximos.slice(0,3).map(c => {
+          const cor = c.dias <= 1 ? "#E24B4A" : "#f0b400";
+          const diaLabel = c.dias===0?"Hoje":c.dias===1?"Amanhã":`${c.dias}d`;
+          return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid ${T.sep};">
+            <div style="font-size:11px;color:${T.text};flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.fornecedor||"—"}</div>
+            <div style="font-size:10px;font-weight:600;color:${cor};margin-left:8px;flex-shrink:0;">${diaLabel}</div>
+          </div>`;
+        })),
+        ...((window._fiscalAgrupado||[]).slice(0,3).map(e => {
+          const cor = e.diff <= 5 ? "#E24B4A" : e.diff <= 14 ? "#f0b400" : T.text2;
+          return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid ${T.sep};">
+            <div style="font-size:11px;color:${T.text};flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.nome}</div>
+            <div style="font-size:10px;font-weight:600;color:${cor};margin-left:8px;flex-shrink:0;">em ${e.diff}d</div>
+          </div>`;
+        }))
+      ].join("");
 
-      // Inserir o card na sidebar
-      const vencCardHtml = `<div id="sbar-card-venc" onclick="window._sbarToggle('venc')" style="background:${T.card};border:0.5px solid ${T.border};border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s;">
-        <div style="padding:13px 16px;display:flex;align-items:center;gap:10px;">
-          <div style="font-size:10px;color:${T.text2};white-space:nowrap;">Vencimentos</div>
-          <div style="display:flex;align-items:center;gap:8px;flex:1;">${statusTag}</div>
-          <div id="sbar-arr-venc" style="font-size:10px;color:${T.text2};transition:transform .2s,color .2s;">▾</div>
-        </div>
-        <div id="sbar-drawer-venc" style="max-height:0;overflow:hidden;transition:max-height .3s ease;">
-          <div style="padding:8px 14px 10px;max-height:280px;overflow-y:auto;">
-            ${vencDrawerRows || ""}
-            ${fiscalRows ? `<div style="font-size:9px;color:${T.text2};padding:6px 0 4px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">Fiscal</div>${fiscalRows}` : ""}
-            ${!vencDrawerRows && !fiscalRows ? `<div style="font-size:11px;color:${T.text2};padding:6px 0;">Nenhum vencimento próximo ✓</div>` : ""}
-          </div>
-        </div>
+      const vencCardHtml = `<div id="sbar-card-venc" style="background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:14px 16px;">
+        <div style="font-size:9px;color:${T.text2};text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;">Vencimentos · ${statusTag.replace(/<[^>]+>/g,' ').trim()}</div>
+        ${allVencRows || `<div style="font-size:11px;color:${T.text2};">Em dia ✓</div>`}
       </div>`;
 
-      const sbar = document.getElementById("sbar-card-tasks")?.parentElement;
+      const sbar = document.getElementById("dash-sidebar");
       if (sbar) {
         sbar.insertAdjacentHTML("beforeend", vencCardHtml);
         window._sbarApply();
@@ -2841,35 +2707,21 @@ function renderDashboard(panel, color) {
       const valorTotal = notas.reduce((s,n) => s + Number(n.valorServicos||n.valor||0), 0);
       const fmtVal = v => `R$ ${Number(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
 
-      const rows = notas.slice(0,5).map(n => `
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px 8px 12px;border-radius:7px;margin-bottom:5px;background:${T.bg3};border:0.5px solid ${T.border};">
-          <div style="min-width:0;flex:1;margin-right:10px;">
-            <div style="font-size:11px;font-weight:500;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${n.prestador||n.razaoSocial||"—"}</div>
-            <div style="font-size:10px;color:${T.text2};margin-top:1px;">${n.discriminacao||n.servico||"Serviço"}</div>
-          </div>
-          <div style="font-size:11px;font-weight:600;font-family:'IBM Plex Mono',monospace;color:${T.text};flex-shrink:0;">${fmtVal(n.valorServicos||n.valor||0)}</div>
+      const nfseRows = notas.slice(0,3).map(n => `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid ${T.sep};">
+          <div style="font-size:11px;color:${T.text};flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${n.prestador||n.razaoSocial||"—"}</div>
+          <div style="font-size:11px;font-weight:600;font-family:'IBM Plex Mono',monospace;color:${T.text};flex-shrink:0;margin-left:8px;">${fmtVal(n.valorServicos||n.valor||0)}</div>
         </div>`).join("");
 
-      const nfseCardHtml = `<div id="sbar-card-nfse" onclick="window._sbarToggle('nfse')" style="background:${T.card};border:0.5px solid ${T.border};border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s;">
-        <div style="padding:13px 16px;display:flex;align-items:center;gap:10px;">
-          <div style="font-size:10px;color:${T.text2};white-space:nowrap;">NFS-e hoje</div>
-          <div style="flex:1;">
-            ${total > 0
-              ? `<div style="display:flex;align-items:center;gap:6px;"><div style="font-size:11px;font-weight:700;color:#3b82f6;">${total} nova${total>1?"s":""}</div><div style="font-size:10px;color:${T.text2};">${fmtVal(valorTotal)}</div></div>`
-              : `<div style="font-size:10px;color:${T.text2};">Nenhuma hoje</div>`
-            }
-          </div>
-          <div id="sbar-arr-nfse" style="font-size:10px;color:#2e2e2e;transition:transform .2s,color .2s;">▾</div>
-        </div>
-        <div id="sbar-drawer-nfse" style="max-height:0;overflow:hidden;transition:max-height .3s ease;">
-          <div style="padding:8px 14px 12px;">
-            ${rows || `<div style="font-size:11px;color:${T.text2};padding:6px 0;">Nenhuma NFS-e capturada hoje.</div>`}
-            ${total > 5 ? `<div onclick="window._diogotab='painel-fiscal';render();" style="text-align:center;font-size:10px;color:${T.text};padding-top:6px;cursor:pointer;">Ver todas (${total}) →</div>` : ""}
-          </div>
-        </div>
+      const nfseCardHtml = `<div id="sbar-card-nfse" style="background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:14px 16px;">
+        <div style="font-size:9px;color:${T.text2};text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;">NFS-e hoje${total > 0 ? ` · ${total} nota${total>1?"s":""}` : ""}</div>
+        ${total > 0
+          ? nfseRows + (total > 3 ? `<div style="font-size:10px;color:${T.text2};padding-top:6px;">+${total-3} outras · ${fmtVal(valorTotal)}</div>` : `<div style="font-size:10px;color:${T.text2};padding-top:4px;">Total: ${fmtVal(valorTotal)}</div>`)
+          : `<div style="font-size:11px;color:${T.text2};">Nenhuma hoje</div>`
+        }
       </div>`;
 
-      const sbar = document.getElementById("sbar-card-tasks")?.parentElement;
+      const sbar = document.getElementById("dash-sidebar");
       if (sbar) {
         sbar.insertAdjacentHTML("beforeend", nfseCardHtml);
         window._sbarApply();
