@@ -715,13 +715,15 @@ onValue(ref(db,"/"),snap=>{
     estoqueAutoCheckDone = false;
     estoqueExcelData = null;
     fetchEstoqueAutomatico();
-    // Se dashboard ainda não carregou, tenta agora que o token chegou
     if(!dashData && !dashLoading) window._fetchDashboard();
-    // Disparar fetches antecipados para o loading screen
     if(!estoqueBlingData && !estoqueBlingLoading && tokenValido(d.bling_token)) fetchBlingProdutos();
+    if(perguntasState.lista === null && !perguntasState.carregando) { _perguntasFetchDisparado = true; fetchPerguntas(); }
   }
-  // Perguntas — disparar sempre que token disponível e ainda não carregado
-  if(d.ml_token_filial?.access_token && perguntasState.lista === null && !perguntasState.carregando) fetchPerguntas();
+  // Primeira chegada do token (sem mudança — token já estava salvo no Firebase)
+  if(d.ml_token_filial?.access_token && !_perguntasFetchDisparado && perguntasState.lista === null && !perguntasState.carregando) {
+    _perguntasFetchDisparado = true;
+    fetchPerguntas();
+  }
   if(!cmpSalvando)render();
   if(document.getElementById("ideias-modal-overlay")) renderIdeiasLista();
 },()=>{syncDot.style.background="#e91e8c";});
@@ -979,6 +981,7 @@ async function confirmarLoteClonagem(container) {
 }
 
 let perguntasState = { lista: null, carregando: false, erro: null, enviando: {}, _fetchedAt: 0 };
+let _perguntasFetchDisparado = false;
 
 // ═══════════════ Picking & Packing ═══════════════
 let pickingState = {
