@@ -2530,7 +2530,7 @@ function renderDashboard(panel, color) {
           <span style="font-size:11px;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.sku||"—"}</span>
         </div>
         <div style="text-align:right;flex-shrink:0;margin-left:10px;">
-          <div style="font-size:12px;font-weight:600;color:${T.text};font-family:'IBM Plex Mono',monospace;">${fmt(p.revenue||0)}</div>
+          <div style="font-size:12px;font-weight:600;color:${T.text};">${fmt(p.revenue||0)}</div>
           <div style="font-size:10px;color:${T.text2};">${p.qty} un</div>
         </div>
       </div>`).join("");
