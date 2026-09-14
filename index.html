@@ -7328,19 +7328,20 @@ function renderFilialSP(panel, color) {
       const semCusto = !r.custo;
       const custoStr = r.custo > 0 ? `R$ ${r.custo.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : `<span style="color:#e91e8c;font-size:11px;">sem custo</span>`;
       const valorStr = r.valor > 0 ? `R$ ${r.valor.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : "—";
-      const tr = document.createElement("tr");
-      tr.style.borderBottom = "1px solid var(--sep2)";
+      tr.style.cssText = "border-bottom:1px solid var(--sep);transition:background .1s;";
+      tr.onmouseover = () => tr.style.background = "var(--bg3)";
+      tr.onmouseout  = () => tr.style.background = "";
       tr.innerHTML = `
-        <td style="padding:8px 8px;color:#e8e8e8;font-size:11px;white-space:nowrap;font-weight:600;">${r.sku}</td>
-        <td style="padding:8px 8px;color:var(--text2);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;">${r.produto}</td>
-        <td style="padding:8px 8px;text-align:center;color:${r.aptas>0?"var(--text)":"var(--text3)"};font-weight:${r.aptas>0?"500":"400"};">${r.aptas||"—"}</td>
-        <td style="padding:8px 8px;text-align:center;color:var(--text3);">${r.transf||"—"}</td>
-        <td style="padding:8px 8px;text-align:center;color:${r.pendente>0?"#f0b400":"var(--text3)"};font-weight:${r.pendente>0?"500":"400"};">${r.pendente||"—"}</td>
-        <td style="padding:8px 8px;text-align:right;color:${semCusto?"#e91e8c":"var(--text2)"};">${custoStr}</td>
-        <td style="padding:8px 8px;text-align:right;color:${semCusto?"var(--text3)":r.valor>5000?"#00dfc3":r.valor>1000?"#00dfc3":"var(--text2)"};font-weight:500;">${valorStr}</td>
-        <td style="padding:8px 8px;text-align:center;">
-          <span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap;background:${statusInfo.bg};color:${statusInfo.color};border:0.5px solid ${statusInfo.border};">${statusInfo.label}</span>
-          ${v30 > 0 ? `<div style="font-size:9px;color:var(--text3);margin-top:2px;">${v30}/mês</div>` : ""}
+        <td style="padding:12px 10px;color:#e8e8e8;font-size:11px;white-space:nowrap;font-weight:700;min-width:120px;">${r.sku}</td>
+        <td style="padding:12px 10px;color:var(--text2);max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;">${r.produto}</td>
+        <td style="padding:12px 10px;text-align:center;color:${r.aptas>0?"var(--text)":"var(--text3)"};font-weight:${r.aptas>0?"600":"400"};">${r.aptas||"—"}</td>
+        <td style="padding:12px 10px;text-align:center;color:var(--text3);">${r.transf||"—"}</td>
+        <td style="padding:12px 10px;text-align:center;color:${r.pendente>0?"#f0b400":"var(--text3)"};font-weight:${r.pendente>0?"600":"400"};">${r.pendente||"—"}</td>
+        <td style="padding:12px 10px;text-align:right;color:${semCusto?"#e91e8c":"var(--text2)"};">${custoStr}</td>
+        <td style="padding:12px 10px;text-align:right;color:${semCusto?"var(--text3)":r.valor>1000?"#00dfc3":"var(--text2)"};font-weight:500;">${valorStr}</td>
+        <td style="padding:12px 10px;text-align:center;">
+          <span style="font-size:10px;font-weight:600;padding:3px 10px;border-radius:20px;white-space:nowrap;background:${statusInfo.bg};color:${statusInfo.color};border:0.5px solid ${statusInfo.border};">${statusInfo.label}</span>
+          ${v30 > 0 ? `<div style="font-size:9px;color:var(--text3);margin-top:3px;">${v30}/mês</div>` : ""}
         </td>`;
       tbody.appendChild(tr);
     });
