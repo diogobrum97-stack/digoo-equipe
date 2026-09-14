@@ -2545,6 +2545,7 @@ function renderDashboard(panel, color) {
   topGrid.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;";
   topGrid.appendChild(mkTopCard("Top hoje", top5Merged));
   topGrid.appendChild(mkTopCard("Top mês", top5MesMerged));
+  vendasCard.appendChild(vendasGrid);
   vendasCard.appendChild(topGrid);
   grid.appendChild(vendasCard);
 
