@@ -7328,6 +7328,7 @@ function renderFilialSP(panel, color) {
       const semCusto = !r.custo;
       const custoStr = r.custo > 0 ? `R$ ${r.custo.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : `<span style="color:#e91e8c;font-size:11px;">sem custo</span>`;
       const valorStr = r.valor > 0 ? `R$ ${r.valor.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : "—";
+      const tr = document.createElement("tr");
       tr.style.cssText = "border-bottom:1px solid var(--sep);transition:background .1s;";
       tr.onmouseover = () => tr.style.background = "var(--bg3)";
       tr.onmouseout  = () => tr.style.background = "";
