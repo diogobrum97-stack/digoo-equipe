@@ -719,8 +719,9 @@ onValue(ref(db,"/"),snap=>{
     if(!dashData && !dashLoading) window._fetchDashboard();
     // Disparar fetches antecipados para o loading screen
     if(!estoqueBlingData && !estoqueBlingLoading && tokenValido(d.bling_token)) fetchBlingProdutos();
-    if(perguntasState.lista === null && !perguntasState.carregando) fetchPerguntas();
   }
+  // Perguntas — disparar sempre que token disponível e ainda não carregado
+  if(d.ml_token_filial?.access_token && perguntasState.lista === null && !perguntasState.carregando) fetchPerguntas();
   if(!cmpSalvando)render();
   if(document.getElementById("ideias-modal-overlay")) renderIdeiasLista();
 },()=>{syncDot.style.background="#e91e8c";});
