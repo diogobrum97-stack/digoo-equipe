@@ -2444,11 +2444,16 @@ function renderDashboard(panel, color) {
   wrap.appendChild(header);
 
   const grid = document.createElement("div");
-  grid.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:10px;";
+  grid.style.cssText = "display:grid;grid-template-columns:1fr 280px;gap:16px;align-items:start;";
+
+  // Sidebar direita — preenchida progressivamente abaixo
+  const sidebar = document.createElement("div");
+  sidebar.id = "dash-sidebar";
+  sidebar.style.cssText = "display:flex;flex-direction:column;gap:10px;";
 
   // Vendas ML com abas Filial/Matriz
   const vendasCard = document.createElement("div");
-  vendasCard.style.cssText = "grid-column:1/-1;";
+  vendasCard.style.cssText = "";
   function vendasTabContent(d, percDia) {
     if(!d) return `<div style="text-align:center;padding:20px;color:var(--text3);font-size:11px;">Token não conectado</div>`;
     const top5 = d.top5hoje || [];
@@ -2591,6 +2596,7 @@ function renderDashboard(panel, color) {
   // Renderizar aba inicial
   setTimeout(() => renderVendasAba(), 0);
   grid.appendChild(vendasCard);
+  grid.appendChild(sidebar);
 
   // Tarefas
   // Usar tasksFor igual ao resto do sistema
