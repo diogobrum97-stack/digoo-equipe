@@ -5565,10 +5565,6 @@ function render(){
     const nameWrap=document.createElement("div");nameWrap.style.cssText="flex:1;display:flex;align-items:center;";
     const nameEl=document.createElement("div");nameEl.className="member-name";nameEl.style.color=_displayColor;nameEl.textContent=_displayName;
     const dotsEl=document.createElement("div");dotsEl.className="dots";
-    if((active.length>0||done.length>0) && currentUser !== "Resicon"){
-      ["superurgente","urgente","importante","normal"].forEach(p=>{active.filter(t=>t.prio===p).slice(0,5).forEach(()=>{const d=document.createElement("span");d.className="dot";const pc=themePrio(p);d.style.cssText=`background:${pc};box-shadow:0 0 8px ${pc};${p==="superurgente"?"animation:siren 0.6s infinite;":""}`;dotsEl.appendChild(d);});});
-      if(done.length>0&&active.length===0){const s=document.createElement("span");s.style.cssText=`font-size:11px;color:${color}88;`;s.textContent="✓";dotsEl.appendChild(s);}
-    }
     nameWrap.appendChild(nameEl);nameWrap.appendChild(dotsEl);header.appendChild(avatar);header.appendChild(nameWrap);
     if(unreadMsgs.length>0&&!isOpen){const ud=document.createElement("span");ud.className="unread-dot";ud.style.cssText=`background:${color};box-shadow:0 0 8px ${color};`;header.appendChild(ud);}
 
