@@ -7242,7 +7242,7 @@ function renderFilialSP(panel, color) {
     { label:"TOTAL NO FULL", value: (totalAptas+totalTransf).toLocaleString("pt-BR"), color:"#7F77DD", sub:"aptas + transferência" },
   ].forEach(s => {
     const card = document.createElement("div");
-    card.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:16px 18px;border-top:2px solid ${s.color};`;
+    card.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:16px 18px;border-top:3px solid ${s.color};`;
     card.innerHTML = `<div style="font-size:10px;color:${T.text2};letter-spacing:1px;margin-bottom:10px;text-transform:uppercase;">${s.label}</div><div style="font-size:26px;font-weight:700;color:${T.text};font-family:'IBM Plex Mono',monospace;">${s.value}</div><div style="font-size:11px;color:${T.text2};margin-top:6px;">${s.sub}</div>`;
     resumo.appendChild(card);
   });
@@ -7337,7 +7337,7 @@ function renderFilialSP(panel, color) {
         <td style="padding:12px 10px;text-align:center;color:${r.aptas>0?"var(--text)":"var(--text3)"};font-weight:${r.aptas>0?"600":"400"};">${r.aptas||"—"}</td>
         <td style="padding:12px 10px;text-align:center;color:var(--text3);">${r.transf||"—"}</td>
         <td style="padding:12px 10px;text-align:right;color:${semCusto?"#e91e8c":"var(--text2)"};">${custoStr}</td>
-        <td style="padding:12px 10px;text-align:right;color:${semCusto?"var(--text3)":r.valor>1000?"#00dfc3":"var(--text2)"};font-weight:500;">${valorStr}</td>
+        <td style="padding:12px 10px;text-align:right;color:${semCusto?"var(--text3)":r.valor>1000?"#10b981":"var(--text2)"};font-weight:500;">${valorStr}</td>
         <td style="padding:12px 10px;text-align:center;">
           <span style="font-size:10px;font-weight:600;padding:3px 10px;border-radius:20px;white-space:nowrap;background:${statusInfo.bg};color:${statusInfo.color};border:0.5px solid ${statusInfo.border};">${statusInfo.label}</span>
           ${v30 > 0 ? `<div style="font-size:9px;color:var(--text3);margin-top:3px;">${v30}/mês</div>` : ""}
@@ -7479,7 +7479,7 @@ function renderMatrizRS(panel, color) {
         <td style="padding:8px 8px;color:var(--text2);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;">${r.produto}</td>
         <td style="padding:8px 8px;text-align:center;color:${r.qty>0?"var(--text)":"var(--text3)"};font-weight:${r.qty>0?"500":"400"};">${r.qty||"—"}</td>
         <td style="padding:8px 8px;text-align:right;color:var(--text2);">${r.custo>0?`R$ ${r.custo.toLocaleString("pt-BR",{minimumFractionDigits:2})}`:"—"}</td>
-        <td style="padding:8px 8px;text-align:right;color:${r.valor>5000?"#00dfc3":r.valor>1000?"#00dfc3":"var(--text2)"};font-weight:500;">${r.valor>0?`R$ ${r.valor.toLocaleString("pt-BR",{minimumFractionDigits:2})}`:"—"}</td>`;
+        <td style="padding:8px 8px;text-align:right;color:${r.valor>5000?"#00dfc3":r.valor>1000?"#10b981":"var(--text2)"};font-weight:500;">${r.valor>0?`R$ ${r.valor.toLocaleString("pt-BR",{minimumFractionDigits:2})}`:"—"}</td>`;
       tbody.appendChild(tr);
     });
   } else {
