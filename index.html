@@ -2491,7 +2491,7 @@ function renderDashboard(panel, color) {
   vendasGrid.appendChild(mkVendaCard("Mês atual · Filial SP", fmt(dF.fatMes), `${dF.pedidosMes} PEDIDOS`, "#10b981", "#10b981"));
   if (dM) {
     vendasGrid.appendChild(mkVendaCard("Hoje · Matriz RS", fmtFull(dM.fatHoje), `${dF.percDia}% DO DIA`, "#8b5cf6", "#8b5cf6"));
-    vendasGrid.appendChild(mkVendaCard("Mês · Matriz RS", fmt(dM.fatMes), `${dM.pedidosMes} PEDIDOS`, "#10b981", "#10b981"));
+    vendasGrid.appendChild(mkVendaCard("Mês · Matriz RS", fmt(dM.fatMes), (dM.pedidosMes||0)+" PEDIDOS", "#f59e0b", "#f59e0b"));
   }
 
   const top5 = dashData.top5hoje || [];
