@@ -2657,7 +2657,7 @@ function renderDashboard(panel, color) {
     const pergList = (perguntasState.lista || []).slice(0,5).map(p => {
       const cor = p.requires_attention ? "#e8432d" : "#2dce89";
       const nomeShort = (p.produto||"").length > 30 ? p.produto.slice(0,30)+"…" : (p.produto||"");
-      return `<div onclick="window._diogotab='perguntas';render();" style="padding:7px 0 7px 10px;border-bottom:0.5px solid ${T.sep};cursor:pointer;border-left:2px solid ${cor};padding-left:10px;margin-bottom:2px;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
+      return `<div onclick="window._diogotab='perguntas';render();" style="padding:7px 8px 7px 10px;border-bottom:0.5px solid ${T.sep};cursor:pointer;border-left:3px solid ${cor};border-radius:6px;margin-bottom:4px;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
         <div style="font-size:11px;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nomeShort||"—"}</div>
         <div style="font-size:10px;color:${T.text2};margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.pergunta||""}</div>
         <div style="font-size:9px;color:${cor};margin-top:1px;">${p.requires_attention ? "⚠ Atenção" : "✓ Sugerida"}</div>
@@ -2729,14 +2729,14 @@ function renderDashboard(panel, color) {
         ...(proximos.slice(0,3).map(c => {
           const cor = c.dias <= 1 ? "#E24B4A" : "#f0b400";
           const diaLabel = c.dias===0?"Hoje":c.dias===1?"Amanhã":(c.dias+"d");
-          return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0 7px 10px;border-bottom:0.5px solid ${T.sep};border-left:2px solid ${cor};margin-bottom:2px;">
+          return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 8px 7px 10px;border-left:3px solid ${cor};border-radius:6px;margin-bottom:4px;">
             <div style="font-size:11px;color:${T.text};flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.fornecedor||"—"}</div>
             <div style="font-size:10px;font-weight:600;color:${cor};margin-left:8px;flex-shrink:0;">${diaLabel}</div>
           </div>`;
         })),
         ...((window._fiscalAgrupado||[]).slice(0,3).map(e => {
           const cor = e.diff <= 5 ? "#E24B4A" : e.diff <= 14 ? "#f0b400" : T.text2;
-          return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0 7px 10px;border-bottom:0.5px solid ${T.sep};border-left:2px solid ${dotCor};margin-bottom:2px;">
+          return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 8px 7px 10px;border-left:3px solid ${dotCor};border-radius:6px;margin-bottom:4px;">
             <div style="font-size:11px;color:${T.text};flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.nome}</div>
             <div style="font-size:10px;font-weight:600;color:${cor};margin-left:8px;flex-shrink:0;">em ${e.diff}d</div>
           </div>`;
