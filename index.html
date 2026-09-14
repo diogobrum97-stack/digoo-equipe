@@ -2446,11 +2446,6 @@ function renderDashboard(panel, color) {
   const grid = document.createElement("div");
   grid.style.cssText = "display:grid;grid-template-columns:1fr 280px;gap:16px;align-items:start;";
 
-  // Sidebar direita — preenchida progressivamente abaixo
-  const sidebar = document.createElement("div");
-  sidebar.id = "dash-sidebar";
-  sidebar.style.cssText = "display:flex;flex-direction:column;gap:10px;";
-
   // Vendas ML com abas Filial/Matriz
   const vendasCard = document.createElement("div");
   vendasCard.style.cssText = "";
@@ -2596,7 +2591,6 @@ function renderDashboard(panel, color) {
   // Renderizar aba inicial
   setTimeout(() => renderVendasAba(), 0);
   grid.appendChild(vendasCard);
-  grid.appendChild(sidebar);
 
   // Tarefas
   // Usar tasksFor igual ao resto do sistema
@@ -2707,19 +2701,20 @@ function renderDashboard(panel, color) {
   }).join("");
 
   const statusBar = document.createElement("div");
-  statusBar.style.cssText = "grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-top:8px;align-items:start;";
+  statusBar.id = "dash-sidebar";
+  statusBar.style.cssText = "display:flex;flex-direction:column;gap:10px;";
   statusBar.innerHTML = `
     <div id="sbar-card-tasks" onclick="window._sbarToggle('tasks')" style="background:${T.card};border:0.5px solid ${T.border};border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s;">
       <div style="padding:13px 16px;display:flex;align-items:center;gap:14px;">
         <div style="font-size:10px;color:${T.text2};white-space:nowrap;">Tarefas</div>
         <div style="display:flex;align-items:center;gap:8px;flex:1;">
-          <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#e8432d;"></div><div style="font-size:11px;font-weight:700;color:#e8432d;font-family:'Inter',sans-serif;">${urgentes}</div></div>
-          <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#f77614;"></div><div style="font-size:11px;font-weight:700;color:#f77614;font-family:'Inter',sans-serif;">${importantes}</div></div>
-          <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#f0c000;"></div><div style="font-size:11px;font-weight:700;color:#f0c000;font-family:'Inter',sans-serif;">${normais}</div></div>
+          <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#e8432d;"></div><div style="font-size:11px;font-weight:700;color:#e8432d;">${urgentes}</div></div>
+          <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#f77614;"></div><div style="font-size:11px;font-weight:700;color:#f77614;">${importantes}</div></div>
+          <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#f0c000;"></div><div style="font-size:11px;font-weight:700;color:#f0c000;">${normais}</div></div>
         </div>
-        <div id="sbar-arr-tasks" style="font-size:10px;color:#2e2e2e;transition:transform .2s,color .2s;">▾</div>
+        <div id="sbar-arr-tasks" style="font-size:10px;color:${T.text2};transition:transform .2s,color .2s;">▾</div>
       </div>
-      <div id="sbar-drawer-tasks" style="max-height:0;overflow:hidden;transition:max-height .3s ease;border-top:0px solid #1a1a1a;">
+      <div id="sbar-drawer-tasks" style="max-height:0;overflow:hidden;transition:max-height .3s ease;">
         <div style="padding:8px 14px 10px;height:188px;overflow-y:auto;">${tarefasDrawerRows || `<div style="font-size:11px;color:${T.text2};padding:6px 0;">Nenhuma tarefa pendente ✓</div>`}</div>
       </div>
     </div>
@@ -2729,9 +2724,9 @@ function renderDashboard(panel, color) {
         <div style="font-size:11px;font-weight:700;color:${T.text};font-family:'IBM Plex Mono',monospace;">${fmtFull(valorTotal)}</div>
         <div style="font-size:10px;color:${T.text2};">${unidadesTotal} un</div>
         ${alertasCount > 0 ? `<div style="margin-left:auto;display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#c0392b;"></div><div style="font-size:10px;color:#c0392b;">${alertasCount} alertas</div></div>` : `<div style="margin-left:auto;font-size:10px;color:#2dce89;">OK ✓</div>`}
-        <div id="sbar-arr-stock" style="font-size:10px;color:#2e2e2e;margin-left:8px;transition:transform .2s,color .2s;">▾</div>
+        <div id="sbar-arr-stock" style="font-size:10px;color:${T.text2};margin-left:8px;transition:transform .2s,color .2s;">▾</div>
       </div>
-      <div id="sbar-drawer-stock" style="max-height:0;overflow:hidden;transition:max-height .3s ease;border-top:0px solid #1a1a1a;">
+      <div id="sbar-drawer-stock" style="max-height:0;overflow:hidden;transition:max-height .3s ease;">
         <div style="padding:8px 14px 10px;height:188px;overflow-y:auto;">${estDrawerRows || `<div style="font-size:11px;color:${T.text2};padding:6px 0;">Nenhum produto crítico ✓</div>`}</div>
       </div>
     </div>
@@ -2748,9 +2743,9 @@ function renderDashboard(panel, color) {
               </div>`
             : `<div style="font-size:10px;color:#2dce89;">Em dia ✓</div>`
         }
-        <div id="sbar-arr-perguntas" style="font-size:10px;color:#2e2e2e;transition:transform .2s,color .2s;">▾</div>
+        <div id="sbar-arr-perguntas" style="font-size:10px;color:${T.text2};transition:transform .2s,color .2s;">▾</div>
       </div>
-      <div id="sbar-drawer-perguntas" style="max-height:0;overflow:hidden;transition:max-height .3s ease;border-top:0px solid #1a1a1a;">
+      <div id="sbar-drawer-perguntas" style="max-height:0;overflow:hidden;transition:max-height .3s ease;">
         <div style="padding:8px 14px 10px;">
           <div style="height:188px;overflow-y:auto;">${perguntasDrawerRows || `<div style="font-size:11px;color:${T.text2};padding:6px 0;">Nenhuma pergunta pendente ✓</div>`}</div>
           ${perguntasTotal > 6 ? `<div onclick="window._goPerguntas()" style="text-align:center;font-size:10px;color:${T.text};padding-top:8px;cursor:pointer;">Ver todas (${perguntasTotal}) →</div>` : (perguntasTotal > 0 ? `<div onclick="window._goPerguntas()" style="text-align:center;font-size:10px;color:${T.text};padding-top:8px;cursor:pointer;">Ir para aba Perguntas →</div>` : "")}
@@ -2796,17 +2791,30 @@ function renderDashboard(panel, color) {
         </div>`;
       }).join("");
 
-      // Inserir o card na statusBar
+      const fiscalRows = (window._fiscalAgrupado||[]).map(e => {
+        const cor = e.diff <= 5 ? "#E24B4A" : e.diff <= 14 ? "#f0b400" : T.text2;
+        const dotCor = coresFiscal[e.tipo] || "#bbb";
+        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px 8px 12px;border-radius:7px;margin-bottom:5px;background:${T.bg3};border:0.5px solid ${T.border};border-left:2px solid ${dotCor};">
+          <div style="flex:1;min-width:0;margin-right:8px;">
+            <div style="font-size:11px;font-weight:500;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.nome}</div>
+            <div style="font-size:10px;color:${T.text2};margin-top:1px;">Fiscal</div>
+          </div>
+          <div style="font-size:10px;font-weight:600;color:${cor};flex-shrink:0;">em ${e.diff}d</div>
+        </div>`;
+      }).join("");
+
+      // Inserir o card na sidebar
       const vencCardHtml = `<div id="sbar-card-venc" onclick="window._sbarToggle('venc')" style="background:${T.card};border:0.5px solid ${T.border};border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s;">
         <div style="padding:13px 16px;display:flex;align-items:center;gap:10px;">
           <div style="font-size:10px;color:${T.text2};white-space:nowrap;">Vencimentos</div>
           <div style="display:flex;align-items:center;gap:8px;flex:1;">${statusTag}</div>
-          <div id="sbar-arr-venc" style="font-size:10px;color:#2e2e2e;transition:transform .2s,color .2s;">▾</div>
+          <div id="sbar-arr-venc" style="font-size:10px;color:${T.text2};transition:transform .2s,color .2s;">▾</div>
         </div>
         <div id="sbar-drawer-venc" style="max-height:0;overflow:hidden;transition:max-height .3s ease;">
-          <div style="padding:8px 14px 0;height:188px;display:flex;flex-direction:column;">
-            <div style="flex:1;overflow-y:auto;">${vencDrawerRows || `<div style="font-size:11px;color:${T.text2};padding:6px 0;">Nenhum vencimento próximo ✓</div>`}</div>
-
+          <div style="padding:8px 14px 10px;max-height:280px;overflow-y:auto;">
+            ${vencDrawerRows || ""}
+            ${fiscalRows ? `<div style="font-size:9px;color:${T.text2};padding:6px 0 4px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">Fiscal</div>${fiscalRows}` : ""}
+            ${!vencDrawerRows && !fiscalRows ? `<div style="font-size:11px;color:${T.text2};padding:6px 0;">Nenhum vencimento próximo ✓</div>` : ""}
           </div>
         </div>
       </div>`;
@@ -2874,17 +2882,13 @@ function renderDashboard(panel, color) {
     fetchPerguntas().then(() => render());
   }
 
-  // Calendário Fiscal
-  const fiscalCard = document.createElement("div");
-  fiscalCard.style.cssText = `background:${T.isLight?"#ffffff":T.card};border:1px solid ${T.border};border-radius:14px;padding:16px;grid-column:1/-1;box-shadow:${T.cardShadow};`;
-  const hoje2 = new Date();
-  const mes2 = hoje2.getMonth();
-  const ano2 = hoje2.getFullYear();
+  // Eventos fiscais — injetados no card de vencimentos da sidebar
+  const hoje2 = new Date(); hoje2.setHours(0,0,0,0);
   const coresFiscal = {difal:"#f0b400", dare:"#a855f7", ipi:"#5e72e4"};
   const visto = new Set();
   const fiscal_agrupado = [];
   FISCAL_EVENTS.map(e => {
-    const venc = new Date(ano2, mes2, e.dia);
+    const venc = new Date(hoje2.getFullYear(), hoje2.getMonth(), e.dia);
     const diff = Math.ceil((venc - hoje2) / (1000*60*60*24));
     return {...e, diff};
   }).filter(e => e.diff >= 0 && e.diff <= 30).sort((a,b) => a.diff - b.diff).forEach(e => {
@@ -2892,29 +2896,18 @@ function renderDashboard(panel, color) {
     if(e.tipo === "difal" && !visto.has(key)) { visto.add(key); fiscal_agrupado.push({...e, nome:`DIFAL — múltiplos estados`}); }
     else if(e.tipo !== "difal") fiscal_agrupado.push(e);
   });
-  fiscalCard.innerHTML = `
-    <div style="font-size:11px;font-weight:500;color:${T.text3};font-family:'Inter',sans-serif;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid ${T.sep};">Calendário fiscal</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-      ${fiscal_agrupado.slice(0,6).map(e => {
-        const cor = e.diff <= 5 ? "#e91e8c" : e.diff <= 14 ? "#f0b400" : "#bbb";
-        const dotCor = coresFiscal[e.tipo] || "#bbb";
-        return `<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:${T.isLight?"#f7f7f7":T.bg3};border:1px solid ${T.border};border-radius:10px;"><div style="width:7px;height:7px;border-radius:50%;background:${dotCor};flex-shrink:0;"></div><div style="flex:1;"><div style="font-size:11px;font-weight:600;color:${T.text};">${e.nome}</div><div style="font-size:11px;color:${T.text3};margin-top:2px;">Ref. ${String(mes2).padStart(2,"0")}/${ano2}</div></div><div style="font-size:14px;font-weight:700;color:${cor};font-family:'Inter',sans-serif;">em ${e.diff}d</div></div>`;
-      }).join("")}
-    </div>
-  `;
-  // Top 10 mês
-  // ── Experiência de compra — antes do calendário fiscal ──
+  window._fiscalAgrupado = fiscal_agrupado;
+
+  // Experiência de compra — coluna principal
   if(dashExperiencia?.problemas?.length > 0) {
     const expCard = document.createElement("div");
-    expCard.style.cssText = `background:${T.isLight?"#ffffff":T.card};border:1px solid ${T.border};border-radius:14px;padding:16px;grid-column:1/-1;box-shadow:${T.cardShadow};margin-top:14px;`;
+    expCard.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:12px;padding:16px;margin-top:10px;`;
     window._goExperiencia = function(){ window._diogotab = 'experiencia'; render(); };
     expCard.innerHTML = (() => {
       const prob  = dashExperiencia.problemas.length;
       const probRed = dashExperiencia.problemas.filter(p => p.color === 'red').length;
       const probReg = dashExperiencia.problemas.filter(p => p.color !== 'red').length;
-      const total = dashExperiencia.todos || 1;
       const preview = dashExperiencia.problemas.slice(0, 3);
-
       const circPrev = 2 * Math.PI * 20;
       const previewRows = preview.map(p => {
         const cor = p.color === 'red' ? '#e8432d' : '#f77614';
@@ -2922,33 +2915,30 @@ function renderDashboard(panel, color) {
         const dashPrev = ((score/100)*circPrev).toFixed(1);
         const nome = (p.title || p.sku || '');
         const nomeShort = nome.length > 30 ? nome.slice(0,30)+'\u2026' : nome;
-        return `<div onclick="window._goExperiencia()" style="background:${T.bg3};border-top:1px solid ${T.border};border-bottom:1px solid ${T.border};border-right:1px solid ${T.border};border-left:3px solid `+cor+`;border-radius:8px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;cursor:pointer;">`
+        return `<div onclick="window._goExperiencia()" style="background:${T.bg3};border:0.5px solid ${T.border};border-left:3px solid ${cor};border-radius:8px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;cursor:pointer;">`
           + '<svg width="40" height="40" viewBox="0 0 52 52">'
           + `<circle cx="26" cy="26" r="20" fill="none" stroke="${T.border2}" stroke-width="4"/>`
-          + '<circle cx="26" cy="26" r="20" fill="none" stroke="'+cor+'" stroke-width="4" stroke-dasharray="'+dashPrev+' '+circPrev.toFixed(1)+'" stroke-dashoffset="'+(circPrev*0.25).toFixed(1)+'" stroke-linecap="round"/>'
-          + '<text x="26" y="31" text-anchor="middle" fill="'+cor+'" font-size="13" font-weight="700" font-family="Inter,sans-serif">'+score+'</text>'
+          + `<circle cx="26" cy="26" r="20" fill="none" stroke="${cor}" stroke-width="4" stroke-dasharray="${dashPrev} ${circPrev.toFixed(1)}" stroke-dashoffset="${(circPrev*0.25).toFixed(1)}" stroke-linecap="round"/>`
+          + `<text x="26" y="31" text-anchor="middle" fill="${cor}" font-size="13" font-weight="700" font-family="Inter,sans-serif">${score}</text>`
           + '</svg>'
-          + '<div style="font-size:10px;color:${T.text2};line-height:1.3;">'+nomeShort+'</div>'
+          + `<div style="font-size:10px;color:${T.text2};line-height:1.3;">${nomeShort}</div>`
           + '</div>';
       }).join('');
-
-      return '<div onclick="window._goExperiencia()" style="cursor:pointer;">'
-        + '<div style="font-size:12px;font-weight:500;color:${T.text};margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid ${T.sep};display:flex;align-items:center;justify-content:space-between;">'
-        + 'Experi\u00eancia de compra \u00b7 Filial SP'
-        + '<div style="display:flex;align-items:center;gap:6px;">'
-        + (probRed > 0 ? '<span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(232,67,45,.12);color:#e8432d;border:1px solid rgba(232,67,45,.25);">'+probRed+' ruim</span>' : '')
-        + (probReg > 0 ? `<span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(240,180,0,0.12);color:#d97706;border:1px solid rgba(240,180,0,0.3);">` +probReg+ ' regular</span>' : '')
-        + '<span onclick="window._goExperiencia()" style="font-size:10px;color:${T.text3};font-weight:600;cursor:pointer;">Ver tudo \u2192</span>'
-        + '</div>'
-        + '</div>'
+      return `<div onclick="window._goExperiencia()" style="cursor:pointer;">`
+        + `<div style="font-size:12px;font-weight:500;color:${T.text};margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid ${T.sep};display:flex;align-items:center;justify-content:space-between;">`
+        + `Experi\u00eancia de compra \u00b7 Filial SP`
+        + `<div style="display:flex;align-items:center;gap:6px;">`
+        + (probRed > 0 ? `<span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(232,67,45,.12);color:#e8432d;border:1px solid rgba(232,67,45,.25);">${probRed} ruim</span>` : '')
+        + (probReg > 0 ? `<span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(240,180,0,0.12);color:#d97706;border:1px solid rgba(240,180,0,0.3);">${probReg} regular</span>` : '')
+        + `<span onclick="window._goExperiencia()" style="font-size:10px;color:${T.text2};font-weight:600;cursor:pointer;">Ver tudo \u2192</span>`
+        + `</div></div>`
         + (prob > 0
-            ? '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">'+previewRows+'</div>'+(prob>3 ? '<div style="font-size:10px;color:${T.text3};padding-top:8px;text-align:center;">+'+(prob-3)+' outros itens</div>' : '')
-            : '<div style="font-size:11px;color:${T.text3};padding:8px 0;">Nenhum problema no momento \u2713</div>')
-        + '</div>';
-    })()
-    grid.appendChild(expCard);
+            ? `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">${previewRows}</div>${prob>3 ? `<div style="font-size:10px;color:${T.text2};padding-top:8px;text-align:center;">+${prob-3} outros itens</div>` : ''}`
+            : `<div style="font-size:11px;color:${T.text2};padding:8px 0;">Nenhum problema no momento \u2713</div>`)
+        + `</div>`;
+    })();
+    vendasCard.appendChild(expCard);
   }
-  grid.appendChild(fiscalCard);
 
   // ── Card de vencimentos próximos ──────────────────────────────────────────
   (async () => {
