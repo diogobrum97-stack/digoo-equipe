@@ -7332,7 +7332,7 @@ function renderFilialSP(panel, color) {
       tr.onmouseover = () => tr.style.background = "var(--bg3)";
       tr.onmouseout  = () => tr.style.background = "";
       tr.innerHTML = `
-        <td style="padding:12px 10px;color:var(--text);font-size:11px;white-space:nowrap;font-weight:700;min-width:80px;">${r.sku}</td>
+        <td style="padding:12px 10px;color:var(--text);font-size:11px;white-space:nowrap;font-weight:700;min-width:40px;">${r.sku}</td>
         <td style="padding:12px 10px;color:var(--text2);max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;">${r.produto}</td>
         <td style="padding:12px 10px;text-align:center;color:${r.aptas>0?"var(--text)":"var(--text3)"};font-weight:${r.aptas>0?"600":"400"};">${r.aptas||"—"}</td>
         <td style="padding:12px 10px;text-align:center;color:var(--text3);">${r.transf||"—"}</td>
