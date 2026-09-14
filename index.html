@@ -716,6 +716,10 @@ onValue(ref(db,"/"),snap=>{
     // Se dashboard ainda não carregou, tenta agora que o token chegou
     if(!dashData && !dashLoading) window._fetchDashboard();
   }
+  // Picking — disparar na primeira chegada do token ML Matriz
+  if(d.ml_token?.access_token && !pickingState.fila && !pickingState.carregando) {
+    fetchPickingFila().then(() => render());
+  }
   if(!cmpSalvando)render();
   if(document.getElementById("ideias-modal-overlay")) renderIdeiasLista();
 },()=>{syncDot.style.background="#e91e8c";});
