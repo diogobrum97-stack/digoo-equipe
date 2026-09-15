@@ -6408,6 +6408,11 @@ function render(){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
             let nfsContainer = panel.querySelector(".nfs-emitidas-container");
             if(!nfsContainer){ nfsContainer=document.createElement("div"); nfsContainer.className="nfs-emitidas-container"; panel.appendChild(nfsContainer); renderNfsEmitidas(nfsContainer); }
+          }else if(window._diogotab==="anuncios-rascunho"){
+            panel.style.maxHeight="none"; panel.style.overflowY="auto";
+            let arContainer = panel.querySelector(".ar-container");
+            if(!arContainer){ arContainer=document.createElement("div"); arContainer.className="ar-container"; panel.appendChild(arContainer); }
+            renderAnunciosRascunho(arContainer);
           }else if(window._diogotab==="contas-pagar"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto"; panel.style.flex="1";
             // Limpa containers de outras abas para evitar conflito
@@ -9578,6 +9583,79 @@ const PORTADOR_ITAU = 14893332147;
 const CNPJ_FILIAL = "40981026000344";
 
 let cpState = { mostraForm: false, contas: [], carregando: false, filtroSituacao: "", filtroCategoria: "", filtroEmpresa: "", mes: new Date().toISOString().slice(0,7), _filial: false };
+
+async function renderAnunciosRascunho(panel) {
+  panel.innerHTML = `<div style="padding:20px;font-size:13px;color:${T.text2};">Carregando rascunhos...</div>`;
+  try {
+    const snap = await get(ref(db, "/anuncios_rascunho"));
+    const dados = snap.val() || {};
+    const rascunhos = Object.entries(dados)
+      .map(([id, r]) => ({ id, ...r }))
+      .filter(r => r.status === "pendente")
+      .sort((a, b) => (b.criado_em||0) - (a.criado_em||0));
+
+    panel.innerHTML = "";
+
+    // Header
+    const header = document.createElement("div");
+    header.style.cssText = `padding:20px 24px 12px;border-bottom:0.5px solid ${T.sep};display:flex;align-items:center;justify-content:space-between;`;
+    header.innerHTML = `
+      <div>
+        <div style="font-size:16px;font-weight:600;color:${T.text};">Anúncios para criar</div>
+        <div style="font-size:11px;color:${T.text2};margin-top:2px;">${rascunhos.length} rascunho${rascunhos.length!==1?"s":""} aguardando aprovação</div>
+      </div>`;
+    panel.appendChild(header);
+
+    if (rascunhos.length === 0) {
+      panel.innerHTML += `<div style="padding:40px;text-align:center;color:${T.text2};font-size:13px;">Nenhum rascunho pendente ✓</div>`;
+      return;
+    }
+
+    const lista = document.createElement("div");
+    lista.style.cssText = "padding:16px 24px;display:flex;flex-direction:column;gap:14px;";
+
+    rascunhos.forEach(r => {
+      const card = document.createElement("div");
+      card.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-left:3px solid #f59e0b;border-radius:10px;padding:16px 18px;`;
+      card.innerHTML = `
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px;">
+          <div style="flex:1;">
+            <div style="font-size:13px;font-weight:600;color:${T.text};margin-bottom:4px;">${r.titulo_sugerido||"Sem título"}</div>
+            <div style="font-size:11px;color:${T.text2};">Originado de: <em>${r.pergunta_origem||"—"}</em></div>
+          </div>
+          <span style="background:#f59e0b22;color:#f59e0b;border:0.5px solid #f59e0b44;border-radius:20px;padding:2px 10px;font-size:10px;font-weight:600;white-space:nowrap;">Pendente</span>
+        </div>
+        ${r.descricao_sugerida ? `<div style="font-size:12px;color:${T.text2};margin-bottom:10px;line-height:1.5;border-top:0.5px solid ${T.sep};padding-top:10px;">${r.descricao_sugerida}</div>` : ""}
+        ${r.preco_sugerido ? `<div style="font-size:12px;color:${T.text};margin-bottom:10px;">Preço sugerido: <strong>R$ ${Number(r.preco_sugerido).toLocaleString("pt-BR",{minimumFractionDigits:2})}</strong></div>` : ""}
+        ${r.motivo ? `<div style="font-size:11px;color:${T.text2};font-style:italic;margin-bottom:12px;">💡 ${r.motivo}</div>` : ""}
+        <div style="display:flex;gap:8px;padding-top:10px;border-top:0.5px solid ${T.sep};">
+          <button onclick="window._rejeitarRascunho('${r.id}')" style="padding:7px 14px;border-radius:6px;background:none;border:0.5px solid ${T.border};color:${T.text2};font-size:11px;font-weight:600;cursor:pointer;">Rejeitar</button>
+          <button onclick="window._editarRascunho('${r.id}')" style="padding:7px 14px;border-radius:6px;background:${T.bg3};border:0.5px solid ${T.border};color:${T.text};font-size:11px;font-weight:600;cursor:pointer;">Editar no ML ↗</button>
+        </div>`;
+      lista.appendChild(card);
+    });
+
+    panel.appendChild(lista);
+
+    // Ações
+    window._rejeitarRascunho = async (id) => {
+      if (!confirm("Rejeitar este rascunho?")) return;
+      await set(ref(db, `/anuncios_rascunho/${id}/status`), "rejeitado");
+      renderAnunciosRascunho(panel);
+    };
+
+    window._editarRascunho = (id) => {
+      const r = rascunhos.find(x => x.id === id);
+      if (!r) return;
+      // Abre ML para criar anúncio com título pré-preenchido
+      const url = `https://www.mercadolivre.com.br/anuncios/criar?title=${encodeURIComponent(r.titulo_sugerido||"")}`;
+      window.open(url, "_blank");
+    };
+
+  } catch(e) {
+    panel.innerHTML = `<div style="padding:20px;color:#e8432d;font-size:13px;">Erro ao carregar rascunhos: ${e.message}</div>`;
+  }
+}
 
 async function renderContasPagar(panel) {
   try {
