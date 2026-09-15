@@ -9600,7 +9600,7 @@ async function renderAnunciosRascunho(panel) {
     header.style.cssText = `padding:20px 24px 12px;border-bottom:0.5px solid ${T.sep};`;
     header.innerHTML = `
       <div style="font-size:16px;font-weight:600;color:${T.text};">Anúncios para criar</div>
-      <div style="font-size:11px;color:${T.text2};margin-top:2px;">${rascunhos.length} pergunta${rascunhos.length!==1?"s":""} com sugestão de novo anúncio</div>`;
+      <div style="font-size:11px;color:${T.text2};margin-top:2px;">${rascunhos.length} pergunta${rascunhos.length!==1?"s":""} aguardando</div>`;
     panel.appendChild(header);
 
     if (rascunhos.length === 0) {
@@ -9615,341 +9615,108 @@ async function renderAnunciosRascunho(panel) {
     lista.style.cssText = "padding:16px 24px;display:flex;flex-direction:column;gap:16px;";
 
     rascunhos.forEach(r => {
-      const sugestoes = r.sugestoes || (r.titulo_sugerido ? [{ titulo_sugerido: r.titulo_sugerido, descricao_sugerida: r.descricao_sugerida, preco_sugerido: r.preco_sugerido, motivo: r.motivo }] : []);
-
+      const sugestoes = r.sugestoes || [];
       const card = document.createElement("div");
       card.id = `rascunho-card-${r.id}`;
       card.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:10px;overflow:hidden;`;
 
-      // Header do card — contexto da pergunta
-      const cardHeader = document.createElement("div");
-      cardHeader.style.cssText = `padding:14px 16px;border-bottom:0.5px solid ${T.sep};background:${T.bg3};`;
-      cardHeader.innerHTML = `
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
-          <div style="flex:1;">
-            <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-              <span style="font-size:10px;color:${T.text2};">📦</span>
-              <span style="font-size:11px;font-weight:600;color:${T.text};">${r.produto_origem_titulo || r.item_id_origem || "Produto"}</span>
-            </div>
-            <div style="display:flex;align-items:flex-start;gap:6px;">
-              <span style="font-size:10px;color:${T.text2};padding-top:1px;">💬</span>
-              <span style="font-size:11px;color:${T.text2};font-style:italic;">${r.pergunta_origem||"—"}</span>
-            </div>
-          </div>
-          <span style="background:#f59e0b22;color:#f59e0b;border:0.5px solid #f59e0b44;border-radius:20px;padding:2px 10px;font-size:10px;font-weight:600;white-space:nowrap;flex-shrink:0;">${sugestoes.length} sugestão${sugestoes.length!==1?"ões":""}</span>
-        </div>`;
-      card.appendChild(cardHeader);
-
-      // Sugestões como opções selecionáveis
-      const sugestoesEl = document.createElement("div");
-      sugestoesEl.style.cssText = "padding:12px 16px;display:flex;flex-direction:column;gap:10px;";
-
-      sugestoes.forEach((s, idx) => {
-        const sCard = document.createElement("div");
-        sCard.id = `sug-${r.id}-${idx}`;
-        sCard.style.cssText = `border:1.5px solid ${T.border};border-radius:8px;padding:12px 14px;cursor:pointer;transition:border-color .15s;`;
-        sCard.onclick = () => {
-          // Selecionar esta sugestão
-          sugestoesEl.querySelectorAll("[id^='sug-']").forEach(el => {
-            el.style.borderColor = T.border;
-          });
-          sCard.style.borderColor = "#f59e0b";
-          // Preencher formulário
-          document.getElementById(`rasc-titulo-${r.id}`).value = s.titulo_sugerido || "";
-          document.getElementById(`rasc-desc-${r.id}`).value = s.descricao_sugerida || "";
-          document.getElementById(`rasc-preco-${r.id}`).value = s.preco_sugerido || "";
-        };
-        sCard.innerHTML = `
-          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
-            <div style="flex:1;">
-              <div style="font-size:12px;font-weight:600;color:${T.text};margin-bottom:4px;">${s.titulo_sugerido||"Sem título"}</div>
-              ${s.motivo ? `<div style="font-size:10px;color:${T.text2};font-style:italic;">💡 ${s.motivo}</div>` : ""}
-            </div>
-            ${s.preco_sugerido ? `<span style="font-size:11px;font-weight:600;color:${T.text};flex-shrink:0;">R$ ${Number(s.preco_sugerido).toFixed(2)}</span>` : ""}
-          </div>`;
-        sugestoesEl.appendChild(sCard);
-      });
-
-      // Auto-seleciona a primeira
-      if (sugestoes.length > 0) {
-        setTimeout(() => {
-          const first = document.getElementById(`sug-${r.id}-0`);
-          if (first) { first.style.borderColor = "#f59e0b"; }
-        }, 50);
-      }
-
-      card.appendChild(sugestoesEl);
-
-      // Formulário de edição e publicação
-      const form = document.createElement("div");
-      form.style.cssText = `padding:12px 16px;border-top:0.5px solid ${T.sep};display:flex;flex-direction:column;gap:10px;`;
-      const s0 = sugestoes[0] || {};
-      form.innerHTML = `
-        <div>
-          <div style="font-size:10px;color:${T.text2};margin-bottom:4px;">Título</div>
-          <input id="rasc-titulo-${r.id}" value="${(s0.titulo_sugerido||"").replace(/"/g,"&quot;")}" style="width:100%;background:${T.bg};border:0.5px solid ${T.border};border-radius:6px;padding:8px 10px;color:${T.text};font-size:12px;font-family:Inter,sans-serif;box-sizing:border-box;outline:none;">
-        </div>
-        <div>
-          <div style="font-size:10px;color:${T.text2};margin-bottom:4px;">Descrição</div>
-          <textarea id="rasc-desc-${r.id}" style="width:100%;background:${T.bg};border:0.5px solid ${T.border};border-radius:6px;padding:8px 10px;color:${T.text};font-size:12px;font-family:Inter,sans-serif;box-sizing:border-box;outline:none;resize:vertical;min-height:70px;">${s0.descricao_sugerida||""}</textarea>
-        </div>
-        <div style="display:flex;gap:10px;">
-          <div style="flex:1;">
-            <div style="font-size:10px;color:${T.text2};margin-bottom:4px;">Preço (R$)</div>
-            <input id="rasc-preco-${r.id}" type="number" value="${s0.preco_sugerido||""}" placeholder="0,00" style="width:100%;background:${T.bg};border:0.5px solid ${T.border};border-radius:6px;padding:8px 10px;color:${T.text};font-size:12px;font-family:Inter,sans-serif;box-sizing:border-box;outline:none;">
-          </div>
-          <div style="flex:1;">
-            <div style="font-size:10px;color:${T.text2};margin-bottom:4px;">Estoque</div>
-            <input id="rasc-estoque-${r.id}" type="number" value="1" style="width:100%;background:${T.bg};border:0.5px solid ${T.border};border-radius:6px;padding:8px 10px;color:${T.text};font-size:12px;font-family:Inter,sans-serif;box-sizing:border-box;outline:none;">
-          </div>
-        </div>
-        <div>
-          <div style="font-size:10px;color:${T.text2};margin-bottom:6px;">Publicar em</div>
-          <div style="display:flex;gap:12px;">
-            <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:${T.text};cursor:pointer;"><input type="checkbox" id="rasc-pub-filial-${r.id}" checked> Filial SP</label>
-            <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:${T.text};cursor:pointer;"><input type="checkbox" id="rasc-pub-matriz-${r.id}"> Matriz RS</label>
-          </div>
-        </div>
-        <div id="rasc-err-${r.id}" style="font-size:11px;color:#e8432d;display:none;"></div>
-        <div style="display:flex;gap:8px;">
-          <button id="rasc-rejeitar-${r.id}" style="padding:8px 14px;border-radius:6px;background:none;border:0.5px solid ${T.border};color:${T.text2};font-size:11px;font-weight:600;cursor:pointer;">Rejeitar</button>
-          <button id="rasc-publicar-${r.id}" style="padding:8px 18px;border-radius:6px;background:#f59e0b;border:none;color:#fff;font-size:11px;font-weight:600;cursor:pointer;">Publicar anúncio</button>
-        </div>`;
-      card.appendChild(form);
-      lista.appendChild(card);
-
-      // Event listeners
-      setTimeout(() => {
-        const btnRejeitar = document.getElementById(`rasc-rejeitar-${r.id}`);
-        const btnPublicar = document.getElementById(`rasc-publicar-${r.id}`);
-        const errEl = document.getElementById(`rasc-err-${r.id}`);
-
-        if (btnRejeitar) btnRejeitar.onclick = async () => {
-          if (!confirm("Rejeitar este rascunho?")) return;
-          await set(ref(db, `/anuncios_rascunho/${r.id}/status`), "rejeitado");
-          renderAnunciosRascunho(panel);
-        };
-
-        if (btnPublicar) btnPublicar.onclick = async () => {
-          const titulo = document.getElementById(`rasc-titulo-${r.id}`)?.value?.trim();
-          const desc = document.getElementById(`rasc-desc-${r.id}`)?.value?.trim();
-          const preco = parseFloat(document.getElementById(`rasc-preco-${r.id}`)?.value);
-          const estoque = parseInt(document.getElementById(`rasc-estoque-${r.id}`)?.value) || 1;
-          const pubFilial = document.getElementById(`rasc-pub-filial-${r.id}`)?.checked;
-          const pubMatriz = document.getElementById(`rasc-pub-matriz-${r.id}`)?.checked;
-
-          if (!titulo) { errEl.textContent = "Informe o título."; errEl.style.display="block"; return; }
-          if (!preco || preco <= 0) { errEl.textContent = "Informe o preço."; errEl.style.display="block"; return; }
-          if (!pubFilial && !pubMatriz) { errEl.textContent = "Selecione ao menos uma conta."; errEl.style.display="block"; return; }
-
-          btnPublicar.disabled = true;
-          btnPublicar.textContent = "Publicando...";
-          errEl.style.display = "none";
-
-          const contas = [];
-          if (pubFilial && state.ml_token_filial?.access_token) contas.push({ label: "Filial SP", token: state.ml_token_filial.access_token });
-          if (pubMatriz && state.ml_token?.access_token) contas.push({ label: "Matriz RS", token: state.ml_token.access_token });
-
-          const erros = [];
-          const links = [];
-
-          for (const conta of contas) {
-            try {
-              const res = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=criar-anuncio`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ token: conta.token, titulo, descricao: desc, preco, estoque })
-              });
-              const data = await res.json();
-              if (data.ok && data.permalink) {
-                links.push({ conta: conta.label, link: data.permalink });
-              } else {
-                erros.push(`${conta.label}: ${data.error || "Erro"}`);
-              }
-            } catch(e) {
-              erros.push(`${conta.label}: ${e.message}`);
-            }
-          }
-
-          if (links.length > 0) {
-            await set(ref(db, `/anuncios_rascunho/${r.id}`), { ...r, status: "publicado", links_publicados: links, publicado_em: Date.now() });
-            renderAnunciosRascunho(panel);
-          } else {
-            errEl.textContent = erros.join(" | ");
-            errEl.style.display = "block";
-            btnPublicar.disabled = false;
-            btnPublicar.textContent = "Publicar anúncio";
-          }
-        };
-      }, 100);
-    });
-
-    panel.appendChild(lista);
-  } catch(e) {
-    panel.innerHTML = `<div style="padding:20px;color:#e8432d;font-size:13px;">Erro: ${e.message}</div>`;
-  }
-}
-  try {
-    const snap = await get(ref(db, "/anuncios_rascunho"));
-    const dados = snap.val() || {};
-    const rascunhos = Object.entries(dados)
-      .map(([id, r]) => ({ id, ...r }))
-      .filter(r => r.status === "pendente")
-      .sort((a, b) => (b.criado_em||0) - (a.criado_em||0));
-
-    panel.innerHTML = "";
-
-    const header = document.createElement("div");
-    header.style.cssText = `padding:20px 24px 12px;border-bottom:0.5px solid ${T.sep};display:flex;align-items:center;justify-content:space-between;`;
-    header.innerHTML = `
-      <div>
-        <div style="font-size:16px;font-weight:600;color:${T.text};">Anúncios para criar</div>
-        <div style="font-size:11px;color:${T.text2};margin-top:2px;">${rascunhos.length} rascunho${rascunhos.length!==1?"s":""} aguardando aprovação</div>
-      </div>`;
-    panel.appendChild(header);
-
-    if (rascunhos.length === 0) {
-      const empty = document.createElement("div");
-      empty.style.cssText = "padding:40px;text-align:center;";
-      empty.innerHTML = `<div style="color:${T.text2};font-size:13px;">Nenhum rascunho pendente ✓</div>`;
-      panel.appendChild(empty);
-      return;
-    }
-
-    const lista = document.createElement("div");
-    lista.style.cssText = "padding:16px 24px;display:flex;flex-direction:column;gap:14px;";
-
-    rascunhos.forEach(r => {
-      const card = document.createElement("div");
-      card.id = `rascunho-card-${r.id}`;
-      card.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-left:3px solid #f59e0b;border-radius:10px;padding:16px 18px;`;
-
       card.innerHTML = `
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px;">
-          <div style="flex:1;">
-            <div style="font-size:13px;font-weight:600;color:${T.text};margin-bottom:8px;">${r.titulo_sugerido||"Sem título"}</div>
-            <div style="background:${T.bg3};border:0.5px solid ${T.border};border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;">
-              <div style="display:flex;gap:8px;align-items:flex-start;">
-                <span style="font-size:10px;color:${T.text2};white-space:nowrap;padding-top:1px;">📦 Anúncio</span>
-                <span style="font-size:11px;color:${T.text};font-weight:500;">${r.produto_origem_titulo || r.item_id_origem || "—"}</span>
+        <div style="padding:14px 16px;border-bottom:0.5px solid ${T.sep};background:${T.bg3};">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+                <span style="font-size:10px;color:${T.text2};">📦</span>
+                <span style="font-size:11px;font-weight:600;color:${T.text};">${r.produto_origem_titulo || r.item_id_origem || "—"}</span>
               </div>
-              <div style="display:flex;gap:8px;align-items:flex-start;">
-                <span style="font-size:10px;color:${T.text2};white-space:nowrap;padding-top:1px;">💬 Pergunta</span>
+              <div style="display:flex;align-items:flex-start;gap:6px;">
+                <span style="font-size:10px;color:${T.text2};margin-top:1px;">💬</span>
                 <span style="font-size:11px;color:${T.text2};font-style:italic;">${r.pergunta_origem||"—"}</span>
               </div>
             </div>
+            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+              <span style="background:#f59e0b22;color:#f59e0b;border:0.5px solid #f59e0b44;border-radius:20px;padding:2px 10px;font-size:10px;font-weight:600;">${sugestoes.length} sugest${sugestoes.length!==1?"ões":"ão"}</span>
+              <button id="rasc-rejeitar-${r.id}" style="padding:5px 12px;border-radius:6px;background:none;border:0.5px solid ${T.border};color:${T.text2};font-size:11px;cursor:pointer;">Rejeitar</button>
+            </div>
           </div>
-          <span style="background:#f59e0b22;color:#f59e0b;border:0.5px solid #f59e0b44;border-radius:20px;padding:2px 10px;font-size:10px;font-weight:600;white-space:nowrap;flex-shrink:0;">Pendente</span>
         </div>
-        ${r.motivo ? `<div style="font-size:11px;color:${T.text2};font-style:italic;margin-bottom:12px;padding:8px 12px;background:#f59e0b0a;border-radius:6px;border-left:2px solid #f59e0b;">💡 ${r.motivo}</div>` : ""}
-
-        <div style="border-top:0.5px solid ${T.sep};padding-top:12px;display:flex;flex-direction:column;gap:10px;">
-          <div>
-            <div style="font-size:10px;color:${T.text2};margin-bottom:4px;">Título</div>
-            <input id="rasc-titulo-${r.id}" value="${(r.titulo_sugerido||"").replace(/"/g,"&quot;")}" style="width:100%;background:${T.bg};border:0.5px solid ${T.border};border-radius:6px;padding:8px 10px;color:${T.text};font-size:12px;font-family:Inter,sans-serif;box-sizing:border-box;outline:none;">
-          </div>
-          <div>
-            <div style="font-size:10px;color:${T.text2};margin-bottom:4px;">Descrição</div>
-            <textarea id="rasc-desc-${r.id}" style="width:100%;background:${T.bg};border:0.5px solid ${T.border};border-radius:6px;padding:8px 10px;color:${T.text};font-size:12px;font-family:Inter,sans-serif;box-sizing:border-box;outline:none;resize:vertical;min-height:80px;">${r.descricao_sugerida||""}</textarea>
-          </div>
-          <div style="display:flex;gap:10px;">
-            <div style="flex:1;">
-              <div style="font-size:10px;color:${T.text2};margin-bottom:4px;">Preço (R$)</div>
-              <input id="rasc-preco-${r.id}" type="number" value="${r.preco_sugerido||""}" placeholder="0,00" style="width:100%;background:${T.bg};border:0.5px solid ${T.border};border-radius:6px;padding:8px 10px;color:${T.text};font-size:12px;font-family:Inter,sans-serif;box-sizing:border-box;outline:none;">
-            </div>
-            <div style="flex:1;">
-              <div style="font-size:10px;color:${T.text2};margin-bottom:4px;">Estoque</div>
-              <input id="rasc-estoque-${r.id}" type="number" value="1" placeholder="1" style="width:100%;background:${T.bg};border:0.5px solid ${T.border};border-radius:6px;padding:8px 10px;color:${T.text};font-size:12px;font-family:Inter,sans-serif;box-sizing:border-box;outline:none;">
-            </div>
-          </div>
-          <div>
-            <div style="font-size:10px;color:${T.text2};margin-bottom:4px;">Publicar em</div>
-            <div style="display:flex;gap:8px;">
-              <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:${T.text};cursor:pointer;">
-                <input type="checkbox" id="rasc-pub-filial-${r.id}" checked> Filial SP
-              </label>
-              <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:${T.text};cursor:pointer;">
-                <input type="checkbox" id="rasc-pub-matriz-${r.id}"> Matriz RS
-              </label>
-            </div>
-          </div>
-          <div id="rasc-err-${r.id}" style="font-size:11px;color:#e8432d;display:none;"></div>
-          <div style="display:flex;gap:8px;margin-top:4px;">
-            <button id="rasc-rejeitar-${r.id}" style="padding:8px 14px;border-radius:6px;background:none;border:0.5px solid ${T.border};color:${T.text2};font-size:11px;font-weight:600;cursor:pointer;">Rejeitar</button>
-            <button id="rasc-publicar-${r.id}" style="padding:8px 18px;border-radius:6px;background:#f59e0b;border:none;color:#fff;font-size:11px;font-weight:600;cursor:pointer;">Publicar anúncio</button>
-          </div>
+        <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
+          ${sugestoes.map((s, si) => `
+            <div style="border:0.5px solid ${T.border};border-left:3px solid #f59e0b;border-radius:8px;padding:12px 14px;">
+              <div style="font-size:11px;font-weight:600;color:${T.text};margin-bottom:4px;">${s.titulo_sugerido||"Sem título"}</div>
+              ${s.motivo ? `<div style="font-size:10px;color:${T.text2};font-style:italic;margin-bottom:8px;">💡 ${s.motivo}</div>` : ""}
+              <div style="display:flex;gap:8px;margin-bottom:8px;">
+                <div style="flex:1;">
+                  <div style="font-size:9px;color:${T.text2};margin-bottom:3px;">Título</div>
+                  <input id="rasc-titulo-${r.id}-${si}" value="${(s.titulo_sugerido||"").replace(/"/g,"&quot;")}" style="width:100%;background:${T.bg};border:0.5px solid ${T.border};border-radius:6px;padding:6px 8px;color:${T.text};font-size:11px;font-family:Inter,sans-serif;box-sizing:border-box;outline:none;">
+                </div>
+                <div style="width:100px;">
+                  <div style="font-size:9px;color:${T.text2};margin-bottom:3px;">Preço (R$)</div>
+                  <input id="rasc-preco-${r.id}-${si}" type="number" value="${s.preco_sugerido||""}" placeholder="0,00" style="width:100%;background:${T.bg};border:0.5px solid ${T.border};border-radius:6px;padding:6px 8px;color:${T.text};font-size:11px;font-family:Inter,sans-serif;box-sizing:border-box;outline:none;">
+                </div>
+                <div style="width:70px;">
+                  <div style="font-size:9px;color:${T.text2};margin-bottom:3px;">Estoque</div>
+                  <input id="rasc-estoque-${r.id}-${si}" type="number" value="1" style="width:100%;background:${T.bg};border:0.5px solid ${T.border};border-radius:6px;padding:6px 8px;color:${T.text};font-size:11px;font-family:Inter,sans-serif;box-sizing:border-box;outline:none;">
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <div style="display:flex;gap:10px;">
+                  <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:${T.text};cursor:pointer;"><input type="checkbox" id="rasc-filial-${r.id}-${si}" checked> Filial SP</label>
+                  <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:${T.text};cursor:pointer;"><input type="checkbox" id="rasc-matriz-${r.id}-${si}"> Matriz RS</label>
+                </div>
+                <button id="rasc-pub-${r.id}-${si}" style="padding:6px 14px;border-radius:6px;background:#f59e0b;border:none;color:#fff;font-size:11px;font-weight:600;cursor:pointer;">Publicar</button>
+              </div>
+              <div id="rasc-err-${r.id}-${si}" style="font-size:11px;color:#e8432d;display:none;margin-top:6px;"></div>
+            </div>`).join("")}
         </div>`;
 
       lista.appendChild(card);
 
-      // Ações após renderizar
       setTimeout(() => {
-        const btnRejeitar = document.getElementById(`rasc-rejeitar-${r.id}`);
-        const btnPublicar = document.getElementById(`rasc-publicar-${r.id}`);
-        const errEl = document.getElementById(`rasc-err-${r.id}`);
-
-        if (btnRejeitar) btnRejeitar.onclick = async () => {
+        const btnRej = document.getElementById(`rasc-rejeitar-${r.id}`);
+        if (btnRej) btnRej.onclick = async () => {
           if (!confirm("Rejeitar este rascunho?")) return;
           await set(ref(db, `/anuncios_rascunho/${r.id}/status`), "rejeitado");
           renderAnunciosRascunho(panel);
         };
 
-        if (btnPublicar) btnPublicar.onclick = async () => {
-          const titulo = document.getElementById(`rasc-titulo-${r.id}`)?.value?.trim();
-          const desc = document.getElementById(`rasc-desc-${r.id}`)?.value?.trim();
-          const preco = parseFloat(document.getElementById(`rasc-preco-${r.id}`)?.value);
-          const estoque = parseInt(document.getElementById(`rasc-estoque-${r.id}`)?.value) || 1;
-          const pubFilial = document.getElementById(`rasc-pub-filial-${r.id}`)?.checked;
-          const pubMatriz = document.getElementById(`rasc-pub-matriz-${r.id}`)?.checked;
-
-          if (!titulo) { errEl.textContent = "Informe o título."; errEl.style.display="block"; return; }
-          if (!preco || preco <= 0) { errEl.textContent = "Informe o preço."; errEl.style.display="block"; return; }
-          if (!pubFilial && !pubMatriz) { errEl.textContent = "Selecione ao menos uma conta."; errEl.style.display="block"; return; }
-
-          btnPublicar.disabled = true;
-          btnPublicar.textContent = "Publicando...";
-          errEl.style.display = "none";
-
-          const contas = [];
-          if (pubFilial && state.ml_token_filial?.access_token) contas.push({ label: "Filial SP", token: state.ml_token_filial.access_token });
-          if (pubMatriz && state.ml_token?.access_token) contas.push({ label: "Matriz RS", token: state.ml_token.access_token });
-
-          const erros = [];
-          const links = [];
-
-          for (const conta of contas) {
-            try {
-              const res = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=criar-anuncio`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ token: conta.token, titulo, descricao: desc, preco, estoque })
-              });
-              const data = await res.json();
-              if (data.ok && data.permalink) {
-                links.push({ conta: conta.label, link: data.permalink });
-              } else {
-                erros.push(`${conta.label}: ${data.error || "Erro desconhecido"}`);
-              }
-            } catch(e) {
-              erros.push(`${conta.label}: ${e.message}`);
+        sugestoes.forEach((s, si) => {
+          const btnPub = document.getElementById(`rasc-pub-${r.id}-${si}`);
+          const errEl = document.getElementById(`rasc-err-${r.id}-${si}`);
+          if (!btnPub) return;
+          btnPub.onclick = async () => {
+            const titulo = document.getElementById(`rasc-titulo-${r.id}-${si}`)?.value?.trim();
+            const preco = parseFloat(document.getElementById(`rasc-preco-${r.id}-${si}`)?.value);
+            const estoque = parseInt(document.getElementById(`rasc-estoque-${r.id}-${si}`)?.value) || 1;
+            const pubFilial = document.getElementById(`rasc-filial-${r.id}-${si}`)?.checked;
+            const pubMatriz = document.getElementById(`rasc-matriz-${r.id}-${si}`)?.checked;
+            if (!titulo) { errEl.textContent="Informe o título."; errEl.style.display="block"; return; }
+            if (!preco || preco <= 0) { errEl.textContent="Informe o preço."; errEl.style.display="block"; return; }
+            if (!pubFilial && !pubMatriz) { errEl.textContent="Selecione ao menos uma conta."; errEl.style.display="block"; return; }
+            btnPub.disabled = true; btnPub.textContent = "Publicando..."; errEl.style.display = "none";
+            const contas = [];
+            if (pubFilial && state.ml_token_filial?.access_token) contas.push({ label:"Filial SP", token: state.ml_token_filial.access_token });
+            if (pubMatriz && state.ml_token?.access_token) contas.push({ label:"Matriz RS", token: state.ml_token.access_token });
+            const erros = [], links = [];
+            for (const conta of contas) {
+              try {
+                const res = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=criar-anuncio`, {
+                  method:"POST", headers:{"Content-Type":"application/json"},
+                  body: JSON.stringify({ token: conta.token, titulo, descricao: s.descricao_sugerida||titulo, preco, estoque })
+                });
+                const data = await res.json();
+                if (data.ok && data.permalink) links.push({ conta: conta.label, link: data.permalink });
+                else erros.push(`${conta.label}: ${data.error||"Erro"}`);
+              } catch(e2) { erros.push(`${conta.label}: ${e2.message}`); }
             }
-          }
-
-          if (links.length > 0) {
-            // Marca rascunho como publicado
-            await set(ref(db, `/anuncios_rascunho/${r.id}`), {
-              ...r, status: "publicado",
-              links_publicados: links,
-              publicado_em: Date.now()
-            });
-            renderAnunciosRascunho(panel);
-          } else {
-            errEl.textContent = erros.join(" | ");
-            errEl.style.display = "block";
-            btnPublicar.disabled = false;
-            btnPublicar.textContent = "Publicar anúncio";
-          }
-        };
+            if (links.length > 0) {
+              await set(ref(db, `/anuncios_rascunho/${r.id}`), { ...r, status:"publicado", links_publicados: links, publicado_em: Date.now() });
+              renderAnunciosRascunho(panel);
+            } else {
+              errEl.textContent = erros.join(" | "); errEl.style.display = "block";
+              btnPub.disabled = false; btnPub.textContent = "Publicar";
+            }
+          };
+        });
       }, 100);
     });
 
