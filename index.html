@@ -1937,7 +1937,7 @@ function renderPerguntasTab(container) {
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
           ${p.thumbnail ? `<img src="${p.thumbnail}" style="width:36px;height:36px;border-radius:6px;object-fit:cover;background:${T.bg};flex-shrink:0;">` : ""}
           <div style="flex:1;min-width:0;">
-            <div style="font-size:12px;font-weight:600;color:#fff;line-height:1.3;">${p.produto}</div>
+            <div style="font-size:12px;font-weight:600;color:${T.text};line-height:1.3;">${p.produto}</div>
           </div>
           <div style="flex-shrink:0;padding:2px 8px;border-radius:10px;background:${p.conta === "matriz" ? "#8b5cf622" : "#3b82f622"};border:0.5px solid ${p.conta === "matriz" ? "#8b5cf644" : "#3b82f644"};color:${p.conta === "matriz" ? "#8b5cf6" : "#3b82f6"};font-size:9px;font-weight:600;white-space:nowrap;">${p.contaLabel || (p.conta === "matriz" ? "Matriz RS" : "Filial SP")}</div>
         </div>
