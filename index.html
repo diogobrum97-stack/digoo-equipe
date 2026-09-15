@@ -483,11 +483,6 @@ function setupIdentityScreen() {
       : "flex:0 0 30%;display:flex;flex-direction:column;justify-content:center;height:100vh;overflow-y:auto;";
 
     const W = _isMobile ? "min(260px,80vw)" : "220px";
-    // PINs por perfil — definido antes do innerHTML para poder usar CORRECT.length
-    const PINS = { "Resicon": "0303" };
-    const CORRECT = PINS[userName] || "000000";
-    let entered = "";
-
     const keys = [1,2,3,4,5,6,7,8,9,"\u232b",0,"\u2192"].map(k=>
       '<div class="pk" data-k="'+k+'" style="background:#0f0f0f;border:1px solid #1a1a1a;border-radius:7px;height:44px;display:flex;align-items:center;justify-content:center;font-size:'+(k==="⌫"||k==="→"?"12":"15")+'px;color:'+(k==="→"?"#10b981":k==="⌫"?"#555":"#888")+';cursor:pointer;font-weight:500;font-family:Inter,sans-serif;">'+k+'</div>'
     ).join("");
@@ -560,11 +555,6 @@ function setupIdentityScreen() {
       : "flex:0 0 30%;display:flex;flex-direction:column;justify-content:center;height:100vh;overflow-y:auto;";
     const W = _isMobile ? "min(260px,80vw)" : "220px";
     const initials = MEMBERS.find(m=>m.name===userName)?.initials || userName[0];
-    // PINs por perfil — definido antes do innerHTML para poder usar CORRECT.length
-    const PINS = { "Resicon": "0303" };
-    const CORRECT = PINS[userName] || "000000";
-    let entered = "";
-
     const keys = [1,2,3,4,5,6,7,8,9,"\u232b",0,"\u2192"].map(k=>
       '<div class="pk" data-k="'+k+'" style="background:#0f0f0f;border:1px solid #1a1a1a;border-radius:7px;height:44px;display:flex;align-items:center;justify-content:center;font-size:'+(k==="⌫"||k==="→"?"12":"15")+'px;color:'+(k==="→"?color:k==="⌫"?"#555":"#888")+';cursor:pointer;font-weight:500;font-family:Inter,sans-serif;">'+k+'</div>'
     ).join("");
@@ -578,14 +568,17 @@ function setupIdentityScreen() {
         +'<div style="font-size:11px;color:#444;font-family:Inter,sans-serif;">Digite o PIN</div>'
       +'</div>'
       +'<div id="pk-dots" style="display:flex;gap:10px;margin-bottom:16px;justify-content:center;width:100%;">'
-        +Array.from({length: CORRECT.length}).map(()=>'<div class="pkd" style="width:10px;height:10px;border-radius:50%;background:#1e1e1e;border:1px solid #333;transition:all .1s;"></div>').join("")
+        +[0,1,2,3,4,5].map(()=>'<div class="pkd" style="width:10px;height:10px;border-radius:50%;background:#1e1e1e;border:1px solid #333;transition:all .1s;"></div>').join("")
       +'</div>'
       +'<div id="pk-err" style="font-size:11px;color:#e8432d;min-height:16px;margin-bottom:10px;font-family:Inter,sans-serif;text-align:center;width:100%;"></div>'
       +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;width:100%;">'+keys+'</div>';
     r.appendChild(inner);
     screen.appendChild(r);
     document.getElementById("pk-back").onclick = showSelecao;
-
+    let entered = "";
+    // PINs por perfil — armazenados aqui para facilidade
+    const PINS = { "Resicon": "0303" };
+    const CORRECT = PINS[userName] || "000000";
     function updateDots() {
       document.querySelectorAll(".pkd").forEach((dot,i) => {
         dot.style.background = i < entered.length ? color : "#1e1e1e";
