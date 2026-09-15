@@ -1794,7 +1794,9 @@ async function fetchPerguntas() {
   try {
     const resultados = await Promise.all(contas.map(async (c) => {
       try {
-        const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=buscar-perguntas&token=${c.token}`);
+        const tokenOutro = c.key === "filial" ? state.ml_token?.access_token : state.ml_token_filial?.access_token;
+        const tokenOutroParam = tokenOutro ? `&token_outro=${tokenOutro}` : "";
+        const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=buscar-perguntas&token=${c.token}${tokenOutroParam}`);
         const data = await r.json();
         if (!data.ok) return { conta: c.key, ok: false, erro: data.error };
         return { conta: c.key, ok: true, perguntas: (data.perguntas || []).map(p => ({ ...p, conta: c.key, contaLabel: c.label })) };
