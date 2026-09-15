@@ -547,6 +547,7 @@ function setupIdentityScreen() {
 
   // PIN genérico para qualquer perfil
   function showPinFor(userName, color) {
+    window.showPinFor = showPinFor;
     // PINs definidos PRIMEIRO — antes de qualquer HTML
     var PINS = { "Resicon": "0303" };
     var CORRECT = PINS[userName] || "000000";
@@ -602,14 +603,14 @@ function setupIdentityScreen() {
         const err = document.getElementById("pk-err"); if(err) err.textContent = "";
         if(k === "⌫") { entered = entered.slice(0,-1); }
         else if(k === "→") { checkPin(); return; }
-        else if(entered.length < 6) { entered += k; if(entered.length === CORRECT.length) { checkPin(); return; } }
+        else if(entered.length < pinLen) { entered += k; if(entered.length === CORRECT.length) { checkPin(); return; } }
         updateDots();
       };
     });
     function _kbd(e) {
       if(!document.getElementById("pk-dots")) { document.removeEventListener("keydown",_kbd); return; }
       const err = document.getElementById("pk-err"); if(err) err.textContent = "";
-      if(e.key>="0"&&e.key<="9"&&entered.length<6) { entered+=e.key; updateDots(); if(entered.length===CORRECT.length) checkPin(); }
+      if(e.key>="0"&&e.key<="9"&&entered.length<pinLen) { entered+=e.key; updateDots(); if(entered.length===CORRECT.length) checkPin(); }
       else if(e.key==="Backspace") { entered=entered.slice(0,-1); updateDots(); }
       else if(e.key==="Enter") checkPin();
     }
