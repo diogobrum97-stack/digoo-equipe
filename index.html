@@ -91,7 +91,7 @@
     var el = document.getElementById('identity-screen');
     if(el && !window._firebaseOk) {
       el.style.cssText = 'position:fixed;inset:0;background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;font-family:Inter,sans-serif;';
-      el.innerHTML = '<div style="color:#fff;font-size:16px;font-weight:700;margin-bottom:12px;">⚠ Falha na conexão</div><div style="color:#888;font-size:12px;text-align:center;max-width:260px;line-height:1.6;">O sistema não conseguiu conectar ao servidor.<br>Verifique sua internet e tente recarregar.</div><button onclick="location.reload()" style="margin-top:24px;background:#5e72e4;color:#fff;border:none;border-radius:8px;padding:12px 28px;font-size:13px;font-weight:600;cursor:pointer;">↺ Recarregar</button>';
+      el.innerHTML = '<div style="color:#fff;font-size:16px;font-weight:700;margin-bottom:12px;">⚠ Falha na conexão</div><div style="color:#888;font-size:12px;text-align:center;max-width:260px;line-height:1.6;">O sistema não conseguiu conectar ao servidor.<br>Verifique sua internet e tente recarregar.</div><button onclick="location.reload()" style="margin-top:24px;background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:12px 28px;font-size:13px;font-weight:600;cursor:pointer;">↺ Recarregar</button>';
     }
   }, 25000);
 </script>
@@ -273,7 +273,7 @@ const T = {
   get infoTxt() { return T.isLight ? "#1d4ed8" : "#5eb3f0"; },
   get okBg()    { return T.isLight ? "#f0fdf4" : "#1a2a1a"; },
   get okBor()   { return T.isLight ? "#86efac" : "#2d5a2d"; },
-  get okTxt()   { return T.isLight ? "#15803d" : "#2dce89"; },
+  get okTxt()   { return T.isLight ? "#15803d" : "#10b981"; },
   get cardShadow() { return T.isLight ? "0 1px 4px rgba(0,0,0,0.08)" : "none"; },
 };
 
@@ -446,15 +446,15 @@ function setupIdentityScreen() {
         +'<div style="font-size:10px;color:#1e1e1e;font-family:Inter,sans-serif;">equipe</div>'
         +`<div style="flex:1;height:1px;background:${T.sep};"></div>`
       +'</div>'
-      +'<div id="ov-bruno" style="border-left:2px solid #5e72e4;padding:12px 16px;background:#080808;border-radius:0 9px 9px 0;display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:4px;">'
+      +'<div id="ov-bruno" style="border-left:2px solid #3b82f6;padding:12px 16px;background:#080808;border-radius:0 9px 9px 0;display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:4px;">'
         +'<div><div style="font-size:12px;font-weight:600;color:#777;font-family:Inter,sans-serif;">Bruno</div>'
         +'<div style="font-size:11px;color:#333;margin-top:2px;font-family:Inter,sans-serif;">Opera\u00e7\u00f5es</div></div>'
-        +'<span style="font-size:9px;padding:2px 7px;border-radius:3px;font-weight:600;background:rgba(94,114,228,.08);color:#5e72e4;border:1px solid #5e72e422;font-family:Inter,sans-serif;">EQUIPE</span>'
+        +'<span style="font-size:9px;padding:2px 7px;border-radius:3px;font-weight:600;background:rgba(94,114,228,.08);color:#3b82f6;border:1px solid #3b82f622;font-family:Inter,sans-serif;">EQUIPE</span>'
       +'</div>'
-      +'<div id="ov-larissa" style="border-left:2px solid #e91e8c;padding:12px 16px;background:#080808;border-radius:0 9px 9px 0;display:flex;align-items:center;justify-content:space-between;cursor:pointer;">'
+      +'<div id="ov-larissa" style="border-left:2px solid #e8432d;padding:12px 16px;background:#080808;border-radius:0 9px 9px 0;display:flex;align-items:center;justify-content:space-between;cursor:pointer;">'
         +'<div><div style="font-size:12px;font-weight:600;color:#777;font-family:Inter,sans-serif;">Larissa</div>'
         +'<div style="font-size:11px;color:#333;margin-top:2px;font-family:Inter,sans-serif;">Atendimento</div></div>'
-        +'<span style="font-size:9px;padding:2px 7px;border-radius:3px;font-weight:600;background:rgba(233,30,140,.08);color:#e91e8c;border:1px solid #e91e8c22;font-family:Inter,sans-serif;">EQUIPE</span>'
+        +'<span style="font-size:9px;padding:2px 7px;border-radius:3px;font-weight:600;background:rgba(233,30,140,.08);color:#e8432d;border:1px solid #e8432d22;font-family:Inter,sans-serif;">EQUIPE</span>'
       +'</div>'
       +'<div style="display:flex;align-items:center;gap:8px;margin:4px 0;">'
         +'<div style="flex:1;height:1px;background:#1a1a1a;"></div>'
@@ -484,7 +484,7 @@ function setupIdentityScreen() {
 
     const W = _isMobile ? "min(260px,80vw)" : "220px";
     const keys = [1,2,3,4,5,6,7,8,9,"\u232b",0,"\u2192"].map(k=>
-      '<div class="pk" data-k="'+k+'" style="background:#0f0f0f;border:1px solid #1a1a1a;border-radius:7px;height:44px;display:flex;align-items:center;justify-content:center;font-size:'+(k==="⌫"||k==="→"?"12":"15")+'px;color:'+(k==="→"?"#2dce89":k==="⌫"?"#555":"#888")+';cursor:pointer;font-weight:500;font-family:Inter,sans-serif;">'+k+'</div>'
+      '<div class="pk" data-k="'+k+'" style="background:#0f0f0f;border:1px solid #1a1a1a;border-radius:7px;height:44px;display:flex;align-items:center;justify-content:center;font-size:'+(k==="⌫"||k==="→"?"12":"15")+'px;color:'+(k==="→"?"#10b981":k==="⌫"?"#555":"#888")+';cursor:pointer;font-weight:500;font-family:Inter,sans-serif;">'+k+'</div>'
     ).join("");
 
     const inner = document.createElement("div");
@@ -499,7 +499,7 @@ function setupIdentityScreen() {
       +'<div id="pk-dots" style="display:flex;gap:10px;margin-bottom:16px;justify-content:center;width:100%;">'
         +[0,1,2,3,4,5].map(()=>`<div class="pkd" style="width:10px;height:10px;border-radius:50%;background:${T.bg3};border:1px solid ${T.border};transition:all .1s;"></div>`).join("")
       +'</div>'
-      +'<div id="pk-err" style="font-size:11px;color:#e91e8c;min-height:16px;margin-bottom:10px;font-family:Inter,sans-serif;text-align:center;width:100%;"></div>'
+      +'<div id="pk-err" style="font-size:11px;color:#e8432d;min-height:16px;margin-bottom:10px;font-family:Inter,sans-serif;text-align:center;width:100%;"></div>'
       +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;width:100%;">'+keys+'</div>';
 
     r.appendChild(inner);
@@ -570,7 +570,7 @@ function setupIdentityScreen() {
       +'<div id="pk-dots" style="display:flex;gap:10px;margin-bottom:16px;justify-content:center;width:100%;">'
         +[0,1,2,3,4,5].map(()=>'<div class="pkd" style="width:10px;height:10px;border-radius:50%;background:#1e1e1e;border:1px solid #333;transition:all .1s;"></div>').join("")
       +'</div>'
-      +'<div id="pk-err" style="font-size:11px;color:#e91e8c;min-height:16px;margin-bottom:10px;font-family:Inter,sans-serif;text-align:center;width:100%;"></div>'
+      +'<div id="pk-err" style="font-size:11px;color:#e8432d;min-height:16px;margin-bottom:10px;font-family:Inter,sans-serif;text-align:center;width:100%;"></div>'
       +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;width:100%;">'+keys+'</div>';
     r.appendChild(inner);
     screen.appendChild(r);
@@ -722,7 +722,7 @@ onValue(ref(db,"/"),snap=>{
   }
   if(!cmpSalvando)render();
   if(document.getElementById("ideias-modal-overlay")) renderIdeiasLista();
-},()=>{syncDot.style.background="#e91e8c";});
+},()=>{syncDot.style.background="#e8432d";});
 
 function addTask(member,text,prio,sender){
   setSyncing(true);push(ref(db,"/tasks"),{member,text,prio,done:false,delegatedBy:sender||null,createdAt:Date.now()});
@@ -1340,7 +1340,7 @@ function renderPickingTab(panel, quemSou, modoOperar) {
         <div style="display:inline-block;padding:2px 7px;border-radius:9px;font-size:8px;font-weight:700;background:${etiquetaImpressa ? "rgba(16,185,129,0.15)" : "rgba(139,92,246,0.15)"};color:${etiquetaImpressa ? "#10b981" : "#8b5cf6"};">${etiquetaImpressa ? "Etiqueta impressa" : "Etiqueta pronta para imprimir"}</div>
       </div>
       <div style="font-size:9px;color:${T.text3};margin-top:6px;">${travadoPorOutro ? `● sendo separado por ${lock.por}` : (ativo ? "● separando agora" : "na fila")}</div>
-      ${etiquetaImpressa && modoOperar ? `<button data-marcar-feito="${pedido.order_id}" style="width:100%;margin-top:8px;padding:6px;border-radius:6px;background:${T.okBg};border:1px solid ${T.okBor};color:#2dce89;font-size:9px;font-weight:600;cursor:pointer;">Marcar como já feito</button>` : ""}
+      ${etiquetaImpressa && modoOperar ? `<button data-marcar-feito="${pedido.order_id}" style="width:100%;margin-top:8px;padding:6px;border-radius:6px;background:${T.okBg};border:1px solid ${T.okBor};color:#10b981;font-size:9px;font-weight:600;cursor:pointer;">Marcar como já feito</button>` : ""}
     `;
     if (clicavel) {
       card.onclick = () => { if (!ativo) abrirPedidoPicking(pedido, quemSou, refresh); };
@@ -1396,7 +1396,7 @@ function renderPickingTab(panel, quemSou, modoOperar) {
       avisoBling.style.cssText = `display:flex;align-items:center;justify-content:space-between;gap:12px;background:${T.errBg};border:1px solid ${T.errBor};border-radius:8px;padding:10px 14px;margin-bottom:14px;flex-wrap:wrap;`;
       avisoBling.innerHTML = `
         <div style="font-size:11px;color:#f0a060;line-height:1.4;">O Bling está desconectado ou o token expirou — não foi possível buscar EAN/kit desse pedido. Os itens abaixo caíram pra bipagem por SKU, sem conferência automática de kit.</div>
-        <button id="picking-btn-reconectar-bling" style="background:#5e72e4;border:none;border-radius:6px;padding:7px 14px;color:#000;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">Reconectar Bling</button>
+        <button id="picking-btn-reconectar-bling" style="background:#3b82f6;border:none;border-radius:6px;padding:7px 14px;color:#000;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">Reconectar Bling</button>
       `;
       colDetalhe.appendChild(avisoBling);
     }
@@ -1412,8 +1412,8 @@ function renderPickingTab(panel, quemSou, modoOperar) {
           <div style="font-size:12px;color:#fff;">${l.nome}</div>
           <div style="font-size:10px;color:#666;margin-top:2px;">${l.sku}${l.ean ? ` · EAN ${l.ean}` : " · sem EAN cadastrado, bipa pelo SKU"}</div>
         </div>
-        <div style="font-size:11px;font-weight:700;color:${completo ? "#2dce89" : "#ffffff"};flex-shrink:0;">${l.quantidadeBipada}/${l.quantidadeNecessaria}</div>
-        ${completo ? `<div style="width:24px;height:24px;border-radius:50%;background:#2dce89;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span style="color:#000;font-size:12px;font-weight:700;">✓</span></div>` : `<div style="width:24px;height:24px;border-radius:50%;border:2px solid #444;flex-shrink:0;"></div>`}
+        <div style="font-size:11px;font-weight:700;color:${completo ? "#10b981" : "#ffffff"};flex-shrink:0;">${l.quantidadeBipada}/${l.quantidadeNecessaria}</div>
+        ${completo ? `<div style="width:24px;height:24px;border-radius:50%;background:#10b981;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span style="color:#000;font-size:12px;font-weight:700;">✓</span></div>` : `<div style="width:24px;height:24px;border-radius:50%;border:2px solid #444;flex-shrink:0;"></div>`}
       `;
       listaItens.appendChild(linha);
     });
@@ -1566,7 +1566,7 @@ function renderPickingHistorico(panel) {
             detalhe.innerHTML += `
               <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #1e1e1e;">
                 <div style="font-size:11px;color:${T.text2};">${it.nome || it.sku}</div>
-                <div style="font-size:11px;font-weight:700;color:${bateu ? "#2dce89" : "#e8432d"};">${it.quantidadeBipada}/${it.quantidadeNecessaria}</div>
+                <div style="font-size:11px;font-weight:700;color:${bateu ? "#10b981" : "#e8432d"};">${it.quantidadeBipada}/${it.quantidadeNecessaria}</div>
               </div>
             `;
           });
@@ -1592,7 +1592,7 @@ function renderPickingHistorico(panel) {
             let html = `<div style="font-size:10px;color:#666;margin-bottom:8px;">LINHA DO TEMPO DAS LEITURAS</div>`;
             eventos.forEach(ev => {
               const hora = new Date(ev.ts).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-              const cor = ev.acertou ? "#2dce89" : "#e8432d";
+              const cor = ev.acertou ? "#10b981" : "#e8432d";
               html += `
                 <div style="display:flex;align-items:center;gap:8px;padding:5px 0;">
                   <div style="font-size:10px;color:#555;width:70px;flex-shrink:0;">${hora}</div>
@@ -1634,7 +1634,7 @@ function renderPickingAcompanhar(panel) {
   const resumo = document.createElement("div");
   resumo.style.cssText = `display:flex;gap:24px;background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:16px 20px;margin-bottom:16px;`;
   resumo.innerHTML = `
-    <div><div style="font-size:20px;font-weight:700;color:#2dce89;font-family:Inter,sans-serif;">${concluidosHoje.length}</div><div style="font-size:10px;color:${T.text3};margin-top:2px;">embalados hoje</div></div>
+    <div><div style="font-size:20px;font-weight:700;color:#10b981;font-family:Inter,sans-serif;">${concluidosHoje.length}</div><div style="font-size:10px;color:${T.text3};margin-top:2px;">embalados hoje</div></div>
     <div><div style="font-size:20px;font-weight:700;color:${T.text};font-family:Inter,sans-serif;">${filaTotal}</div><div style="font-size:10px;color:${T.text3};margin-top:2px;">na fila</div></div>
   `;
   wrap.appendChild(resumo);
@@ -1650,7 +1650,7 @@ function renderPickingAcompanhar(panel) {
       const linha = document.createElement("div");
       linha.style.cssText = `display:flex;align-items:center;gap:8px;padding:10px 12px;background:${T.infoBg};border:1px solid ${T.infoBor};border-radius:8px;margin-bottom:6px;`;
       linha.innerHTML = `
-        <div style="width:8px;height:8px;border-radius:50%;background:#2dce89;flex-shrink:0;"></div>
+        <div style="width:8px;height:8px;border-radius:50%;background:#10b981;flex-shrink:0;"></div>
         <div style="flex:1;min-width:0;">
           <div style="font-size:12px;color:#fff;font-weight:600;">${lock.por} está separando</div>
           <div style="font-size:10px;color:#888;margin-top:2px;">Pedido #${orderId}${pedidoInfo ? " · " + (pedidoInfo.itens[0]?.titulo || "") : ""}</div>
@@ -1670,7 +1670,7 @@ function renderPickingAcompanhar(panel) {
       const hora = new Date(c.ts).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
       const linha = document.createElement("div");
       linha.style.cssText = "padding:9px 12px;background:"+T.bg+";border:1px solid "+T.border+";border-radius:7px;margin-bottom:5px;";
-      linha.innerHTML = `<div style="font-size:11px;color:${T.text};">#${orderId} · ${c.titulo}</div><div style="font-size:10px;color:#2dce89;margin-top:2px;">✓ etiqueta impressa às ${hora} por ${c.por}</div>`;
+      linha.innerHTML = `<div style="font-size:11px;color:${T.text};">#${orderId} · ${c.titulo}</div><div style="font-size:10px;color:#10b981;margin-top:2px;">✓ etiqueta impressa às ${hora} por ${c.por}</div>`;
       hist.appendChild(linha);
     });
   }
@@ -1744,9 +1744,9 @@ function renderPickingDiogo(panel) {
     b.style.cssText = `padding:8px 16px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid ${T.border};`;
     const key = ["acompanhar", "operar", "historico"][i];
     const isAtivo = modo === key;
-    b.style.background = isAtivo ? "#5e72e4" : T.bg3;
+    b.style.background = isAtivo ? "#3b82f6" : T.bg3;
     b.style.color = isAtivo ? "#ffffff" : T.text2;
-    b.style.borderColor = isAtivo ? "#5e72e4" : T.border;
+    b.style.borderColor = isAtivo ? "#3b82f6" : T.border;
   });
   opAcompanhar.onclick = () => { window._pickingModoDiogo = "acompanhar"; render(); };
   opOperar.onclick = () => { window._pickingModoDiogo = "operar"; render(); };
@@ -1899,7 +1899,7 @@ function renderPerguntasTab(container) {
   autoBar.style.cssText = `display:flex;align-items:center;justify-content:space-between;background:${modoAuto ? (T.isLight?"#f0fdf4":"linear-gradient(to top,#1a2a1a 0%,#000 100%)") : (T.isLight?"#ffffff":"linear-gradient(to top,#252525 0%,#000 100%)")};border:1px solid ${modoAuto ? T.okBor : T.border};border-radius:10px;padding:12px 16px;margin-bottom:20px;`;
   autoBar.innerHTML = `
     <div>
-      <div style="font-size:12px;font-weight:600;color:${modoAuto ? "#2dce89" : T.text};">Modo automático ${modoAuto ? "ativado" : "desativado"}</div>
+      <div style="font-size:12px;font-weight:600;color:${modoAuto ? "#10b981" : T.text};">Modo automático ${modoAuto ? "ativado" : "desativado"}</div>
       <div style="font-size:10px;color:#666;margin-top:2px;">Envia sozinho apenas perguntas com conhecimento já confirmado sobre o mesmo produto. O resto continua na fila manual.</div>
     </div>
     <button id="perguntas-btn-toggle-auto" style="background:${modoAuto ? "#c0392b" : "#ffffff"};border:none;border-radius:6px;padding:8px 16px;color:${modoAuto ? "#fff" : "#000"};font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;">${modoAuto ? "Desativar" : "Ativar"}</button>
@@ -1945,7 +1945,7 @@ function renderPerguntasTab(container) {
         ${p.requires_attention
           ? `<div style="display:inline-block;padding:3px 10px;border-radius:12px;background:#f0a06018;border:0.5px solid #f0a06044;color:#f0a060;font-size:10px;font-weight:600;margin-bottom:12px;">⚠ requer atenção manual</div>`
           : `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
-              <div style="display:inline-block;padding:3px 10px;border-radius:12px;background:${T.okBg};border:1px solid ${T.okBor};color:#2dce89;font-size:10px;font-weight:600;">sugestão da IA</div>
+              <div style="display:inline-block;padding:3px 10px;border-radius:12px;background:${T.okBg};border:1px solid ${T.okBor};color:#10b981;font-size:10px;font-weight:600;">sugestão da IA</div>
               ${p.has_knowledge ? `<div style="display:inline-block;padding:3px 10px;border-radius:12px;background:${T.infoBg};border:1px solid ${T.infoBor};color:#5eb3f0;font-size:10px;font-weight:600;">baseada em respostas já dadas</div>` : ""}
               ${enviadoAuto ? `<div style="display:inline-block;padding:3px 10px;border-radius:12px;background:#ffffff22;border:1px solid #ffffff55;color:#ffffff;font-size:10px;font-weight:600;">✓ enviada automaticamente</div>` : ""}
             </div>`
@@ -1966,7 +1966,7 @@ function renderPerguntasTab(container) {
         ` : !p.requires_attention ? `
           <div style="font-size:10px;color:#666;margin-bottom:6px;">Resposta ${enviadoAuto || enviado ? "enviada" : "sugerida (editável)"}</div>
           <textarea id="pergunta-resp-${p.question_id}" ${enviadoAuto || enviado ? "disabled" : ""} style="width:100%;background:${T.bg};border:1px solid ${enviadoAuto ? T.border : T.text};border-radius:6px;padding:10px 12px;color:${enviadoAuto ? T.text3 : T.text};font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;resize:vertical;min-height:60px;margin-bottom:12px;">${p.suggested_answer}</textarea>
-          ${!enviadoAuto ? `<button id="pergunta-enviar-${p.question_id}" ${(enviado || enviandoAgora) ? "disabled" : ""} style="padding:9px 18px;border-radius:6px;background:${enviado ? T.okBg : "#5e72e4"};border:1px solid ${enviado ? T.okBor : "transparent"};color:${enviado ? "#2dce89" : "#fff"};font-size:12px;font-weight:600;cursor:${(enviado || enviandoAgora) ? "default" : "pointer"};opacity:${enviandoAgora ? "0.6" : "1"};">${enviado ? "Enviado ✓" : (enviandoAgora ? "Enviando..." : "Enviar resposta")}</button>` : ""}
+          ${!enviadoAuto ? `<button id="pergunta-enviar-${p.question_id}" ${(enviado || enviandoAgora) ? "disabled" : ""} style="padding:9px 18px;border-radius:6px;background:${enviado ? T.okBg : "#3b82f6"};border:1px solid ${enviado ? T.okBor : "transparent"};color:${enviado ? "#10b981" : "#fff"};font-size:12px;font-weight:600;cursor:${(enviado || enviandoAgora) ? "default" : "pointer"};opacity:${enviandoAgora ? "0.6" : "1"};">${enviado ? "Enviado ✓" : (enviandoAgora ? "Enviando..." : "Enviar resposta")}</button>` : ""}
         ` : `
           <div style="display:flex;gap:8px;">
             <a href="https://www.mercadolivre.com.br/anuncio/${p.item_id}" target="_blank" style="display:inline-block;padding:9px 18px;border-radius:6px;background:${T.bg2};border:1px solid ${T.border};color:${T.text2};font-size:12px;font-weight:600;text-decoration:none;">Responder no ML ↗</a>
@@ -2065,8 +2065,8 @@ function renderClonarTab(container) {
     ${isLoteModo ? `<div style="font-size:11px;color:#8b5cf6;margin-bottom:10px;">⋯ ${idsDetectados.length} anúncios — modo lote</div>` : ""}
     <div style="font-size:11px;color:${T.text3};margin-bottom:8px;">Conta de origem</div>
     <div style="display:flex;gap:8px;margin-bottom:14px;">
-      <button id="clonar-origem-matriz" style="flex:1;padding:9px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid ${clonarState.contaOrigem==='matriz'?"#5e72e4":T.border};background:${clonarState.contaOrigem==='matriz'?"#5e72e4":T.bg3};color:${clonarState.contaOrigem==='matriz'?"#fff":T.text2};">Matriz RS</button>
-      <button id="clonar-origem-filial" style="flex:1;padding:9px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid ${clonarState.contaOrigem==='filial'?"#5e72e4":T.border};background:${clonarState.contaOrigem==='filial'?"#5e72e4":T.bg3};color:${clonarState.contaOrigem==='filial'?"#fff":T.text2};">Filial SP</button>
+      <button id="clonar-origem-matriz" style="flex:1;padding:9px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid ${clonarState.contaOrigem==='matriz'?"#3b82f6":T.border};background:${clonarState.contaOrigem==='matriz'?"#3b82f6":T.bg3};color:${clonarState.contaOrigem==='matriz'?"#fff":T.text2};">Matriz RS</button>
+      <button id="clonar-origem-filial" style="flex:1;padding:9px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid ${clonarState.contaOrigem==='filial'?"#3b82f6":T.border};background:${clonarState.contaOrigem==='filial'?"#3b82f6":T.bg3};color:${clonarState.contaOrigem==='filial'?"#fff":T.text2};">Filial SP</button>
     </div>
     <button id="clonar-btn-buscar" ${loteState.rodando?"disabled":""} style="width:100%;padding:10px;border-radius:6px;background:${loteState.rodando?T.border:T.bg3};border:1px solid ${T.border};color:${loteState.rodando?T.text3:T.text};font-size:12px;font-weight:600;cursor:${loteState.rodando?"default":"pointer"};">${
       isLoteModo
@@ -2079,7 +2079,7 @@ function renderClonarTab(container) {
       const jaClonando = loteState.fase==="clonando";
       if (!encontrados.length && !jaClonando) return "";
       const concluidos2 = (loteState.itens||[]).filter(it=>it.status==="sucesso"||it.status==="erro").length;
-      return `<button id="clonar-btn-confirmar-lote" ${jaClonando?"disabled":""} style="width:100%;margin-top:12px;padding:11px;border-radius:6px;background:${jaClonando?"#8b5cf6":"#2dce89"};border:none;color:#fff;font-size:12px;font-weight:700;cursor:${jaClonando?"default":"pointer"};">${jaClonando?`Clonando ${concluidos2}/${encontrados.length}...`:`Confirmar e clonar ${(loteState.itens||[]).filter(it=>it.status==="encontrado").length} anúncios`}</button>`;
+      return `<button id="clonar-btn-confirmar-lote" ${jaClonando?"disabled":""} style="width:100%;margin-top:12px;padding:11px;border-radius:6px;background:${jaClonando?"#8b5cf6":"#10b981"};border:none;color:#fff;font-size:12px;font-weight:700;cursor:${jaClonando?"default":"pointer"};">${jaClonando?`Clonando ${concluidos2}/${encontrados.length}...`:`Confirmar e clonar ${(loteState.itens||[]).filter(it=>it.status==="encontrado").length} anúncios`}</button>`;
     })() : ""}
     ${!isLoteModo && clonarState.itemEncontrado && !clonarState.resultado ? (() => {
       const item = clonarState.itemEncontrado;
@@ -2096,7 +2096,7 @@ function renderClonarTab(container) {
         <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:${T.bg3};border-radius:6px;margin-bottom:12px;font-size:11px;">
           <span style="color:${T.text3};">Clonando para</span><span style="color:${T.text};font-weight:600;">${contaDestino}</span>
         </div>
-        <button id="clonar-btn-confirmar" ${item.has_variations?"disabled":""} style="width:100%;padding:11px;border-radius:6px;background:${item.has_variations?T.border:"#5e72e4"};border:none;color:${item.has_variations?T.text3:"#fff"};font-size:12px;font-weight:600;cursor:${item.has_variations?"not-allowed":"pointer"};">${clonarState.clonando?"Clonando...":"Confirmar e clonar anúncio"}</button>
+        <button id="clonar-btn-confirmar" ${item.has_variations?"disabled":""} style="width:100%;padding:11px;border-radius:6px;background:${item.has_variations?T.border:"#3b82f6"};border:none;color:${item.has_variations?T.text3:"#fff"};font-size:12px;font-weight:600;cursor:${item.has_variations?"not-allowed":"pointer"};">${clonarState.clonando?"Clonando...":"Confirmar e clonar anúncio"}</button>
       </div>`;
     })() : ""}
     ${clonarState.resultado ? `<div style="background:${T.okBg};border:1px solid ${T.okBor};border-radius:8px;padding:14px;margin-top:12px;text-align:center;"><div style="font-size:13px;font-weight:700;color:${T.okTxt};margin-bottom:8px;">✓ Clonado com sucesso!</div><a href="${clonarState.resultado.permalink||"#"}" target="_blank" style="font-size:11px;color:#5eb3f0;">Ver anúncio clonado ↗</a></div>` : ""}
@@ -2147,7 +2147,7 @@ function renderClonarTab(container) {
     const statusInfo = {
       aguardando: { label: "Na fila", cor: T.text3, icone: "⋯" },
       buscando:   { label: "Buscando...", cor: T.text2, icone: "⏳" },
-      encontrado: { label: "Pronto pra clonar", cor: "#5e72e4", icone: "✓" },
+      encontrado: { label: "Pronto pra clonar", cor: "#3b82f6", icone: "✓" },
       clonando:   { label: "Clonando...", cor: T.text2, icone: "⏳" },
       sucesso:    { label: "Clonado", cor: T.okTxt, icone: "✓" },
       erro:       { label: "Erro", cor: T.errText, icone: "✕" },
@@ -2162,13 +2162,13 @@ function renderClonarTab(container) {
 
     cardDir.innerHTML = `
       <div style="font-size:11px;color:${T.text3};margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid ${T.sep};">${titulo}</div>
-      ${loteState.total>0&&loteState.fase!=="revisao" ? `<div style="height:3px;background:${T.border};border-radius:99px;overflow:hidden;margin-bottom:12px;"><div style="height:3px;background:#5e72e4;width:${(concluidos/loteState.total*100).toFixed(0)}%;transition:width .3s;"></div></div>` : ""}
+      ${loteState.total>0&&loteState.fase!=="revisao" ? `<div style="height:3px;background:${T.border};border-radius:99px;overflow:hidden;margin-bottom:12px;"><div style="height:3px;background:#3b82f6;width:${(concluidos/loteState.total*100).toFixed(0)}%;transition:width .3s;"></div></div>` : ""}
       <div style="display:flex;flex-direction:column;gap:8px;">
         ${itens.length===0 ? `<div style="text-align:center;padding:30px 0;color:${T.text3};font-size:12px;">Cole os IDs e clique em Buscar</div>` : itens.map((it,idx) => {
           const s = statusInfo[it.status]||statusInfo.aguardando;
           const podeExpandir = it.status==="encontrado"||it.status==="sucesso";
           const exp = it._expandido||false;
-          return `<div style="background:${T.bg3};border:1px solid ${it.status==="encontrado"?"#5e72e4":it.status==="sucesso"?T.okBor:it.status==="erro"?T.errBor:T.border};border-radius:8px;overflow:hidden;">
+          return `<div style="background:${T.bg3};border:1px solid ${it.status==="encontrado"?"#3b82f6":it.status==="sucesso"?T.okBor:it.status==="erro"?T.errBor:T.border};border-radius:8px;overflow:hidden;">
             <div onclick="window._clonarToggle(${idx})" style="display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:${podeExpandir?"pointer":"default"};">
               ${it.foto?`<img src="${it.foto}" style="width:36px;height:36px;border-radius:5px;object-fit:cover;flex-shrink:0;">`:`<div style="width:36px;height:36px;border-radius:5px;background:${T.border};flex-shrink:0;"></div>`}
               <div style="flex:1;min-width:0;">
@@ -2652,7 +2652,7 @@ function renderDashboard(panel, color) {
   const perguntasSugeridas = (perguntasLista || []).filter(p => !p.requires_attention).length;
   const perguntasAtencao = (perguntasLista || []).filter(p => p.requires_attention).length;
   const perguntasDrawerRows = (perguntasLista || []).slice(0, 6).map(p => {
-    const cor = p.requires_attention ? "#c0392b" : "#2dce89";
+    const cor = p.requires_attention ? "#c0392b" : "#10b981";
     const nomeShort = (p.produto || "").length > 42 ? p.produto.slice(0,42)+"…" : (p.produto || "");
     return `<div onclick="window._sbarNavPergunta(event)" style="display:flex;align-items:center;justify-content:space-between;padding:9px 10px 9px 12px;border-radius:7px;margin-bottom:6px;cursor:pointer;background:${T.bg3};border:0.5px solid ${T.border};border-left:2px solid ${cor};transition:opacity .12s;" onmouseover="this.style.opacity='0.75'" onmouseout="this.style.opacity='1'">
       <div style="flex:1;min-width:0;margin-right:10px;">
@@ -2734,7 +2734,7 @@ function renderDashboard(panel, color) {
   const pergVal = perguntasTotal > 0 ? perguntasTotal+(perguntasSugeridas>0?" · "+perguntasSugeridas+" sug.":"") : "Em dia ✓";
   const pergLabelHtml = `<div style="font-size:11px;color:${T.text};">Perguntas</div><div style="${pergBg}">${pergVal}</div>`;
   const pergListHtml = (perguntasState.lista||[]).slice(0,10).map(p => {
-    const cor = p.requires_attention ? "#e8432d" : "#2dce89";
+    const cor = p.requires_attention ? "#e8432d" : "#10b981";
     const ns = (p.produto||"").length>30 ? p.produto.slice(0,30)+"…" : (p.produto||"");
     return `<div onclick="window._sbarNavPergunta(event)" style="padding:7px 8px 7px 10px;border-left:3px solid ${cor};border-radius:6px;margin-bottom:4px;cursor:pointer;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
       <div style="font-size:11px;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ns||"—"}</div>
@@ -2748,9 +2748,9 @@ function renderDashboard(panel, color) {
   pendCard.appendChild(mkExpansivel(pergLabelHtml, pergDrawerHtml, "320px"));
 
   // ── Estoque Full SP ──
-  const estBg = alertasCount>0 ? `background:#e8432d;color:#fff;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:600;` : `font-size:11px;font-weight:600;color:#2dce89;`;
+  const estBg = alertasCount>0 ? `background:#e8432d;color:#fff;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:600;` : `font-size:11px;font-weight:600;color:#10b981;`;
   const estLabelHtml = `<div style="font-size:11px;color:${T.text};">Estoque Full · SP</div><div style="${estBg}">${alertasCount>0?alertasCount+" alertas":"OK ✓"}</div>`;
-  const estListHtml = estDrawerRows || `<div style="font-size:11px;color:#2dce89;padding:6px 0;">Nenhum produto crítico ✓</div>`;
+  const estListHtml = estDrawerRows || `<div style="font-size:11px;color:#10b981;padding:6px 0;">Nenhum produto crítico ✓</div>`;
   const estDrawerHtml = `<div style="max-height:260px;overflow-y:auto;padding-bottom:4px;">${estListHtml}${alertasCount>0?`<div onclick="window._diogotab='estoque';render();" style="text-align:center;font-size:10px;color:${T.text2};padding:6px 0;cursor:pointer;">Ver estoque →</div>`:""}</div>`;
   const estRow = mkExpansivel(estLabelHtml, estDrawerHtml, "300px");
   estRow.style.borderBottom = "none";
@@ -2765,7 +2765,7 @@ function renderDashboard(panel, color) {
   pickingCard.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:14px 16px;`;
 
   const pickingLabelHtml = `<div style="font-size:11px;color:${T.text};">Picking & Packing</div>
-    <div style="${pickingTotal>0?`background:#f77614;color:#fff;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:600;`:`font-size:11px;font-weight:600;color:#2dce89;`}">
+    <div style="${pickingTotal>0?`background:#f77614;color:#fff;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:600;`:`font-size:11px;font-weight:600;color:#10b981;`}">
       ${pickingTotal>0?`${pickingTotal} pedido${pickingTotal>1?"s":""}`:"Em dia ✓"}
     </div>`;
 
@@ -2779,7 +2779,7 @@ function renderDashboard(panel, color) {
 
   const pickingDrawerHtml = pickingTotal>0
     ? `<div style="max-height:260px;overflow-y:auto;padding-bottom:4px;">${pickingListHtml}<div onclick="window._diogotab='picking';render();" style="text-align:center;font-size:10px;color:${T.text2};padding:6px 0;cursor:pointer;">Ir para Picking →</div></div>`
-    : `<div style="font-size:11px;color:#2dce89;padding:6px 0;">Nenhum pedido pendente ✓</div>`;
+    : `<div style="font-size:11px;color:#10b981;padding:6px 0;">Nenhum pedido pendente ✓</div>`;
 
   const pickingRow = mkExpansivel(pickingLabelHtml, pickingDrawerHtml, "300px");
   pickingRow.style.borderBottom = "none";
@@ -2810,7 +2810,7 @@ function renderDashboard(panel, color) {
         ? `<div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#E24B4A;animation:pulse-red 1s ease-in-out infinite;"></div><div style="font-size:10px;color:#E24B4A;">${urgentes2} urgente${urgentes2>1?"s":""}</div></div>`
         : emBreve2
           ? `<div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#f0b400;"></div><div style="font-size:10px;color:#f0b400;">${emBreve2} em breve</div></div>`
-          : `<div style="font-size:10px;color:#2dce89;">Em dia ✓</div>`;
+          : `<div style="font-size:10px;color:#10b981;">Em dia ✓</div>`;
 
       const vencDrawerRows = proximos.slice(0,5).map(c => {
         const isUrg = c.dias <= 1;
@@ -2903,7 +2903,7 @@ function renderDashboard(panel, color) {
 
   // Eventos fiscais — injetados no card de vencimentos da sidebar
   const hoje2 = new Date(); hoje2.setHours(0,0,0,0);
-  const coresFiscal = {difal:"#f0b400", dare:"#a855f7", ipi:"#5e72e4"};
+  const coresFiscal = {difal:"#f0b400", dare:"#a855f7", ipi:"#3b82f6"};
   const visto = new Set();
   const fiscal_agrupado = [];
   FISCAL_EVENTS.map(e => {
@@ -3069,7 +3069,7 @@ function renderDashboard(panel, color) {
 const CAL_CORES = {
   difal: "#f0b400",
   dare:  "#a855f7",
-  ipi:   "#5e72e4",
+  ipi:   "#3b82f6",
   inss:  "#22c55e",
 };
 
@@ -3134,7 +3134,7 @@ function renderCalFiscal() {
           const isHoje = d===hoje.getDate() && mes===hoje.getMonth() && ano===hoje.getFullYear();
           const evs = eventosPorDia[d] || [];
           const cor = evs.length > 0 ? CAL_CORES[evs[0].tipo] : null;
-          return `<div style="height:26px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:4px;font-size:11px;cursor:pointer;position:relative;${isHoje?"background:#5e72e4;color:${T.text};font-weight:700;":"color:"+(evs.length?"#ddd":"#888")+";"}">
+          return `<div style="height:26px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:4px;font-size:11px;cursor:pointer;position:relative;${isHoje?"background:#3b82f6;color:${T.text};font-weight:700;":"color:"+(evs.length?"#ddd":"#888")+";"}">
             ${d}
             ${cor && !isHoje ? `<div style="width:3px;height:3px;border-radius:50%;background:${cor};position:absolute;bottom:2px;"></div>` : ""}
           </div>`;
@@ -3146,7 +3146,7 @@ function renderCalFiscal() {
       <div style="font-size:8px;letter-spacing:1.5px;color:#999;text-transform:uppercase;padding:8px 14px 4px;">Próximos vencimentos</div>
       ${eventosComDias.filter(e => e.diff >= -1).map(e => {
         const cor = CAL_CORES[e.tipo] || "#555";
-        const diasCor = e.diff < 0 ? "#e91e8c" : e.diff <= 7 ? "#e91e8c" : e.diff <= 14 ? "#f0b400" : "#888";
+        const diasCor = e.diff < 0 ? "#e8432d" : e.diff <= 7 ? "#e8432d" : e.diff <= 14 ? "#f0b400" : "#888";
         const diasTxt = e.diff < 0 ? `${Math.abs(e.diff)}d atrás` : e.diff === 0 ? "hoje" : `em ${e.diff}d`;
         return `<div style="display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:0.5px solid #111;">
           <div style="font-size:11px;font-weight:700;color:${T.text3};width:18px;text-align:center;flex-shrink:0;">${e.dia}</div>
@@ -3279,8 +3279,8 @@ function returnStatusStyle(key){
     delivered:{bg:"#4ade8022",color:"#4ade80",border:"#4ade8044"},
     review:   {bg:"#f0b40022",color:"#f0b400",border:"#f0b40044"},
     waiting:  {bg:"#f0b40022",color:"#f0b400",border:"#f0b40044"},
-    dispute:  {bg:"#e91e8c22",color:"#e91e8c",border:"#e91e8c44"},
-    lost:     {bg:"#e91e8c22",color:"#e91e8c",border:"#e91e8c44"},
+    dispute:  {bg:"#e8432d22",color:"#e8432d",border:"#e8432d44"},
+    lost:     {bg:"#e8432d22",color:"#e8432d",border:"#e8432d44"},
     cancelled:{bg:"#88888822",color:"#888",border:"#88888844"},
     default:  {bg:"#88888822",color:"#888",border:"#88888844"},
   };
@@ -3659,7 +3659,7 @@ function renderCalcIpiPanel(container, task){
 
   if(calc.erro){
     const erroBox = document.createElement("div");
-    erroBox.style.cssText = "margin-bottom:12px;padding:8px 10px;background:#e91e8c10;border:1px solid #e91e8c33;border-radius:5px;font-size:11px;color:#e91e8c;";
+    erroBox.style.cssText = "margin-bottom:12px;padding:8px 10px;background:#e8432d10;border:1px solid #e8432d33;border-radius:5px;font-size:11px;color:#e8432d;";
     erroBox.textContent = calc.erro;
     wrap.appendChild(erroBox);
   }
@@ -3675,7 +3675,7 @@ function renderCalcIpiPanel(container, task){
     campo.appendChild(inpNumero);
     const buscarBtn = document.createElement("button");
     buscarBtn.textContent = "Buscar";
-    buscarBtn.style.cssText = "background:none;border:1px solid #00dfc366;color:#00dfc3;border-radius:4px;padding:7px 14px;font-size:11px;cursor:pointer;font-family:inherit;white-space:nowrap;";
+    buscarBtn.style.cssText = "background:none;border:1px solid #10b98166;color:#10b981;border-radius:4px;padding:7px 14px;font-size:11px;cursor:pointer;font-family:inherit;white-space:nowrap;";
     buscarBtn.addEventListener("click", ()=>{ if(inpNumero.value.trim()) initCalcIpi(task, inpNumero.value.trim()); });
     manualBox.appendChild(campo); manualBox.appendChild(buscarBtn);
     wrap.appendChild(manualBox);
@@ -3781,14 +3781,14 @@ function renderCalcIpiPanel(container, task){
 
   const addBtn = document.createElement("button");
   addBtn.textContent = "+ adicionar produto";
-  addBtn.style.cssText = "margin-top:8px;width:100%;background:none;border:1px dashed #00dfc366;color:#00dfc3;border-radius:5px;padding:6px;font-size:11px;cursor:pointer;font-family:inherit;letter-spacing:0.5px;";
+  addBtn.style.cssText = "margin-top:8px;width:100%;background:none;border:1px dashed #10b98166;color:#10b981;border-radius:5px;padding:6px;font-size:11px;cursor:pointer;font-family:inherit;letter-spacing:0.5px;";
   addBtn.addEventListener("click", ()=>{ calc.produtos.push({sku:"",produto:"",qtd:0,valorNf:0,ncm:"",precoVenda:null,aliquotaValor:null,automatico:false}); render(); });
   wrap.appendChild(addBtn);
 
   const totalRow = document.createElement("div");
   totalRow.style.cssText = "margin-top:12px;padding-top:10px;border-top:1px solid var(--sep);display:flex;justify-content:space-between;align-items:center;";
   const totalSpan = document.createElement("span");
-  totalSpan.style.cssText = "font-size:18px;font-weight:600;color:#00dfc3;";
+  totalSpan.style.cssText = "font-size:18px;font-weight:600;color:#10b981;";
   totalSpan.textContent = "R$ 0,00";
   totalRow.innerHTML = `<span style="font-size:11px;color:var(--text3);letter-spacing:1px;">TOTAL IPI E NOTA</span>`;
   totalRow.appendChild(totalSpan);
@@ -3803,15 +3803,15 @@ function renderCalcIpiPanel(container, task){
 
       const tdSku = document.createElement("td"); tdSku.style.cssText="padding:6px 3px;";
       const aliqTextoHtml = (val) => val==null
-        ? `<span class="aliqBadge" style="color:#e91e8c;font-size:11px;">sem %</span>`
+        ? `<span class="aliqBadge" style="color:#e8432d;font-size:11px;">sem %</span>`
         : `<span class="aliqBadge" style="color:var(--text3);font-size:11px;">${(val*100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}%</span>`;
       const seta = calc.linhaExpandida===i ? "▾" : "▸";
       if(p.automatico){
-        tdSku.innerHTML = `<div style="color:#00dfc3;font-weight:600;">${p.sku} <span style="color:var(--border2);">·</span> ${aliqTextoHtml(p.aliquotaValor)} <span style="color:var(--text3);font-size:11px;">${seta}</span></div><div style="color:var(--text3);font-size:9.5px;margin-top:2px;">${p.produto||""}</div>`;
+        tdSku.innerHTML = `<div style="color:#10b981;font-weight:600;">${p.sku} <span style="color:var(--border2);">·</span> ${aliqTextoHtml(p.aliquotaValor)} <span style="color:var(--text3);font-size:11px;">${seta}</span></div><div style="color:var(--text3);font-size:9.5px;margin-top:2px;">${p.produto||""}</div>`;
       }else{
-        tdSku.innerHTML = `<div style="color:#00dfc3;font-weight:600;">· ${aliqTextoHtml(p.aliquotaValor)} <span style="color:var(--text3);font-size:11px;">${seta}</span></div>`;
+        tdSku.innerHTML = `<div style="color:#10b981;font-weight:600;">· ${aliqTextoHtml(p.aliquotaValor)} <span style="color:var(--text3);font-size:11px;">${seta}</span></div>`;
         const inpSku=document.createElement("input"); inpSku.value=p.sku; inpSku.placeholder="SKU";
-        inpSku.style.cssText="width:100px;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:3px 5px;color:#00dfc3;font-family:inherit;font-size:11px;margin-top:2px;";
+        inpSku.style.cssText="width:100px;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:3px 5px;color:#10b981;font-family:inherit;font-size:11px;margin-top:2px;";
         inpSku.addEventListener("click",e=>e.stopPropagation());
         inpSku.addEventListener("input",()=>{p.sku=inpSku.value;});
         tdSku.insertBefore(inpSku, tdSku.firstChild.nextSibling);
@@ -3831,7 +3831,7 @@ function renderCalcIpiPanel(container, task){
       const tdPreco = document.createElement("td"); tdPreco.style.cssText="padding:6px 3px;text-align:right;";
       const inpPreco = document.createElement("input"); inpPreco.type="number"; inpPreco.placeholder="digitar";
       inpPreco.value = p.precoVenda!=null ? p.precoVenda.toFixed(2) : "";
-      inpPreco.style.cssText=`width:70px;background:var(--bg);border:1px solid ${p.precoVenda==null?"#e91e8c":"var(--border2)"};border-radius:4px;padding:3px 5px;color:#f0b400;font-family:inherit;font-size:11px;text-align:right;`;
+      inpPreco.style.cssText=`width:70px;background:var(--bg);border:1px solid ${p.precoVenda==null?"#e8432d":"var(--border2)"};border-radius:4px;padding:3px 5px;color:#f0b400;font-family:inherit;font-size:11px;text-align:right;`;
       inpPreco.addEventListener("click",e=>e.stopPropagation());
       // Só recalcula localmente enquanto digita (sem gravar no Firebase a cada
       // tecla — isso disparava um recarregamento da tela inteira e derrubava
@@ -3845,7 +3845,7 @@ function renderCalcIpiPanel(container, task){
       tdPreco.appendChild(inpPreco);
       tr.appendChild(tdPreco);
 
-      const tdIpi = document.createElement("td"); tdIpi.className="celulaIpi"; tdIpi.style.cssText="padding:6px 3px;text-align:right;color:#00dfc3;";
+      const tdIpi = document.createElement("td"); tdIpi.className="celulaIpi"; tdIpi.style.cssText="padding:6px 3px;text-align:right;color:#10b981;";
       tr.appendChild(tdIpi);
 
       const tdCmv = document.createElement("td"); tdCmv.className="celulaCmv"; tdCmv.style.cssText="padding:6px 3px;text-align:right;color:#7F77DD;";
@@ -3882,7 +3882,7 @@ function renderCalcIpiPanel(container, task){
           p.aliquotaValor=isNaN(v)?null:v/100;
           const badge = tr.querySelector(".aliqBadge");
           if(badge){
-            if(p.aliquotaValor==null){ badge.style.color="#e91e8c"; badge.textContent="sem %"; }
+            if(p.aliquotaValor==null){ badge.style.color="#e8432d"; badge.textContent="sem %"; }
             else{ badge.style.color="var(--text3)"; badge.textContent=`${(p.aliquotaValor*100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}%`; }
           }
           recalcular();
@@ -3953,7 +3953,7 @@ function renderCalcIpiPanel(container, task){
         </div>
         <div style="padding:7px;text-align:center;border-top:1px solid var(--sep);">
           <div style="font-size:11px;color:var(--text3);">VALOR</div>
-          <div style="font-size:12px;color:#00dfc3;">R$ ${d.valor.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+          <div style="font-size:12px;color:#10b981;">R$ ${d.valor.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
         </div>`;
       cardsWrap.appendChild(card);
     });
@@ -3992,7 +3992,7 @@ function renderCalcIpiPanel(container, task){
 
   const cmpBuscarBtn = document.createElement("button");
   cmpBuscarBtn.textContent = "↻ Calcular CMP";
-  cmpBuscarBtn.style.cssText = "background:none;border:1px solid #00dfc366;color:#00dfc3;border-radius:4px;padding:4px 12px;font-size:11px;cursor:pointer;font-family:inherit;";
+  cmpBuscarBtn.style.cssText = "background:none;border:1px solid #10b98166;color:#10b981;border-radius:4px;padding:4px 12px;font-size:11px;cursor:pointer;font-family:inherit;";
 
   cmpRightBtns.appendChild(cmpBuscarBtn);
   cmpHeader.appendChild(cmpTitle); cmpHeader.appendChild(cmpRightBtns);
@@ -4118,7 +4118,7 @@ function renderCalcIpiPanel(container, task){
 
           // Células fixas — visual igual à tabela de IPI acima
           const tdSku = document.createElement("td"); tdSku.style.cssText="padding:6px 8px;";
-          tdSku.innerHTML = `<div style="color:#00dfc3;font-weight:600;">${l.sku||"—"}</div>`;
+          tdSku.innerHTML = `<div style="color:#10b981;font-weight:600;">${l.sku||"—"}</div>`;
           const tdQtd = document.createElement("td"); tdQtd.style.cssText="padding:6px 8px;text-align:right;color:var(--text2);"; tdQtd.textContent=l.qtd;
           const tdCmv = document.createElement("td"); tdCmv.style.cssText="padding:6px 8px;text-align:right;color:#7F77DD;"; tdCmv.textContent=fmt(l.cmvUnit);
           const tdEst = document.createElement("td"); tdEst.style.cssText="padding:6px 8px;text-align:right;color:var(--text2);"; tdEst.textContent=l.estoqueAtual;
@@ -4130,7 +4130,7 @@ function renderCalcIpiPanel(container, task){
           iCusto.step = "0.01";
           iCusto.value = l.custoAtual != null ? parseFloat(String(l.custoAtual).replace(",",".")).toFixed(2) : "";
           iCusto.placeholder = semCusto ? "⚠ preencher" : "";
-          iCusto.style.cssText = `width:80px;background:none;border:none;border-bottom:1px solid ${semCusto?"#e91e8c66":"var(--border2)"};color:${semCusto?"#e91e8c":"#f0b400"};font-family:inherit;font-size:11px;text-align:right;outline:none;padding:2px 4px;`;
+          iCusto.style.cssText = `width:80px;background:none;border:none;border-bottom:1px solid ${semCusto?"#e8432d66":"var(--border2)"};color:${semCusto?"#e8432d":"#f0b400"};font-family:inherit;font-size:11px;text-align:right;outline:none;padding:2px 4px;`;
           iCusto.addEventListener("input", () => {
             l.custoAtual = iCusto.value;
             iCusto.style.borderBottomColor = "var(--border2)";
@@ -4158,7 +4158,7 @@ function renderCalcIpiPanel(container, task){
       // Botão salvar CMP
       const salvarCmpBtn = document.createElement("button");
       salvarCmpBtn.textContent = "✓ Salvar CMP";
-      salvarCmpBtn.style.cssText = "margin-top:12px;background:none;border:1px solid #00dfc366;color:#00dfc3;border-radius:4px;padding:6px 16px;font-size:11px;cursor:pointer;font-family:inherit;letter-spacing:0.5px;";
+      salvarCmpBtn.style.cssText = "margin-top:12px;background:none;border:1px solid #10b98166;color:#10b981;border-radius:4px;padding:6px 16px;font-size:11px;cursor:pointer;font-family:inherit;letter-spacing:0.5px;";
       salvarCmpBtn.addEventListener("click", async () => {
         const updates = {};
         let algumVazio = false;
@@ -4189,8 +4189,8 @@ function renderCalcIpiPanel(container, task){
         csvAtribBtn._custosMerged = custosMerged;
         setTimeout(() => {
           salvarCmpBtn.textContent = "✓ Salvar CMP";
-          salvarCmpBtn.style.color = "#00dfc3";
-          salvarCmpBtn.style.borderColor = "#00dfc366";
+          salvarCmpBtn.style.color = "#10b981";
+          salvarCmpBtn.style.borderColor = "#10b98166";
         }, 2500);
 
         // Gera CSV de atributos atualizado automaticamente
@@ -4287,7 +4287,7 @@ function renderNfComplementarInline(box, taskFake, calc, nf, panel) {
       </tbody>
       <tfoot><tr style="border-top:1px solid ${T.border};">
         <td colspan="4" style="padding:10px 8px;text-align:right;color:${T.text2};font-size:11px;">Total IPI</td>
-        <td style="padding:10px 8px;text-align:right;color:#00dfc3;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:14px;">R$ ${totalIPI.toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
+        <td style="padding:10px 8px;text-align:right;color:#10b981;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:14px;">R$ ${totalIPI.toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
       </tr></tfoot>
     </table>`;
   box.appendChild(tblWrap);
@@ -4305,7 +4305,7 @@ function renderNfComplementarInline(box, taskFake, calc, nf, panel) {
   // Botão emitir
   const emitirBtn = document.createElement("button");
   emitirBtn.textContent = "Emitir NF Complementar de IPI";
-  emitirBtn.style.cssText = `width:100%;padding:12px;border-radius:8px;background:#00dfc3;border:none;color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;`;
+  emitirBtn.style.cssText = `width:100%;padding:12px;border-radius:8px;background:#10b981;border:none;color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;`;
   emitirBtn.addEventListener("click", async () => {
     const chaveRefVal = box.querySelector("#nfi-chave-ref")?.value?.trim() || "";
     const nNumVal = box.querySelector("#nfi-numero-comp")?.value?.trim() || "";
@@ -4329,7 +4329,7 @@ function renderNfComplementarInline(box, taskFake, calc, nf, panel) {
       });
       const data = await r.json();
       if (!data.ok) { statusEl.innerHTML = `<div style="color:#e8432d;font-size:12px;padding:6px 0;">Erro ${data.cStat}: ${data.xMotivo||data.erro}</div>`; emitirBtn.disabled=false; emitirBtn.textContent="Tentar novamente"; return; }
-      statusEl.innerHTML = `<div style="color:#2dce89;font-size:13px;font-weight:600;padding:10px 0;">✓ Autorizada! NF ${nNumVal}</div><div style="font-size:10px;color:${T.text2};font-family:'IBM Plex Mono',monospace;word-break:break-all;margin-bottom:10px;">${data.chave}</div>`;
+      statusEl.innerHTML = `<div style="color:#10b981;font-size:13px;font-weight:600;padding:10px 0;">✓ Autorizada! NF ${nNumVal}</div><div style="font-size:10px;color:${T.text2};font-family:'IBM Plex Mono',monospace;word-break:break-all;margin-bottom:10px;">${data.chave}</div>`;
       // Botão download XML
       const btnDlXml = document.createElement("button");
       btnDlXml.textContent = "⬇ Baixar XML";
@@ -4347,7 +4347,7 @@ function renderNfComplementarInline(box, taskFake, calc, nf, panel) {
         } catch(e) { alert("Erro: " + e.message); }
       });
       statusEl.appendChild(btnDlXml);
-      emitirBtn.textContent="✓ Emitida"; emitirBtn.style.background="#2dce8922"; emitirBtn.style.color="#2dce89";
+      emitirBtn.textContent="✓ Emitida"; emitirBtn.style.background="#10b98122"; emitirBtn.style.color="#10b981";
       const chaveKey = nf?.chave || String(nfRef).replace(/[.#$\[\]\/]/g,"_");
       if (chaveKey) await update(ref(db, `/nfes_processadas/${chaveKey}`), { nfComplementarNumero: nNumVal, chaveComplementar: data.chave });
       setTimeout(() => { const p = panel?.closest?.(".nfs-emitidas-container")||panel; if(p) renderNfsEmitidas(p); }, 2000);
@@ -4438,7 +4438,7 @@ async function renderNfComplementarPreview(container, task, calc) {
       <tfoot>
         <tr style="border-top:2px solid ${T.border};">
           <td colspan="5" style="padding:10px 8px;text-align:right;color:${T.text3};font-size:11px;">Total IPI Complementar</td>
-          <td style="padding:10px 8px;text-align:right;color:#00dfc3;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px;">R$ ${produtosComIpi.reduce((s,p)=>{const u=parseFloat(p.ipiUnitario||0);return s+u*Number(p.quantidade);},0).toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
+          <td style="padding:10px 8px;text-align:right;color:#10b981;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px;">R$ ${produtosComIpi.reduce((s,p)=>{const u=parseFloat(p.ipiUnitario||0);return s+u*Number(p.quantidade);},0).toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
         </tr>
       </tfoot>
     `;
@@ -4460,7 +4460,7 @@ async function renderNfComplementarPreview(container, task, calc) {
     const emitirBtn = document.createElement("button");
     emitirBtn.id = "nf-comp-emitir";
     emitirBtn.textContent = "Emitir NF Complementar de IPI";
-    emitirBtn.style.cssText = `width:100%;padding:12px;border-radius:6px;background:#00dfc3;border:none;color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;`;
+    emitirBtn.style.cssText = `width:100%;padding:12px;border-radius:6px;background:#10b981;border:none;color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;`;
     emitirBtn.addEventListener("click", async () => {
       const chaveRefInput = document.getElementById("nf-comp-chave-ref")?.value?.trim() || "";
       const numeroRefInput = document.getElementById("nf-comp-numero-ref")?.value?.trim() || "";
@@ -4617,7 +4617,7 @@ function renderVendasTab(panel, color) {
     l.innerHTML='<span class="spinning">↻</span> Carregando...';panel.appendChild(l);return;
   }
   if(!vendasData||vendasData.error){
-    const err=document.createElement("p");err.style.cssText="color:#e91e8c;font-size:12px;padding:14px 0;";
+    const err=document.createElement("p");err.style.cssText="color:#e8432d;font-size:12px;padding:14px 0;";
     err.textContent=vendasData?.error||"Erro ao carregar";panel.appendChild(err);return;
   }
 
@@ -4626,7 +4626,7 @@ function renderVendasTab(panel, color) {
   summaryGrid.style.cssText="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;";
   [
     {label:"FATURAMENTO",value:`R$ ${vendasData.summary.totalRevenue.toLocaleString("pt-BR",{minimumFractionDigits:2})}`,color:"#4ade80"},
-    {label:"VENDAS",value:vendasData.summary.totalOrders,color:"#5e72e4"},
+    {label:"VENDAS",value:vendasData.summary.totalOrders,color:"#3b82f6"},
     {label:"TICKET MÉDIO",value:`R$ ${vendasData.summary.avgTicket.toLocaleString("pt-BR",{minimumFractionDigits:2})}`,color:"#a78bfa"},
   ].forEach(s=>{
     const card=document.createElement("div");
@@ -4709,14 +4709,14 @@ function renderVendasTab(panel, color) {
     sec.appendChild(t);
     vendasData.stoppedItems.slice(0,5).forEach(p=>{
       const row=document.createElement("div");
-      row.style.cssText="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg2);border-radius:5px;margin-bottom:5px;border-left:2px solid #e91e8c;";
+      row.style.cssText="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg2);border-radius:5px;margin-bottom:5px;border-left:2px solid #e8432d;";
       row.innerHTML=`
         <div style="flex:1;min-width:0;">
           <div style="font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.title}</div>
           <div style="font-size:11px;color:var(--text3);margin-top:2px;">Estoque: ${p.available_quantity} · Total vendido: ${p.sold_quantity}</div>
         </div>
         <div style="text-align:right;flex-shrink:0;">
-          <div style="font-size:12px;color:#e91e8c;">R$ ${p.price?.toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
+          <div style="font-size:12px;color:#e8432d;">R$ ${p.price?.toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
         </div>`;
       sec.appendChild(row);
     });
@@ -4793,7 +4793,7 @@ function renderDiogoDevTab(panel, color) {
   }
   if(!diogoDevolucoes || diogoDevolucoes.error) {
     const err = document.createElement("p");
-    err.style.cssText = "color:#e91e8c;font-size:12px;padding:14px 0;";
+    err.style.cssText = "color:#e8432d;font-size:12px;padding:14px 0;";
     err.textContent = diogoDevolucoes?.error || "Erro ao carregar";
     panel.appendChild(err); return;
   }
@@ -4807,7 +4807,7 @@ function renderDiogoDevTab(panel, color) {
   // Total
   const totalDiv = document.createElement("div");
   totalDiv.style.cssText = "display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--bg2);border-radius:5px;margin-bottom:12px;";
-  totalDiv.innerHTML = `<span style="font-size:11px;color:var(--text3);letter-spacing:1px">${diogoDevolucoes.count} devoluções</span><span style="font-size:16px;font-family:'Bebas Neue',sans-serif;color:#e91e8c;letter-spacing:2px;">-R$ ${diogoDevolucoes.totalCost.toLocaleString("pt-BR",{minimumFractionDigits:2})}</span>`;
+  totalDiv.innerHTML = `<span style="font-size:11px;color:var(--text3);letter-spacing:1px">${diogoDevolucoes.count} devoluções</span><span style="font-size:16px;font-family:'Bebas Neue',sans-serif;color:#e8432d;letter-spacing:2px;">-R$ ${diogoDevolucoes.totalCost.toLocaleString("pt-BR",{minimumFractionDigits:2})}</span>`;
   panel.appendChild(totalDiv);
 
   // Lista
@@ -4815,7 +4815,7 @@ function renderDiogoDevTab(panel, color) {
   grid.style.cssText = "display:flex;flex-direction:column;gap:6px;";
   diogoDevolucoes.data.forEach(dev => {
     const card = document.createElement("div");
-    card.style.cssText = `display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--bg2);border-radius:4px;border-left:2px solid ${dev.refundedAmount>0?"#e91e8c":"#4ade80"};`;
+    card.style.cssText = `display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--bg2);border-radius:4px;border-left:2px solid ${dev.refundedAmount>0?"#e8432d":"#4ade80"};`;
     const date = dev.closedAt ? new Date(dev.closedAt).toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"}) : "—";
     card.innerHTML = `
       <div style="flex:1;min-width:0;">
@@ -4823,7 +4823,7 @@ function renderDiogoDevTab(panel, color) {
         <div style="font-size:11px;color:var(--text3);margin-top:2px;">${dev.buyer} · ${date}</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;margin-left:8px;flex-shrink:0;">
-        <span style="font-size:11px;color:${dev.refundedAmount>0?'#e91e8c':'#4ade80'};">${dev.refundedAmount>0?'-R$ '+dev.refundedAmount.toFixed(2).replace('.',','):'R$ 0,00'}</span>
+        <span style="font-size:11px;color:${dev.refundedAmount>0?'#e8432d':'#4ade80'};">${dev.refundedAmount>0?'-R$ '+dev.refundedAmount.toFixed(2).replace('.',','):'R$ 0,00'}</span>
         <a href="${dev.permalink}" target="_blank" style="color:#f0b400;font-size:11px;text-decoration:none;">→</a>
       </div>`;
     grid.appendChild(card);
@@ -4874,7 +4874,7 @@ function renderDiogoCustoTab(panel, color) {
       <div style="font-size:11px;color:var(--text3);letter-spacing:2px;margin-bottom:4px">CUSTO REAL DE DEVOLUÇÕES</div>
       <div style="font-size:11px;color:var(--text3);">${diogoCustoData.negCount} devoluções com frete negativo</div>
     </div>
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;color:#e91e8c;">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;color:#e8432d;">
       R$ ${Math.abs(diogoCustoData.totalNeg).toLocaleString("pt-BR",{minimumFractionDigits:2})}
     </div>`;
   panel.appendChild(totalCard);
@@ -4885,13 +4885,13 @@ function renderDiogoCustoTab(panel, color) {
     grid.style.cssText = "display:flex;flex-direction:column;gap:5px;";
     diogoCustoData.negItems.forEach(item => {
       const row = document.createElement("div");
-      row.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--bg2);border-radius:4px;border-left:2px solid #e91e8c;";
+      row.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--bg2);border-radius:4px;border-left:2px solid #e8432d;";
       row.innerHTML = `
         <div style="flex:1;min-width:0;">
           <div style="font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.titulo}</div>
           <div style="font-size:11px;color:var(--text3);margin-top:2px;">${item.status} · ${item.data}</div>
         </div>
-        <span style="font-size:12px;color:#e91e8c;margin-left:8px;flex-shrink:0;">R$ ${Math.abs(item.total).toLocaleString("pt-BR",{minimumFractionDigits:2})}</span>`;
+        <span style="font-size:12px;color:#e8432d;margin-left:8px;flex-shrink:0;">R$ ${Math.abs(item.total).toLocaleString("pt-BR",{minimumFractionDigits:2})}</span>`;
       grid.appendChild(row);
     });
     panel.appendChild(grid);
@@ -4995,7 +4995,7 @@ function renderFinanceiroTab(panel,color){
     if(!state.ml_token?.access_token||finData?.error==="token ausente"){
       const msg=document.createElement("p");msg.style.cssText="font-size:11px;color:var(--text3);margin-bottom:12px;";msg.textContent="Conecte o Mercado Livre no card da Larissa.";panel.appendChild(msg);
     }else{
-      const err=document.createElement("p");err.style.cssText="color:#e91e8c;font-size:12px;padding:20px 0;";err.textContent=finData?.error||"Erro ao carregar";panel.appendChild(err);
+      const err=document.createElement("p");err.style.cssText="color:#e8432d;font-size:12px;padding:20px 0;";err.textContent=finData?.error||"Erro ao carregar";panel.appendChild(err);
     }
     return;
   }
@@ -5006,7 +5006,7 @@ function renderFinanceiroTab(panel,color){
   const totalLabel=document.createElement("div");
   totalLabel.innerHTML=`<div style="font-size:11px;color:var(--text3);letter-spacing:2px;margin-bottom:4px">CUSTO DE DEVOLUÇÕES</div><div style="font-size:11px;color:var(--text3);letter-spacing:1px">${finData.count} devoluções concluídas</div>`;
   const totalValue=document.createElement("div");
-  totalValue.style.cssText=`font-size:22px;font-family:'Bebas Neue',sans-serif;letter-spacing:2px;color:${finData.totalCost>0?"#e91e8c":"#4ade80"};`;
+  totalValue.style.cssText=`font-size:22px;font-family:'Bebas Neue',sans-serif;letter-spacing:2px;color:${finData.totalCost>0?"#e8432d":"#4ade80"};`;
   totalValue.textContent=`-R$ ${finData.totalCost.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
   totalCard.appendChild(totalLabel);totalCard.appendChild(totalValue);
   panel.appendChild(totalCard);
@@ -5024,7 +5024,7 @@ function renderFinanceiroTab(panel,color){
     const card=document.createElement("div");
     card.className="ml-card";
     const hasCost=dev.refundedAmount>0;
-    card.style.borderLeftColor=hasCost?"#e91e8c":"#4ade80";
+    card.style.borderLeftColor=hasCost?"#e8432d":"#4ade80";
     card.style.borderLeftWidth="3px";
 
     const date=dev.closedAt?new Date(dev.closedAt).toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"}):"—";
@@ -5036,7 +5036,7 @@ function renderFinanceiroTab(panel,color){
           ${dev.buyer} · <span style="color:var(--text3)">${date}</span>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;">
-          <span class="ml-badge" style="background:${hasCost?"#e91e8c22":"#4ade8022"};color:${hasCost?"#e91e8c":"#4ade80"};border:1px solid ${hasCost?"#e91e8c44":"#4ade8044"}">
+          <span class="ml-badge" style="background:${hasCost?"#e8432d22":"#4ade8022"};color:${hasCost?"#e8432d":"#4ade80"};border:1px solid ${hasCost?"#e8432d44":"#4ade8044"}">
             ${hasCost?`-R$ ${dev.refundedAmount.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}`:"R$ 0,00"}
           </span>
           <a href="${dev.permalink}" target="_blank" class="ml-link" style="margin-top:0">Ver →</a>
@@ -5091,7 +5091,7 @@ function renderMLInPanel(panel,color){
       const msg=document.createElement("p");msg.style.cssText="font-size:11px;color:var(--text3);margin-bottom:12px;line-height:1.6;";msg.textContent="Conecte sua conta do Mercado Livre para ver os dados.";panel.appendChild(msg);
       const btn=document.createElement("button");btn.className="ml-connect-btn";btn.textContent="Conectar Mercado Livre";btn.addEventListener("click",()=>{window.open(`${VERCEL_BACKEND}/api/ml-auth`,"_blank");});panel.appendChild(btn);
     }else{
-      const err=document.createElement("p");err.style.cssText="color:#e91e8c;font-size:12px;padding:20px 0;";err.textContent=data.error;panel.appendChild(err);
+      const err=document.createElement("p");err.style.cssText="color:#e8432d;font-size:12px;padding:20px 0;";err.textContent=data.error;panel.appendChild(err);
     }
     return;
   }
@@ -5123,7 +5123,7 @@ function renderMLInPanel(panel,color){
   }
 
   displayData.forEach(dev=>{
-    const stageColors={"waiting_seller":"#e91e8c","seller":"#e91e8c","buyer":"#f0b400","dispute":"#e91e8c","resolved":"#4ade80"};
+    const stageColors={"waiting_seller":"#e8432d","seller":"#e8432d","buyer":"#f0b400","dispute":"#e8432d","resolved":"#4ade80"};
     const stageLabels={"waiting_seller":"Aguarda você","seller":"Aguarda você","buyer":"Aguarda comprador","dispute":"Em disputa","resolved":"Resolvida"};
     const sc=stageColors[dev.stage]||"#888";
     const sl=stageLabels[dev.stage]||dev.stage||dev.status;
@@ -5133,7 +5133,7 @@ function renderMLInPanel(panel,color){
     // Cor da borda pelo status de revisão
     let borderColor = sc;
     if(dev.needsReview) borderColor = "#f0b400";
-    if(dev.returnStatusKey === "dispute") borderColor = "#e91e8c";
+    if(dev.returnStatusKey === "dispute") borderColor = "#e8432d";
     card.style.borderLeftColor=borderColor;card.style.borderLeftWidth="3px";
 
     // Badge de status
@@ -5158,7 +5158,7 @@ function renderMLInPanel(panel,color){
           dueBadgeHtml=`<span class="ml-badge" style="background:#a3e63515;color:#a3e635;border:1px solid #a3e63533">até hoje</span>`;
         } else {
           const label=`até ${d.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"})}`;
-          dueBadgeHtml=`<span class="ml-badge" style="background:#5e72e415;color:#5e72e4;border:1px solid #5e72e433">${label}</span>`;
+          dueBadgeHtml=`<span class="ml-badge" style="background:#3b82f615;color:#3b82f6;border:1px solid #3b82f633">${label}</span>`;
         }
       }catch{}
     }
@@ -5181,7 +5181,7 @@ function renderMLInPanel(panel,color){
         </div>
         ${dev.needsReview ? `<div id="${actionBtnsId}" style="display:flex;gap:6px;flex-wrap:wrap;">
           <button onclick="window._reviewDev('${dev.id}','ok')" style="background:#4ade8022;border:1px solid #4ade8066;color:#4ade80;border-radius:4px;padding:5px 12px;font-size:11px;cursor:pointer;font-family:inherit;letter-spacing:1px;">✓ Chegou ok</button>
-          <button onclick="window._reviewDev('${dev.id}','fail')" style="background:#e91e8c22;border:1px solid #e91e8c66;color:#e91e8c;border-radius:4px;padding:5px 12px;font-size:11px;cursor:pointer;font-family:inherit;letter-spacing:1px;">✗ Reportar problema</button>
+          <button onclick="window._reviewDev('${dev.id}','fail')" style="background:#e8432d22;border:1px solid #e8432d66;color:#e8432d;border-radius:4px;padding:5px 12px;font-size:11px;cursor:pointer;font-family:inherit;letter-spacing:1px;">✗ Reportar problema</button>
         </div>` : `<a href="${dev.permalink}" target="_blank" class="ml-link">Abrir no ML →</a>`}
       </div>`;
     cardsGrid.appendChild(card);
@@ -5205,10 +5205,10 @@ function renderMLInPanel(panel,color){
         // Atualiza a lista após 2s
         setTimeout(() => { mlDevolucoes = null; fetchMLData("devolucoes"); }, 2000);
       } else {
-        if (btn) btn.innerHTML = `<span style="font-size:11px;color:#e91e8c">Erro: ${data.error}</span>`;
+        if (btn) btn.innerHTML = `<span style="font-size:11px;color:#e8432d">Erro: ${data.error}</span>`;
       }
     } catch(e) {
-      if (btn) btn.innerHTML = `<span style="font-size:11px;color:#e91e8c">Erro: ${e.message}</span>`;
+      if (btn) btn.innerHTML = `<span style="font-size:11px;color:#e8432d">Erro: ${e.message}</span>`;
     }
   };
 
@@ -5593,7 +5593,7 @@ function render(){
         calCircleBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`;
         if(proxCal.length > 0) {
           const dot = document.createElement("div");
-          dot.style.cssText = "position:absolute;top:-1px;right:-1px;width:8px;height:8px;border-radius:50%;background:#e91e8c;border:1.5px solid #000;";
+          dot.style.cssText = "position:absolute;top:-1px;right:-1px;width:8px;height:8px;border-radius:50%;background:#e8432d;border:1.5px solid #000;";
           calCircleBtn.appendChild(dot);
         }
         calCircleBtn.title = "Calendário Fiscal";
@@ -5634,7 +5634,7 @@ function render(){
       if(diogoCardFullscreen || brunoEmPicking || diogoEmPickingOperar) { panel.style.flex="1"; panel.style.overflowY="auto"; panel.style.maxHeight="none"; }
 
       if(member.locked&&!diogoPinUnlocked){
-        panel.innerHTML=`<div class="pin-wrap"><div class="pin-icon">◈</div><p>Digite o PIN para acessar</p><input class="pin-input" type="password" inputmode="numeric" autocomplete="new-password" name="digoo-pin-${Date.now()}" data-lpignore="true" data-form-type="other" maxlength="10" placeholder="••••••" id="pin-field" readonly><div style="font-size:11px;color:#e91e8c;margin-top:8px;letter-spacing:1px;display:none" id="pin-err">PIN incorreto</div><button class="pin-btn" style="background:${color};color:#000" id="pin-btn">ENTRAR</button></div>`;
+        panel.innerHTML=`<div class="pin-wrap"><div class="pin-icon">◈</div><p>Digite o PIN para acessar</p><input class="pin-input" type="password" inputmode="numeric" autocomplete="new-password" name="digoo-pin-${Date.now()}" data-lpignore="true" data-form-type="other" maxlength="10" placeholder="••••••" id="pin-field" readonly><div style="font-size:11px;color:#e8432d;margin-top:8px;letter-spacing:1px;display:none" id="pin-err">PIN incorreto</div><button class="pin-btn" style="background:${color};color:#000" id="pin-btn">ENTRAR</button></div>`;
         setTimeout(()=>{
           const f=document.getElementById("pin-field"),e=document.getElementById("pin-err"),b=document.getElementById("pin-btn");
           if(f){f.value="";f.removeAttribute("readonly");f.focus();f.click();}
@@ -5683,7 +5683,7 @@ function render(){
             const isActive = group.tab === currentTab || group.subs.some(s => s.tab === currentTab);
 
             const btn = document.createElement("button");
-            btn.style.cssText = `background:${isActive?"#5e72e4":(T.isLight?"#e0e0e0":"#1a1a1a")};border:0.5px solid ${isActive?"transparent":(T.isLight?"#cccccc":"#242424")};border-radius:99px;color:${isActive?"#fff":(T.isLight?"#444":"#888")};font-size:11px;font-weight:600;letter-spacing:0.5px;padding:7px 16px;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap;flex-shrink:0;`;
+            btn.style.cssText = `background:${isActive?"#3b82f6":(T.isLight?"#e0e0e0":"#1a1a1a")};border:0.5px solid ${isActive?"transparent":(T.isLight?"#cccccc":"#242424")};border-radius:99px;color:${isActive?"#fff":(T.isLight?"#444":"#888")};font-size:11px;font-weight:600;letter-spacing:0.5px;padding:7px 16px;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap;flex-shrink:0;`;
             btn.textContent = group.label;
 
             if(group.tab) {
@@ -5782,7 +5782,7 @@ function render(){
             mainGroups.forEach(group => {
               const isActive = window._activeNavGroup === group.label || (group.tab && group.tab === currentTab);
               const chip = document.createElement("div");
-              chip.style.cssText = `padding:6px 14px;border-radius:99px;font-size:11px;font-weight:600;letter-spacing:0.5px;white-space:nowrap;cursor:pointer;flex-shrink:0;transition:all .15s;background:${isActive?"#5e72e4":(T.isLight?"#e0e0e0":"#1a1a1a")};color:${isActive?"#fff":(T.isLight?"#444":"#666")};border:0.5px solid ${isActive?"transparent":(T.isLight?"#cccccc":"#222")};font-family:inherit;`;
+              chip.style.cssText = `padding:6px 14px;border-radius:99px;font-size:11px;font-weight:600;letter-spacing:0.5px;white-space:nowrap;cursor:pointer;flex-shrink:0;transition:all .15s;background:${isActive?"#3b82f6":(T.isLight?"#e0e0e0":"#1a1a1a")};color:${isActive?"#fff":(T.isLight?"#444":"#666")};border:0.5px solid ${isActive?"transparent":(T.isLight?"#cccccc":"#222")};font-family:inherit;`;
               chip.textContent = group.label;
               chip.addEventListener("click", () => {
                 if(group.acao === "ideias") { window._openIdeiasModal(); return; }
@@ -5803,7 +5803,7 @@ function render(){
               activeGroup.subs.forEach(sub => {
                 const isSubActive = currentTab === sub.tab;
                 const subChip = document.createElement("div");
-                subChip.style.cssText = `padding:5px 12px;border-radius:99px;font-size:11px;font-weight:600;letter-spacing:0.5px;white-space:nowrap;cursor:pointer;flex-shrink:0;font-family:inherit;background:${isSubActive?"#5e72e422":"#141414"};color:${isSubActive?"#5e72e4":"#555"};border:0.5px solid ${isSubActive?"#5e72e444":"#1e1e1e"};`;
+                subChip.style.cssText = `padding:5px 12px;border-radius:99px;font-size:11px;font-weight:600;letter-spacing:0.5px;white-space:nowrap;cursor:pointer;flex-shrink:0;font-family:inherit;background:${isSubActive?"#3b82f622":"#141414"};color:${isSubActive?"#3b82f6":"#555"};border:0.5px solid ${isSubActive?"#3b82f644":"#1e1e1e"};`;
                 subChip.textContent = sub.label;
                 subChip.addEventListener("click", () => { window._diogotab = sub.tab; render(); });
                 subRow.appendChild(subChip);
@@ -5850,7 +5850,7 @@ function render(){
 
               const nfCompTopBtn = document.createElement("button");
               nfCompTopBtn.textContent = "⊕ Gerar NF Complementar de IPI";
-              nfCompTopBtn.style.cssText = "background:none;border:1px solid #00dfc366;color:#00dfc3;border-radius:4px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;";
+              nfCompTopBtn.style.cssText = "background:none;border:1px solid #10b98166;color:#10b981;border-radius:4px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;";
               nfCompTopBtn.addEventListener("click", () => {
                 const calc = calcIpiState[taskFS.id];
                 if (!calc) { alert("Aguarde o carregamento dos dados."); return; }
@@ -5888,7 +5888,7 @@ function render(){
 
                 const emitirBtn = document.createElement("button");
                 emitirBtn.textContent = "Emitir NF Complementar";
-                emitirBtn.style.cssText = `width:100%;padding:12px;border-radius:8px;background:#00dfc3;border:none;color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;`;
+                emitirBtn.style.cssText = `width:100%;padding:12px;border-radius:8px;background:#10b981;border:none;color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;`;
                 emitirBtn.addEventListener("click", async () => {
                   const chaveRef = chaveInput.value.trim();
                   const nNF = nNumInput.value.trim();
@@ -5924,10 +5924,10 @@ function render(){
                       emitirBtn.disabled = false; emitirBtn.textContent = "Tentar novamente";
                       return;
                     }
-                    statusDiv.innerHTML = `<div style="color:#2dce89;font-size:13px;font-weight:600;padding:10px 0;">✓ Autorizada! Chave: ${data.chave}</div>`;
+                    statusDiv.innerHTML = `<div style="color:#10b981;font-size:13px;font-weight:600;padding:10px 0;">✓ Autorizada! Chave: ${data.chave}</div>`;
                     emitirBtn.textContent = "✓ Emitida";
-                    emitirBtn.style.background = "#2dce8922";
-                    emitirBtn.style.color = "#2dce89";
+                    emitirBtn.style.background = "#10b98122";
+                    emitirBtn.style.color = "#10b981";
                     // Salvar no Firebase
                     if (data.chave && calc.nfUsada) {
                       const chaveKey = String(calc.nfUsada).replace(/[.#$\[\]\/]/g,"_");
@@ -6029,7 +6029,7 @@ function render(){
               recGrid.style.cssText="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;";
               // Cards de alerta fiscal — piscam em azul
               fiscalAlerts.forEach(e => {
-                const cor = "#5e72e4";
+                const cor = "#3b82f6";
                 const card = document.createElement("div");
                 card.style.cssText = `background:var(--bg3);border:0.5px solid ${cor}33;border-top:2px solid ${cor};border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;box-sizing:border-box;--c:${cor};animation:cardFlash 1.2s ease-in-out infinite;`;
                 const title = document.createElement("div");
@@ -6049,23 +6049,23 @@ function render(){
 
               recTasks.forEach(task=>{
                 const card=document.createElement("div");
-                card.style.cssText=`background:var(--bg3);border:0.5px solid #5e72e433;border-top:2px solid #5e72e4;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;box-sizing:border-box;`;
+                card.style.cssText=`background:var(--bg3);border:0.5px solid #3b82f633;border-top:2px solid #3b82f6;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;box-sizing:border-box;`;
                 const chk=document.createElement("button");
-                chk.style.cssText=`width:15px;height:15px;border-radius:3px;border:1.5px solid #5e72e4;background:${task.done?"#5e72e4":"none"};flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#000;font-size:11px;font-weight:700;`;
+                chk.style.cssText=`width:15px;height:15px;border-radius:3px;border:1.5px solid #3b82f6;background:${task.done?"#3b82f6":"none"};flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#000;font-size:11px;font-weight:700;`;
                 chk.textContent=task.done?"✓":"";
                 chk.addEventListener("click",()=>toggleTask(task.id,task.done,task.progress,true));
                 const tt=document.createElement("div");
                 tt.style.cssText=`font-size:11px;font-weight:500;color:${task.done?"var(--text3)":"var(--text)"};line-height:1.4;text-decoration:${task.done?"line-through":"none"};`;
                 tt.textContent=task.text;
                 const badge=document.createElement("span");
-                badge.style.cssText="font-size:11px;font-weight:700;letter-spacing:.8px;padding:2px 6px;border-radius:4px;background:#5e72e422;color:#5e72e4;width:fit-content;";
+                badge.style.cssText="font-size:11px;font-weight:700;letter-spacing:.8px;padding:2px 6px;border-radius:4px;background:#3b82f622;color:#3b82f6;width:fit-content;";
                 badge.textContent="RECORRENTE";
                 card.appendChild(chk);card.appendChild(tt);card.appendChild(badge);
                 if(task.done){
                   const btnWrap=document.createElement("div");btnWrap.style.cssText="display:flex;gap:4px;margin-top:2px;";
-                  const reopen=document.createElement("button");reopen.style.cssText="background:none;border:1px solid #5e72e444;border-radius:3px;color:#5e72e477;font-size:8px;letter-spacing:1px;padding:2px 7px;cursor:pointer;font-family:inherit;";reopen.textContent="Reabrir";
+                  const reopen=document.createElement("button");reopen.style.cssText="background:none;border:1px solid #3b82f644;border-radius:3px;color:#3b82f677;font-size:8px;letter-spacing:1px;padding:2px 7px;cursor:pointer;font-family:inherit;";reopen.textContent="Reabrir";
                   reopen.addEventListener("click",(e)=>{e.stopPropagation();update(ref(db,`/tasks/${task.id}`),{done:false,progress:false});});
-                  const okBtn=document.createElement("button");okBtn.style.cssText="background:#5e72e4;border:none;border-radius:3px;color:#000;font-size:8px;font-weight:700;letter-spacing:1px;padding:2px 7px;cursor:pointer;font-family:inherit;";okBtn.textContent="OK";
+                  const okBtn=document.createElement("button");okBtn.style.cssText="background:#3b82f6;border:none;border-radius:3px;color:#000;font-size:8px;font-weight:700;letter-spacing:1px;padding:2px 7px;cursor:pointer;font-family:inherit;";okBtn.textContent="OK";
                   okBtn.addEventListener("click",(e)=>{e.stopPropagation();remove(ref(db,`/tasks/${task.id}`));});
                   btnWrap.appendChild(reopen);btnWrap.appendChild(okBtn);card.appendChild(btnWrap);
                 }
@@ -6154,7 +6154,7 @@ function render(){
               card.appendChild(handle);
               // Checkbox topo esquerdo
               const chkBtn=document.createElement("button");
-              chkBtn.style.cssText=`width:18px;height:18px;border-radius:4px;border:1.5px solid ${todosPassosFeitos&&!task.done?"#00dfc3":pc};background:${task.done?pc:"none"};flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#000;font-size:11px;font-weight:700;`;
+              chkBtn.style.cssText=`width:18px;height:18px;border-radius:4px;border:1.5px solid ${todosPassosFeitos&&!task.done?"#10b981":pc};background:${task.done?pc:"none"};flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#000;font-size:11px;font-weight:700;`;
               chkBtn.textContent=task.done?"✓":"";
               chkBtn.addEventListener("click",(e)=>{e.stopPropagation();toggleTask(task.id,task.done,task.progress);});
               card.appendChild(chkBtn);
@@ -6170,9 +6170,9 @@ function render(){
                 const progWrap=document.createElement("div");
                 progWrap.style.cssText="display:flex;flex-direction:column;gap:3px;";
                 const barBg=document.createElement("div");barBg.style.cssText="background:var(--border2);border-radius:99px;height:3px;";
-                const barFill=document.createElement("div");barFill.style.cssText=`background:${todosPassosFeitos?"#00dfc3":pc};height:3px;border-radius:99px;width:${pct}%;transition:width .3s;`;
+                const barFill=document.createElement("div");barFill.style.cssText=`background:${todosPassosFeitos?"#10b981":pc};height:3px;border-radius:99px;width:${pct}%;transition:width .3s;`;
                 barBg.appendChild(barFill);
-                const progLabel=document.createElement("div");progLabel.style.cssText=`font-size:11px;color:${todosPassosFeitos?"#00dfc3":"var(--text3)"};`;
+                const progLabel=document.createElement("div");progLabel.style.cssText=`font-size:11px;color:${todosPassosFeitos?"#10b981":"var(--text3)"};`;
                 progLabel.textContent=`${feitos} de ${task.subtarefas.length} concluídas`;
                 progWrap.appendChild(barBg);progWrap.appendChild(progLabel);
                 card.appendChild(progWrap);
@@ -6201,7 +6201,7 @@ function render(){
                   task.subtarefas.forEach((sub,idx)=>{
                     const subRow=document.createElement("div");subRow.style.cssText="display:flex;align-items:center;gap:8px;padding:3px 0;";
                     const subChk=document.createElement("button");
-                    subChk.style.cssText=`width:15px;height:15px;border-radius:3px;border:1.5px solid ${sub.feito?"#00dfc3":"var(--border2)"};background:${sub.feito?"#00dfc3":"none"};flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#000;font-size:11px;font-weight:700;`;
+                    subChk.style.cssText=`width:15px;height:15px;border-radius:3px;border:1.5px solid ${sub.feito?"#10b981":"var(--border2)"};background:${sub.feito?"#10b981":"none"};flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#000;font-size:11px;font-weight:700;`;
                     subChk.textContent=sub.feito?"✓":"";
                     subChk.addEventListener("click",(e)=>{e.stopPropagation();update(ref(db,`/tasks/${task.id}/subtarefas/${idx}`),{feito:!sub.feito});});
                     const subLabel=document.createElement("span");
@@ -6701,7 +6701,7 @@ function renderCancelamentos(panel) {
 
   if (cancelamentosErro) {
     const err = document.createElement("div");
-    err.style.cssText = "padding:10px;background:#e91e8c10;border:1px solid #e91e8c33;border-radius:5px;font-size:11px;color:#e91e8c;margin-bottom:12px;";
+    err.style.cssText = "padding:10px;background:#e8432d10;border:1px solid #e8432d33;border-radius:5px;font-size:11px;color:#e8432d;margin-bottom:12px;";
     err.textContent = `Erro: ${cancelamentosErro}`;
     panel.appendChild(err);
     return;
@@ -6716,9 +6716,9 @@ function renderCancelamentos(panel) {
 
   // 4 status — definição de cor, ícone e texto do badge
   const statusDefs = {
-    nf_pendente:        { cor: "#e91e8c", texto: "Cancelar NF",          icone: "⚠" },
+    nf_pendente:        { cor: "#e8432d", texto: "Cancelar NF",          icone: "⚠" },
     devolucao_pendente: { cor: "#f0b400", texto: "Devolução — processar", icone: "↩" },
-    nf_cancelada:       { cor: "#00dfc3", texto: "NF cancelada",          icone: "✓" },
+    nf_cancelada:       { cor: "#10b981", texto: "NF cancelada",          icone: "✓" },
   };
 
   // Ordena: cancelar NF direto primeiro, depois devolução pendente, depois já ok
@@ -6739,7 +6739,7 @@ function renderCancelamentos(panel) {
   function badgeSituacao(situacao) {
     const s = String(situacao||"").toLowerCase();
     if(/cancelad/.test(s)) return { bg:"#33333380", cor:"#888", borda:"#44444480" };
-    if(/autoriz/.test(s))  return { bg:"#00dfc318", cor:"#00dfc3", borda:"#00dfc333" };
+    if(/autoriz/.test(s))  return { bg:"#10b98118", cor:"#10b981", borda:"#10b98133" };
     return { bg:"#f0b40018", cor:"#f0b400", borda:"#f0b40033" };
   }
 
@@ -6752,7 +6752,7 @@ function renderCancelamentos(panel) {
       e.stopPropagation();
       navigator.clipboard.writeText(texto).catch(()=>{});
       const orig = span.style.color;
-      span.style.color = "#00dfc3";
+      span.style.color = "#10b981";
       setTimeout(()=>span.style.color=orig, 800);
     });
     return span;
@@ -6862,7 +6862,7 @@ function renderCancelamentosBruno(panel) {
 
   if(pendentes.length === 0) {
     const ok = document.createElement("div");
-    ok.style.cssText = "text-align:center;padding:30px 0;color:#00dfc3;font-size:13px;";
+    ok.style.cssText = "text-align:center;padding:30px 0;color:#10b981;font-size:13px;";
     ok.textContent = "✓ Tudo ok, nenhuma NF pra cancelar";
     panel.appendChild(ok); return;
   }
@@ -6893,7 +6893,7 @@ function renderCancelamentosBruno(panel) {
     copyBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:3px 10px;font-size:11px;cursor:pointer;font-family:inherit;flex-shrink:0;";
     copyBtn.addEventListener("click", () => {
       navigator.clipboard.writeText(txt).catch(()=>{});
-      copyBtn.textContent = "✓"; copyBtn.style.color="#00dfc3";
+      copyBtn.textContent = "✓"; copyBtn.style.color="#10b981";
       setTimeout(()=>{ copyBtn.textContent="Copiar"; copyBtn.style.color="var(--text3)"; }, 1200);
     });
     row.appendChild(label); row.appendChild(copyBtn);
@@ -6909,7 +6909,7 @@ function renderCancelamentosBruno(panel) {
     span.addEventListener("click", e => {
       e.stopPropagation();
       navigator.clipboard.writeText(texto).catch(()=>{});
-      const orig = span.style.color; span.style.color="#00dfc3";
+      const orig = span.style.color; span.style.color="#10b981";
       setTimeout(()=>span.style.color=orig, 800);
     });
     return span;
@@ -6917,7 +6917,7 @@ function renderCancelamentosBruno(panel) {
 
   pendentes.forEach(it => {
     const card = document.createElement("div");
-    card.style.cssText = "background:var(--bg3);border:1px solid #e91e8c33;border-left:3px solid #e91e8c;border-radius:6px;padding:10px 14px;margin-bottom:8px;";
+    card.style.cssText = "background:var(--bg3);border:1px solid #e8432d33;border-left:3px solid #e8432d;border-radius:6px;padding:10px 14px;margin-bottom:8px;";
 
     const badgeRow = document.createElement("div");
     badgeRow.style.cssText = "display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;";
@@ -6925,7 +6925,7 @@ function renderCancelamentosBruno(panel) {
     prodNome.style.cssText = "font-size:12px;font-weight:600;color:var(--text);flex:1;margin-right:8px;";
     prodNome.textContent = it.produto;
     const badge = document.createElement("span");
-    badge.style.cssText = "background:#e91e8c18;color:#e91e8c;border:1px solid #e91e8c55;border-radius:4px;padding:2px 8px;font-size:11px;white-space:nowrap;flex-shrink:0;font-weight:600;";
+    badge.style.cssText = "background:#e8432d18;color:#e8432d;border:1px solid #e8432d55;border-radius:4px;padding:2px 8px;font-size:11px;white-space:nowrap;flex-shrink:0;font-weight:600;";
     badge.textContent = "⚠ Necessário cancelar NF";
     badgeRow.appendChild(prodNome); badgeRow.appendChild(badge);
     card.appendChild(badgeRow);
@@ -6960,7 +6960,7 @@ function renderCancelamentosBruno(panel) {
     pedidoNum.title = "Clique pra copiar";
     pedidoNum.addEventListener("click", () => {
       navigator.clipboard.writeText(String(it.numeroPedido)).catch(()=>{});
-      const orig = pedidoNum.style.color; pedidoNum.style.color="#00dfc3";
+      const orig = pedidoNum.style.color; pedidoNum.style.color="#10b981";
       setTimeout(()=>pedidoNum.style.color=orig, 800);
     });
     pedidoWrap.appendChild(pedidoLabel); pedidoWrap.appendChild(pedidoNum);
@@ -6973,16 +6973,16 @@ function renderCancelamentosBruno(panel) {
       nfLabel.style.cssText = "font-size:11px;color:var(--text3);letter-spacing:1px;";
       nfLabel.textContent = "NF";
       const nfNum = document.createElement("span");
-      nfNum.style.cssText = "font-size:16px;font-weight:700;color:#e91e8c;font-family:'Inter',sans-serif;cursor:pointer;";
+      nfNum.style.cssText = "font-size:16px;font-weight:700;color:#e8432d;font-family:'Inter',sans-serif;cursor:pointer;";
       nfNum.textContent = it.nf.nfNumero;
       nfNum.title = "Clique pra copiar";
       nfNum.addEventListener("click", () => {
         navigator.clipboard.writeText(String(it.nf.nfNumero)).catch(()=>{});
-        const orig = nfNum.style.color; nfNum.style.color="#00dfc3";
+        const orig = nfNum.style.color; nfNum.style.color="#10b981";
         setTimeout(()=>nfNum.style.color=orig, 800);
       });
       const nfBadge = document.createElement("span");
-      nfBadge.style.cssText = "background:#00dfc318;color:#00dfc3;border:1px solid #00dfc333;border-radius:3px;padding:1px 7px;font-size:11px;";
+      nfBadge.style.cssText = "background:#10b98118;color:#10b981;border:1px solid #10b98133;border-radius:3px;padding:1px 7px;font-size:11px;";
       nfBadge.textContent = it.nf.nfSituacao;
       nfWrap.appendChild(nfLabel); nfWrap.appendChild(nfNum); nfWrap.appendChild(nfBadge);
       bottomRow.appendChild(nfWrap);
@@ -7236,8 +7236,8 @@ function renderFilialSP(panel, color) {
   });
 
   [
-    { label:"VALOR EM ESTOQUE", value: estoqueBlingData ? `R$ ${totalValor.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : "—", color:"#00dfc3", sub: skusSemCusto > 0 ? `${skusSemCusto} SKUs sem custo` : "todos com custo" },
-    { label:"UNIDADES APTAS", value: totalAptas.toLocaleString("pt-BR"), color:"#5e72e4", sub:`${rows.length} SKUs` },
+    { label:"VALOR EM ESTOQUE", value: estoqueBlingData ? `R$ ${totalValor.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : "—", color:"#10b981", sub: skusSemCusto > 0 ? `${skusSemCusto} SKUs sem custo` : "todos com custo" },
+    { label:"UNIDADES APTAS", value: totalAptas.toLocaleString("pt-BR"), color:"#3b82f6", sub:`${rows.length} SKUs` },
     { label:"EM TRANSFERÊNCIA", value: totalTransf.toLocaleString("pt-BR"), color:"#f0b400", sub:"entre centros do Full" },
     { label:"TOTAL NO FULL", value: (totalAptas+totalTransf).toLocaleString("pt-BR"), color:"#7F77DD", sub:"aptas + transferência" },
   ].forEach(s => {
@@ -7278,7 +7278,7 @@ function renderFilialSP(panel, color) {
         Mostra quanto tempo o estoque de cada produto vai durar no ritmo de vendas atual dos últimos 30 dias.<br><br>
         <span style="color:#22c55e;font-weight:600;">🟢 Verde (&lt;15d)</span> — Acabando. Risco de ruptura.<br>
         <span style="color:#f0b400;font-weight:600;">🟡 Amarelo (15–90d)</span> — Saudável. Acompanhar.<br>
-        <span style="color:#e91e8c;font-weight:600;">🔴 Vermelho (&gt;90d)</span> — Encalhado. Precisa de ação.<br><br>
+        <span style="color:#e8432d;font-weight:600;">🔴 Vermelho (&gt;90d)</span> — Encalhado. Precisa de ação.<br><br>
         Clique num card pra ver projeção de receita e histórico de preço.
       </div>
       <button onclick="document.getElementById('saude-help-tooltip').remove()" style="background:var(--accent);border:none;border-radius:6px;color:#000;font-size:11px;font-weight:700;letter-spacing:1px;padding:7px 16px;cursor:pointer;font-family:inherit;width:100%;">Entendido</button>
@@ -7322,10 +7322,10 @@ function renderFilialSP(panel, color) {
         : v30 <= 30
         ? { label: "Médio",       bg: "#f0b40011", color: "#c8960a", border: "#f0b40033" }
         : v30 <= 60
-        ? { label: "Saudável",    bg: "#2dce8918", color: "#2dce89", border: "#2dce8944" }
+        ? { label: "Saudável",    bg: "#10b98118", color: "#10b981", border: "#10b98144" }
         : { label: "Subir preço", bg: "#3b82f622", color: "#3b82f6", border: "#3b82f644" };
       const semCusto = !r.custo;
-      const custoStr = r.custo > 0 ? `R$ ${r.custo.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : `<span style="color:#e91e8c;font-size:11px;">sem custo</span>`;
+      const custoStr = r.custo > 0 ? `R$ ${r.custo.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : `<span style="color:#e8432d;font-size:11px;">sem custo</span>`;
       const valorStr = r.valor > 0 ? `R$ ${r.valor.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : "—";
       const tr = document.createElement("tr");
       tr.style.cssText = "border-bottom:1px solid var(--sep);transition:background .1s;";
@@ -7336,7 +7336,7 @@ function renderFilialSP(panel, color) {
         <td style="padding:12px 10px;color:var(--text2);max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;">${r.produto}</td>
         <td style="padding:12px 10px;text-align:center;color:${r.aptas>0?"var(--text)":"var(--text3)"};font-weight:${r.aptas>0?"600":"400"};">${r.aptas||"—"}</td>
         <td style="padding:12px 10px;text-align:center;color:var(--text3);">${r.transf||"—"}</td>
-        <td style="padding:12px 10px;text-align:center;color:${semCusto?"#e91e8c":"var(--text2)"};">${custoStr}</td>
+        <td style="padding:12px 10px;text-align:center;color:${semCusto?"#e8432d":"var(--text2)"};">${custoStr}</td>
         <td style="padding:12px 10px;text-align:center;color:${semCusto?"var(--text3)":r.valor>1000?"#10b981":"var(--text2)"};font-weight:500;">${valorStr}</td>
         <td style="padding:12px 10px;text-align:center;">
           <span style="font-size:10px;font-weight:600;padding:3px 10px;border-radius:20px;white-space:nowrap;background:${statusInfo.bg};color:${statusInfo.color};border:0.5px solid ${statusInfo.border};">${statusInfo.label}</span>
@@ -7347,7 +7347,7 @@ function renderFilialSP(panel, color) {
 
     if (skusSemCusto > 0 && estoqueBlingData) {
       const warn = document.createElement("div");
-      warn.style.cssText = "margin-top:12px;padding:8px 12px;background:#f8711408;border:1px solid #f8711422;border-radius:5px;font-size:11px;color:#e91e8c;";
+      warn.style.cssText = "margin-top:12px;padding:8px 12px;background:#f8711408;border:1px solid #f8711422;border-radius:5px;font-size:11px;color:#e8432d;";
       warn.textContent = `⚠ ${skusSemCusto} SKUs sem custo no Bling — verifique o campo "Preço de Custo" no cadastro do produto.`;
       panel.appendChild(warn);
     }
@@ -7396,7 +7396,7 @@ function renderMatrizRS(panel, color) {
   mlMatrizWrap.style.cssText = "display:flex;align-items:center;gap:6px;font-size:11px;";
   if(state.ml_token?.access_token){
     const nick = state.ml_token.nickname ? ` · ${state.ml_token.nickname}` : "";
-    mlMatrizWrap.innerHTML = `<span style="color:#00dfc3">●</span><span style="color:var(--text3)">ML Matriz${nick}</span>`;
+    mlMatrizWrap.innerHTML = `<span style="color:#10b981">●</span><span style="color:var(--text3)">ML Matriz${nick}</span>`;
     const reconBtn = document.createElement("button");
     reconBtn.textContent = "Reconectar";
     reconBtn.style.cssText = "background:none;border:1px solid var(--border2);color:var(--text3);border-radius:3px;padding:2px 8px;font-size:11px;cursor:pointer;letter-spacing:1px;margin-left:4px;";
@@ -7429,8 +7429,8 @@ function renderMatrizRS(panel, color) {
   const resumo = document.createElement("div");
   resumo.style.cssText = "display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;";
   [
-    { label:"VALOR EM ESTOQUE", value:`R$ ${totalValor.toLocaleString("pt-BR",{minimumFractionDigits:2})}`, color:"#00dfc3", sub:`${matrizRows.length} SKUs` },
-    { label:"UNIDADES", value: totalQty.toLocaleString("pt-BR"), color:"#5e72e4", sub:"peças" },
+    { label:"VALOR EM ESTOQUE", value:`R$ ${totalValor.toLocaleString("pt-BR",{minimumFractionDigits:2})}`, color:"#10b981", sub:`${matrizRows.length} SKUs` },
+    { label:"UNIDADES", value: totalQty.toLocaleString("pt-BR"), color:"#3b82f6", sub:"peças" },
     { label:"CUSTO MÉDIO/UN", value:`R$ ${custoMedio.toLocaleString("pt-BR",{minimumFractionDigits:2})}`, color:"#7F77DD", sub:"ponderado" },
   ].forEach(s => {
     const card = document.createElement("div");
@@ -7479,7 +7479,7 @@ function renderMatrizRS(panel, color) {
         <td style="padding:8px 8px;color:var(--text2);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;">${r.produto}</td>
         <td style="padding:8px 8px;text-align:center;color:${r.qty>0?"var(--text)":"var(--text3)"};font-weight:${r.qty>0?"500":"400"};">${r.qty||"—"}</td>
         <td style="padding:8px 8px;text-align:right;color:var(--text2);">${r.custo>0?`R$ ${r.custo.toLocaleString("pt-BR",{minimumFractionDigits:2})}`:"—"}</td>
-        <td style="padding:8px 8px;text-align:right;color:${r.valor>5000?"#00dfc3":r.valor>1000?"#10b981":"var(--text2)"};font-weight:500;">${r.valor>0?`R$ ${r.valor.toLocaleString("pt-BR",{minimumFractionDigits:2})}`:"—"}</td>`;
+        <td style="padding:8px 8px;text-align:right;color:${r.valor>5000?"#10b981":r.valor>1000?"#10b981":"var(--text2)"};font-weight:500;">${r.valor>0?`R$ ${r.valor.toLocaleString("pt-BR",{minimumFractionDigits:2})}`:"—"}</td>`;
       tbody.appendChild(tr);
     });
   } else {
@@ -7507,7 +7507,7 @@ function renderSaudeChart(panel, enriched) {
   // Legenda
   const leg = document.createElement("div");
   leg.style.cssText = "display:flex;gap:14px;margin-bottom:14px;font-size:11px;flex-wrap:wrap;";
-  [{c:"#00ffb8",l:"<15d — subir"},{c:"#f0b400",l:"15–90d — acompanhar"},{c:"#e91e8c",l:">90d — baixar"}].forEach(({c,l}) => {
+  [{c:"#00ffb8",l:"<15d — subir"},{c:"#f0b400",l:"15–90d — acompanhar"},{c:"#e8432d",l:">90d — baixar"}].forEach(({c,l}) => {
     const s = document.createElement("span");
     s.style.cssText = "display:flex;align-items:center;gap:4px;color:var(--text3);";
     s.innerHTML = '<span style="width:8px;height:8px;border-radius:2px;background:' + c + ';display:inline-block;flex-shrink:0;"></span>' + l;
@@ -7529,7 +7529,7 @@ function renderSaudeChart(panel, enriched) {
     return {...r, vendas30, aptas, dias};
   }).sort((a,b) => b.dias - a.dias);
 
-  const cor = d => d.dias <= 15 ? "#00ffb8" : d.dias <= 90 ? "#f0b400" : "#e91e8c";
+  const cor = d => d.dias <= 15 ? "#00ffb8" : d.dias <= 90 ? "#f0b400" : "#e8432d";
   const categoriaKey = d => d.dias <= 15 ? "verde" : d.dias <= 90 ? "amarelo" : "vermelho";
   const badgeText = d => d.dias <= 15 ? "↑ SUBIR" : d.dias <= 90 ? "~ ACOMPANHAR" : "↓ BAIXAR";
   const diasLabel = d => d.dias >= 999 ? "sem vendas" : d.dias + "d";
@@ -7605,7 +7605,7 @@ function renderSaudeChart(panel, enriched) {
         const diasMes = new Date(new Date().getFullYear(), new Date().getMonth()+1, 0).getDate();
         const percMes = Math.round((diaAtual / diasMes) * 100);
         const ruptura = d.dias < 999 ? `em ~${d.dias} dias` : "sem previsão";
-        const rupturaColor = d.dias <= 15 ? "#e91e8c" : d.dias <= 60 ? "#f0b400" : "#22c55e";
+        const rupturaColor = d.dias <= 15 ? "#e8432d" : d.dias <= 60 ? "#f0b400" : "#22c55e";
 
         projSection.innerHTML = `
           <div style="font-size:8px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;">Projeção do mês</div>
@@ -7665,7 +7665,7 @@ function renderSaudeChart(panel, enriched) {
             const rdata = await r.json();
             ultimoRdata = rdata;
             if(!r.ok || rdata.error){
-              statsRow.innerHTML = `<span style="color:#e91e8c;font-size:11px;">Erro: ${rdata.error||"falha na consulta"}</span>`;
+              statsRow.innerHTML = `<span style="color:#e8432d;font-size:11px;">Erro: ${rdata.error||"falha na consulta"}</span>`;
               return;
             }
             const m = rdata.skuMatch;
@@ -7711,7 +7711,7 @@ function renderSaudeChart(panel, enriched) {
               actionsRow.appendChild(toggleBtn);
             }
           }catch(err){
-            statsRow.innerHTML = `<span style="color:#e91e8c;font-size:11px;">Erro de conexão: ${err.message}</span>`;
+            statsRow.innerHTML = `<span style="color:#e8432d;font-size:11px;">Erro de conexão: ${err.message}</span>`;
           }
         };
         buscar(); // busca automática ao abrir o card, sem precisar clicar
@@ -7724,7 +7724,7 @@ function renderSaudeChart(panel, enriched) {
         info.style.cssText = "margin-bottom:10px;";
         if(pc.priceBefore!=null && pc.priceAfter!=null){
           const subiu = Number(pc.priceAfter) > Number(pc.priceBefore);
-          const precoColor = subiu ? "#22c55e" : "#5e72e4";
+          const precoColor = subiu ? "#22c55e" : "#3b82f6";
           const diff = Number(pc.priceAfter) - Number(pc.priceBefore);
           const diffPct = ((diff / Number(pc.priceBefore)) * 100).toFixed(1);
           const vendasAntes = pc.vendas30AtChange || 0;
@@ -7749,7 +7749,7 @@ function renderSaudeChart(panel, enriched) {
                 '</div>' +
                 '<div style="background:var(--bg2);border-radius:7px;padding:10px;">' +
                   '<div style="font-size:8px;color:var(--text3);letter-spacing:1px;margin-bottom:4px;">DEPOIS (R$ ' + Number(pc.priceAfter).toFixed(0) + ')</div>' +
-                  '<div style="font-size:18px;font-weight:700;color:' + (varVendas > 0 ? "#22c55e" : "#e91e8c") + ';">' + (varVendas > 0 ? "+" : "") + varVendas + '%</div>' +
+                  '<div style="font-size:18px;font-weight:700;color:' + (varVendas > 0 ? "#22c55e" : "#e8432d") + ';">' + (varVendas > 0 ? "+" : "") + varVendas + '%</div>' +
                   '<div style="font-size:11px;color:var(--text3);margin-top:2px;">' + vendasDepois + ' un em ' + diasDesde + 'd ↑</div>' +
                 '</div>' +
               '</div>'
@@ -7935,7 +7935,7 @@ function renderFechamentoMensal(panel, color) {
     const vazio = !val || String(val).toUpperCase().includes("NÃO") || String(val) === "—";
     inp.value = vazio ? "" : (val || "");
     inp.placeholder = vazio ? "⚠ preencher" : (placeholder || "");
-    inp.style.cssText = `background:none;border:none;border-bottom:1px solid ${vazio?"#e91e8c44":"transparent"};color:${vazio?"#e91e8c":(cor||"var(--text)")};font-family:${mono?"var(--font-mono, monospace)":"inherit"};font-size:inherit;padding:0;outline:none;width:100%;`;
+    inp.style.cssText = `background:none;border:none;border-bottom:1px solid ${vazio?"#e8432d44":"transparent"};color:${vazio?"#e8432d":(cor||"var(--text)")};font-family:${mono?"var(--font-mono, monospace)":"inherit"};font-size:inherit;padding:0;outline:none;width:100%;`;
     inp.addEventListener("focus", () => inp.style.borderBottomColor = color);
     inp.addEventListener("blur",  () => { inp.style.borderBottomColor = "transparent"; if(inp.value) inp.style.color = cor||"var(--text)"; });
     return inp;
@@ -8008,7 +8008,7 @@ function renderFechamentoMensal(panel, color) {
         return { col, inp };
       }
 
-      const nfCol   = detalheCol("Nº nota", nf.numero, "var(--text-accent, #00dfc3)", true, "80px");
+      const nfCol   = detalheCol("Nº nota", nf.numero, "var(--text-accent, #10b981)", true, "80px");
       nfCol.inp.addEventListener("input", () => { nf.numero = nfCol.inp.value; });
       const servCol = detalheCol("Serviço", nf.servico, "var(--text2)");
       servCol.inp.addEventListener("input", () => { nf.servico = servCol.inp.value; });
@@ -8068,7 +8068,7 @@ function renderFechamentoMensal(panel, color) {
   rodape.style.cssText = "display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding-top:12px;border-top:1px solid var(--border);";
 
   const salvarBtn = document.createElement("button");
-  salvarBtn.style.cssText = "padding:10px;font-size:11px;background:#00dfc322;border:1px solid #00dfc366;border-radius:6px;cursor:pointer;color:#00dfc3;font-family:inherit;letter-spacing:0.5px;";
+  salvarBtn.style.cssText = "padding:10px;font-size:11px;background:#10b98122;border:1px solid #10b98166;border-radius:6px;cursor:pointer;color:#10b981;font-family:inherit;letter-spacing:0.5px;";
   salvarBtn.textContent = "✓ Salvar";
   salvarBtn.addEventListener("click", async () => {
     const ativas = notasState.filter(nf => !nf._removido);
@@ -8248,7 +8248,7 @@ function renderConfig(panel, color) {
       left.style.cssText = "display:flex;align-items:center;gap:10px;";
 
       const dot = document.createElement("div");
-      const dotColor = api.ativo ? "#22c55e" : api.expirado ? "#f0b400" : "#e91e8c";
+      const dotColor = api.ativo ? "#22c55e" : api.expirado ? "#f0b400" : "#e8432d";
       dot.style.cssText = `width:7px;height:7px;border-radius:50%;background:${dotColor};flex-shrink:0;${!api.ativo?"animation:siren 1s infinite;":""}`;
 
       const info = document.createElement("div");
@@ -8291,7 +8291,7 @@ function renderConfig(panel, color) {
   atribStatus.style.cssText = "font-size:11px;margin-bottom:10px;";
   const atribSalvo = state.config_atributos;
   if(atribSalvo?.total) {
-    atribStatus.innerHTML = `<span style="color:#00dfc3;">✓ ${atribSalvo.total} SKUs carregados</span> <span style="color:var(--text3);">· atualizado em ${new Date(atribSalvo.atualizadoEm).toLocaleDateString("pt-BR")}</span>`;
+    atribStatus.innerHTML = `<span style="color:#10b981;">✓ ${atribSalvo.total} SKUs carregados</span> <span style="color:var(--text3);">· atualizado em ${new Date(atribSalvo.atualizadoEm).toLocaleDateString("pt-BR")}</span>`;
   } else {
     atribStatus.innerHTML = `<span style="color:var(--text3);">Nenhuma planilha importada ainda</span>`;
   }
@@ -8314,7 +8314,7 @@ function renderConfig(panel, color) {
   kitsStatus.style.cssText = "font-size:11px;margin-bottom:10px;";
   const kitsSalvos = state.config_kits;
   if(kitsSalvos?.total) {
-    kitsStatus.innerHTML = `<span style="color:#00dfc3;">✓ ${kitsSalvos.total} kits carregados</span> <span style="color:var(--text3);">· atualizado em ${new Date(kitsSalvos.atualizadoEm).toLocaleDateString("pt-BR")}</span>`;
+    kitsStatus.innerHTML = `<span style="color:#10b981;">✓ ${kitsSalvos.total} kits carregados</span> <span style="color:var(--text3);">· atualizado em ${new Date(kitsSalvos.atualizadoEm).toLocaleDateString("pt-BR")}</span>`;
   } else {
     kitsStatus.innerHTML = `<span style="color:var(--text3);">Nenhuma planilha importada ainda</span>`;
   }
@@ -8333,7 +8333,7 @@ function renderConfig(panel, color) {
       const row = document.createElement("div");
       row.style.cssText = "background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;";
       const kitSku = document.createElement("div");
-      kitSku.style.cssText = "font-size:11px;font-weight:600;color:#00dfc3;margin-bottom:4px;";
+      kitSku.style.cssText = "font-size:11px;font-weight:600;color:#10b981;margin-bottom:4px;";
       kitSku.textContent = kit;
       const compsRow = document.createElement("div");
       compsRow.style.cssText = "display:flex;gap:6px;flex-wrap:wrap;";
@@ -8404,9 +8404,9 @@ async function processarPlanilhaAtributos(file, statusEl, color) {
 
     const total = Object.keys(atributos).length;
     await set(ref(db, "/config_atributos"), { atributos, total, atualizadoEm: Date.now() });
-    statusEl.innerHTML = `<span style="color:#00dfc3;">✓ ${total} SKUs importados com sucesso</span>`;
+    statusEl.innerHTML = `<span style="color:#10b981;">✓ ${total} SKUs importados com sucesso</span>`;
   } catch(e) {
-    statusEl.innerHTML = `<span style="color:#e91e8c;">Erro: ${e.message}</span>`;
+    statusEl.innerHTML = `<span style="color:#e8432d;">Erro: ${e.message}</span>`;
   }
 }
 
@@ -8450,15 +8450,15 @@ async function processarPlanilhaKits(file, statusEl, color) {
     const total = Object.keys(composicoes).length;
     await set(ref(db, "/config_kits"), { composicoes, total, atualizadoEm: Date.now() });
 
-    let msg = `<span style="color:#00dfc3;">✓ ${total} kits importados</span>`;
+    let msg = `<span style="color:#10b981;">✓ ${total} kits importados</span>`;
     if(novos.length) msg += ` <span style="color:#f0b400;">· ${novos.length} novo(s): ${novos.join(", ")}</span>`;
-    if(alterados.length) msg += ` <span style="color:#5e72e4;">· ${alterados.length} alterado(s)</span>`;
+    if(alterados.length) msg += ` <span style="color:#3b82f6;">· ${alterados.length} alterado(s)</span>`;
     statusEl.innerHTML = msg;
 
     const p = document.querySelector("#diogo-panel");
     if(p && window._diogotab === "config") { p.innerHTML=""; renderConfig(p, color); }
   } catch(e) {
-    statusEl.innerHTML = `<span style="color:#e91e8c;">Erro: ${e.message}</span>`;
+    statusEl.innerHTML = `<span style="color:#e8432d;">Erro: ${e.message}</span>`;
   }
 }
 
@@ -8611,7 +8611,7 @@ window._openIdeiasModal = function() {
         <option value="Gestão">Gestão</option>
         <option value="Outro">Outro</option>
       </select>
-      <button id="ideias-add" style="background:#2dce89;border:none;border-radius:8px;padding:10px 18px;color:#000;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">+ Adicionar</button>
+      <button id="ideias-add" style="background:#10b981;border:none;border-radius:8px;padding:10px 18px;color:#000;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">+ Adicionar</button>
     </div>
     <div id="ideias-abas" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;"></div>
     <div id="ideias-lista"></div>
@@ -8656,7 +8656,7 @@ function renderIdeiasLista() {
       if (cat !== "Todas" && contagens[cat] === 0) return;
       const ativo = window._ideiasFiltroCategoria === cat;
       const tab = document.createElement("button");
-      tab.style.cssText = `background:${ativo ? "#2dce89" : T.bg3};border:0.5px solid ${ativo ? "#2dce89" : T.border};border-radius:15px;padding:6px 14px;color:${ativo ? "#000" : T.text2};font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap;`;
+      tab.style.cssText = `background:${ativo ? "#10b981" : T.bg3};border:0.5px solid ${ativo ? "#10b981" : T.border};border-radius:15px;padding:6px 14px;color:${ativo ? "#000" : T.text2};font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap;`;
       tab.textContent = `${cat} ${contagens[cat]}`;
       tab.onclick = () => { window._ideiasFiltroCategoria = cat; renderIdeiasLista(); };
       abasEl.appendChild(tab);
@@ -8668,14 +8668,14 @@ function renderIdeiasLista() {
 
   const corCategoria = {
     "Dashboard": "#f0c000", "Tarefas": "#e8432d", "Equipe": "#5e8ce6",
-    "Mercado Livre": "#5eb3f0", "Gestão": "#2dce89", "Outro": "#888",
+    "Mercado Livre": "#5eb3f0", "Gestão": "#10b981", "Outro": "#888",
   };
 
   const grupos = {
     afazer: { titulo: "A FAZER", cor: T.text, itens: [] },
     andamento: { titulo: "EM ANDAMENTO", cor: "#5e8ce6", itens: [] },
     teste: { titulo: "EM TESTE", cor: "#f0b400", itens: [] },
-    concluido: { titulo: "CONCLUÍDO", cor: "#2dce89", itens: [] },
+    concluido: { titulo: "CONCLUÍDO", cor: "#10b981", itens: [] },
   };
   entradas.forEach(([id, item]) => {
     const status = grupos[item.status] ? item.status : "afazer";
@@ -8757,17 +8757,17 @@ function checkBlingModal() {
   modalOverlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;";
 
   const modalBox = document.createElement("div");
-  modalBox.style.cssText = "background:var(--bg2);border:0.5px solid #5e72e455;border-radius:14px;padding:20px 24px;width:320px;max-width:90vw;";
+  modalBox.style.cssText = "background:var(--bg2);border:0.5px solid #3b82f655;border-radius:14px;padding:20px 24px;width:320px;max-width:90vw;";
 
   modalBox.innerHTML = `
     <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;display:flex;align-items:center;gap:8px;">
-      <span style="color:#5e72e4;font-size:16px;">⚠</span> Token do Bling expirado
+      <span style="color:#3b82f6;font-size:16px;">⚠</span> Token do Bling expirado
     </div>
     <div style="font-size:11px;color:var(--text3);margin-bottom:16px;line-height:1.6;">
       O token do Bling expira a cada 1 hora e precisa ser renovado manualmente. Clique em reconectar para gerar um novo token — leva menos de 1 minuto.
     </div>
     <div style="display:flex;gap:8px;">
-      <button id="bling-modal-reconectar" style="flex:1;background:#5e72e4;border:none;border-radius:7px;color:#000;font-size:11px;font-weight:700;letter-spacing:1px;padding:9px;cursor:pointer;font-family:inherit;">RECONECTAR BLING</button>
+      <button id="bling-modal-reconectar" style="flex:1;background:#3b82f6;border:none;border-radius:7px;color:#000;font-size:11px;font-weight:700;letter-spacing:1px;padding:9px;cursor:pointer;font-family:inherit;">RECONECTAR BLING</button>
       <button id="bling-modal-fechar" style="background:none;border:0.5px solid var(--border2);border-radius:7px;color:var(--text3);font-size:11px;padding:9px 14px;cursor:pointer;font-family:inherit;">Depois</button>
     </div>
   `;
@@ -8792,16 +8792,16 @@ function notifRefreshFalhou(conta) {
   if(document.getElementById(id)) return; // já está mostrando
   const notif = document.createElement("div");
   notif.id = id;
-  notif.style.cssText = "position:fixed;bottom:20px;right:20px;background:var(--bg3);border:1px solid #e91e8c55;border-radius:10px;padding:14px 18px;z-index:9999;max-width:300px;box-shadow:0 4px 20px rgba(0,0,0,0.4);";
+  notif.style.cssText = "position:fixed;bottom:20px;right:20px;background:var(--bg3);border:1px solid #e8432d55;border-radius:10px;padding:14px 18px;z-index:9999;max-width:300px;box-shadow:0 4px 20px rgba(0,0,0,0.4);";
   const label = conta === "filial" ? "Filial SP" : "Matriz RS";
   notif.innerHTML = `
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-      <span style="color:#e91e8c;font-size:16px;">⚠</span>
+      <span style="color:#e8432d;font-size:16px;">⚠</span>
       <span style="font-size:12px;font-weight:600;color:${T.text};">Token ML ${label} expirou</span>
     </div>
     <div style="font-size:11px;color:${T.text3};margin-bottom:12px;line-height:1.5;">O refresh automático falhou. Reconecte manualmente abrindo o link no browser certo.</div>
     <div style="display:flex;gap:8px;">
-      <button onclick="window.open('${VERCEL_BACKEND}/api/ml-auth?conta=${conta}','_blank')" style="flex:1;background:#e91e8c;border:none;border-radius:5px;color:${T.text};font-size:11px;font-weight:700;letter-spacing:1px;padding:6px;cursor:pointer;font-family:inherit;">RECONECTAR</button>
+      <button onclick="window.open('${VERCEL_BACKEND}/api/ml-auth?conta=${conta}','_blank')" style="flex:1;background:#e8432d;border:none;border-radius:5px;color:${T.text};font-size:11px;font-weight:700;letter-spacing:1px;padding:6px;cursor:pointer;font-family:inherit;">RECONECTAR</button>
       <button onclick="document.getElementById('${id}').remove()" style="background:none;border:1px solid ${T.border};border-radius:5px;color:${T.text2};font-size:11px;padding:6px 10px;cursor:pointer;font-family:inherit;">✕</button>
     </div>
   `;
@@ -9021,7 +9021,7 @@ async function renderNfTransferenciaFull(container, color) {
           <div style="font-size:10px;color:${T.text3};margin-top:2px;">Houve entrada de estoque desde então?</div>
         </div>
         <div style="display:flex;gap:6px;flex-shrink:0;">
-          <button id="nf-full-cmp-sim" style="padding:6px 12px;background:#5e72e4;border:none;border-radius:5px;font-size:11px;font-weight:600;color:#fff;cursor:pointer;font-family:inherit;">Sim, atualizar</button>
+          <button id="nf-full-cmp-sim" style="padding:6px 12px;background:#3b82f6;border:none;border-radius:5px;font-size:11px;font-weight:600;color:#fff;cursor:pointer;font-family:inherit;">Sim, atualizar</button>
           <button id="nf-full-cmp-nao" style="padding:6px 12px;background:${T.bg3};border:1px solid ${T.border};border-radius:5px;font-size:11px;font-weight:600;color:${T.text2};cursor:pointer;font-family:inherit;">Não, manter</button>
         </div>
       </div>` : `
@@ -9080,7 +9080,7 @@ async function renderNfTransferenciaFull(container, color) {
           </div>
         `).join("")}
       </div>
-      <button id="nf-full-preview-btn" style="width:100%;padding:11px;border-radius:6px;background:#2dce89;border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">
+      <button id="nf-full-preview-btn" style="width:100%;padding:11px;border-radius:6px;background:#10b981;border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">
         Ver preview e emitir NF de transferência
       </button>
     `;
@@ -9112,7 +9112,7 @@ async function renderNfTransferenciaFull(container, color) {
         <div style="font-size:12px;font-weight:700;color:#3B82F6;font-family:'IBM Plex Mono',monospace;min-width:48px;">NF ${nf.chave.replace(/_/g,"/")}</div>
         <div style="flex:1;font-size:11px;color:${T.text2};">${dataStr}</div>
         <div style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap;${temComp
-          ? `background:#2dce8918;color:#2dce89;border:0.5px solid #2dce8944;`
+          ? `background:#10b98118;color:#10b981;border:0.5px solid #10b98144;`
           : `background:#ff3d3d14;color:#e8432d;border:0.5px solid #ff3d3d33;`
         }">${temComp ? `✓ Compl. ${nf.nfComplementarNumero}` : "Sem complementar"}</div>`;
       histWrap.appendChild(row);
@@ -9364,7 +9364,7 @@ function renderNfFullEmitirModal(itens) {
       <tfoot>
         <tr style="border-top:2px solid ${T.border};">
           <td colspan="4" style="padding:10px 8px;text-align:right;color:${T.text3};">Total NF</td>
-          <td style="padding:10px 8px;text-align:right;font-weight:700;color:#2dce89;font-family:'IBM Plex Mono',monospace;font-size:13px;">R$ ${totalCusto.toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
+          <td style="padding:10px 8px;text-align:right;font-weight:700;color:#10b981;font-family:'IBM Plex Mono',monospace;font-size:13px;">R$ ${totalCusto.toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
         </tr>
       </tfoot>
     </table>
@@ -9375,7 +9375,7 @@ function renderNfFullEmitirModal(itens) {
 
     <div id="nf-full-status"></div>
 
-    <button id="nf-full-emitir" style="width:100%;padding:12px;border-radius:6px;background:#2dce89;border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
+    <button id="nf-full-emitir" style="width:100%;padding:12px;border-radius:6px;background:#10b981;border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
       Emitir NF de Transferência no Bling
     </button>
   `;
@@ -9427,7 +9427,7 @@ function renderNfFullEmitirModal(itens) {
       // ── Botão Complementar de IPI ──
       const btnComplementar = document.createElement("button");
       btnComplementar.textContent = "⊕ Gerar NF Complementar de IPI";
-      btnComplementar.style.cssText = `width:100%;padding:12px;border-radius:6px;background:none;border:1px solid #00dfc366;color:#00dfc3;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:8px;transition:all .15s;`;
+      btnComplementar.style.cssText = `width:100%;padding:12px;border-radius:6px;background:none;border:1px solid #10b98166;color:#10b981;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:8px;transition:all .15s;`;
       btnComplementar.addEventListener("click", async () => {
         // Fecha o modal da transferência
         overlay.remove();
@@ -9454,7 +9454,7 @@ function renderNfFullEmitirModal(itens) {
         renderCalcIpiPanel(boxComp, taskFake);
         const btnGerarComp = document.createElement("button");
         btnGerarComp.textContent = "Gerar NF Complementar de IPI";
-        btnGerarComp.style.cssText = `width:100%;margin-top:20px;padding:12px;border-radius:8px;background:#00dfc3;border:none;color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;`;
+        btnGerarComp.style.cssText = `width:100%;margin-top:20px;padding:12px;border-radius:8px;background:#10b981;border:none;color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;`;
         btnGerarComp.addEventListener("click", () => {
           const calcObj = calcIpiState[taskFake.id];
           if (!calcObj || calcObj.carregando) { alert("Aguarde o carregamento dos dados."); return; }
@@ -9530,7 +9530,7 @@ async function renderContasPagar(panel) {
   headerLeft.innerHTML = `<div style="font-size:16px;font-weight:600;color:${T.text};">Contas a pagar</div><div style="font-size:12px;color:${T.text3};margin-top:2px;">${cpState.contas.length ? cpState.contas.length+" lançamentos" : ""}</div>`;
   const btnNova = document.createElement("button");
   btnNova.textContent = "+ Nova conta";
-  btnNova.style.cssText = "background:#2dce89;border:none;border-radius:8px;padding:7px 14px;color:#000;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;";
+  btnNova.style.cssText = "background:#10b981;border:none;border-radius:8px;padding:7px 14px;color:#000;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;";
   btnNova.addEventListener("click", () => abrirModalNovaConta(panel));
   if (currentUser === "Resicon") { btnNova.style.display = "none"; }
   header.appendChild(headerLeft);
@@ -9571,7 +9571,7 @@ async function renderContasPagar(panel) {
     const p = document.createElement("button");
     p.textContent = label;
     const ativo = (cpState.filtroEmpresa || "") === val;
-    p.style.cssText = `background:${ativo?"#2dce89":"none"};border:none;border-radius:20px;padding:5px 12px;font-size:12px;font-weight:${ativo?"600":"400"};color:${ativo?"#000":T.text2};cursor:pointer;font-family:inherit;white-space:nowrap;`;
+    p.style.cssText = `background:${ativo?"#10b981":"none"};border:none;border-radius:20px;padding:5px 12px;font-size:12px;font-weight:${ativo?"600":"400"};color:${ativo?"#000":T.text2};cursor:pointer;font-family:inherit;white-space:nowrap;`;
     p.addEventListener("click", () => { cpState.filtroEmpresa = val; renderContasPagar(panel); });
     empresaWrap.appendChild(p);
   });
@@ -9583,7 +9583,7 @@ async function renderContasPagar(panel) {
     const p = document.createElement("button");
     p.textContent = label;
     const ativo = cpState.filtroSituacao === val;
-    p.style.cssText = `background:${ativo?"#2dce89":"none"};border:none;border-radius:20px;padding:5px 14px;font-size:12px;font-weight:${ativo?"600":"400"};color:${ativo?"#000":T.text2};cursor:pointer;font-family:inherit;white-space:nowrap;`;
+    p.style.cssText = `background:${ativo?"#10b981":"none"};border:none;border-radius:20px;padding:5px 14px;font-size:12px;font-weight:${ativo?"600":"400"};color:${ativo?"#000":T.text2};cursor:pointer;font-family:inherit;white-space:nowrap;`;
     p.addEventListener("click", () => { cpState.filtroSituacao = val; renderContasPagar(panel); });
     pillsWrap.appendChild(p);
   });
@@ -9685,7 +9685,7 @@ function renderCpFormulario(card, mainPanel, overlay) {
   fileInput.type = "file"; fileInput.accept = ".pdf"; fileInput.style.display = "none";
   fileInput.addEventListener("change", async (e) => {
     const file = e.target.files[0]; if (!file) return;
-    uploadArea.innerHTML = `<span style="font-size:14px;">↻</span><span style="font-size:12px;color:#2dce89;">Extraindo dados com IA...</span>`;
+    uploadArea.innerHTML = `<span style="font-size:14px;">↻</span><span style="font-size:12px;color:#10b981;">Extraindo dados com IA...</span>`;
     const base64 = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result.split(",")[1]); r.readAsDataURL(file); });
     try {
       const resp = await fetch(`${BLING_PROXY}/api/bling-produtos?action=extrair-nf-cp`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({pdfBase64:base64}) });
@@ -9693,7 +9693,7 @@ function renderCpFormulario(card, mainPanel, overlay) {
       if (!aiData.ok) throw new Error(aiData.erro);
       preencherCampos(aiData.dados);
       cpState._nfBase64 = base64; cpState._nfNome = file.name;
-      uploadArea.innerHTML = `<span style="font-size:14px;">✓</span><span style="font-size:12px;color:#2dce89;">${file.name}</span>`;
+      uploadArea.innerHTML = `<span style="font-size:14px;">✓</span><span style="font-size:12px;color:#10b981;">${file.name}</span>`;
     } catch(e) {
       uploadArea.innerHTML = `<span style="font-size:14px;">⚠</span><span style="font-size:12px;color:#ff3d3d;">Erro na extração — preencha manualmente</span>`;
     }
@@ -9746,7 +9746,7 @@ function renderCpFormulario(card, mainPanel, overlay) {
   checkWrap.style.cssText = "display:flex;align-items:center;gap:8px;margin-top:-6px;margin-bottom:14px;cursor:pointer;user-select:none;";
   const checkbox = document.createElement("input");
   checkbox.type = "checkbox";
-  checkbox.style.cssText = "width:14px;height:14px;accent-color:#2dce89;cursor:pointer;";
+  checkbox.style.cssText = "width:14px;height:14px;accent-color:#10b981;cursor:pointer;";
   checkbox.addEventListener("change", () => {
     if(checkbox.checked && campos.competencia.value) {
       const [y,m] = campos.competencia.value.split("-");
@@ -9784,7 +9784,7 @@ function renderCpFormulario(card, mainPanel, overlay) {
 
   // Badge IA
   const badge=document.createElement("div");
-  badge.style.cssText="font-size:11px;color:#2dce89;margin-top:-8px;margin-bottom:12px;display:none;";
+  badge.style.cssText="font-size:11px;color:#10b981;margin-top:-8px;margin-bottom:12px;display:none;";
   card.appendChild(badge);
 
   // Badge Filial
@@ -9818,7 +9818,7 @@ function renderCpFormulario(card, mainPanel, overlay) {
   // Botão criar
   const btnCriar=document.createElement("button");
   btnCriar.textContent="Criar no Bling";
-  btnCriar.style.cssText="width:100%;padding:12px;background:#2dce89;border:none;border-radius:10px;color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;margin-top:8px;";
+  btnCriar.style.cssText="width:100%;padding:12px;background:#10b981;border:none;border-radius:10px;color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;margin-top:8px;";
   btnCriar.addEventListener("click", async () => {
     const valor=parseFloat(String(campos.valor.value).replace(",","."));
     const competencia=campos.competencia.value;
@@ -9854,7 +9854,7 @@ function renderCpFormulario(card, mainPanel, overlay) {
     }catch(e){
       btnCriar.style.background="#ff3d3d"; btnCriar.style.color="#fff";
       btnCriar.textContent=`Erro: ${e.message}`;
-      setTimeout(()=>{btnCriar.disabled=false;btnCriar.textContent="Criar no Bling";btnCriar.style.background="#2dce89";btnCriar.style.color="#000";},3000);
+      setTimeout(()=>{btnCriar.disabled=false;btnCriar.textContent="Criar no Bling";btnCriar.style.background="#10b981";btnCriar.style.color="#000";},3000);
     }
   });
   card.appendChild(btnCriar);
@@ -9923,7 +9923,7 @@ function preencherFormCP(card, dados) {
   // Badge categoria sugerida
   if (dados.categoria_sugerida) {
     const badge = document.createElement("div");
-    badge.style.cssText = "font-size:10px;color:#2dce89;margin-top:-8px;margin-bottom:12px;";
+    badge.style.cssText = "font-size:10px;color:#10b981;margin-top:-8px;margin-bottom:12px;";
     badge.textContent = `✦ IA sugeriu: ${dados.categoria_sugerida}`;
     form.appendChild(badge);
   }
@@ -9931,7 +9931,7 @@ function preencherFormCP(card, dados) {
   // Botão enviar
   const btnEnviar = document.createElement("button");
   btnEnviar.textContent = "Criar no Bling";
-  btnEnviar.style.cssText = "width:100%;padding:12px;background:#2dce89;border:none;border-radius:6px;color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;margin-top:4px;";
+  btnEnviar.style.cssText = "width:100%;padding:12px;background:#10b981;border:none;border-radius:6px;color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;margin-top:4px;";
   btnEnviar.addEventListener("click", async () => {
     const get = key => form.querySelector(`[data-key="${key}"]`)?.value?.trim();
     const valor = parseFloat(get("valor"));
@@ -9954,13 +9954,13 @@ function preencherFormCP(card, dados) {
       });
       const d = await r.json();
       if (!r.ok || !d.ok) throw new Error(d.erro || "Erro ao criar");
-      btnEnviar.style.background = "#2dce89";
+      btnEnviar.style.background = "#10b981";
       btnEnviar.textContent = `✓ Criado no Bling (ID ${d.id})`;
-      setTimeout(() => { btnEnviar.disabled = false; btnEnviar.textContent = "Criar no Bling"; btnEnviar.style.background = "#2dce89"; }, 3000);
+      setTimeout(() => { btnEnviar.disabled = false; btnEnviar.textContent = "Criar no Bling"; btnEnviar.style.background = "#10b981"; }, 3000);
     } catch(e) {
       btnEnviar.style.background = "#ff3d3d"; btnEnviar.style.color = "#fff";
       btnEnviar.textContent = `Erro: ${e.message}`;
-      setTimeout(() => { btnEnviar.disabled = false; btnEnviar.textContent = "Criar no Bling"; btnEnviar.style.background = "#2dce89"; btnEnviar.style.color = "#000"; }, 3000);
+      setTimeout(() => { btnEnviar.disabled = false; btnEnviar.textContent = "Criar no Bling"; btnEnviar.style.background = "#10b981"; btnEnviar.style.color = "#000"; }, 3000);
     }
   });
   form.appendChild(btnEnviar);
@@ -9992,7 +9992,7 @@ async function renderCpLista(panel) {
   let total = 0;
   cpState.contas.forEach((c, i) => {
     const sit = c.situacao || "aberto";
-    const sitCor = sit==="pago"?"#2dce89":sit==="cancelado"?"#888":sit==="pendente"?"#f77614":sit==="rascunho"?"#f77614":"#3B82F6";
+    const sitCor = sit==="pago"?"#10b981":sit==="cancelado"?"#888":sit==="pendente"?"#f77614":sit==="rascunho"?"#f77614":"#3B82F6";
     const valor = Number(c.valor||0);
     if (sit !== "cancelado") total += valor;
 
@@ -10013,7 +10013,7 @@ async function renderCpLista(panel) {
       <div style="font-size:12px;color:${T.text2};text-align:center;">${c.competencia ? c.competencia.slice(5,7)+"/"+c.competencia.slice(0,4) : "—"}</div>
       <div style="position:relative;display:flex;align-items:center;justify-content:center;width:100%;padding:0 36px;">
         ${currentUser === "Resicon"
-          ? `<span title="${c.xmlBase64||c.nfBase64 ? 'Nota disponível para download' : 'Nota aguardando SEFAZ para liberação'}" style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;background:${c.xmlBase64||c.nfBase64?'#2dce89':'#f0b400'};color:#000;letter-spacing:.2px;cursor:default;white-space:nowrap;">${c.xmlBase64||c.nfBase64?'Disponível':'Aguardando'}</span>`
+          ? `<span title="${c.xmlBase64||c.nfBase64 ? 'Nota disponível para download' : 'Nota aguardando SEFAZ para liberação'}" style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;background:${c.xmlBase64||c.nfBase64?'#10b981':'#f0b400'};color:#000;letter-spacing:.2px;cursor:default;white-space:nowrap;">${c.xmlBase64||c.nfBase64?'Disponível':'Aguardando'}</span>`
           : `<span title="${c.dataVencimento ? 'BOLETO COM VENCIMENTO ' + c.dataVencimento.slice(8,10) + '/' + c.dataVencimento.slice(5,7) + '/' + c.dataVencimento.slice(0,4) : ''}" style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;background:${sitCor};color:#000;letter-spacing:.2px;cursor:default;white-space:nowrap;">${sit}${c.dataVencimento && sit !== 'pago' ? ' · ' + c.dataVencimento.slice(8,10) + '/' + c.dataVencimento.slice(5,7) : ''}</span>`}
         <div class="cp-menu-wrap" style="position:absolute;right:0px;">
           <button class="cp-dots" style="background:none;border:none;cursor:pointer;padding:2px 4px;border-radius:4px;color:${T.text2};font-size:16px;line-height:1;display:flex;align-items:center;">⋮</button>
@@ -10056,7 +10056,7 @@ async function renderCpLista(panel) {
           <input type="date" id="cp-date-input" value="${atual}" style="width:100%;padding:10px 12px;border-radius:8px;border:0.5px solid ${T.border};background:${T.bg3};color:${T.text};font-size:14px;font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;">
           <div style="display:flex;gap:8px;margin-top:18px;justify-content:flex-end;">
             <button id="cp-date-cancel" style="padding:8px 18px;border-radius:8px;border:0.5px solid ${T.border};background:none;color:${T.text2};font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;">Cancelar</button>
-            <button id="cp-date-ok" style="padding:8px 20px;border-radius:8px;border:none;background:#5e72e4;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;">Salvar</button>
+            <button id="cp-date-ok" style="padding:8px 20px;border-radius:8px;border:none;background:#3b82f6;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;">Salvar</button>
           </div>`;
         overlay.appendChild(box);
         document.body.appendChild(overlay);
@@ -10141,12 +10141,12 @@ async function renderCpLista(panel) {
 
   const btnMarcarTodos = document.createElement("button");
   const naoPageis = cpState.contas.filter(c => c.situacao !== "pago" && c.situacao !== "cancelado");
-  btnMarcarTodos.innerHTML = `<svg viewBox="0 0 24 24" width="13" height="13" style="stroke:#2dce89;stroke-width:3;fill:none;"><polyline points="20 6 9 17 4 12"/></svg>`;
+  btnMarcarTodos.innerHTML = `<svg viewBox="0 0 24 24" width="13" height="13" style="stroke:#10b981;stroke-width:3;fill:none;"><polyline points="20 6 9 17 4 12"/></svg>`;
   btnMarcarTodos.title = "Marcar todos como pago";
-  btnMarcarTodos.style.cssText = `width:28px;height:28px;border-radius:50%;background:transparent;border:2px solid #2dce89;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s,transform .15s;padding:0;justify-self:center;margin:0 auto;`;
-  btnMarcarTodos.innerHTML = `<svg viewBox="0 0 24 24" width="13" height="13" style="stroke:#2dce89;stroke-width:3;fill:none;"><polyline points="20 6 9 17 4 12"/></svg>`;
+  btnMarcarTodos.style.cssText = `width:28px;height:28px;border-radius:50%;background:transparent;border:2px solid #10b981;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s,transform .15s;padding:0;justify-self:center;margin:0 auto;`;
+  btnMarcarTodos.innerHTML = `<svg viewBox="0 0 24 24" width="13" height="13" style="stroke:#10b981;stroke-width:3;fill:none;"><polyline points="20 6 9 17 4 12"/></svg>`;
   if (currentUser === "Resicon") { btnMarcarTodos.style.display = "none"; }
-  btnMarcarTodos.addEventListener("mouseenter", () => { btnMarcarTodos.style.background="#2dce8918"; btnMarcarTodos.style.transform="scale(1.1)"; });
+  btnMarcarTodos.addEventListener("mouseenter", () => { btnMarcarTodos.style.background="#10b98118"; btnMarcarTodos.style.transform="scale(1.1)"; });
   btnMarcarTodos.addEventListener("mouseleave", () => { btnMarcarTodos.style.background="transparent"; btnMarcarTodos.style.transform="scale(1)"; });
   if (!naoPageis.length) {
     btnMarcarTodos.disabled = true;
@@ -10208,7 +10208,7 @@ async function renderCpLista(panel) {
     const btnExportar = document.createElement("button");
     btnExportar.textContent = "Exportar relatório Excel";
     btnExportar.style.cssText = `background:none;border:0.5px solid ${T.border};border-radius:8px;padding:10px 28px;color:${T.text2};font-size:12px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;transition:all .15s;`;
-    btnExportar.addEventListener("mouseenter", () => { btnExportar.style.borderColor="#2dce89"; btnExportar.style.color="#2dce89"; });
+    btnExportar.addEventListener("mouseenter", () => { btnExportar.style.borderColor="#10b981"; btnExportar.style.color="#10b981"; });
     btnExportar.addEventListener("mouseleave", () => { btnExportar.style.borderColor=T.border; btnExportar.style.color=T.text2; });
     btnExportar.addEventListener("click", () => window._exportarExcelResicon(cpState.contas, cpState.mes));
 
@@ -10350,7 +10350,7 @@ async function renderPainelFiscal(panel) {
   [
     { label: "NFS-e Recebidas", icon: "📄", total: totalNfse, valor: valorNfse, cor: "#3B82F6" },
     { label: "CT-e Recebidos", icon: "🚛", total: totalCte, valor: valorCte, cor: "#f0b400" },
-    { label: "NF-e Recebidas", icon: "📦", total: totalNfe, valor: valorNfe, cor: "#2dce89" },
+    { label: "NF-e Recebidas", icon: "📦", total: totalNfe, valor: valorNfe, cor: "#10b981" },
   ].forEach(c => {
     const card = document.createElement("div");
     card.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:12px;padding:16px;`;
@@ -10393,7 +10393,7 @@ async function renderPainelFiscal(panel) {
     <div style="font-size:11px;font-weight:500;color:${T.text3};">MÊS</div>
     <div style="font-size:11px;font-weight:500;color:#3B82F6;text-align:right;">NFS-e</div>
     <div style="font-size:11px;font-weight:500;color:#f0b400;text-align:right;">CT-e</div>
-    <div style="font-size:11px;font-weight:500;color:#2dce89;text-align:right;">NF-e</div>
+    <div style="font-size:11px;font-weight:500;color:#10b981;text-align:right;">NF-e</div>
     <div style="font-size:11px;font-weight:500;color:${T.text3};text-align:right;">TOTAL</div>`;
   tabelaWrap.appendChild(thead);
 
@@ -10416,7 +10416,7 @@ async function renderPainelFiscal(panel) {
         <div style="font-size:10px;color:${T.text3};">${fmt(d.vCte)}</div>
       </div>
       <div style="text-align:right;">
-        <div style="font-size:12px;color:#2dce89;font-weight:600;">${d.nfe}</div>
+        <div style="font-size:12px;color:#10b981;font-weight:600;">${d.nfe}</div>
         <div style="font-size:10px;color:${T.text3};">${fmt(d.vNfe)}</div>
       </div>
       <div style="text-align:right;">
@@ -10493,7 +10493,7 @@ async function renderNfsEmitidas(panel) {
       if (!toast) {
         toast = document.createElement("div");
         toast.id = "nf-copy-toast";
-        toast.style.cssText = `position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#2dce89;color:#000;font-size:12px;font-weight:600;padding:7px 18px;border-radius:20px;z-index:9999;font-family:'Inter',sans-serif;pointer-events:none;opacity:0;transition:opacity .15s;`;
+        toast.style.cssText = `position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#10b981;color:#000;font-size:12px;font-weight:600;padding:7px 18px;border-radius:20px;z-index:9999;font-family:'Inter',sans-serif;pointer-events:none;opacity:0;transition:opacity .15s;`;
         document.body.appendChild(toast);
       }
       toast.textContent = `NF ${numero} copiada`;
@@ -10519,7 +10519,7 @@ async function renderNfsEmitidas(panel) {
     // Badge complementar
     if (temComp) {
       const badge = document.createElement("span");
-      badge.style.cssText = "font-size:11px;font-weight:600;background:#2dce8918;color:#2dce89;border-radius:20px;padding:3px 12px;border:0.5px solid #2dce8944;white-space:nowrap;";
+      badge.style.cssText = "font-size:11px;font-weight:600;background:#10b98118;color:#10b981;border-radius:20px;padding:3px 12px;border:0.5px solid #10b98144;white-space:nowrap;";
       badge.textContent = `✓ Complementar NF ${nf.nfComplementarNumero}`;
       direita.appendChild(badge);
     } else {
@@ -10617,7 +10617,7 @@ async function renderNfsEmitidas(panel) {
           // Botão de gerar complementar — troca calculadora pelo preview na mesma janela
           const btnGerarComp = document.createElement("button");
           btnGerarComp.textContent = "Gerar NF Complementar de IPI";
-          btnGerarComp.style.cssText = `width:100%;margin-top:20px;padding:12px;border-radius:8px;background:#00dfc3;border:none;color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;`;
+          btnGerarComp.style.cssText = `width:100%;margin-top:20px;padding:12px;border-radius:8px;background:#10b981;border:none;color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;`;
           btnGerarComp.addEventListener("click", () => {
             const calcObj = calcIpiState[taskFake.id];
             if (!calcObj || calcObj.carregando) { alert("Aguarde o carregamento dos dados."); return; }
@@ -10916,7 +10916,7 @@ async function renderConferencia(panel, color) {
       }
       const btnDel = document.createElement("button");
       btnDel.textContent = "✕";
-      btnDel.style.cssText = "background:none;border:0.5px solid #e91e8c22;border-radius:4px;color:#e91e8c66;font-size:11px;padding:3px 7px;cursor:pointer;font-family:inherit;";
+      btnDel.style.cssText = "background:none;border:0.5px solid #e8432d22;border-radius:4px;color:#e8432d66;font-size:11px;padding:3px 7px;cursor:pointer;font-family:inherit;";
       btnDel.addEventListener("click", async () => {
         if(!confirm(`Remover "${doc.nome}"?`)) return;
         await removerDocFirebase(confMes, categoria, doc.id);
@@ -11008,7 +11008,7 @@ async function renderConferencia(panel, color) {
           const vStr = form.querySelector(".manual-valor").value;
           const v = parseFloat(vStr.replace(",","."));
           const c = form.querySelector(".manual-comp").value.trim();
-          if(!v || v <= 0) { form.querySelector(".manual-valor").style.borderColor="#e91e8c"; return; }
+          if(!v || v <= 0) { form.querySelector(".manual-valor").style.borderColor="#e8432d"; return; }
           form.remove();
           const driveResult = await uploadParaDrive(file, confMes, categoria);
           await salvarDocFirebase(confMes, categoria, {
