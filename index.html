@@ -1972,7 +1972,14 @@ function renderPerguntasTab(container) {
         ` : !p.requires_attention ? `
           <div style="font-size:10px;color:#666;margin-bottom:6px;">Resposta ${enviadoAuto || enviado ? "enviada" : "sugerida (editável)"}</div>
           <textarea id="pergunta-resp-${p.question_id}" ${enviadoAuto || enviado ? "disabled" : ""} style="width:100%;background:${T.bg};border:1px solid ${enviadoAuto ? T.border : T.text};border-radius:6px;padding:10px 12px;color:${enviadoAuto ? T.text3 : T.text};font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;resize:vertical;min-height:60px;margin-bottom:10px;">${p.suggested_answer}</textarea>
-          ${p.produto_identificado ? `
+          ${p.criar_rascunho ? `
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#f59e0b18;border:0.5px solid #f59e0b44;border-radius:8px;margin-bottom:10px;">
+            <span style="font-size:16px;">📋</span>
+            <div>
+              <div style="font-size:11px;font-weight:600;color:#f59e0b;">Rascunho criado — aguardando aprovação</div>
+              <div style="font-size:10px;color:${T.text2};margin-top:1px;">${p.criar_rascunho.titulo_sugerido||""}</div>
+            </div>
+          </div>` : ""}
           <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;background:${T.bg3};border:0.5px solid ${T.border};border-radius:8px;margin-bottom:10px;">
             <div style="min-width:0;flex:1;">
               <div style="font-size:10px;color:${T.text2};margin-bottom:2px;">Anúncio identificado</div>
@@ -2801,6 +2808,42 @@ function renderDashboard(panel, color) {
   pickingCard.innerHTML = `<div style="font-size:9px;color:${T.text2};text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;">Operações</div>`;
   pickingCard.appendChild(pickingRow);
   statusBar.appendChild(pickingCard);
+
+  // ── Card Rascunhos de anúncios ──
+  (async () => {
+    try {
+      const snap = await get(ref(db, "/anuncios_rascunho"));
+      const dados = snap.val() || {};
+      const rascunhos = Object.entries(dados)
+        .map(([id, r]) => ({ id, ...r }))
+        .filter(r => r.status === "pendente")
+        .sort((a, b) => (b.criado_em||0) - (a.criado_em||0));
+
+      if (rascunhos.length === 0) return;
+
+      const rascCard = document.createElement("div");
+      rascCard.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:14px 16px;`;
+
+      const rascLabelHtml = `<div style="font-size:11px;color:${T.text};">Anúncios para criar</div>
+        <div style="background:#f59e0b;color:#fff;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:600;">${rascunhos.length} rascunho${rascunhos.length>1?"s":""}</div>`;
+
+      const rascListHtml = rascunhos.slice(0,5).map(r => `
+        <div onclick="window._diogotab='anuncios-rascunho';render();" style="padding:7px 8px 7px 10px;border-left:3px solid #f59e0b;border-radius:6px;margin-bottom:4px;cursor:pointer;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
+          <div style="font-size:11px;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.titulo_sugerido||"Sem título"}</div>
+          <div style="font-size:10px;color:${T.text2};margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">↩ ${r.pergunta_origem||""}</div>
+        </div>`).join("");
+
+      const rascDrawerHtml = `<div style="max-height:260px;overflow-y:auto;padding-bottom:4px;">${rascListHtml}
+        <div onclick="window._diogotab='anuncios-rascunho';render();" style="text-align:center;font-size:10px;color:${T.text2};padding:6px 0;cursor:pointer;">Ver todos →</div>
+      </div>`;
+
+      const rascRow = mkExpansivel(rascLabelHtml, rascDrawerHtml, "300px");
+      rascRow.style.borderBottom = "none";
+      rascCard.innerHTML = `<div style="font-size:9px;color:${T.text2};text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;">Anúncios</div>`;
+      rascCard.appendChild(rascRow);
+      statusBar.appendChild(rascCard);
+    } catch(e) { console.log("rascunhos:", e.message); }
+  })();
 
   grid.appendChild(statusBar);
   window._sbarApply = function() {};
