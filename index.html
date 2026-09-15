@@ -547,6 +547,10 @@ function setupIdentityScreen() {
 
   // PIN genérico para qualquer perfil
   function showPinFor(userName, color) {
+    // PINs definidos PRIMEIRO — antes de qualquer HTML
+    var PINS = { "Resicon": "0303" };
+    var CORRECT = PINS[userName] || "000000";
+    var pinLen = CORRECT.length;
     screen.innerHTML = "";
     screen.appendChild(buildLeft());
     const r = document.createElement("div");
@@ -568,7 +572,7 @@ function setupIdentityScreen() {
         +'<div style="font-size:11px;color:#444;font-family:Inter,sans-serif;">Digite o PIN</div>'
       +'</div>'
       +'<div id="pk-dots" style="display:flex;gap:10px;margin-bottom:16px;justify-content:center;width:100%;">'
-        +[0,1,2,3,4,5].map(()=>'<div class="pkd" style="width:10px;height:10px;border-radius:50%;background:#1e1e1e;border:1px solid #333;transition:all .1s;"></div>').join("")
+        +Array.from({length: pinLen}).map(()=>'<div class="pkd" style="width:10px;height:10px;border-radius:50%;background:#1e1e1e;border:1px solid #333;transition:all .1s;"></div>').join("")
       +'</div>'
       +'<div id="pk-err" style="font-size:11px;color:#e8432d;min-height:16px;margin-bottom:10px;font-family:Inter,sans-serif;text-align:center;width:100%;"></div>'
       +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;width:100%;">'+keys+'</div>';
@@ -576,9 +580,6 @@ function setupIdentityScreen() {
     screen.appendChild(r);
     document.getElementById("pk-back").onclick = showSelecao;
     let entered = "";
-    // PINs por perfil — armazenados aqui para facilidade
-    const PINS = { "Resicon": "0303" };
-    const CORRECT = PINS[userName] || "000000";
     function updateDots() {
       document.querySelectorAll(".pkd").forEach((dot,i) => {
         dot.style.background = i < entered.length ? color : "#1e1e1e";
