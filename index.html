@@ -1965,7 +1965,16 @@ function renderPerguntasTab(container) {
           </div>
         ` : !p.requires_attention ? `
           <div style="font-size:10px;color:#666;margin-bottom:6px;">Resposta ${enviadoAuto || enviado ? "enviada" : "sugerida (editável)"}</div>
-          <textarea id="pergunta-resp-${p.question_id}" ${enviadoAuto || enviado ? "disabled" : ""} style="width:100%;background:${T.bg};border:1px solid ${enviadoAuto ? T.border : T.text};border-radius:6px;padding:10px 12px;color:${enviadoAuto ? T.text3 : T.text};font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;resize:vertical;min-height:60px;margin-bottom:12px;">${p.suggested_answer}</textarea>
+          <textarea id="pergunta-resp-${p.question_id}" ${enviadoAuto || enviado ? "disabled" : ""} style="width:100%;background:${T.bg};border:1px solid ${enviadoAuto ? T.border : T.text};border-radius:6px;padding:10px 12px;color:${enviadoAuto ? T.text3 : T.text};font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;resize:vertical;min-height:60px;margin-bottom:10px;">${p.suggested_answer}</textarea>
+          ${p.produto_identificado ? `
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;background:${T.bg3};border:0.5px solid ${T.border};border-radius:8px;margin-bottom:10px;">
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:10px;color:${T.text2};margin-bottom:2px;">Anúncio identificado</div>
+              <div style="font-size:11px;font-weight:600;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.produto_identificado.titulo}</div>
+              ${p.produto_identificado.sku ? `<div style="font-size:10px;color:${T.text2};">${p.produto_identificado.sku}</div>` : ""}
+            </div>
+            <a href="${p.produto_identificado.link}" target="_blank" style="flex-shrink:0;display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:6px;background:none;border:0.5px solid #3b82f6;color:#3b82f6;font-size:11px;font-weight:600;text-decoration:none;white-space:nowrap;">Ver anúncio ↗</a>
+          </div>` : ""}
           ${!enviadoAuto ? `<button id="pergunta-enviar-${p.question_id}" ${(enviado || enviandoAgora) ? "disabled" : ""} style="padding:9px 18px;border-radius:6px;background:${enviado ? T.okBg : "#3b82f6"};border:1px solid ${enviado ? T.okBor : "transparent"};color:${enviado ? "#10b981" : "#fff"};font-size:12px;font-weight:600;cursor:${(enviado || enviandoAgora) ? "default" : "pointer"};opacity:${enviandoAgora ? "0.6" : "1"};">${enviado ? "Enviado ✓" : (enviandoAgora ? "Enviando..." : "Enviar resposta")}</button>` : ""}
         ` : `
           <div style="display:flex;gap:8px;">
