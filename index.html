@@ -644,6 +644,7 @@ function setupIdentityScreen() {
 function requestNotif(){if("Notification"in window&&Notification.permission==="default")Notification.requestPermission();}
 
 let state={tasks:{},messages:{},flashes:{}};
+window._state = () => state; // acesso no console: window._state()
 let prevTasks={},flashQueue={},completionAlerts={},openCard=null,diogoPinUnlocked=false,diogoAutoFullscreen=false,diogoCardFullscreen=false,tabFlashInterval=null,faviconInterval=null,cmpSalvando=false;
 const syncDot=document.getElementById("sync-dot");
 function setSyncing(v){syncDot.style.opacity=v?"0.4":"1";}
@@ -1891,7 +1892,10 @@ function renderPerguntasTab(container) {
       <div style="font-size:16px;font-weight:700;color:#fff;">Perguntas automáticas</div>
       <div style="font-size:11px;color:#666;margin-top:2px;">${perguntasState.lista ? `${total} pendentes${atencao ? ` · ${atencao} requer${atencao>1?"em":""} atenção manual` : ""}` : "Respostas sugeridas com IA para perguntas pré-venda"}</div>
     </div>
-    <button id="perguntas-btn-atualizar" style="background:${T.bg3};border:1px solid ${T.border};border-radius:6px;padding:7px 14px;color:${T.text2};font-size:11px;cursor:pointer;">${perguntasState.carregando ? "Buscando..." : "↻ Atualizar"}</button>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button id="perguntas-btn-catalogo" style="background:${T.bg3};border:1px solid ${T.border};border-radius:6px;padding:7px 14px;color:${T.text2};font-size:11px;cursor:pointer;">🔍 Testar catálogo</button>
+      <button id="perguntas-btn-atualizar" style="background:${T.bg3};border:1px solid ${T.border};border-radius:6px;padding:7px 14px;color:${T.text2};font-size:11px;cursor:pointer;">${perguntasState.carregando ? "Buscando..." : "↻ Atualizar"}</button>
+    </div>
   `;
   wrap.appendChild(header);
 
@@ -2845,7 +2849,7 @@ function renderDashboard(panel, color) {
         })),
         ...((window._fiscalAgrupado||[]).slice(0,3).map(e => {
           const cor = e.diff <= 5 ? "#E24B4A" : e.diff <= 14 ? "#f0b400" : T.text2;
-          return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 8px 7px 10px;border-left:3px solid ${dotCor};border-radius:6px;margin-bottom:4px;">
+          return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 8px 7px 10px;border-left:3px solid ${cor};border-radius:6px;margin-bottom:4px;">
             <div style="font-size:11px;color:${T.text};flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.nome}</div>
             <div style="font-size:10px;font-weight:600;color:${cor};margin-left:8px;flex-shrink:0;">em ${e.diff}d</div>
           </div>`;
