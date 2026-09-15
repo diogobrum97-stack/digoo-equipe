@@ -1980,6 +1980,7 @@ function renderPerguntasTab(container) {
               <div style="font-size:10px;color:${T.text2};margin-top:1px;">${p.criar_rascunho.titulo_sugerido||""}</div>
             </div>
           </div>` : ""}
+          ${p.produto_identificado ? `
           <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;background:${T.bg3};border:0.5px solid ${T.border};border-radius:8px;margin-bottom:10px;">
             <div style="min-width:0;flex:1;">
               <div style="font-size:10px;color:${T.text2};margin-bottom:2px;">Anúncio identificado</div>
