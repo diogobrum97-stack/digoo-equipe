@@ -384,17 +384,17 @@ function setupIdentityScreen() {
 
     } else if(name === "Resicon") {
       // Resicon vai direto para Contas a Pagar em tela cheia
+      const _s = document.getElementById("identity-screen");
+      if(_s) _s.remove();
       openCard = "Diogo";
       diogoPinUnlocked = true;
       diogoAutoFullscreen = true;
       diogoCardFullscreen = true;
       window._diogotab = "contas-pagar";
-      // Ocultar elementos que não devem aparecer para Resicon
       setTimeout(() => {
         const t = document.getElementById("equipe-titulo");
         if(t) t.style.display = "none";
         document.querySelectorAll(".ov-footer, [id^=ov-]").forEach(el => el.style.display = "none");
-
       }, 200);
     } else {
       // Outros usuários — remove tela e renderiza normalmente
