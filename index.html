@@ -435,10 +435,10 @@ function setupIdentityScreen() {
     const r = document.createElement("div");
     r.style.cssText = _isMobile ? "flex:1;width:100%;display:flex;flex-direction:column;justify-content:center;padding:24px 20px;overflow-y:auto;gap:6px;" : "flex:0 0 30%;display:flex;flex-direction:column;justify-content:center;padding:32px 40px;height:100vh;overflow-y:auto;gap:6px;";
     r.innerHTML =
-      '<div style="font-size:11px;color:#333;margin-bottom:10px;font-family:Inter,sans-serif;">Quem est\u00e1 acessando?</div>'
-      +'<div id="ov-admin" style="border-left:2px solid #fff;padding:12px 16px;background:#0f0f0f;border-radius:0 9px 9px 0;display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:2px;">'
+      `<div style="font-size:11px;color:${T.text2};margin-bottom:10px;font-family:Inter,sans-serif;">Quem está acessando?</div>`
+      +'<div id="ov-admin" style="border-left:2px solid #fff;padding:12px 16px;background:${T.card};border-radius:0 9px 9px 0;display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:2px;">'
         +'<div><div style="font-size:13px;font-weight:700;color:#fff;font-family:Inter,sans-serif;">Diogo</div>'
-        +'<div style="font-size:11px;color:#555;margin-top:2px;font-family:Inter,sans-serif;">Administrador \u00b7 acesso total</div></div>'
+        +'<div style="font-size:11px;color:${T.text2};margin-top:2px;font-family:Inter,sans-serif;">Administrador \u00b7 acesso total</div></div>'
         +'<span style="font-size:9px;padding:2px 7px;border-radius:3px;font-weight:600;background:rgba(255,255,255,.06);color:#666;border:1px solid #1e1e1e;font-family:Inter,sans-serif;">ADMIN</span>'
       +'</div>'
       +'<div style="display:flex;align-items:center;gap:8px;margin:4px 0;">'
@@ -446,14 +446,14 @@ function setupIdentityScreen() {
         +'<div style="font-size:10px;color:#1e1e1e;font-family:Inter,sans-serif;">equipe</div>'
         +`<div style="flex:1;height:1px;background:${T.sep};"></div>`
       +'</div>'
-      +'<div id="ov-bruno" style="border-left:2px solid #3b82f6;padding:12px 16px;background:#080808;border-radius:0 9px 9px 0;display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:4px;">'
-        +'<div><div style="font-size:12px;font-weight:600;color:#777;font-family:Inter,sans-serif;">Bruno</div>'
-        +'<div style="font-size:11px;color:#333;margin-top:2px;font-family:Inter,sans-serif;">Opera\u00e7\u00f5es</div></div>'
+      +'<div id="ov-bruno" style="border-left:2px solid #3b82f6;padding:12px 16px;background:${T.bg3};border-radius:0 9px 9px 0;display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:4px;">'
+        +'<div><div style="font-size:12px;font-weight:600;color:${T.text};font-family:Inter,sans-serif;">Bruno</div>'
+        +'<div style="font-size:11px;color:${T.text2};margin-top:2px;font-family:Inter,sans-serif;">Opera\u00e7\u00f5es</div></div>'
         +'<span style="font-size:9px;padding:2px 7px;border-radius:3px;font-weight:600;background:rgba(94,114,228,.08);color:#3b82f6;border:1px solid #3b82f622;font-family:Inter,sans-serif;">EQUIPE</span>'
       +'</div>'
-      +'<div id="ov-larissa" style="border-left:2px solid #e8432d;padding:12px 16px;background:#080808;border-radius:0 9px 9px 0;display:flex;align-items:center;justify-content:space-between;cursor:pointer;">'
-        +'<div><div style="font-size:12px;font-weight:600;color:#777;font-family:Inter,sans-serif;">Larissa</div>'
-        +'<div style="font-size:11px;color:#333;margin-top:2px;font-family:Inter,sans-serif;">Atendimento</div></div>'
+      +'<div id="ov-larissa" style="border-left:2px solid #e8432d;padding:12px 16px;background:${T.bg3};border-radius:0 9px 9px 0;display:flex;align-items:center;justify-content:space-between;cursor:pointer;">'
+        +'<div><div style="font-size:12px;font-weight:600;color:${T.text};font-family:Inter,sans-serif;">Larissa</div>'
+        +'<div style="font-size:11px;color:${T.text2};margin-top:2px;font-family:Inter,sans-serif;">Atendimento</div></div>'
         +'<span style="font-size:9px;padding:2px 7px;border-radius:3px;font-weight:600;background:rgba(233,30,140,.08);color:#e8432d;border:1px solid #e8432d22;font-family:Inter,sans-serif;">EQUIPE</span>'
       +'</div>'
       +'<div style="display:flex;align-items:center;gap:8px;margin:4px 0;">'
@@ -461,9 +461,9 @@ function setupIdentityScreen() {
         +'<div style="font-size:10px;color:#1e1e1e;font-family:Inter,sans-serif;">contabilidade</div>'
         +'<div style="flex:1;height:1px;background:#1a1a1a;"></div>'
       +'</div>'
-      +'<div id="ov-resicon" style="border-left:2px solid #C9A227;padding:12px 16px;background:#080808;border-radius:0 9px 9px 0;display:flex;align-items:center;justify-content:space-between;cursor:pointer;">'
-        +'<div><div style="font-size:12px;font-weight:600;color:#777;font-family:Inter,sans-serif;">Resicon</div>'
-        +'<div style="font-size:11px;color:#333;margin-top:2px;font-family:Inter,sans-serif;">Contabilidade</div></div>'
+      +'<div id="ov-resicon" style="border-left:2px solid #C9A227;padding:12px 16px;background:${T.bg3};border-radius:0 9px 9px 0;display:flex;align-items:center;justify-content:space-between;cursor:pointer;">'
+        +'<div><div style="font-size:12px;font-weight:600;color:${T.text};font-family:Inter,sans-serif;">Resicon</div>'
+        +'<div style="font-size:11px;color:${T.text2};margin-top:2px;font-family:Inter,sans-serif;">Contabilidade</div></div>'
         +'<span style="font-size:9px;padding:2px 7px;border-radius:3px;font-weight:600;background:rgba(201,162,39,.08);color:#C9A227;border:1px solid #C9A22722;font-family:Inter,sans-serif;">CONTAB</span>'
       +'</div>';
     screen.appendChild(r);
