@@ -2663,6 +2663,10 @@ function renderDashboard(panel, color) {
     window._diogotab = 'perguntas';
     render();
   };
+  window._goAnuncios = function() {
+    window._diogotab = 'anuncios-rascunho';
+    render();
+  };
   window._sbarNavPergunta = function(e) {
     e.stopPropagation();
     e.preventDefault();
@@ -2831,13 +2835,13 @@ function renderDashboard(panel, color) {
         <div style="background:#f59e0b;color:#fff;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:600;">${rascunhos.length} rascunho${rascunhos.length>1?"s":""}</div>`;
 
       const rascListHtml = rascunhos.slice(0,5).map(r => `
-        <div onclick="window._diogotab='anuncios-rascunho';render();" style="padding:7px 8px 7px 10px;border-left:3px solid #f59e0b;border-radius:6px;margin-bottom:4px;cursor:pointer;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
+        <div onclick="window._goAnuncios()" style="padding:7px 8px 7px 10px;border-left:3px solid #f59e0b;border-radius:6px;margin-bottom:4px;cursor:pointer;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
           <div style="font-size:11px;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.titulo_sugerido||"Sem título"}</div>
           <div style="font-size:10px;color:${T.text2};margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">↩ ${r.pergunta_origem||""}</div>
         </div>`).join("");
 
       const rascDrawerHtml = `<div style="max-height:260px;overflow-y:auto;padding-bottom:4px;">${rascListHtml}
-        <div onclick="window._diogotab='anuncios-rascunho';render();" style="text-align:center;font-size:10px;color:${T.text2};padding:6px 0;cursor:pointer;">Ver todos →</div>
+        <div onclick="window._goAnuncios()" style="text-align:center;font-size:10px;color:${T.text2};padding:6px 0;cursor:pointer;">Ver todos →</div>
       </div>`;
 
       const rascRow = mkExpansivel(rascLabelHtml, rascDrawerHtml, "300px");
