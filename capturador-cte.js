@@ -230,9 +230,18 @@ async function sincronizarEmpresa(empresa) {
 
     await fbPut(nsuKey, ultNSU);
 
-    // Continuar se há mais documentos
+    // Salvar NSU retornado pela SEFAZ (ultNSURet é o cursor oficial)
+    if (ultNSURet && parseInt(ultNSURet) > ultNSU) {
+      ultNSU = parseInt(ultNSURet);
+      await fbPut(nsuKey, ultNSU);
+    }
+
+    // Continuar só se há mais documentos — espera 2s entre chamadas
     continuar = maxNSU && parseInt(maxNSU) > ultNSU;
-    if (continuar) await new Promise(r => setTimeout(r, 1000));
+    if (continuar) {
+      console.log("  Há mais documentos, aguardando 2s...");
+      await new Promise(r => setTimeout(r, 2000));
+    }
   }
 
   return totalNovas;
