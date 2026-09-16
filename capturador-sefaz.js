@@ -6,8 +6,8 @@ const FIREBASE_URL = "https://digoo-equipe-default-rtdb.firebaseio.com";
 const PASSPHRASE = "Digoo7560";
 
 const EMPRESAS = [
-  { nome: "Matriz", pfx: "./matriz_new.pfx", cnpj: "40981026000182" },
-  { nome: "Filial", pfx: "./filial_new.pfx", cnpj: "40981026000344" },
+  { nome: "Matriz", pfx: "/opt/digoo-capturador/matriz_new.pfx", cnpj: "40981026000182" },
+  { nome: "Filial", pfx: "/opt/digoo-capturador/filial_new.pfx", cnpj: "40981026000344" },
 ];
 
 function limparChave(str) {
@@ -26,7 +26,6 @@ function mesPath(dataStr) {
 }
 
 function extrairXml(tag, xml) {
-  // Tenta com namespace e sem
   const patterns = [
     new RegExp("<" + tag + ">([\\s\\S]*?)<\\/" + tag + ">", "i"),
     new RegExp("<[^:>]+:" + tag + ">([\\s\\S]*?)<\\/[^:>]+:" + tag + ">", "i"),
@@ -100,60 +99,38 @@ function buscarSefaz(pfxPath, nsu) {
   });
 }
 
-async function processarDoc(doc, empresa) {
-  if (doc.TipoDocumento !== "NFSE") return false; // só NFS-e no Contas a Pagar
+async function processarNfse(doc, empresa) {
+  if (doc.TipoDocumento !== "NFSE") return false;
 
-  const chave = limparChave(doc.ChaveAcesso || String(doc.NSU));
-  const xml = descomprimirXml(doc.ArquivoXml || "");
+  const xmlRaw = doc.ArquivoXml ? descomprimirXml(doc.ArquivoXml) : "";
+  const numero = extrairXml("Numero", xmlRaw) || extrairXml("NumeroNfse", xmlRaw) || doc.NSU;
+  const dataEmissao = (extrairXml("DataEmissao", xmlRaw) || extrairXml("DataEmissaoNfse", xmlRaw) || "").slice(0, 10);
+  const competencia = (extrairXml("Competencia", xmlRaw) || dataEmissao || "").slice(0, 7);
+  const valorStr = extrairXml("ValorServicos", xmlRaw) || extrairXml("ValorLiquidoNfse", xmlRaw) || "0";
+  const valor = parseFloat(valorStr.replace(",", ".")) || 0;
+  const discriminacao = (extrairXml("Discriminacao", xmlRaw) || "").slice(0, 300);
+  const prestadorCnpj = extrairXml("Cnpj", xmlRaw) || "";
+  const prestadorNome = (extrairXml("RazaoSocial", xmlRaw) || extrairXml("NomeFantasia", xmlRaw) || "").slice(0, 100);
+  const mp = mesPath(dataEmissao || competencia);
+  const chave = limparChave(doc.ChaveAcesso || ("NFSE_" + empresa.cnpj + "_" + numero + "_" + (competencia || doc.NSU)));
 
-  if (!xml || xml.length < 50) {
-    console.log("  XML vazio para NSU", doc.NSU);
+  const existe = await fbGet("nfse_tomadas/" + mp + "/" + chave);
+  if (existe && existe.nsu) {
+    const contaExiste = await fbGet("contas_pagar/" + mp + "/" + chave);
+    if (contaExiste && !contaExiste.xmlBase64 && doc.ArquivoXml) {
+      await fbPut("contas_pagar/" + mp + "/" + chave, Object.assign({}, contaExiste, { xmlBase64: doc.ArquivoXml }));
+      return true;
+    }
     return false;
   }
 
-  // Debug: mostra trecho do XML na primeira nota
-  if (doc.NSU === 1) {
-    console.log("  XML amostra:", xml.slice(0, 300));
-  }
-
-  // Extrai campos conforme estrutura real do PNFS-e
-  // Prestador: dentro de <emit> ou <prest>
-  const emitMatch = xml.match(/<emit[^>]*>([\s\S]*?)<\/emit>/i) || xml.match(/<prest[^>]*>([\s\S]*?)<\/prest>/i);
-  const emitXml = emitMatch ? emitMatch[1] : xml;
-  const prestadorNome = extrairXml("xNome", emitXml) || extrairXml("xNome", xml) || "";
-  const prestadorCnpj = extrairXml("CNPJ", emitXml) || extrairXml("Cnpj", emitXml) || extrairXml("CNPJ", xml) || "";
-
-  // Valor: vLiq ou vBC dentro de <valores>
-  const valoresMatch = xml.match(/<valores[^>]*>([\s\S]*?)<\/valores>/i);
-  const valoresXml = valoresMatch ? valoresMatch[1] : xml;
-  const valorStr = extrairXml("vLiq", valoresXml) || extrairXml("vBC", valoresXml) || extrairXml("ValorServicos", xml) || "0";
-  const valor = parseFloat(valorStr.replace(",", ".")) || 0;
-
-  // Serviço: dentro de <serv> ou <xDescServ>
-  const servMatch = xml.match(/<serv[^>]*>([\s\S]*?)<\/serv>/i);
-  const servXml = servMatch ? servMatch[1] : xml;
-  const discriminacao = (extrairXml("xDescServ", servXml) || extrairXml("Discriminacao", xml) || extrairXml("xTribNac", xml) || "").split("|").join("").trim().toUpperCase().slice(0, 300);
-
-  // Data e competência
-  const dataEmissao = (extrairXml("dhEmi", xml) || extrairXml("DataEmissao", xml) || "").slice(0, 10);
-  const competencia = (extrairXml("dCompet", xml) || dataEmissao).slice(0, 7);
-  const numero = extrairXml("nNFSe", xml) || extrairXml("nDFSe", xml) || extrairXml("Numero", xml) || String(doc.NSU);
-
-  const mp = mesPath(competencia || dataEmissao);
-
-  // Verifica se já existe
-  const existe = await fbGet("nfse_tomadas/" + mp + "/" + chave);
-  if (existe && existe.nsu) return false;
-
   const entrada = {
-    nsu: doc.NSU,
-    chaveAcesso: doc.ChaveAcesso || "",
+    nsu: doc.NSU, chaveAcesso: doc.ChaveAcesso || "",
     numero, dataEmissao, competencia,
     prestadorCnpj: prestadorCnpj.replace(/\D/g, ""),
     prestadorRazaoSocial: prestadorNome,
     tomadorCnpj: empresa.cnpj,
-    valorServicos: valor,
-    discriminacao,
+    valorServicos: valor, discriminacao,
     criadoEm: Date.now(),
   };
 
@@ -163,9 +140,7 @@ async function processarDoc(doc, empresa) {
     cnpj: prestadorCnpj.replace(/\D/g, ""),
     tomadorCnpj: empresa.cnpj,
     empresa: empresa.nome,
-    numeroDoc: numero,
-    valor,
-    competencia,
+    numeroDoc: numero, valor, competencia,
     vencimento: dataEmissao,
     historico: discriminacao,
     categoriaId: "", categoriaLabel: "",
@@ -176,7 +151,79 @@ async function processarDoc(doc, empresa) {
     criadoEm: Date.now(),
   });
 
+  console.log("  [NFS-e] " + prestadorNome + " R$" + valor + " — " + dataEmissao);
   return true;
+}
+
+async function processarCte(doc, empresa) {
+  if (doc.TipoDocumento !== "CTE") return false;
+
+  const xmlRaw = doc.ArquivoXml ? descomprimirXml(doc.ArquivoXml) : "";
+  const chaveAcesso = doc.ChaveAcesso || extrairXml("chCTe", xmlRaw) || "";
+  const numero = extrairXml("nCT", xmlRaw) || doc.NSU;
+  const dataEmissao = (extrairXml("dhEmi", xmlRaw) || "").slice(0, 10);
+  const valor = parseFloat(extrairXml("vTPrest", xmlRaw) || extrairXml("vRec", xmlRaw) || "0");
+  const emitNome = (extrairXml("xNome", xmlRaw) || "").split("<")[0].slice(0, 100);
+  const emitCnpj = extrairXml("CNPJ", xmlRaw) || "";
+  const mp = mesPath(dataEmissao);
+  const chave = limparChave(chaveAcesso || ("CTE_" + empresa.cnpj + "_" + numero + "_" + (dataEmissao || doc.NSU)));
+
+  const existe = await fbGet("cte_tomados/" + mp + "/" + chave);
+  if (existe) return false;
+
+  await fbPut("cte_tomados/" + mp + "/" + chave, {
+    nsu: doc.NSU, chaveAcesso,
+    numero, dataEmissao,
+    emitenteCnpj: emitCnpj.replace(/\D/g, ""),
+    emitenteRazaoSocial: emitNome,
+    tomadorCnpj: empresa.cnpj,
+    empresa: empresa.nome,
+    valor, criadoEm: Date.now(),
+  });
+
+  console.log("  [CT-e] " + emitNome + " R$" + valor + " — " + dataEmissao);
+  return true;
+}
+
+async function processarNfe(doc, empresa) {
+  if (doc.TipoDocumento !== "NFE") return false;
+
+  const xmlRaw = doc.ArquivoXml ? descomprimirXml(doc.ArquivoXml) : "";
+  const chaveAcesso = doc.ChaveAcesso || extrairXml("chNFe", xmlRaw) || "";
+  const numero = extrairXml("nNF", xmlRaw) || doc.NSU;
+  const dataEmissao = (extrairXml("dhEmi", xmlRaw) || "").slice(0, 10);
+  const valor = parseFloat(extrairXml("vNF", xmlRaw) || "0");
+  const emitNome = (extrairXml("xNome", xmlRaw) || "").split("<")[0].slice(0, 100);
+  const emitCnpj = extrairXml("CNPJ", xmlRaw) || "";
+  const mp = mesPath(dataEmissao);
+  const chave = limparChave(chaveAcesso || ("NFE_" + empresa.cnpj + "_" + numero + "_" + (dataEmissao || doc.NSU)));
+
+  const existe = await fbGet("nfe_tomadas/" + mp + "/" + chave);
+  if (existe) return false;
+
+  await fbPut("nfe_tomadas/" + mp + "/" + chave, {
+    nsu: doc.NSU, chaveAcesso,
+    numero, dataEmissao,
+    emitenteCnpj: emitCnpj.replace(/\D/g, ""),
+    emitenteRazaoSocial: emitNome,
+    tomadorCnpj: empresa.cnpj,
+    empresa: empresa.nome,
+    valor, criadoEm: Date.now(),
+  });
+
+  console.log("  [NF-e] " + emitNome + " R$" + valor + " — " + dataEmissao);
+  return true;
+}
+
+async function processarDoc(doc, empresa) {
+  switch (doc.TipoDocumento) {
+    case "NFSE": return await processarNfse(doc, empresa);
+    case "CTE":  return await processarCte(doc, empresa);
+    case "NFE":  return await processarNfe(doc, empresa);
+    default:
+      console.log("  [?] Tipo desconhecido:", doc.TipoDocumento);
+      return false;
+  }
 }
 
 async function sincronizarEmpresa(empresa) {
@@ -223,12 +270,12 @@ async function sincronizarEmpresa(empresa) {
 }
 
 async function main() {
-  console.log("[" + new Date().toISOString() + "] Capturador SEFAZ PNFS-e v2");
+  console.log("[" + new Date().toISOString() + "] Capturador SEFAZ v3 — NFS-e + CT-e + NF-e");
   let total = 0;
   for (const empresa of EMPRESAS) {
     total += await sincronizarEmpresa(empresa);
   }
-  console.log("\n[" + new Date().toISOString() + "] Concluído — " + total + " notas novas.");
+  console.log("\n[" + new Date().toISOString() + "] Concluído — " + total + " documentos novos.");
 }
 
 main().catch(console.error);
