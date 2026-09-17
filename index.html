@@ -2975,10 +2975,6 @@ function renderDashboard(panel, color) {
       const nfeHoje  = Object.values(snapNfe.val()||{}).filter(n => fmtHoje(n.dataEmissao||n.criadoEm) === hoje);
 
       const totalGeral = nfseHoje.length + cteHoje.length + nfeHoje.length;
-).join("")}
-    </div>
-  `;
-}
 
 // initCalFiscal — sem fab fixo, badge gerenciado pelo render()
 function initCalFiscal() {
