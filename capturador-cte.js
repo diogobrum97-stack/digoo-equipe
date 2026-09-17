@@ -203,9 +203,16 @@ async function sincronizarEmpresa(empresa) {
     if (cStat === "137") { console.log("  Nenhum documento novo."); break; }
     if (cStat !== "138") { console.log("  Resposta inesperada:", cStat, xMotivo); break; }
 
-    // Extrair documentos
+    // Extrair NSUs do XML de resposta
     const maxNSU = extrairTag("maxNSU", respostaXml);
     const ultNSURet = extrairTag("ultNSU", respostaXml);
+
+    // Atualizar NSU imediatamente com o retornado pela SEFAZ
+    if (ultNSURet && parseInt(ultNSURet) > ultNSU) {
+      ultNSU = parseInt(ultNSURet);
+      await fbPut(nsuKey, ultNSU);
+      console.log("  NSU salvo:", ultNSU);
+    }
 
     // Processar cada docZip
     const docZipRe = /<docZip[^>]*schema="([^"]+)"[^>]*NSU="(\d+)"[^>]*>([^<]+)<\/docZip>/g;
@@ -218,29 +225,28 @@ async function sincronizarEmpresa(empresa) {
       const chaveMatch = xmlDoc.match(/<chCTe>([^<]+)<\/chCTe>|<chNFe>([^<]+)<\/chNFe>|<Id>CTe([^<]+)<\/Id>|<Id>NFe([^<]+)<\/Id>/);
       const chave = chaveMatch ? (chaveMatch[1]||chaveMatch[2]||chaveMatch[3]||chaveMatch[4]||"") : "";
 
+      console.log("  Doc schema:", schema, "NSU:", nsu, "chave:", chave.slice(0,10)||"(sem chave)");
+
       let ok = false;
-      if (schema.includes("cte")) {
+      if (schema.toLowerCase().includes("cte")) {
         ok = await processarCte(chave, xmlDoc, empresa);
-      } else if (schema.includes("nfe") || schema.includes("NFe")) {
+      } else if (schema.toLowerCase().includes("nfe")) {
         ok = await processarNfe(chave, xmlDoc, empresa);
+      } else {
+        console.log("  Schema desconhecido:", schema);
       }
       if (ok) totalNovas++;
-      ultNSU = Math.max(ultNSU, nsu);
+      if (nsu > ultNSU) {
+        ultNSU = nsu;
+        await fbPut(nsuKey, ultNSU);
+      }
     }
 
-    await fbPut(nsuKey, ultNSU);
-
-    // Salvar NSU retornado pela SEFAZ (ultNSURet é o cursor oficial)
-    if (ultNSURet && parseInt(ultNSURet) > ultNSU) {
-      ultNSU = parseInt(ultNSURet);
-      await fbPut(nsuKey, ultNSU);
-    }
-
-    // Continuar só se há mais documentos — espera 2s entre chamadas
+    // Continuar só se há mais documentos — espera 3s entre chamadas
     continuar = maxNSU && parseInt(maxNSU) > ultNSU;
     if (continuar) {
-      console.log("  Há mais documentos, aguardando 2s...");
-      await new Promise(r => setTimeout(r, 2000));
+      console.log("  Há mais documentos (max:", maxNSU, "), aguardando 3s...");
+      await new Promise(r => setTimeout(r, 3000));
     }
   }
 
