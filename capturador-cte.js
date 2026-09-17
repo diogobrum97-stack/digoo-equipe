@@ -200,7 +200,16 @@ async function sincronizarEmpresa(empresa) {
     const xMotivo = extrairTag("xMotivo", respostaXml);
     console.log("  Status:", cStat, xMotivo);
 
+    // Sempre salvar o ultNSU retornado, mesmo em erros
+    const ultNSUResp = extrairTag("ultNSU", respostaXml);
+    if (ultNSUResp && parseInt(ultNSUResp) > ultNSU) {
+      ultNSU = parseInt(ultNSUResp);
+      await fbPut(nsuKey, ultNSU);
+      console.log("  NSU salvo:", ultNSU);
+    }
+
     if (cStat === "137") { console.log("  Nenhum documento novo."); break; }
+    if (cStat === "656") { console.log("  Bloqueio SEFAZ — NSU salvo para próxima hora."); break; }
     if (cStat !== "138") { console.log("  Resposta inesperada:", cStat, xMotivo); break; }
 
     // Extrair NSUs do XML de resposta
