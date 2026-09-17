@@ -2958,7 +2958,7 @@ function renderDashboard(panel, color) {
 
       const totalGeral = nfseHoje.length + cteHoje.length + nfeHoje.length;
 
-      function mkSecao(id, titulo, cor, itens, campoNome, campoValor) {
+      function mkSecao(id, secTitulo, cor, itens, campoNome, campoValor) {
         const total = itens.reduce((s,n) => s + Number(n[campoValor]||0), 0);
         const rows = itens.slice(0,10).map(n => `
           <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0 6px 8px;border-left:2px solid ${cor};border-radius:4px;margin-bottom:3px;">
@@ -2973,7 +2973,7 @@ function renderDashboard(panel, color) {
           <div style="margin-bottom:4px;">
             <div onclick="(function(){var c=document.getElementById('docs-sec-${id}');var a=document.getElementById('docs-arr-${id}');if(c.style.display==='none'){c.style.display='block';a.textContent='▾';}else{c.style.display='none';a.textContent='▸';}})()" style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 0;user-select:none;">
               <span id="docs-arr-${id}" style="font-size:10px;color:${cor};">▾</span>
-              <span style="font-size:10px;color:${cor};font-weight:600;text-transform:uppercase;letter-spacing:1px;">${titulo}${itens.length > 0 ? " · "+itens.length : ""}</span>
+              <span style="font-size:10px;color:${cor};font-weight:600;text-transform:uppercase;letter-spacing:1px;">${secTitulo}${itens.length > 0 ? " · "+itens.length : ""}</span>
             </div>
             <div id="docs-sec-${id}">${conteudo}</div>
           </div>`;
