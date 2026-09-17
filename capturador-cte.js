@@ -237,21 +237,30 @@ async function sincronizarEmpresa(empresa) {
       const schema = schemaM ? schemaM[1] : "";
       const nsu = nsuM ? parseInt(nsuM[1]) : 0;
       const xmlDoc = descomprimir(base64);
-      const chaveMatch = xmlDoc.match(/<chCTe>([^<]+)<\/chCTe>|<chNFe>([^<]+)<\/chNFe>/);
-      const chave = chaveMatch ? (chaveMatch[1]||chaveMatch[2]||"") : "";
+      // Extrair chave — tenta vários campos
+      const chaveMatch = xmlDoc.match(/<chCTe>([^<]{44})<\/chCTe>/) ||
+                         xmlDoc.match(/<chNFe>([^<]{44})<\/chNFe>/) ||
+                         xmlDoc.match(/Id="CTe([^"]{44})"/) ||
+                         xmlDoc.match(/Id="NFe([^"]{44})"/) ||
+                         xmlDoc.match(/<chave>([^<]{44})<\/chave>/);
+      const chave = chaveMatch ? chaveMatch[1] : "";
 
       console.log("  Doc", totalDocs, "schema:", schema||"(vazio)", "NSU:", nsu, "chave:", chave.slice(0,10)||"(sem chave)", "xmlLen:", xmlDoc.length);
 
-      let ok = false;
-      if (schema.toLowerCase().includes("cte")) {
-        ok = await processarCte(chave, xmlDoc, empresa);
-      } else if (schema.toLowerCase().includes("nfe")) {
-        ok = await processarNfe(chave, xmlDoc, empresa);
+      // Ignorar eventos (cancelamento, carta de correção) — não são documentos fiscais novos
+      if (schema.toLowerCase().includes("evento")) {
+        console.log("  → Evento ignorado");
       } else {
-        // Log primeiros 200 chars do XML para identificar tipo
-        console.log("  XML amostra:", xmlDoc.slice(0, 200));
+        let ok = false;
+        if (schema.toLowerCase().includes("cte")) {
+          ok = await processarCte(chave, xmlDoc, empresa);
+        } else if (schema.toLowerCase().includes("nfe") || schema.toLowerCase().includes("nfe")) {
+          ok = await processarNfe(chave, xmlDoc, empresa);
+        } else {
+          console.log("  XML amostra:", xmlDoc.slice(0, 300));
+        }
+        if (ok) totalNovas++;
       }
-      if (ok) totalNovas++;
       if (nsu > ultNSU) {
         ultNSU = nsu;
         await fbPut(nsuKey, ultNSU);
