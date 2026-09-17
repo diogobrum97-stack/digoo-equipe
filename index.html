@@ -2944,9 +2944,17 @@ function renderDashboard(panel, color) {
 
       const hoje = ano + "-" + mes + "-" + String(now.getDate()).padStart(2,"0");
 
-      const nfseHoje = Object.values(snapNfse.val()||{}).filter(n => (n.dataEmissao||n.criadoEm||"").toString().slice(0,10) === hoje);
-      const cteHoje  = Object.values(snapCte.val()||{}).filter(n => (n.dataEmissao||n.criadoEm||"").toString().slice(0,10) === hoje);
-      const nfeHoje  = Object.values(snapNfe.val()||{}).filter(n => (n.dataEmissao||n.criadoEm||"").toString().slice(0,10) === hoje);
+      const fmtHoje = d => {
+        if (!d) return "";
+        const s = d.toString();
+        // Se é timestamp em ms (13 dígitos)
+        if (/^\d{13}$/.test(s)) return new Date(Number(s)).toLocaleDateString("sv-SE"); // YYYY-MM-DD
+        return s.slice(0, 10);
+      };
+
+      const nfseHoje = Object.values(snapNfse.val()||{}).filter(n => fmtHoje(n.dataEmissao||n.criadoEm) === hoje);
+      const cteHoje  = Object.values(snapCte.val()||{}).filter(n => fmtHoje(n.dataEmissao||n.criadoEm) === hoje);
+      const nfeHoje  = Object.values(snapNfe.val()||{}).filter(n => fmtHoje(n.dataEmissao||n.criadoEm) === hoje);
 
       const totalGeral = nfseHoje.length + cteHoje.length + nfeHoje.length;
 
