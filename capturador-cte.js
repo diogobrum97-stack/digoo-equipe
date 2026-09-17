@@ -223,18 +223,24 @@ async function sincronizarEmpresa(empresa) {
       console.log("  NSU salvo:", ultNSU);
     }
 
-    // Processar cada docZip
-    const docZipRe = /<docZip[^>]*schema="([^"]+)"[^>]*NSU="(\d+)"[^>]*>([^<]+)<\/docZip>/g;
+    // Processar cada docZip — tenta os dois formatos de atributo
+    const docZipRe = /<docZip[^>]*>([^<]+)<\/docZip>/g;
+    const docZipReAtt = /<docZip([^>]*)>([^<]+)<\/docZip>/g;
     let match;
-    while ((match = docZipRe.exec(respostaXml)) !== null) {
-      const schema = match[1];
-      const nsu = parseInt(match[2]);
-      const base64 = match[3];
+    let totalDocs = 0;
+    while ((match = docZipReAtt.exec(respostaXml)) !== null) {
+      totalDocs++;
+      const attrs = match[1];
+      const base64 = match[2].trim();
+      const schemaM = attrs.match(/schema="([^"]+)"/i);
+      const nsuM = attrs.match(/NSU="(\d+)"/i);
+      const schema = schemaM ? schemaM[1] : "";
+      const nsu = nsuM ? parseInt(nsuM[1]) : 0;
       const xmlDoc = descomprimir(base64);
-      const chaveMatch = xmlDoc.match(/<chCTe>([^<]+)<\/chCTe>|<chNFe>([^<]+)<\/chNFe>|<Id>CTe([^<]+)<\/Id>|<Id>NFe([^<]+)<\/Id>/);
-      const chave = chaveMatch ? (chaveMatch[1]||chaveMatch[2]||chaveMatch[3]||chaveMatch[4]||"") : "";
+      const chaveMatch = xmlDoc.match(/<chCTe>([^<]+)<\/chCTe>|<chNFe>([^<]+)<\/chNFe>/);
+      const chave = chaveMatch ? (chaveMatch[1]||chaveMatch[2]||"") : "";
 
-      console.log("  Doc schema:", schema, "NSU:", nsu, "chave:", chave.slice(0,10)||"(sem chave)");
+      console.log("  Doc", totalDocs, "schema:", schema||"(vazio)", "NSU:", nsu, "chave:", chave.slice(0,10)||"(sem chave)", "xmlLen:", xmlDoc.length);
 
       let ok = false;
       if (schema.toLowerCase().includes("cte")) {
@@ -242,7 +248,8 @@ async function sincronizarEmpresa(empresa) {
       } else if (schema.toLowerCase().includes("nfe")) {
         ok = await processarNfe(chave, xmlDoc, empresa);
       } else {
-        console.log("  Schema desconhecido:", schema);
+        // Log primeiros 200 chars do XML para identificar tipo
+        console.log("  XML amostra:", xmlDoc.slice(0, 200));
       }
       if (ok) totalNovas++;
       if (nsu > ultNSU) {
@@ -250,6 +257,7 @@ async function sincronizarEmpresa(empresa) {
         await fbPut(nsuKey, ultNSU);
       }
     }
+    console.log("  Total docZip encontrados:", totalDocs);
 
     // Continuar só se há mais documentos — espera 3s entre chamadas
     continuar = maxNSU && parseInt(maxNSU) > ultNSU;
