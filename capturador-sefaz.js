@@ -103,14 +103,29 @@ async function processarNfse(doc, empresa) {
   if (doc.TipoDocumento !== "NFSE") return false;
 
   const xmlRaw = doc.ArquivoXml ? descomprimirXml(doc.ArquivoXml) : "";
-  const numero = extrairXml("Numero", xmlRaw) || extrairXml("NumeroNfse", xmlRaw) || doc.NSU;
-  const dataEmissao = (extrairXml("DataEmissao", xmlRaw) || extrairXml("DataEmissaoNfse", xmlRaw) || "").slice(0, 10);
-  const competencia = (extrairXml("Competencia", xmlRaw) || dataEmissao || "").slice(0, 7);
-  const valorStr = extrairXml("ValorServicos", xmlRaw) || extrairXml("ValorLiquidoNfse", xmlRaw) || "0";
+
+  // Número da NFS-e — PNFS-e usa nNFSe ou nDFSe
+  const numero = extrairXml("nNFSe", xmlRaw) || extrairXml("nDFSe", xmlRaw) || extrairXml("Numero", xmlRaw) || String(doc.NSU);
+
+  // Data — PNFS-e usa dhProc ou dEmi dentro de infNFSe
+  const dataEmissao = (extrairXml("dhProc", xmlRaw) || extrairXml("dEmi", xmlRaw) || extrairXml("DataEmissao", xmlRaw) || "").slice(0, 10);
+  const competencia = (extrairXml("dCompet", xmlRaw) || dataEmissao || "").slice(0, 7);
+
+  // Valor — dentro de <valores>
+  const valoresMatch = xmlRaw.match(/<valores[^>]*>([\s\S]*?)<\/valores>/i);
+  const valoresXml = valoresMatch ? valoresMatch[1] : xmlRaw;
+  const valorStr = extrairXml("vLiq", valoresXml) || extrairXml("vNFS", valoresXml) || extrairXml("vBC", valoresXml) || extrairXml("ValorServicos", xmlRaw) || "0";
   const valor = parseFloat(valorStr.replace(",", ".")) || 0;
-  const discriminacao = (extrairXml("Discriminacao", xmlRaw) || "").slice(0, 300);
-  const prestadorCnpj = extrairXml("Cnpj", xmlRaw) || "";
-  const prestadorNome = (extrairXml("RazaoSocial", xmlRaw) || extrairXml("NomeFantasia", xmlRaw) || "").slice(0, 100);
+
+  // Discriminação do serviço
+  const discriminacao = (extrairXml("xTribNac", xmlRaw) || extrairXml("xDiscServ", xmlRaw) || extrairXml("Discriminacao", xmlRaw) || "").slice(0, 300);
+
+  // Prestador — dentro de <emit>
+  const emitMatch = xmlRaw.match(/<emit[^>]*>([\s\S]*?)<\/emit>/i);
+  const emitXml = emitMatch ? emitMatch[1] : xmlRaw;
+  const prestadorCnpj = extrairXml("CNPJ", emitXml) || extrairXml("Cnpj", emitXml) || "";
+  const prestadorNome = (extrairXml("xNome", emitXml) || extrairXml("RazaoSocial", emitXml) || "").slice(0, 100);
+
   const mp = mesPath(dataEmissao || competencia);
   const chave = limparChave(doc.ChaveAcesso || ("NFSE_" + empresa.cnpj + "_" + numero + "_" + (competencia || doc.NSU)));
 
