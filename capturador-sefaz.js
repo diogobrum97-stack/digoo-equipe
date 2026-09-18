@@ -118,7 +118,7 @@ async function processarNfse(doc, empresa) {
   const valor = parseFloat(valorStr.replace(",", ".")) || 0;
 
   // Discriminação do serviço
-  const discriminacao = (extrairXml("xTribNac", xmlRaw) || extrairXml("xDiscServ", xmlRaw) || extrairXml("Discriminacao", xmlRaw) || "").slice(0, 300);
+  const discriminacao = (extrairXml("xTribNac", xmlRaw) || extrairXml("xDiscServ", xmlRaw) || extrairXml("Discriminacao", xmlRaw) || "").trim().toUpperCase().slice(0, 300);
 
   // Prestador — dentro de <emit>
   const emitMatch = xmlRaw.match(/<emit[^>]*>([\s\S]*?)<\/emit>/i);
