@@ -2952,9 +2952,9 @@ function renderDashboard(panel, color) {
         return s.slice(0, 10);
       };
 
-      const nfseHoje = Object.values(snapNfse.val()||{}).filter(n => fmtHoje(n.dataEmissao||n.criadoEm) === hoje);
-      const cteHoje  = Object.values(snapCte.val()||{}).filter(n => fmtHoje(n.dataEmissao||n.criadoEm) === hoje);
-      const nfeHoje  = Object.values(snapNfe.val()||{}).filter(n => fmtHoje(n.dataEmissao||n.criadoEm) === hoje);
+      const nfseHoje = Object.values(snapNfse.val()||{}).filter(n => (n.dataEmissao||"").slice(0,10) === hoje);
+      const cteHoje  = Object.values(snapCte.val()||{}).filter(n => (n.dataEmissao||"").slice(0,10) === hoje);
+      const nfeHoje  = Object.values(snapNfe.val()||{}).filter(n => (n.dataEmissao||"").slice(0,10) === hoje);
 
       const totalGeral = nfseHoje.length + cteHoje.length + nfeHoje.length;
 
