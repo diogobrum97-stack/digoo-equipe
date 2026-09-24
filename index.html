@@ -2881,8 +2881,8 @@ function renderDashboard(panel, color) {
         .map(([id,c]) => ({...c,id}))
         .filter(c => c.dataVencimento && c.situacao !== "pago" && c.situacao !== "cancelado")
         .map(c => { const v=new Date(c.dataVencimento+"T00:00:00"); return {...c, dias:Math.ceil((v-hoje)/(1000*60*60*24))}; })
-        .filter(c => c.dias >= 0 && c.dias <= 7)
-        .sort((a,b) => a.dias - b.dias);
+        .filter(c => c.dias <= 7) // inclui vencidas (dias < 0) e próximas (até 7 dias)
+        .sort((a,b) => a.dias - b.dias); // vencidas aparecem primeiro (dias negativos)
       const urgentes2 = proximos.filter(c => c.dias <= 1).length;
       const emBreve2  = proximos.filter(c => c.dias > 1 && c.dias <= 3).length;
       const statusTag = urgentes2
@@ -2943,8 +2943,9 @@ function renderDashboard(panel, color) {
       const mkCell = (label, val) => `<div><div style="font-size:9px;color:${T.text2};margin-bottom:1px;">${label}</div><div style="font-size:11px;color:${T.text};">${val}</div></div>`;
 
       const linhasContas = proximos.slice(0,8).map(c => {
-        const cor = c.dias <= 1 ? "#E24B4A" : "#f0b400";
-        const diaLabel = c.dias===0?"Hoje":c.dias===1?"Amanhã":(c.dias+"d");
+        const vencida = c.dias < 0;
+        const cor = (vencida || c.dias <= 1) ? "#E24B4A" : "#f0b400";
+        const diaLabel = vencida ? "Vencida" : c.dias===0?"Hoje":c.dias===1?"Amanhã":(c.dias+"d");
         const dtFmt = c.dataVencimento ? c.dataVencimento.slice(8,10)+"/"+c.dataVencimento.slice(5,7)+"/"+c.dataVencimento.slice(0,4) : "—";
         const detalhes = mkCell("Vencimento", dtFmt) + `<div><div style="font-size:9px;color:${T.text2};margin-bottom:1px;">Valor</div><div style="font-size:11px;font-weight:600;color:${T.text};">${fmtValV(c.valor||0)}</div></div>`;
         return mkVencRow(c.fornecedor||"—", cor, diaLabel, detalhes);
