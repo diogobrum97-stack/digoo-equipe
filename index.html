@@ -811,15 +811,15 @@ window._fetchDashboard = async function fetchDashboard() {
     const minutosDia = 24 * 60;
     const minutosPassados = hoje.getHours() * 60 + hoje.getMinutes();
     const percDia = minutosPassados / minutosDia;
-    const fatHoje = resHoje?.summary?.totalRevenue || 0;
+    const fatHoje = resHoje.summary?.totalRevenue || 0;
     const projecaoDia = percDia > 0 ? fatHoje / percDia : 0;
     const fatHojeMatriz = resHojeMatriz?.summary?.totalRevenue || 0;
     const projecaoMatriz = percDia > 0 ? fatHojeMatriz / percDia : 0;
 
     dashData = {
       fatHoje, projecaoDia,
-      fatMes: resMes?.summary?.totalRevenue || 0,
-      pedidosMes: resMes?.summary?.totalOrders || 0,
+      fatMes: resMes.summary?.totalRevenue || 0,
+      pedidosMes: resMes.summary?.totalOrders || 0,
       percDia: Math.round(percDia * 100),
       hora: hoje.toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"}),
       top5hoje: [...(resHoje.topSellers || [])].sort((a,b)=>(b.revenue||0)-(a.revenue||0)).slice(0,5),
