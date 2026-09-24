@@ -980,6 +980,7 @@ async function confirmarLoteClonagem(container) {
 }
 
 let perguntasState = { lista: null, carregando: false, erro: null, enviando: {}, _fetchedAt: 0 };
+window._perguntasState = () => perguntasState;
 
 // ═══════════════ Picking & Packing ═══════════════
 let pickingState = {
