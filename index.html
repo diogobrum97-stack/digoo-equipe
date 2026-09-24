@@ -2807,14 +2807,14 @@ function renderDashboard(panel, color) {
   const subEst = alertasCount > 0 ? "alertas" : "Em dia";
 
   grid.appendChild(mkPendExpand("tarefas", corTarefas, "Tarefas", valTarefas, subTarefas, tarefasDrawerInner));
-  grid.appendChild(mkPendExpand("perguntas", corPerg, "Perguntas", valPerg, subPerg, pergDrawerInner));
-  grid.appendChild(mkPendExpand("estoque", corEst, "Full SP", valEst, subEst, estDrawerInner));
+  pendGrid.appendChild(mkPendExpand("perguntas", corPerg, "Perguntas", valPerg, subPerg, pergDrawerInner));
+  pendGrid.appendChild(mkPendExpand("estoque", corEst, "Full SP", valEst, subEst, estDrawerInner));
 
   const titulo = document.createElement("div");
   titulo.style.cssText = `font-size:11px;color:${T.text2};font-weight:600;margin-bottom:10px;`;
   titulo.textContent = "Pendências";
   pendCard.appendChild(titulo);
-  pendCard.appendChild(grid);
+  pendCard.appendChild(pendGrid);
   statusBar.appendChild(pendCard);
 
   // ── Card Operações ──
@@ -2842,15 +2842,15 @@ function renderDashboard(panel, color) {
     ? `<div style="border-top:0.5px solid ${T.border};padding-top:8px;margin-top:8px;max-height:260px;overflow-y:auto;">${pickingListHtml}<div onclick="window._diogotab='picking';render();" style="text-align:center;font-size:10px;color:${T.text2};padding:6px 0;cursor:pointer;">Ir para Picking →</div></div>`
     : `<div style="border-top:0.5px solid ${T.border};padding-top:8px;margin-top:8px;font-size:11px;color:#10b981;">Nenhum pedido pendente ✓</div>`;
 
-  const pickGrid = document.createElement("div");
-  pickGrid.style.cssText = "display:grid;grid-template-columns:1fr;gap:8px;";
-  pickGrid.appendChild(mkPendExpand("packing", corPick, "Picking & Packing", valPick, subPick, pickingDrawerInner));
+  const pickingGrid = document.createElement("div");
+  pickingGrid.style.cssText = "display:grid;grid-template-columns:1fr;gap:8px;";
+  pickingGrid.appendChild(mkPendExpand("packing", corPick, "Picking & Packing", valPick, subPick, pickingDrawerInner));
 
   const pickTitulo = document.createElement("div");
   pickTitulo.style.cssText = `font-size:11px;color:${T.text2};font-weight:600;margin-bottom:10px;`;
   pickTitulo.textContent = "Operações";
   pickingCard.appendChild(pickTitulo);
-  pickingCard.appendChild(pickGrid);
+  pickingCard.appendChild(pickingGrid);
   statusBar.appendChild(pickingCard);
 
   // ── Card Anúncios ──
@@ -2880,15 +2880,15 @@ function renderDashboard(panel, color) {
         ? `<div style="border-top:0.5px solid ${T.border};padding-top:8px;margin-top:8px;max-height:200px;overflow-y:auto;">${rascListHtml}<div onclick="window._diogotab='clonagem';render();" style="text-align:center;font-size:10px;color:${T.text2};padding:6px 0;cursor:pointer;">Ver anúncios →</div></div>`
         : `<div style="border-top:0.5px solid ${T.border};padding-top:8px;margin-top:8px;font-size:11px;color:#10b981;">Nenhum rascunho pendente ✓</div>`;
 
-      const rascGrid = document.createElement("div");
-      rascGrid.style.cssText = "display:grid;grid-template-columns:1fr;gap:8px;";
-      rascGrid.appendChild(mkPendExpand("anuncios", corRasc, "Para criar", valRasc, subRasc, rascDrawerInner));
+      const anunciosGrid = document.createElement("div");
+      anunciosGrid.style.cssText = "display:grid;grid-template-columns:1fr;gap:8px;";
+      anunciosGrid.appendChild(mkPendExpand("anuncios", corRasc, "Para criar", valRasc, subRasc, rascDrawerInner));
 
       const rascTitulo = document.createElement("div");
       rascTitulo.style.cssText = `font-size:11px;color:${T.text2};font-weight:600;margin-bottom:10px;`;
       rascTitulo.textContent = "Anúncios";
       rascCard.appendChild(rascTitulo);
-      rascCard.appendChild(rascGrid);
+      rascCard.appendChild(anunciosGrid);
       statusBar.appendChild(rascCard);
       window._sbarApply();
     } catch(e) { console.log("rascunhos-sbar:", e.message); }
