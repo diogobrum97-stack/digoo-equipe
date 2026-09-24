@@ -2937,7 +2937,7 @@ function renderDashboard(panel, color) {
     } catch(e) { console.log("venc-sbar:", e.message); }
   })();
 
-  // Card Documentos hoje — NFS-e + CT-e + NF-e
+  // Card Documentos hoje — NFS-e + NF-e
   (async () => {
     try {
       const now = new Date();
@@ -2945,52 +2945,81 @@ function renderDashboard(panel, color) {
       const mes = String(now.getMonth()+1).padStart(2,"0");
       const mesPath = ano + "/" + mes;
       const fmtVal = v => `R$ ${Number(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+      const fmtData = d => {
+        if (!d) return "";
+        const s = d.toString();
+        if (/^\d{13}$/.test(s)) return new Date(Number(s)).toLocaleDateString("pt-BR");
+        return s.slice(0,10).split("-").reverse().join("/");
+      };
 
-      // Buscar os três tipos em paralelo
-      const [snapNfse, snapCte, snapNfe] = await Promise.all([
+      const [snapNfse, snapNfe] = await Promise.all([
         get(ref(db, `/nfse_tomadas/${mesPath}`)),
-        get(ref(db, `/cte_tomados/${mesPath}`)),
         get(ref(db, `/nfe_tomadas/${mesPath}`)),
       ]);
 
       const hoje = ano + "-" + mes + "-" + String(now.getDate()).padStart(2,"0");
+      const nfseHoje = Object.values(snapNfse.val()||{}).filter(n => (n.dataEmissao||"").slice(0,10) === hoje);
+      const nfeHoje  = Object.values(snapNfe.val()||{}).filter(n => (n.dataEmissao||"").slice(0,10) === hoje);
+      const totalGeral = nfseHoje.length + nfeHoje.length;
 
-      const fmtHoje = d => {
-        if (!d) return "";
-        const s = d.toString();
-        // Se é timestamp em ms (13 dígitos)
-        if (/^\d{13}$/.test(s)) return new Date(Number(s)).toLocaleDateString("sv-SE"); // YYYY-MM-DD
-        return s.slice(0, 10);
+      // Monta os contadores lado a lado
+      const mkContador = (label, cor, itens, campoValor) => {
+        const total = itens.reduce((s,n) => s + Number(n[campoValor]||0), 0);
+        const ativo = itens.length > 0;
+        return `<div style="border-top:2px solid ${ativo ? cor : T.border};padding-top:6px;opacity:${ativo ? 1 : 0.35};">
+          <div style="font-size:10px;font-weight:600;color:${cor};text-transform:uppercase;letter-spacing:0.5px;">${label}</div>
+          <div style="font-size:20px;font-weight:600;color:${T.text};line-height:1.2;">${itens.length || "0"}</div>
+          <div style="font-size:10px;color:${T.text2};">${ativo ? fmtVal(total) : "—"}</div>
+        </div>`;
       };
 
-      const nfseHoje = Object.values(snapNfse.val()||{}).filter(n => (n.dataEmissao||"").slice(0,10) === hoje);
-      const cteHoje  = Object.values(snapCte.val()||{}).filter(n => (n.dataEmissao||"").slice(0,10) === hoje);
-      const nfeHoje  = Object.values(snapNfe.val()||{}).filter(n => (n.dataEmissao||"").slice(0,10) === hoje);
+      // Monta cada linha de documento com expand
+      let docIdx = 0;
+      const mkDoc = (n, cor, tipo, campoNome, campoValor, campoNum, campoLink) => {
+        const id = "sdoc" + (docIdx++);
+        const nome = (n[campoNome]||"—").substring(0,28);
+        const val = fmtVal(n[campoValor]||0);
+        const num = n[campoNum] ? "#" + n[campoNum] : "—";
+        const data = fmtData(n.dataEmissao);
+        const link = n[campoLink] ? `<a href="${n[campoLink]}" target="_blank" style="font-size:10px;color:${cor};text-decoration:none;display:flex;align-items:center;gap:3px;margin-top:8px;">
+          <i class="ti ti-external-link" style="font-size:11px;"></i> Ver documento</a>` : "";
+        return `
+          <div onclick="(function(){var el=document.getElementById('${id}');var ic=document.getElementById('ic${id}');var open=el.style.display==='block';el.style.display=open?'none':'block';ic.style.transform=open?'rotate(0deg)':'rotate(180deg)';})();"
+            style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;padding:4px 0;">
+            <div style="display:flex;align-items:center;gap:5px;min-width:0;">
+              <span style="width:2px;height:12px;background:${cor};border-radius:2px;flex-shrink:0;display:inline-block;"></span>
+              <div style="font-size:11px;color:${T.text2};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nome}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:5px;flex-shrink:0;margin-left:6px;">
+              <div style="font-size:11px;font-weight:600;color:${T.text};">${val}</div>
+              <i class="ti ti-chevron-down" id="ic${id}" style="font-size:12px;color:${T.text2};transition:transform 0.2s;"></i>
+            </div>
+          </div>
+          <div id="${id}" style="display:none;background:${T.card2||T.border};border-radius:8px;padding:10px 12px;margin-bottom:2px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+              <div><div style="font-size:9px;color:${T.text2};margin-bottom:1px;">Tipo</div><div style="font-size:11px;color:${T.text};">${tipo}</div></div>
+              <div><div style="font-size:9px;color:${T.text2};margin-bottom:1px;">Número</div><div style="font-size:11px;color:${T.text};">${num}</div></div>
+              <div><div style="font-size:9px;color:${T.text2};margin-bottom:1px;">Emissão</div><div style="font-size:11px;color:${T.text};">${data}</div></div>
+              <div><div style="font-size:9px;color:${T.text2};margin-bottom:1px;">Valor</div><div style="font-size:11px;font-weight:600;color:${T.text};">${val}</div></div>
+            </div>
+            ${link}
+          </div>`;
+      };
 
-      const totalGeral = nfseHoje.length + cteHoje.length + nfeHoje.length;
-
-      function mkSecao(titulo, cor, itens, campoNome, campoValor) {
-        if (itens.length === 0) return `<div style="font-size:11px;color:${T.text2};padding:4px 0;">Nenhuma hoje</div>`;
-        const rows = itens.slice(0,5).map(n => `
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0 6px 8px;border-left:2px solid ${cor};border-radius:4px;margin-bottom:3px;">
-            <div style="font-size:11px;color:${T.text};flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${n[campoNome]||"—"}</div>
-            <div style="font-size:11px;font-weight:600;color:${T.text};flex-shrink:0;margin-left:8px;">${fmtVal(n[campoValor]||0)}</div>
-          </div>`).join("");
-        const total = itens.reduce((s,n) => s + Number(n[campoValor]||0), 0);
-        return rows + (itens.length > 0 ? `<div style="font-size:10px;color:${T.text2};padding:3px 0 6px;">Total: ${fmtVal(total)}</div>` : "");
-      }
+      const linhasNfse = nfseHoje.map(n => mkDoc(n, "#3b82f6", "NFS-e", "prestadorRazaoSocial", "valorServicos", "numero", "linkNfse")).join("");
+      const linhasNfe  = nfeHoje.map(n => mkDoc(n, "#10b981", "NF-e", "emitenteRazaoSocial", "valor", "numero", "linkNfe")).join("");
 
       const titulo = totalGeral > 0 ? `Documentos hoje · ${totalGeral}` : "Documentos hoje";
 
       const cardHtml = `<div id="sbar-card-nfse" style="background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:14px 16px;">
         <div style="font-size:11px;color:${T.text2};margin-bottom:10px;font-weight:600;">${titulo}</div>
-        <div style="max-height:320px;overflow-y:auto;">
-          <div style="font-size:10px;color:#3b82f6;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;cursor:pointer;" onclick="var s=document.getElementById('ds-nfse');s.style.display=s.style.display==='none'?'block':'none';">▾ NFS-e ${nfseHoje.length > 0 ? "· "+nfseHoje.length : ""}</div>
-          <div id="ds-nfse">${mkSecao("NFS-e", "#3b82f6", nfseHoje, "prestadorRazaoSocial", "valorServicos")}</div>
-          <div style="font-size:10px;color:#f59e0b;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;margin-top:4px;cursor:pointer;" onclick="var s=document.getElementById('ds-cte');s.style.display=s.style.display==='none'?'block':'none';">▾ CT-e ${cteHoje.length > 0 ? "· "+cteHoje.length : ""}</div>
-          <div id="ds-cte">${mkSecao("CT-e", "#f59e0b", cteHoje, "emitenteRazaoSocial", "valor")}</div>
-          <div style="font-size:10px;color:#10b981;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;margin-top:4px;cursor:pointer;" onclick="var s=document.getElementById('ds-nfe');s.style.display=s.style.display==='none'?'block':'none';">▾ NF-e ${nfeHoje.length > 0 ? "· "+nfeHoje.length : ""}</div>
-          <div id="ds-nfe">${mkSecao("NF-e", "#10b981", nfeHoje, "emitenteRazaoSocial", "valor")}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+          ${mkContador("NFS-e","#3b82f6",nfseHoje,"valorServicos")}
+          ${mkContador("NF-e","#10b981",nfeHoje,"valor")}
+        </div>
+        <div style="border-top:0.5px solid ${T.border};padding-top:8px;display:flex;flex-direction:column;gap:2px;max-height:260px;overflow-y:auto;">
+          ${linhasNfse}${linhasNfe}
+          ${totalGeral === 0 ? `<div style="font-size:11px;color:${T.text2};padding:4px 0;">Nenhum documento hoje</div>` : ""}
         </div>
       </div>`;
 
