@@ -2909,8 +2909,8 @@ function renderDashboard(panel, color) {
       const totalFiscal = (window._fiscalAgrupado||[]).filter(e => e.diff <= 7).length;
       const totalVenc = totalContas + totalFiscal;
 
-      const corContas = proximos.some(c => c.dias <= 1) ? "#E24B4A" : proximos.length > 0 ? "#f0b400" : "#10b981";
-      const corFiscal = (window._fiscalAgrupado||[]).some(e => e.diff <= 1) ? "#E24B4A" : totalFiscal > 0 ? "#f0b400" : "#10b981";
+      const corContas = "#E24B4A";
+      const corFiscal = "#f0b400";
 
       const totalValContas = proximos.reduce((s,c) => s + Number(c.valor||0), 0);
       const fmtValV = v => `R$ ${Number(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
@@ -3008,7 +3008,7 @@ function renderDashboard(panel, color) {
       const mkContador = (label, cor, itens, campoValor) => {
         const total = itens.reduce((s,n) => s + Number(n[campoValor]||0), 0);
         const ativo = itens.length > 0;
-        return `<div style="border-top:2px solid ${ativo ? cor : T.border};padding-top:6px;opacity:${ativo ? 1 : 0.35};">
+        return `<div style="border-top:2px solid ${cor};padding-top:6px;opacity:${ativo ? 1 : 0.35};">
           <div style="font-size:10px;font-weight:600;color:${cor};text-transform:uppercase;letter-spacing:0.5px;">${label}</div>
           <div style="font-size:20px;font-weight:600;color:${T.text};line-height:1.2;">${itens.length || "0"}</div>
           <div style="font-size:10px;color:${T.text2};">${ativo ? fmtVal(total) : "—"}</div>
