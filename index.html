@@ -2506,8 +2506,8 @@ function renderDashboard(panel, color) {
   header.innerHTML = `<div><div style="font-size:20px;font-weight:700;color:${T.text};letter-spacing:-0.3px;">${saudacao}, Diogo 👋</div><div style="font-size:11px;color:${T.text3};margin-top:3px;font-family:'Inter',sans-serif;">${dias[now.getDay()]} · ${now.getDate()} ${meses[now.getMonth()]} ${now.getFullYear()}</div></div><div style="display:flex;align-items:center;gap:10px;"><div style="font-size:11px;font-weight:600;color:${T.text};">${dashData.hora}</div><button onclick="this.style.opacity='0.4';dashData=null;dashLoading=false;window._fetchDashboard();" style="background:none;border:none;color:${T.text2};font-size:16px;cursor:pointer;padding:4px;line-height:1;" title="Atualizar">↻</button></div>`;
   wrap.appendChild(header);
 
-  const grid = document.createElement("div");
-  grid.style.cssText = "display:grid;grid-template-columns:1fr 380px;gap:16px;align-items:start;";
+  const dashGrid = document.createElement("div");
+  dashGrid.style.cssText = "display:grid;grid-template-columns:1fr 380px;gap:16px;align-items:start;";
 
   // Vendas ML com abas Filial/Matriz
   const vendasCard = document.createElement("div");
@@ -2587,7 +2587,7 @@ function renderDashboard(panel, color) {
   topGrid.appendChild(mkTopCard("Top mês", top5MesMerged));
   vendasCard.appendChild(vendasGrid);
   vendasCard.appendChild(topGrid);
-  grid.appendChild(vendasCard);
+  dashGrid.appendChild(vendasCard);
 
   // Tarefas
   // Usar tasksFor igual ao resto do sistema
@@ -2791,8 +2791,8 @@ function renderDashboard(panel, color) {
   const estDrawerInner = `<div style="border-top:0.5px solid ${T.border};padding-top:8px;margin-top:8px;max-height:260px;overflow-y:auto;">${estDrawerRows||`<div style="font-size:11px;color:#10b981;">Nenhum produto crítico ✓</div>`}${alertasCount>0?`<div onclick="window._diogotab='estoque';render();" style="text-align:center;font-size:10px;color:${T.text2};padding:6px 0;cursor:pointer;">Ver estoque →</div>`:""}</div>`;
 
   // Montar grid
-  const grid = document.createElement("div");
-  grid.style.cssText = "display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;";
+  const pendGrid = document.createElement("div");
+  pendGrid.style.cssText = "display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;";
 
   const corTarefas = urgentes > 0 ? "#E24B4A" : importantes > 0 ? "#f0b400" : "#10b981";
   const valTarefas = (urgentes+importantes+normais) > 0 ? (urgentes+importantes+normais) : "✓";
@@ -2806,7 +2806,7 @@ function renderDashboard(panel, color) {
   const valEst = alertasCount > 0 ? alertasCount : "✓";
   const subEst = alertasCount > 0 ? "alertas" : "Em dia";
 
-  grid.appendChild(mkPendExpand("tarefas", corTarefas, "Tarefas", valTarefas, subTarefas, tarefasDrawerInner));
+  pendGrid.appendChild(mkPendExpand("tarefas", corTarefas, "Tarefas", valTarefas, subTarefas, tarefasDrawerInner));
   pendGrid.appendChild(mkPendExpand("perguntas", corPerg, "Perguntas", valPerg, subPerg, pergDrawerInner));
   pendGrid.appendChild(mkPendExpand("estoque", corEst, "Full SP", valEst, subEst, estDrawerInner));
 
@@ -3297,7 +3297,7 @@ function renderDashboard(panel, color) {
     }
   })();
 
-  wrap.appendChild(grid);
+  wrap.appendChild(dashGrid);
   panel.appendChild(wrap);
 }
 // ─── FIM DASHBOARD ML ─────────────────────────────────────────────────────────
