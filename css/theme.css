@@ -48,6 +48,8 @@ body.light {
 
 /* ── Animações globais ───────────────────────────────────────────────── */
 @keyframes pulse       { 0%,100%{opacity:1} 50%{opacity:.4} }
+@keyframes pulse-red   { 0%,100%{opacity:1} 50%{opacity:.25} }
+@keyframes pulse-badge { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(0.95)} }
 @keyframes siren       { 0%,100%{opacity:1} 50%{opacity:0.15} }
 @keyframes atrasoBlink { 0%,100%{opacity:1} 50%{opacity:0.25} }
 @keyframes spin        { to { transform: rotate(360deg); } }
