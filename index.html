@@ -2922,12 +2922,13 @@ function renderDashboard(panel, color) {
       </div>`;
 
       let vIdx = 0;
-      const mkVencRow = (nome, cor, diaLabel, detalhes) => {
+      const mkVencRow = (nome, cor, diaLabel, detalhes, barraStyle) => {
         const id = "sv" + (vIdx++);
+        const barra = barraStyle || `style="width:2px;height:12px;background:${cor};border-radius:2px;flex-shrink:0;display:inline-block;"`;
         return `<div onclick="(function(){var el=document.getElementById('${id}');var ic=document.getElementById('ic${id}');var open=el.style.display==='block';el.style.display=open?'none':'block';ic.style.transform=open?'rotate(0deg)':'rotate(180deg)';})();"
           style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;padding:4px 0;">
           <div style="display:flex;align-items:center;gap:5px;min-width:0;">
-            <span style="width:2px;height:12px;background:${cor};border-radius:2px;flex-shrink:0;display:inline-block;"></span>
+            <span ${barra}></span>
             <div style="font-size:11px;color:${T.text2};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nome}</div>
           </div>
           <div style="display:flex;align-items:center;gap:5px;flex-shrink:0;margin-left:6px;">
@@ -2944,11 +2945,13 @@ function renderDashboard(panel, color) {
 
       const linhasContas = proximos.slice(0,8).map(c => {
         const vencida = c.dias < 0;
+        const hoje = c.dias === 0;
         const cor = (vencida || c.dias <= 1) ? "#E24B4A" : "#f0b400";
-        const diaLabel = vencida ? "Vencida" : c.dias===0?"Hoje":c.dias===1?"Amanhã":(c.dias+"d");
+        const diaLabel = vencida ? "Vencida" : hoje ? "Hoje" : c.dias===1?"Amanhã":(c.dias+"d");
         const dtFmt = c.dataVencimento ? c.dataVencimento.slice(8,10)+"/"+c.dataVencimento.slice(5,7)+"/"+c.dataVencimento.slice(0,4) : "—";
         const detalhes = mkCell("Vencimento", dtFmt) + `<div><div style="font-size:9px;color:${T.text2};margin-bottom:1px;">Valor</div><div style="font-size:11px;font-weight:600;color:${T.text};">${fmtValV(c.valor||0)}</div></div>`;
-        return mkVencRow(c.fornecedor||"—", cor, diaLabel, detalhes);
+        const barraExtra = hoje ? `style="width:2px;height:12px;background:#E24B4A;border-radius:2px;flex-shrink:0;display:inline-block;animation:pulse-red 1s ease-in-out infinite;"` : `style="width:2px;height:12px;background:${cor};border-radius:2px;flex-shrink:0;display:inline-block;"`;
+        return mkVencRow(c.fornecedor||"—", cor, diaLabel, detalhes, barraExtra);
       }).join("");
 
       const linhasFiscal = (window._fiscalAgrupado||[]).filter(e => e.diff <= 7).slice(0,5).map(e => {
