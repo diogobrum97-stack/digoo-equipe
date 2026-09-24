@@ -2710,7 +2710,7 @@ function renderDashboard(panel, color) {
   function mkSideCard(title, rows) {
     const c = document.createElement("div");
     c.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:14px 16px;`;
-    c.innerHTML = `<div style="font-size:9px;color:${T.text2};text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;">${title}</div>` + rows;
+    c.innerHTML = `<div style="font-size:11px;color:${T.text2};font-weight:600;margin-bottom:10px;">${title}</div>` + rows;
     return c;
   }
 
@@ -2720,6 +2720,17 @@ function renderDashboard(panel, color) {
       <div style="font-size:11px;color:${T.text};">${label}</div>
       <div style="${bg}">${value}</div>
     </div>`;
+  }
+
+  // Novo contador estilo cards de vencimentos/documentos
+  function mkContSbar(label, cor, valor, sub, onclick) {
+    const el = document.createElement("div");
+    el.style.cssText = `border-top:1px solid ${cor};padding-top:6px;cursor:${onclick?'pointer':'default'};`;
+    el.innerHTML = `<div style="font-size:10px;font-weight:600;color:${cor};text-transform:uppercase;letter-spacing:0.5px;">${label}</div>
+      <div style="font-size:20px;font-weight:600;color:${T.text};line-height:1.2;margin-top:2px;">${valor}</div>
+      <div style="font-size:10px;color:${T.text2};">${sub}</div>`;
+    if (onclick) el.addEventListener("click", onclick);
+    return el;
   }
 
   // Card Pendências interativo
@@ -2737,7 +2748,7 @@ function renderDashboard(panel, color) {
     return row;
   }
 
-  pendCard.innerHTML = `<div style="font-size:9px;color:${T.text2};text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;">Pendências</div>`;
+  pendCard.innerHTML = `<div style="font-size:11px;color:${T.text2};font-weight:600;margin-bottom:10px;">Pendências</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;" id="pend-counters"></div>`;
 
   // helper expansível genérico
   function mkExpansivel(labelHtml, drawerHtml, maxH) {
@@ -2799,6 +2810,24 @@ function renderDashboard(panel, color) {
   estRow.style.borderBottom = "none";
   pendCard.appendChild(estRow);
 
+  // Injetar contadores de Pendências
+  const pendCounters = pendCard.querySelector("#pend-counters");
+  if (pendCounters) {
+    const corTarefas = urgentes > 0 ? "#E24B4A" : importantes > 0 ? "#f0b400" : "#10b981";
+    const valTarefas = (urgentes+importantes+normais) > 0 ? (urgentes+importantes+normais) : "✓";
+    const subTarefas = (urgentes+importantes+normais) > 0 ? "em aberto" : "Em dia";
+    pendCounters.appendChild(mkContSbar("Tarefas", corTarefas, valTarefas, subTarefas, () => { window._diogotab='tarefas'; render(); }));
+
+    const corPerg = perguntasTotal > 0 ? "#3b82f6" : "#10b981";
+    const valPerg = perguntasTotal > 0 ? perguntasTotal : "✓";
+    const subPerg = perguntasTotal > 0 ? (perguntasSugeridas > 0 ? perguntasSugeridas+" sug." : "sem sug.") : "Em dia";
+    pendCounters.appendChild(mkContSbar("Perguntas", corPerg, valPerg, subPerg, () => { window._diogotab='perguntas'; render(); }));
+
+    const corEst = alertasCount > 0 ? "#E24B4A" : "#10b981";
+    const valEst = alertasCount > 0 ? alertasCount : "✓";
+    const subEst = alertasCount > 0 ? "alertas" : "Em dia";
+    pendCounters.appendChild(mkContSbar("Full SP", corEst, valEst, subEst, () => { window._diogotab='estoque'; render(); }));
+  }
   statusBar.appendChild(pendCard);
 
   // ── Card Picking & Packing ──
@@ -2826,8 +2855,16 @@ function renderDashboard(panel, color) {
 
   const pickingRow = mkExpansivel(pickingLabelHtml, pickingDrawerHtml, "300px");
   pickingRow.style.borderBottom = "none";
-  pickingCard.innerHTML = `<div style="font-size:9px;color:${T.text2};text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;">Operações</div>`;
+  pickingCard.innerHTML = `<div style="font-size:11px;color:${T.text2};font-weight:600;margin-bottom:10px;">Operações</div><div style="display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:10px;" id="op-counters"></div>`;
   pickingCard.appendChild(pickingRow);
+  // Injetar contador de Operações
+  const opCounters = pickingCard.querySelector("#op-counters");
+  if (opCounters) {
+    const corPick = pickingTotal > 0 ? "#3b82f6" : "#10b981";
+    const valPick = pickingTotal > 0 ? pickingTotal : "✓";
+    const subPick = pickingTotal > 0 ? "pedido"+(pickingTotal>1?"s":"")+" pronto"+(pickingTotal>1?"s":"") : "Em dia";
+    opCounters.appendChild(mkContSbar("Picking & Packing", corPick, valPick, subPick, () => { window._diogotab='picking'; render(); }));
+  }
   statusBar.appendChild(pickingCard);
 
   // ── Card Rascunhos de anúncios ──
@@ -2860,7 +2897,12 @@ function renderDashboard(panel, color) {
 
       const rascRow = mkExpansivel(rascLabelHtml, rascDrawerHtml, "300px");
       rascRow.style.borderBottom = "none";
-      rascCard.innerHTML = `<div style="font-size:9px;color:${T.text2};text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;">Anúncios</div>`;
+      rascCard.innerHTML = `<div style="font-size:11px;color:${T.text2};font-weight:600;margin-bottom:10px;">Anúncios</div><div style="display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:10px;" id="rasc-counters"></div>`;
+      // Injetar contador de Anúncios
+      const rascCounters = rascCard.querySelector("#rasc-counters");
+      if (rascCounters) {
+        rascCounters.appendChild(mkContSbar("Para criar", "#f0b400", rascunhos.length, "rascunho"+(rascunhos.length>1?"s":""), () => window._goAnuncios()));
+      }
       rascCard.appendChild(rascRow);
       statusBar.appendChild(rascCard);
     } catch(e) { console.log("rascunhos:", e.message); }
@@ -2936,7 +2978,7 @@ function renderDashboard(panel, color) {
       const totalValContas = proximos.reduce((s,c) => s + Number(c.valor||0), 0);
       const fmtValV = v => `R$ ${Number(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
 
-      const mkContV = (label, cor, count, sub) => `<div data-cor="${cor}" data-prop="borderTopColor" style="border-top:2px solid ${cor};padding-top:6px;opacity:${count > 0 ? 1 : 0.35};">
+      const mkContV = (label, cor, count, sub) => `<div data-cor="${cor}" data-prop="borderTopColor" style="border-top:1px solid ${cor};padding-top:6px;opacity:${count > 0 ? 1 : 0.35};">
         <div data-cor="${cor}" data-prop="color" style="font-size:10px;font-weight:600;color:${cor};text-transform:uppercase;letter-spacing:0.5px;">${label}</div>
         <div style="font-size:20px;font-weight:600;color:${T.text};line-height:1.2;">${count}</div>
         <div style="font-size:10px;color:${T.text2};">${sub}</div>
@@ -3038,7 +3080,7 @@ function renderDashboard(panel, color) {
       const mkContador = (label, cor, itens, campoValor) => {
         const total = itens.reduce((s,n) => s + Number(n[campoValor]||0), 0);
         const ativo = itens.length > 0;
-        return `<div data-cor="${cor}" data-prop="borderTopColor" style="border-top:2px solid ${cor};padding-top:6px;opacity:${ativo ? 1 : 0.35};">
+        return `<div data-cor="${cor}" data-prop="borderTopColor" style="border-top:1px solid ${cor};padding-top:6px;opacity:${ativo ? 1 : 0.35};">
           <div data-cor="${cor}" data-prop="color" style="font-size:10px;font-weight:600;color:${cor};text-transform:uppercase;letter-spacing:0.5px;">${label}</div>
           <div style="font-size:20px;font-weight:600;color:${T.text};line-height:1.2;">${itens.length || "0"}</div>
           <div style="font-size:10px;color:${T.text2};">${ativo ? fmtVal(total) : "—"}</div>
