@@ -2738,9 +2738,7 @@ function renderDashboard(panel, color) {
   pendCard.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:14px 16px;`;
 
   function mkPendExpand(id, cor, label, val, sub, drawerHtml) {
-    const wrap = document.createElement("div");
-
-    // Contador clicável
+    // Retorna só o contador — o drawer é injetado separadamente no pendCard
     const counter = document.createElement("div");
     counter.style.cssText = `border-top:2px solid ${cor};padding-top:6px;cursor:pointer;`;
     counter.innerHTML = `
@@ -2748,24 +2746,25 @@ function renderDashboard(panel, color) {
       <div style="font-size:20px;font-weight:600;color:${T.text};line-height:1.2;margin-top:2px;">${val}</div>
       <div style="font-size:10px;color:${T.text2};">${sub}</div>`;
 
-    // Drawer
+    // Drawer — será appendado ao pendCard depois
     const drw = document.createElement("div");
-    drw.style.cssText = "grid-column:1/-1;max-height:0;overflow:hidden;transition:max-height .3s ease;";
+    drw.style.cssText = "max-height:0;overflow:hidden;transition:max-height .3s ease;width:100%;";
     drw.innerHTML = drawerHtml;
+    drw.classList.add("pend-drw");
+    drw.dataset.pendId = id;
 
     let open = false;
     counter.addEventListener("click", () => {
       open = !open;
-      drw.style.maxHeight = open ? "300px" : "0";
-      // Fechar os outros
-      pendCard.querySelectorAll(".pend-drw").forEach(el => { if (el !== drw) el.style.maxHeight = "0"; });
-      pendCard.querySelectorAll(".pend-drw").forEach(el => { if (el !== drw) el._open = false; });
+      // Fechar os outros drawers
+      pendCard.querySelectorAll(".pend-drw").forEach(el => {
+        if (el !== drw) { el.style.maxHeight = "0"; }
+      });
+      drw.style.maxHeight = open ? "320px" : "0";
     });
-    drw.classList.add("pend-drw");
 
-    wrap.appendChild(counter);
-    wrap.appendChild(drw);
-    return wrap;
+    counter._drw = drw;
+    return counter;
   }
 
   // Drawer Tarefas
@@ -2806,15 +2805,22 @@ function renderDashboard(panel, color) {
   const valEst = alertasCount > 0 ? alertasCount : "✓";
   const subEst = alertasCount > 0 ? "alertas" : "Em dia";
 
-  pendGrid.appendChild(mkPendExpand("tarefas", corTarefas, "Tarefas", valTarefas, subTarefas, tarefasDrawerInner));
-  pendGrid.appendChild(mkPendExpand("perguntas", corPerg, "Perguntas", valPerg, subPerg, pergDrawerInner));
-  pendGrid.appendChild(mkPendExpand("estoque", corEst, "Full SP", valEst, subEst, estDrawerInner));
+  const cTarefas = mkPendExpand("tarefas", corTarefas, "Tarefas", valTarefas, subTarefas, tarefasDrawerInner);
+  const cPerg = mkPendExpand("perguntas", corPerg, "Perguntas", valPerg, subPerg, pergDrawerInner);
+  const cEst = mkPendExpand("estoque", corEst, "Full SP", valEst, subEst, estDrawerInner);
+  pendGrid.appendChild(cTarefas);
+  pendGrid.appendChild(cPerg);
+  pendGrid.appendChild(cEst);
 
   const titulo = document.createElement("div");
   titulo.style.cssText = `font-size:11px;color:${T.text2};font-weight:600;margin-bottom:10px;`;
   titulo.textContent = "Pendências";
   pendCard.appendChild(titulo);
   pendCard.appendChild(pendGrid);
+  // Drawers fora do grid — ocupam largura total do card
+  pendCard.appendChild(cTarefas._drw);
+  pendCard.appendChild(cPerg._drw);
+  pendCard.appendChild(cEst._drw);
   statusBar.appendChild(pendCard);
 
   // ── Card Operações ──
@@ -2842,15 +2848,15 @@ function renderDashboard(panel, color) {
     ? `<div style="border-top:0.5px solid ${T.border};padding-top:8px;margin-top:8px;max-height:260px;overflow-y:auto;">${pickingListHtml}<div onclick="window._diogotab='picking';render();" style="text-align:center;font-size:10px;color:${T.text2};padding:6px 0;cursor:pointer;">Ir para Picking →</div></div>`
     : `<div style="border-top:0.5px solid ${T.border};padding-top:8px;margin-top:8px;font-size:11px;color:#10b981;">Nenhum pedido pendente ✓</div>`;
 
-  const pickingGrid = document.createElement("div");
-  pickingGrid.style.cssText = "display:grid;grid-template-columns:1fr;gap:8px;";
-  pickingGrid.appendChild(mkPendExpand("packing", corPick, "Picking & Packing", valPick, subPick, pickingDrawerInner));
+  const cPicking = mkPendExpand("packing", corPick, "Picking & Packing", valPick, subPick, pickingDrawerInner);
+  pickingGrid.appendChild(cPicking);
 
   const pickTitulo = document.createElement("div");
   pickTitulo.style.cssText = `font-size:11px;color:${T.text2};font-weight:600;margin-bottom:10px;`;
   pickTitulo.textContent = "Operações";
   pickingCard.appendChild(pickTitulo);
   pickingCard.appendChild(pickingGrid);
+  pickingCard.appendChild(cPicking._drw);
   statusBar.appendChild(pickingCard);
 
   // ── Card Anúncios ──
@@ -2882,13 +2888,15 @@ function renderDashboard(panel, color) {
 
       const anunciosGrid = document.createElement("div");
       anunciosGrid.style.cssText = "display:grid;grid-template-columns:1fr;gap:8px;";
-      anunciosGrid.appendChild(mkPendExpand("anuncios", corRasc, "Para criar", valRasc, subRasc, rascDrawerInner));
+      const cRasc = mkPendExpand("anuncios", corRasc, "Para criar", valRasc, subRasc, rascDrawerInner);
+      anunciosGrid.appendChild(cRasc);
 
       const rascTitulo = document.createElement("div");
       rascTitulo.style.cssText = `font-size:11px;color:${T.text2};font-weight:600;margin-bottom:10px;`;
       rascTitulo.textContent = "Anúncios";
       rascCard.appendChild(rascTitulo);
       rascCard.appendChild(anunciosGrid);
+      rascCard.appendChild(cRasc._drw);
       statusBar.appendChild(rascCard);
       window._sbarApply();
     } catch(e) { console.log("rascunhos-sbar:", e.message); }
