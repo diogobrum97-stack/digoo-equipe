@@ -1799,10 +1799,18 @@ async function fetchPerguntas() {
       try {
         const tokenOutro = c.key === "filial" ? state.ml_token?.access_token : state.ml_token_filial?.access_token;
         const tokenOutroParam = tokenOutro ? `&token_outro=${tokenOutro}` : "";
-        const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=buscar-perguntas&token=${c.token}${tokenOutroParam}`);
-        const data = await r.json();
-        if (!data.ok) return { conta: c.key, ok: false, erro: data.error };
-        return { conta: c.key, ok: true, perguntas: (data.perguntas || []).map(p => ({ ...p, conta: c.key, contaLabel: c.label })) };
+        let todasPerguntas = [];
+        let offset = 0;
+        while (true) {
+          const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=buscar-perguntas&token=${c.token}${tokenOutroParam}&offset=${offset}`);
+          const data = await r.json();
+          if (!data.ok) { if (offset === 0) return { conta: c.key, ok: false, erro: data.error }; break; }
+          const lote = (data.perguntas || []).map(p => ({ ...p, conta: c.key, contaLabel: c.label }));
+          todasPerguntas = todasPerguntas.concat(lote);
+          if (lote.length < 10) break; // menos de 10 = última página
+          offset += 10;
+        }
+        return { conta: c.key, ok: true, perguntas: todasPerguntas };
       } catch (e) {
         return { conta: c.key, ok: false, erro: e.message };
       }
