@@ -2910,7 +2910,7 @@ function renderDashboard(panel, color) {
       const totalVenc = totalContas + totalFiscal;
 
       const corContas = "#E24B4A";
-      const corFiscal = "#f0b400";
+      const corFiscal = "#f97316";
 
       const totalValContas = proximos.reduce((s,c) => s + Number(c.valor||0), 0);
       const fmtValV = v => `R$ ${Number(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
@@ -2922,9 +2922,12 @@ function renderDashboard(panel, color) {
       </div>`;
 
       let vIdx = 0;
-      const mkVencRow = (nome, cor, diaLabel, detalhes, barraStyle) => {
+      const mkVencRow = (nome, cor, diaLabel, detalhes, barraStyle, badgePisca) => {
         const id = "sv" + (vIdx++);
         const barra = barraStyle || `style="width:2px;height:12px;background:${cor};border-radius:2px;flex-shrink:0;display:inline-block;"`;
+        const badge = badgePisca
+          ? `<span style="font-size:10px;font-weight:600;color:${cor};background:${cor}22;border-radius:4px;padding:2px 7px;animation:pulse-red 1s ease-in-out infinite;">${diaLabel}</span>`
+          : `<span style="font-size:10px;font-weight:600;color:${cor};background:${cor}22;border-radius:4px;padding:2px 7px;">${diaLabel}</span>`;
         return `<div onclick="(function(){var el=document.getElementById('${id}');var ic=document.getElementById('ic${id}');var open=el.style.display==='block';el.style.display=open?'none':'block';ic.style.transform=open?'rotate(0deg)':'rotate(180deg)';})();"
           style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;padding:4px 0;">
           <div style="display:flex;align-items:center;gap:5px;min-width:0;">
@@ -2932,7 +2935,7 @@ function renderDashboard(panel, color) {
             <div style="font-size:11px;color:${T.text2};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nome}</div>
           </div>
           <div style="display:flex;align-items:center;gap:5px;flex-shrink:0;margin-left:6px;">
-            <div style="font-size:10px;font-weight:600;color:${cor};">${diaLabel}</div>
+            ${badge}
             <i class="ti ti-chevron-down" id="ic${id}" style="font-size:12px;color:${T.text2};transition:transform 0.2s;"></i>
           </div>
         </div>
@@ -2951,14 +2954,14 @@ function renderDashboard(panel, color) {
         const dtFmt = c.dataVencimento ? c.dataVencimento.slice(8,10)+"/"+c.dataVencimento.slice(5,7)+"/"+c.dataVencimento.slice(0,4) : "—";
         const detalhes = mkCell("Vencimento", dtFmt) + `<div><div style="font-size:9px;color:${T.text2};margin-bottom:1px;">Valor</div><div style="font-size:11px;font-weight:600;color:${T.text};">${fmtValV(c.valor||0)}</div></div>`;
         const barraExtra = (hoje || vencida) ? `style="width:2px;height:12px;background:#E24B4A;border-radius:2px;flex-shrink:0;display:inline-block;animation:pulse-red 1s ease-in-out infinite;"` : `style="width:2px;height:12px;background:${cor};border-radius:2px;flex-shrink:0;display:inline-block;"`;
-        return mkVencRow(c.fornecedor||"—", cor, diaLabel, detalhes, barraExtra);
+        return mkVencRow(c.fornecedor||"—", cor, diaLabel, detalhes, barraExtra, vencida || hoje);
       }).join("");
 
       const linhasFiscal = (window._fiscalAgrupado||[]).filter(e => e.diff <= 7).slice(0,5).map(e => {
-        const cor = "#f0b400";
+        const cor = "#f97316";
         const diaLabel = e.diff===0?"Hoje":e.diff===1?"Amanhã":("em "+e.diff+"d");
         const detalhes = mkCell("Tipo","Obrigação fiscal") + mkCell("Vencimento", e.dataStr||"—");
-        return mkVencRow(e.nome, cor, diaLabel, detalhes);
+        return mkVencRow(e.nome, cor, diaLabel, detalhes, null, false);
       }).join("");
 
       const vencTitulo = totalVenc > 0 ? `Vencimentos · ${totalVenc}` : "Vencimentos";
