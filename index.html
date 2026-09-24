@@ -2869,6 +2869,27 @@ function renderDashboard(panel, color) {
   grid.appendChild(statusBar);
   window._sbarApply = function() {};
 
+  // Toggle cores sidebar cards — inicializado antes dos cards async
+  window._sbarColorState = { venc: localStorage.getItem('sbar_color_venc') !== '0', docs: localStorage.getItem('sbar_color_docs') !== '0' };
+  window._sbarToggleColor = function(id) {
+    const on = !window._sbarColorState[id];
+    window._sbarColorState[id] = on;
+    localStorage.setItem('sbar_color_' + id, on ? '1' : '0');
+    const el = document.getElementById('sbar-eye-' + id);
+    if (el) el.className = on ? 'ti ti-eye' : 'ti ti-eye-off';
+    const content = document.getElementById('sbar-content-' + id);
+    if (!content) return;
+    const MUTED = '#555';
+    content.querySelectorAll('[data-cor]').forEach(el => {
+      const c = el.getAttribute('data-cor');
+      const prop = el.getAttribute('data-prop') || 'color';
+      if (prop === 'borderTopColor') el.style.borderTopColor = on ? c : MUTED;
+      else if (prop === 'background') el.style.background = on ? c + '22' : 'transparent';
+      else if (prop === 'color') el.style.color = on ? c : MUTED;
+      else el.style[prop] = on ? c : MUTED;
+    });
+  };
+
   // 4º card — Vencimentos próximos (async, adicionado depois)
   (async () => {
     const mesAtual = new Date().toISOString().slice(0,7);
@@ -3092,29 +3113,6 @@ function renderDashboard(panel, color) {
     fetchPerguntas().then(() => render());
   }
 
-
-  // Toggle cores sidebar cards
-  window._sbarColorState = { venc: localStorage.getItem('sbar_color_venc') !== '0', docs: localStorage.getItem('sbar_color_docs') !== '0' };
-  window._sbarToggleColor = function(id) {
-    const on = !window._sbarColorState[id];
-    window._sbarColorState[id] = on;
-    localStorage.setItem('sbar_color_' + id, on ? '1' : '0');
-    const el = document.getElementById('sbar-eye-' + id);
-    if (el) el.className = on ? 'ti ti-eye' : 'ti ti-eye-off';
-    const content = document.getElementById('sbar-content-' + id);
-    if (!content) return;
-    const MUTED = '#555';
-    const colorMap = { venc: ['#E24B4A', '#f97316'], docs: ['#3b82f6', '#10b981'] };
-    const colors = colorMap[id] || [];
-    content.querySelectorAll('[data-cor]').forEach(el => {
-      const c = el.getAttribute('data-cor');
-      const prop = el.getAttribute('data-prop') || 'color';
-      if (prop === 'borderTopColor') el.style.borderTopColor = on ? c : MUTED;
-      else if (prop === 'background') el.style.background = on ? c + '22' : 'transparent';
-      else if (prop === 'color') el.style.color = on ? c : MUTED;
-      else el.style[prop] = on ? c : MUTED;
-    });
-  };
 
   // Eventos fiscais — injetados no card de vencimentos da sidebar
   const hoje2 = new Date(); hoje2.setHours(0,0,0,0);
