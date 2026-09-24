@@ -2915,8 +2915,8 @@ function renderDashboard(panel, color) {
       const totalValContas = proximos.reduce((s,c) => s + Number(c.valor||0), 0);
       const fmtValV = v => `R$ ${Number(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
 
-      const mkContV = (label, cor, count, sub) => `<div style="border-top:2px solid ${cor};padding-top:6px;opacity:${count > 0 ? 1 : 0.35};">
-        <div style="font-size:10px;font-weight:600;color:${cor};text-transform:uppercase;letter-spacing:0.5px;">${label}</div>
+      const mkContV = (label, cor, count, sub) => `<div data-cor="${cor}" data-prop="borderTopColor" style="border-top:2px solid ${cor};padding-top:6px;opacity:${count > 0 ? 1 : 0.35};">
+        <div data-cor="${cor}" data-prop="color" style="font-size:10px;font-weight:600;color:${cor};text-transform:uppercase;letter-spacing:0.5px;">${label}</div>
         <div style="font-size:20px;font-weight:600;color:${T.text};line-height:1.2;">${count}</div>
         <div style="font-size:10px;color:${T.text2};">${sub}</div>
       </div>`;
@@ -2924,10 +2924,10 @@ function renderDashboard(panel, color) {
       let vIdx = 0;
       const mkVencRow = (nome, cor, diaLabel, detalhes, barraStyle, badgePisca) => {
         const id = "sv" + (vIdx++);
-        const barra = barraStyle || `style="width:2px;height:12px;background:${cor};border-radius:2px;flex-shrink:0;display:inline-block;"`;
+        const barra = barraStyle || `style="width:2px;height:12px;background:${cor};border-radius:2px;flex-shrink:0;display:inline-block;" data-cor="${cor}" data-prop="background"`;
         const badge = badgePisca
-          ? `<span style="font-size:10px;font-weight:600;color:${cor};background:${cor}22;border-radius:4px;padding:2px 7px;min-width:52px;text-align:center;display:inline-block;animation:pulse-badge 1s ease-in-out infinite;">${diaLabel}</span>`
-          : `<span style="font-size:10px;font-weight:600;color:${cor};background:${cor}22;border-radius:4px;padding:2px 7px;min-width:52px;text-align:center;display:inline-block;">${diaLabel}</span>`;
+          ? `<span data-cor="${cor}" data-prop="color" style="font-size:10px;font-weight:600;color:${cor};background:${cor}22;border-radius:4px;padding:2px 7px;min-width:52px;text-align:center;display:inline-block;animation:pulse-badge 1s ease-in-out infinite;">${diaLabel}</span>`
+          : `<span data-cor="${cor}" data-prop="color" style="font-size:10px;font-weight:600;color:${cor};background:${cor}22;border-radius:4px;padding:2px 7px;min-width:52px;text-align:center;display:inline-block;">${diaLabel}</span>`;
         return `<div onclick="(function(){var el=document.getElementById('${id}');var ic=document.getElementById('ic${id}');var open=el.style.display==='block';el.style.display=open?'none':'block';ic.style.transform=open?'rotate(0deg)':'rotate(180deg)';})();"
           style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;padding:4px 0;">
           <div style="display:flex;align-items:center;gap:5px;min-width:0;">
@@ -2966,20 +2966,25 @@ function renderDashboard(panel, color) {
 
       const vencTitulo = totalVenc > 0 ? `Vencimentos · ${totalVenc}` : "Vencimentos";
       const vencCardHtml = `<div id="sbar-card-venc" style="background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:14px 16px;">
-        <div style="font-size:11px;color:${T.text2};font-weight:600;margin-bottom:10px;">${vencTitulo}</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
-          ${mkContV("Contas", corContas, totalContas, totalContas > 0 ? fmtValV(totalValContas) : "Em dia ✓")}
-          ${mkContV("Fiscal", corFiscal, totalFiscal, totalFiscal > 0 ? "obrigações" : "Em dia ✓")}
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div style="font-size:11px;color:${T.text2};font-weight:600;">${vencTitulo}</div>
+          <button onclick="window._sbarToggleColor('venc')" style="background:none;border:none;cursor:pointer;padding:0;color:${T.text2};font-size:15px;line-height:1;" title="Ocultar cores"><i id="sbar-eye-venc" class="ti ti-eye"></i></button>
         </div>
-        ${totalVenc > 0 ? `<div style="border-top:0.5px solid ${T.border};padding-top:8px;display:flex;flex-direction:column;gap:2px;max-height:260px;overflow-y:auto;">${linhasContas}${linhasFiscal}</div>` : ""}
+        <div id="sbar-content-venc">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+            ${mkContV("Contas", corContas, totalContas, totalContas > 0 ? fmtValV(totalValContas) : "Em dia ✓")}
+            ${mkContV("Fiscal", corFiscal, totalFiscal, totalFiscal > 0 ? "obrigações" : "Em dia ✓")}
+          </div>
+          ${totalVenc > 0 ? `<div style="border-top:0.5px solid ${T.border};padding-top:8px;display:flex;flex-direction:column;gap:2px;max-height:260px;overflow-y:auto;">${linhasContas}${linhasFiscal}</div>` : ""}
+        </div>
       </div>`;
 
       const sbar = document.getElementById("dash-sidebar");
       if (sbar) {
         sbar.insertAdjacentHTML("beforeend", vencCardHtml);
         window._sbarApply();
+        if (!window._sbarColorState['venc']) window._sbarToggleColor('venc');
       }
-    } catch(e) { console.log("venc-sbar:", e.message); }
   })();
 
   // Card Documentos hoje — NFS-e + NF-e
@@ -3011,8 +3016,8 @@ function renderDashboard(panel, color) {
       const mkContador = (label, cor, itens, campoValor) => {
         const total = itens.reduce((s,n) => s + Number(n[campoValor]||0), 0);
         const ativo = itens.length > 0;
-        return `<div style="border-top:2px solid ${cor};padding-top:6px;opacity:${ativo ? 1 : 0.35};">
-          <div style="font-size:10px;font-weight:600;color:${cor};text-transform:uppercase;letter-spacing:0.5px;">${label}</div>
+        return `<div data-cor="${cor}" data-prop="borderTopColor" style="border-top:2px solid ${cor};padding-top:6px;opacity:${ativo ? 1 : 0.35};">
+          <div data-cor="${cor}" data-prop="color" style="font-size:10px;font-weight:600;color:${cor};text-transform:uppercase;letter-spacing:0.5px;">${label}</div>
           <div style="font-size:20px;font-weight:600;color:${T.text};line-height:1.2;">${itens.length || "0"}</div>
           <div style="font-size:10px;color:${T.text2};">${ativo ? fmtVal(total) : "—"}</div>
         </div>`;
@@ -3032,7 +3037,7 @@ function renderDashboard(panel, color) {
           <div onclick="(function(){var el=document.getElementById('${id}');var ic=document.getElementById('ic${id}');var open=el.style.display==='block';el.style.display=open?'none':'block';ic.style.transform=open?'rotate(0deg)':'rotate(180deg)';})();"
             style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;padding:4px 0;">
             <div style="display:flex;align-items:center;gap:5px;min-width:0;">
-              <span style="width:2px;height:12px;background:${cor};border-radius:2px;flex-shrink:0;display:inline-block;"></span>
+              <span data-cor="${cor}" data-prop="background" style="width:2px;height:12px;background:${cor};border-radius:2px;flex-shrink:0;display:inline-block;"></span>
               <div style="font-size:11px;color:${T.text2};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nome}</div>
             </div>
             <div style="display:flex;align-items:center;gap:5px;flex-shrink:0;margin-left:6px;">
@@ -3057,14 +3062,19 @@ function renderDashboard(panel, color) {
       const titulo = totalGeral > 0 ? `Documentos hoje · ${totalGeral}` : "Documentos hoje";
 
       const cardHtml = `<div id="sbar-card-nfse" style="background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:14px 16px;">
-        <div style="font-size:11px;color:${T.text2};margin-bottom:10px;font-weight:600;">${titulo}</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
-          ${mkContador("NFS-e","#3b82f6",nfseHoje,"valorServicos")}
-          ${mkContador("NF-e","#10b981",nfeHoje,"valor")}
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div style="font-size:11px;color:${T.text2};font-weight:600;">${titulo}</div>
+          <button onclick="window._sbarToggleColor('docs')" style="background:none;border:none;cursor:pointer;padding:0;color:${T.text2};font-size:15px;line-height:1;" title="Ocultar cores"><i id="sbar-eye-docs" class="ti ti-eye"></i></button>
         </div>
-        <div style="border-top:0.5px solid ${T.border};padding-top:8px;display:flex;flex-direction:column;gap:2px;max-height:260px;overflow-y:auto;">
-          ${linhasNfse}${linhasNfe}
-          ${totalGeral === 0 ? `<div style="font-size:11px;color:${T.text2};padding:4px 0;">Nenhum documento hoje</div>` : ""}
+        <div id="sbar-content-docs">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+            ${mkContador("NFS-e","#3b82f6",nfseHoje,"valorServicos")}
+            ${mkContador("NF-e","#10b981",nfeHoje,"valor")}
+          </div>
+          <div style="border-top:0.5px solid ${T.border};padding-top:8px;display:flex;flex-direction:column;gap:2px;max-height:260px;overflow-y:auto;">
+            ${linhasNfse}${linhasNfe}
+            ${totalGeral === 0 ? `<div style="font-size:11px;color:${T.text2};padding:4px 0;">Nenhum documento hoje</div>` : ""}
+          </div>
         </div>
       </div>`;
 
@@ -3072,6 +3082,7 @@ function renderDashboard(panel, color) {
       if (sbar) {
         sbar.insertAdjacentHTML("beforeend", cardHtml);
         window._sbarApply();
+        if (!window._sbarColorState['docs']) window._sbarToggleColor('docs');
       }
     } catch(e) { console.log("docs-hoje-sbar:", e.message); }
   })();
@@ -3079,6 +3090,30 @@ function renderDashboard(panel, color) {
   if(perguntasState.lista === null && !perguntasState.carregando && !perguntasState.erro) {
     fetchPerguntas().then(() => render());
   }
+
+
+  // Toggle cores sidebar cards
+  window._sbarColorState = { venc: localStorage.getItem('sbar_color_venc') !== '0', docs: localStorage.getItem('sbar_color_docs') !== '0' };
+  window._sbarToggleColor = function(id) {
+    const on = !window._sbarColorState[id];
+    window._sbarColorState[id] = on;
+    localStorage.setItem('sbar_color_' + id, on ? '1' : '0');
+    const el = document.getElementById('sbar-eye-' + id);
+    if (el) el.className = on ? 'ti ti-eye' : 'ti ti-eye-off';
+    const content = document.getElementById('sbar-content-' + id);
+    if (!content) return;
+    const MUTED = '#555';
+    const colorMap = { venc: ['#E24B4A', '#f97316'], docs: ['#3b82f6', '#10b981'] };
+    const colors = colorMap[id] || [];
+    content.querySelectorAll('[data-cor]').forEach(el => {
+      const c = el.getAttribute('data-cor');
+      const prop = el.getAttribute('data-prop') || 'color';
+      if (prop === 'borderTopColor') el.style.borderTopColor = on ? c : MUTED;
+      else if (prop === 'background') el.style.background = on ? c + '22' : 'transparent';
+      else if (prop === 'color') el.style.color = on ? c : MUTED;
+      else el.style[prop] = on ? c : MUTED;
+    });
+  };
 
   // Eventos fiscais — injetados no card de vencimentos da sidebar
   const hoje2 = new Date(); hoje2.setHours(0,0,0,0);
