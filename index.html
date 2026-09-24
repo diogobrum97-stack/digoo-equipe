@@ -2985,6 +2985,7 @@ function renderDashboard(panel, color) {
         window._sbarApply();
         if (!window._sbarColorState['venc']) window._sbarToggleColor('venc');
       }
+    } catch(e) { console.log("venc-sbar:", e.message); }
   })();
 
   // Card Documentos hoje — NFS-e + NF-e
