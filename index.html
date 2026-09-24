@@ -2893,10 +2893,8 @@ function renderDashboard(panel, color) {
       window._sbarApply();
     } catch(e) { console.log("rascunhos-sbar:", e.message); }
   })();
-    } catch(e) { console.log("rascunhos:", e.message); }
-  })();
 
-  grid.appendChild(statusBar);
+  dashGrid.appendChild(statusBar);
   window._sbarApply = function() {};
 
   // Toggle cores sidebar cards — inicializado antes dos cards async
