@@ -2737,56 +2737,43 @@ function renderDashboard(panel, color) {
   const pendCard = document.createElement("div");
   pendCard.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:14px 16px;`;
 
-  function mkClickRow(label, value, valueBg, onclick) {
-    const bg = valueBg ? `background:${valueBg};color:#fff;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:600;` : `font-size:11px;font-weight:600;color:${T.text};`;
-    const row = document.createElement("div");
-    row.style.cssText = `display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid ${T.sep};cursor:pointer;transition:opacity .12s;`;
-    row.onmouseover = () => row.style.opacity = "0.7";
-    row.onmouseout  = () => row.style.opacity = "1";
-    row.innerHTML = `<div style="font-size:11px;color:${T.text};">${label}</div><div style="${bg}">${value}</div>`;
-    row.addEventListener("click", onclick);
-    return row;
-  }
-
-  pendCard.innerHTML = `<div style="font-size:11px;color:${T.text2};font-weight:600;margin-bottom:10px;">Pendências</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;" id="pend-counters"></div>`;
-
-  // helper expansível genérico
-  function mkExpansivel(labelHtml, drawerHtml, maxH) {
+  function mkPendExpand(id, cor, label, val, sub, drawerHtml) {
     const wrap = document.createElement("div");
-    wrap.style.cssText = "border-bottom:0.5px solid "+T.sep+";";
-    const hdr = document.createElement("div");
-    hdr.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:8px 0;cursor:pointer;transition:opacity .12s;";
-    hdr.onmouseover = () => hdr.style.opacity = "0.7";
-    hdr.onmouseout  = () => hdr.style.opacity = "1";
-    hdr.innerHTML = labelHtml;
+
+    // Contador clicável
+    const counter = document.createElement("div");
+    counter.style.cssText = `border-top:2px solid ${cor};padding-top:6px;cursor:pointer;`;
+    counter.innerHTML = `
+      <div style="font-size:10px;font-weight:600;color:${cor};text-transform:uppercase;letter-spacing:0.5px;">${label}</div>
+      <div style="font-size:20px;font-weight:600;color:${T.text};line-height:1.2;margin-top:2px;">${val}</div>
+      <div style="font-size:10px;color:${T.text2};">${sub}</div>`;
+
+    // Drawer
     const drw = document.createElement("div");
-    drw.style.cssText = "max-height:0;overflow:hidden;transition:max-height .35s ease;";
+    drw.style.cssText = "grid-column:1/-1;max-height:0;overflow:hidden;transition:max-height .3s ease;";
     drw.innerHTML = drawerHtml;
+
     let open = false;
-    hdr.addEventListener("click", () => { open = !open; drw.style.maxHeight = open ? maxH : "0"; });
-    wrap.appendChild(hdr); wrap.appendChild(drw);
+    counter.addEventListener("click", () => {
+      open = !open;
+      drw.style.maxHeight = open ? "300px" : "0";
+      // Fechar os outros
+      pendCard.querySelectorAll(".pend-drw").forEach(el => { if (el !== drw) el.style.maxHeight = "0"; });
+      pendCard.querySelectorAll(".pend-drw").forEach(el => { if (el !== drw) el._open = false; });
+    });
+    drw.classList.add("pend-drw");
+
+    wrap.appendChild(counter);
+    wrap.appendChild(drw);
     return wrap;
   }
 
-  // ── Tarefas ──
-  const tarefasLabelHtml = `<div style="font-size:11px;color:${T.text};">Tarefas</div>
-    <div style="display:flex;align-items:center;gap:5px;">
-      ${urgentes===0&&importantes===0&&normais===0
-        ? `<span style="font-size:11px;font-weight:600;color:#10b981;">Em dia ✓</span>`
-        : `${urgentes>0?`<span style="background:#e8432d;color:#fff;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;">${urgentes} urgente${urgentes>1?"s":""}</span>`:""}`
-        + `${importantes>0?`<span style="background:#f77614;color:#fff;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;">${importantes} importante${importantes>1?"s":""}</span>`:""}`
-        + `${normais>0?`<span style="background:${T.bg3};color:${T.text2};padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;border:0.5px solid ${T.border};">${normais} normal${normais>1?"is":""}</span>`:""}`
-      }
-    </div>`;
-  const tarefasDrawerHtml = tarefasDrawerRows
-    ? `<div style="max-height:260px;overflow-y:auto;padding-bottom:4px;">${tarefasDrawerRows}<div onclick="window._diogotab='tarefas';render();" style="text-align:center;font-size:10px;color:${T.text2};padding:6px 0;cursor:pointer;">Ver todas →</div></div>`
-    : `<div style="font-size:11px;color:${T.text2};padding:6px 0;">Nenhuma tarefa urgente ✓</div>`;
-  pendCard.appendChild(mkExpansivel(tarefasLabelHtml, tarefasDrawerHtml, "300px"));
+  // Drawer Tarefas
+  const tarefasDrawerInner = tarefasDrawerRows
+    ? `<div style="border-top:0.5px solid ${T.border};padding-top:8px;margin-top:8px;max-height:260px;overflow-y:auto;">${tarefasDrawerRows}<div onclick="window._diogotab='tarefas';render();" style="text-align:center;font-size:10px;color:${T.text2};padding:6px 0;cursor:pointer;">Ver todas →</div></div>`
+    : `<div style="border-top:0.5px solid ${T.border};padding-top:8px;margin-top:8px;font-size:11px;color:${T.text2};">Nenhuma tarefa urgente ✓</div>`;
 
-  // ── Perguntas ──
-  const pergBg = perguntasTotal > 0 ? `background:#3b82f6;color:#fff;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:600;` : `font-size:11px;font-weight:600;color:${T.text};`;
-  const pergVal = perguntasTotal > 0 ? perguntasTotal+(perguntasSugeridas>0?" · "+perguntasSugeridas+" sug.":"") : "Em dia ✓";
-  const pergLabelHtml = `<div style="font-size:11px;color:${T.text};">Perguntas</div><div style="${pergBg}">${pergVal}</div>`;
+  // Drawer Perguntas
   const pergListHtml = (perguntasState.lista||[]).slice(0,10).map(p => {
     const cor = p.requires_attention ? "#e8432d" : "#10b981";
     const ns = (p.produto||"").length>30 ? p.produto.slice(0,30)+"…" : (p.produto||"");
@@ -2796,115 +2783,116 @@ function renderDashboard(panel, color) {
       <div style="font-size:9px;color:${cor};margin-top:1px;">${p.requires_attention?"⚠ Atenção":"✓ Sugerida"}</div>
     </div>`;
   }).join("");
-  const pergDrawerHtml = perguntasTotal>0
-    ? `<div style="max-height:280px;overflow-y:auto;padding-bottom:4px;">${pergListHtml}<div onclick="window._goPerguntas()" style="text-align:center;font-size:10px;color:${T.text2};padding:6px 0;cursor:pointer;">Ver todas →</div></div>`
-    : `<div style="font-size:11px;color:${T.text2};padding:6px 0;">Nenhuma pergunta pendente ✓</div>`;
-  pendCard.appendChild(mkExpansivel(pergLabelHtml, pergDrawerHtml, "320px"));
+  const pergDrawerInner = perguntasTotal > 0
+    ? `<div style="border-top:0.5px solid ${T.border};padding-top:8px;margin-top:8px;max-height:280px;overflow-y:auto;">${pergListHtml}<div onclick="window._goPerguntas()" style="text-align:center;font-size:10px;color:${T.text2};padding:6px 0;cursor:pointer;">Ver todas →</div></div>`
+    : `<div style="border-top:0.5px solid ${T.border};padding-top:8px;margin-top:8px;font-size:11px;color:${T.text2};">Nenhuma pergunta pendente ✓</div>`;
 
-  // ── Estoque Full SP ──
-  const estBg = alertasCount>0 ? `background:#e8432d;color:#fff;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:600;` : `font-size:11px;font-weight:600;color:#10b981;`;
-  const estLabelHtml = `<div style="font-size:11px;color:${T.text};">Estoque Full · SP</div><div style="${estBg}">${alertasCount>0?alertasCount+" alertas":"OK ✓"}</div>`;
-  const estListHtml = estDrawerRows || `<div style="font-size:11px;color:#10b981;padding:6px 0;">Nenhum produto crítico ✓</div>`;
-  const estDrawerHtml = `<div style="max-height:260px;overflow-y:auto;padding-bottom:4px;">${estListHtml}${alertasCount>0?`<div onclick="window._diogotab='estoque';render();" style="text-align:center;font-size:10px;color:${T.text2};padding:6px 0;cursor:pointer;">Ver estoque →</div>`:""}</div>`;
-  const estRow = mkExpansivel(estLabelHtml, estDrawerHtml, "300px");
-  estRow.style.borderBottom = "none";
-  pendCard.appendChild(estRow);
+  // Drawer Estoque
+  const estDrawerInner = `<div style="border-top:0.5px solid ${T.border};padding-top:8px;margin-top:8px;max-height:260px;overflow-y:auto;">${estDrawerRows||`<div style="font-size:11px;color:#10b981;">Nenhum produto crítico ✓</div>`}${alertasCount>0?`<div onclick="window._diogotab='estoque';render();" style="text-align:center;font-size:10px;color:${T.text2};padding:6px 0;cursor:pointer;">Ver estoque →</div>`:""}</div>`;
 
-  // Injetar contadores de Pendências
-  const pendCounters = pendCard.querySelector("#pend-counters");
-  if (pendCounters) {
-    const corTarefas = urgentes > 0 ? "#E24B4A" : importantes > 0 ? "#f0b400" : "#10b981";
-    const valTarefas = (urgentes+importantes+normais) > 0 ? (urgentes+importantes+normais) : "✓";
-    const subTarefas = (urgentes+importantes+normais) > 0 ? "em aberto" : "Em dia";
-    pendCounters.appendChild(mkContSbar("Tarefas", corTarefas, valTarefas, subTarefas, () => { window._diogotab='tarefas'; render(); }));
+  // Montar grid
+  const grid = document.createElement("div");
+  grid.style.cssText = "display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;";
 
-    const corPerg = perguntasTotal > 0 ? "#3b82f6" : "#10b981";
-    const valPerg = perguntasTotal > 0 ? perguntasTotal : "✓";
-    const subPerg = perguntasTotal > 0 ? (perguntasSugeridas > 0 ? perguntasSugeridas+" sug." : "sem sug.") : "Em dia";
-    pendCounters.appendChild(mkContSbar("Perguntas", corPerg, valPerg, subPerg, () => { window._diogotab='perguntas'; render(); }));
+  const corTarefas = urgentes > 0 ? "#E24B4A" : importantes > 0 ? "#f0b400" : "#10b981";
+  const valTarefas = (urgentes+importantes+normais) > 0 ? (urgentes+importantes+normais) : "✓";
+  const subTarefas = (urgentes+importantes+normais) > 0 ? "em aberto" : "Em dia";
 
-    const corEst = alertasCount > 0 ? "#E24B4A" : "#10b981";
-    const valEst = alertasCount > 0 ? alertasCount : "✓";
-    const subEst = alertasCount > 0 ? "alertas" : "Em dia";
-    pendCounters.appendChild(mkContSbar("Full SP", corEst, valEst, subEst, () => { window._diogotab='estoque'; render(); }));
-  }
+  const corPerg = perguntasTotal > 0 ? "#3b82f6" : "#10b981";
+  const valPerg = perguntasTotal > 0 ? perguntasTotal : "✓";
+  const subPerg = perguntasTotal > 0 ? (perguntasSugeridas > 0 ? perguntasSugeridas+" sug." : "sem sug.") : "Em dia";
+
+  const corEst = alertasCount > 0 ? "#E24B4A" : "#10b981";
+  const valEst = alertasCount > 0 ? alertasCount : "✓";
+  const subEst = alertasCount > 0 ? "alertas" : "Em dia";
+
+  grid.appendChild(mkPendExpand("tarefas", corTarefas, "Tarefas", valTarefas, subTarefas, tarefasDrawerInner));
+  grid.appendChild(mkPendExpand("perguntas", corPerg, "Perguntas", valPerg, subPerg, pergDrawerInner));
+  grid.appendChild(mkPendExpand("estoque", corEst, "Full SP", valEst, subEst, estDrawerInner));
+
+  const titulo = document.createElement("div");
+  titulo.style.cssText = `font-size:11px;color:${T.text2};font-weight:600;margin-bottom:10px;`;
+  titulo.textContent = "Pendências";
+  pendCard.appendChild(titulo);
+  pendCard.appendChild(grid);
   statusBar.appendChild(pendCard);
 
-  // ── Card Picking & Packing ──
+  // ── Card Operações ──
   const pickingFila = pickingState.fila || [];
   const pickingTotal = pickingFila.length;
   const pickingCard = document.createElement("div");
   pickingCard.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:14px 16px;`;
 
-  const pickingLabelHtml = `<div style="font-size:11px;color:${T.text};">Picking & Packing</div>
-    <div style="${pickingTotal>0?`background:#f77614;color:#fff;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:600;`:`font-size:11px;font-weight:600;color:#10b981;`}">
-      ${pickingTotal>0?`${pickingTotal} pedido${pickingTotal>1?"s":""}`:"Em dia ✓"}
-    </div>`;
+  const corPick = pickingTotal > 0 ? "#3b82f6" : "#10b981";
+  const valPick = pickingTotal > 0 ? pickingTotal : "✓";
+  const subPick = pickingTotal > 0 ? "pedido"+(pickingTotal>1?"s":"")+" pronto"+(pickingTotal>1?"s":"") : "Em dia";
 
   const pickingListHtml = pickingFila.slice(0,8).map(p => {
     const itens = (p.itens||[]).length;
-    return `<div onclick="window._diogotab='picking';render();" style="padding:7px 8px 7px 10px;border-left:3px solid #f77614;border-radius:6px;margin-bottom:4px;cursor:pointer;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
-      <div style="font-size:11px;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">#${p.order_id||p.pack_id||"—"}</div>
-      <div style="font-size:10px;color:${T.text2};margin-top:1px;">${itens} item${itens!==1?"s":""} · ${p.substatus==="printed"?"Impresso":"Pronto"}</div>
+    return `<div onclick="window._diogotab='picking';render();" style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;cursor:pointer;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
+      <div style="display:flex;align-items:center;gap:5px;">
+        <span style="width:2px;height:12px;background:#3b82f6;border-radius:2px;display:inline-block;"></span>
+        <span style="font-size:11px;color:${T.text2};">#${p.order_id||p.pack_id||"—"}</span>
+      </div>
+      <span style="font-size:10px;color:${T.text2};">${itens} item${itens!==1?"s":""}</span>
     </div>`;
   }).join("");
 
-  const pickingDrawerHtml = pickingTotal>0
-    ? `<div style="max-height:260px;overflow-y:auto;padding-bottom:4px;">${pickingListHtml}<div onclick="window._diogotab='picking';render();" style="text-align:center;font-size:10px;color:${T.text2};padding:6px 0;cursor:pointer;">Ir para Picking →</div></div>`
-    : `<div style="font-size:11px;color:#10b981;padding:6px 0;">Nenhum pedido pendente ✓</div>`;
+  const pickingDrawerInner = pickingTotal > 0
+    ? `<div style="border-top:0.5px solid ${T.border};padding-top:8px;margin-top:8px;max-height:260px;overflow-y:auto;">${pickingListHtml}<div onclick="window._diogotab='picking';render();" style="text-align:center;font-size:10px;color:${T.text2};padding:6px 0;cursor:pointer;">Ir para Picking →</div></div>`
+    : `<div style="border-top:0.5px solid ${T.border};padding-top:8px;margin-top:8px;font-size:11px;color:#10b981;">Nenhum pedido pendente ✓</div>`;
 
-  const pickingRow = mkExpansivel(pickingLabelHtml, pickingDrawerHtml, "300px");
-  pickingRow.style.borderBottom = "none";
-  pickingCard.innerHTML = `<div style="font-size:11px;color:${T.text2};font-weight:600;margin-bottom:10px;">Operações</div><div style="display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:10px;" id="op-counters"></div>`;
-  pickingCard.appendChild(pickingRow);
-  // Injetar contador de Operações
-  const opCounters = pickingCard.querySelector("#op-counters");
-  if (opCounters) {
-    const corPick = pickingTotal > 0 ? "#3b82f6" : "#10b981";
-    const valPick = pickingTotal > 0 ? pickingTotal : "✓";
-    const subPick = pickingTotal > 0 ? "pedido"+(pickingTotal>1?"s":"")+" pronto"+(pickingTotal>1?"s":"") : "Em dia";
-    opCounters.appendChild(mkContSbar("Picking & Packing", corPick, valPick, subPick, () => { window._diogotab='picking'; render(); }));
-  }
+  const pickGrid = document.createElement("div");
+  pickGrid.style.cssText = "display:grid;grid-template-columns:1fr;gap:8px;";
+  pickGrid.appendChild(mkPendExpand("packing", corPick, "Picking & Packing", valPick, subPick, pickingDrawerInner));
+
+  const pickTitulo = document.createElement("div");
+  pickTitulo.style.cssText = `font-size:11px;color:${T.text2};font-weight:600;margin-bottom:10px;`;
+  pickTitulo.textContent = "Operações";
+  pickingCard.appendChild(pickTitulo);
+  pickingCard.appendChild(pickGrid);
   statusBar.appendChild(pickingCard);
 
-  // ── Card Rascunhos de anúncios ──
+  // ── Card Anúncios ──
   (async () => {
     try {
       const snap = await get(ref(db, "/anuncios_rascunho"));
       const dados = snap.val() || {};
       const rascunhos = Object.entries(dados)
         .map(([id, r]) => ({ id, ...r }))
-        .filter(r => r.status === "pendente")
-        .sort((a, b) => (b.criado_em||0) - (a.criado_em||0));
-
-      if (rascunhos.length === 0) return;
+        .filter(r => r.status === "pendente");
+      const rascTotal = rascunhos.length;
 
       const rascCard = document.createElement("div");
       rascCard.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:14px 16px;`;
 
-      const rascLabelHtml = `<div style="font-size:11px;color:${T.text};">Anúncios para criar</div>
-        <div style="background:#f59e0b;color:#fff;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:600;">${rascunhos.length} rascunho${rascunhos.length>1?"s":""}</div>`;
+      const corRasc = rascTotal > 0 ? "#f0b400" : "#10b981";
+      const valRasc = rascTotal > 0 ? rascTotal : "✓";
+      const subRasc = rascTotal > 0 ? "rascunho"+(rascTotal>1?"s":"") : "Em dia";
 
       const rascListHtml = rascunhos.slice(0,5).map(r => `
-        <div onclick="window._goAnuncios()" style="padding:7px 8px 7px 10px;border-left:3px solid #f59e0b;border-radius:6px;margin-bottom:4px;cursor:pointer;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
-          <div style="font-size:11px;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.titulo_sugerido||"Sem título"}</div>
-          <div style="font-size:10px;color:${T.text2};margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">↩ ${r.pergunta_origem||""}</div>
+        <div style="display:flex;align-items:center;gap:5px;padding:4px 0;">
+          <span style="width:2px;height:12px;background:#f0b400;border-radius:2px;display:inline-block;flex-shrink:0;"></span>
+          <span style="font-size:11px;color:${T.text2};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(r.titulo_sugerido||r.titulo||"—").substring(0,32)}</span>
         </div>`).join("");
 
-      const rascDrawerHtml = `<div style="max-height:260px;overflow-y:auto;padding-bottom:4px;">${rascListHtml}
-        <div onclick="window._goAnuncios()" style="text-align:center;font-size:10px;color:${T.text2};padding:6px 0;cursor:pointer;">Ver todos →</div>
-      </div>`;
+      const rascDrawerInner = rascTotal > 0
+        ? `<div style="border-top:0.5px solid ${T.border};padding-top:8px;margin-top:8px;max-height:200px;overflow-y:auto;">${rascListHtml}<div onclick="window._diogotab='clonagem';render();" style="text-align:center;font-size:10px;color:${T.text2};padding:6px 0;cursor:pointer;">Ver anúncios →</div></div>`
+        : `<div style="border-top:0.5px solid ${T.border};padding-top:8px;margin-top:8px;font-size:11px;color:#10b981;">Nenhum rascunho pendente ✓</div>`;
 
-      const rascRow = mkExpansivel(rascLabelHtml, rascDrawerHtml, "300px");
-      rascRow.style.borderBottom = "none";
-      rascCard.innerHTML = `<div style="font-size:11px;color:${T.text2};font-weight:600;margin-bottom:10px;">Anúncios</div><div style="display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:10px;" id="rasc-counters"></div>`;
-      // Injetar contador de Anúncios
-      const rascCounters = rascCard.querySelector("#rasc-counters");
-      if (rascCounters) {
-        rascCounters.appendChild(mkContSbar("Para criar", "#f0b400", rascunhos.length, "rascunho"+(rascunhos.length>1?"s":""), () => window._goAnuncios()));
-      }
-      rascCard.appendChild(rascRow);
+      const rascGrid = document.createElement("div");
+      rascGrid.style.cssText = "display:grid;grid-template-columns:1fr;gap:8px;";
+      rascGrid.appendChild(mkPendExpand("anuncios", corRasc, "Para criar", valRasc, subRasc, rascDrawerInner));
+
+      const rascTitulo = document.createElement("div");
+      rascTitulo.style.cssText = `font-size:11px;color:${T.text2};font-weight:600;margin-bottom:10px;`;
+      rascTitulo.textContent = "Anúncios";
+      rascCard.appendChild(rascTitulo);
+      rascCard.appendChild(rascGrid);
       statusBar.appendChild(rascCard);
+      window._sbarApply();
+    } catch(e) { console.log("rascunhos-sbar:", e.message); }
+  })();
     } catch(e) { console.log("rascunhos:", e.message); }
   })();
 
