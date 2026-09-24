@@ -2849,6 +2849,8 @@ function renderDashboard(panel, color) {
     : `<div style="border-top:0.5px solid ${T.border};padding-top:8px;margin-top:8px;font-size:11px;color:#10b981;">Nenhum pedido pendente ✓</div>`;
 
   const cPicking = mkPendExpand("packing", corPick, "Picking & Packing", valPick, subPick, pickingDrawerInner);
+  const pickingGrid = document.createElement("div");
+  pickingGrid.style.cssText = "display:grid;grid-template-columns:1fr;gap:8px;";
   pickingGrid.appendChild(cPicking);
 
   const pickTitulo = document.createElement("div");
