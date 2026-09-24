@@ -2950,12 +2950,12 @@ function renderDashboard(panel, color) {
         const diaLabel = vencida ? "Vencida" : hoje ? "Hoje" : c.dias===1?"Amanhã":(c.dias+"d");
         const dtFmt = c.dataVencimento ? c.dataVencimento.slice(8,10)+"/"+c.dataVencimento.slice(5,7)+"/"+c.dataVencimento.slice(0,4) : "—";
         const detalhes = mkCell("Vencimento", dtFmt) + `<div><div style="font-size:9px;color:${T.text2};margin-bottom:1px;">Valor</div><div style="font-size:11px;font-weight:600;color:${T.text};">${fmtValV(c.valor||0)}</div></div>`;
-        const barraExtra = hoje ? `style="width:2px;height:12px;background:#E24B4A;border-radius:2px;flex-shrink:0;display:inline-block;animation:pulse-red 1s ease-in-out infinite;"` : `style="width:2px;height:12px;background:${cor};border-radius:2px;flex-shrink:0;display:inline-block;"`;
+        const barraExtra = (hoje || vencida) ? `style="width:2px;height:12px;background:#E24B4A;border-radius:2px;flex-shrink:0;display:inline-block;animation:pulse-red 1s ease-in-out infinite;"` : `style="width:2px;height:12px;background:${cor};border-radius:2px;flex-shrink:0;display:inline-block;"`;
         return mkVencRow(c.fornecedor||"—", cor, diaLabel, detalhes, barraExtra);
       }).join("");
 
       const linhasFiscal = (window._fiscalAgrupado||[]).filter(e => e.diff <= 7).slice(0,5).map(e => {
-        const cor = e.diff <= 1 ? "#E24B4A" : e.diff <= 5 ? "#f0b400" : T.text2;
+        const cor = "#f0b400";
         const diaLabel = e.diff===0?"Hoje":e.diff===1?"Amanhã":("em "+e.diff+"d");
         const detalhes = mkCell("Tipo","Obrigação fiscal") + mkCell("Vencimento", e.dataStr||"—");
         return mkVencRow(e.nome, cor, diaLabel, detalhes);
