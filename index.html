@@ -2926,7 +2926,7 @@ function renderDashboard(panel, color) {
         const id = "sv" + (vIdx++);
         const barra = barraStyle || `style="width:2px;height:12px;background:${cor};border-radius:2px;flex-shrink:0;display:inline-block;"`;
         const badge = badgePisca
-          ? `<span style="font-size:10px;font-weight:600;color:${cor};background:${cor}22;border-radius:4px;padding:2px 7px;animation:pulse-red 1s ease-in-out infinite;">${diaLabel}</span>`
+          ? `<span style="font-size:10px;font-weight:600;color:${cor};background:${cor}22;border-radius:4px;padding:2px 7px;animation:pulse-badge 1s ease-in-out infinite;">${diaLabel}</span>`
           : `<span style="font-size:10px;font-weight:600;color:${cor};background:${cor}22;border-radius:4px;padding:2px 7px;">${diaLabel}</span>`;
         return `<div onclick="(function(){var el=document.getElementById('${id}');var ic=document.getElementById('ic${id}');var open=el.style.display==='block';el.style.display=open?'none':'block';ic.style.transform=open?'rotate(0deg)':'rotate(180deg)';})();"
           style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;padding:4px 0;">
