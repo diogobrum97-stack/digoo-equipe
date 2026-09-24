@@ -797,13 +797,14 @@ window._fetchDashboard = async function fetchDashboard() {
     const diaAtualMes = hoje.getDate();
 
     // Buscar Filial e Matriz em paralelo
+    const safeJson = r => r.json().catch(() => null);
     const fetchPromises = [
-      fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${tokenFilial}&today=1`).then(r=>r.json()),
-      fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${tokenFilial}&days=${diaAtualMes}`).then(r=>r.json()),
+      fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${tokenFilial}&today=1`).then(safeJson).catch(()=>null),
+      fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${tokenFilial}&days=${diaAtualMes}`).then(safeJson).catch(()=>null),
     ];
     if(tokenMatriz) {
-      fetchPromises.push(fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${tokenMatriz}&today=1`).then(r=>r.json()).catch(()=>null));
-      fetchPromises.push(fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${tokenMatriz}&days=${diaAtualMes}`).then(r=>r.json()).catch(()=>null));
+      fetchPromises.push(fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${tokenMatriz}&today=1`).then(safeJson).catch(()=>null));
+      fetchPromises.push(fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${tokenMatriz}&days=${diaAtualMes}`).then(safeJson).catch(()=>null));
     }
     const [resHoje, resMes, resHojeMatriz, resMesMatriz] = await Promise.all(fetchPromises);
 
@@ -1803,8 +1804,9 @@ async function fetchPerguntas() {
         let offset = 0;
         while (true) {
           const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=buscar-perguntas&token=${c.token}${tokenOutroParam}&offset=${offset}`);
-          const data = await r.json();
-          if (!data.ok) { if (offset === 0) return { conta: c.key, ok: false, erro: data.error }; break; }
+          if (!r.ok) { if (offset === 0) return { conta: c.key, ok: false, erro: `HTTP ${r.status}` }; break; }
+          const data = await r.json().catch(() => null);
+          if (!data || !data.ok) { if (offset === 0) return { conta: c.key, ok: false, erro: data?.error || "Erro" }; break; }
           const lote = (data.perguntas || []).map(p => ({ ...p, conta: c.key, contaLabel: c.label }));
           todasPerguntas = todasPerguntas.concat(lote);
           if (lote.length < 10) break; // menos de 10 = última página
