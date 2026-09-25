@@ -9796,7 +9796,7 @@ window.promState = {
   historico: {},
 };
 
-async function renderPromocoes(panel) {
+window.renderPromocoes = async function renderPromocoes(panel) {
   const BACKEND = "https://digoo-backend.vercel.app";
   const fmtVal = v => `R$ ${Number(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
   const fmtData = d => d ? new Date(d).toLocaleDateString("pt-BR") : "—";
