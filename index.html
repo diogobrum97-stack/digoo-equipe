@@ -9852,26 +9852,34 @@ function renderListaPromocoes(container, promocoes, BACKEND, fmtVal, fmtData, to
     return;
   }
 
-  container.innerHTML = promocoes.map((p, i) => {
+  container.innerHTML = promocoes.map((p) => {
     const diasRestantes = p.dias_restantes;
-    const corBorda = diasRestantes !== null && diasRestantes <= 3 ? T.cVermelho : diasRestantes !== null && diasRestantes <= 7 ? T.cAmarelo : T.border;
-    const corDias = diasRestantes !== null && diasRestantes <= 3 ? T.cVermelho : diasRestantes !== null && diasRestantes <= 7 ? T.cAmarelo : T.text2;
-    const labelDias = diasRestantes === null ? "Sem data" : diasRestantes <= 0 ? "Vencida" : `${diasRestantes}d restantes`;
+    const urgente = diasRestantes !== null && diasRestantes <= 3;
+    const atencao = diasRestantes !== null && diasRestantes > 3 && diasRestantes <= 7;
+    const corDias = urgente ? T.cVermelho : atencao ? T.cAmarelo : T.text2;
+    const corBorda = urgente ? T.cVermelho : atencao ? T.cAmarelo : T.border;
+    const labelDias = diasRestantes === null ? "Sem data" : diasRestantes <= 0 ? "Vencida" : `${diasRestantes}d`;
+    const animBadge = urgente ? "animation:pulse-badge 1s ease-in-out infinite;" : "";
 
-    return `<div onclick="window.promState.detalhe={item_id:'${p.item_id}',conta:window.promState.conta};renderPromocoes(document.querySelector('.prom-container'));"
-      style="background:${T.card};border:0.5px solid ${corBorda};border-radius:12px;padding:14px 16px;margin-bottom:10px;cursor:pointer;display:flex;align-items:center;gap:12px;"
-      onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
-      ${p.thumbnail ? `<img src="${p.thumbnail}" style="width:48px;height:48px;border-radius:8px;object-fit:contain;background:${T.bg3};flex-shrink:0;">` : ""}
-      <div style="flex:1;min-width:0;">
+    return `<div onclick="window.promState.detalhe={item_id:'${p.item_id}',conta:window.promState.conta};window.renderPromocoes(document.querySelector('.prom-container'));"
+      style="background:${T.card};border:0.5px solid ${corBorda};border-radius:12px;padding:14px 16px;margin-bottom:10px;cursor:pointer;display:grid;grid-template-columns:48px 1fr auto;gap:12px;align-items:center;"
+      onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+
+      <img src="${p.thumbnail || ''}" style="width:48px;height:48px;border-radius:8px;object-fit:contain;background:${T.bg3};" onerror="this.style.display='none'">
+
+      <div style="min-width:0;">
         <div style="font-size:12px;font-weight:500;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.titulo}</div>
-        <div style="font-size:11px;color:${T.text2};margin-top:2px;">${p.sku || p.item_id} · ${p.desconto_pct}% de desconto</div>
-        <div style="display:flex;align-items:center;gap:12px;margin-top:6px;">
-          <span style="font-size:11px;color:${T.text2};">${fmtVal(p.preco_original)} <span style="text-decoration:line-through;opacity:0.5;"></span>→ <strong>${fmtVal(p.preco_desconto)}</strong></span>
+        <div style="font-size:11px;color:${T.text2};margin-top:3px;">${p.sku || p.item_id}</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:6px;">
+          <span style="font-size:13px;font-weight:500;color:${T.cVerde};">${p.desconto_pct}% off</span>
+          <span style="font-size:11px;color:${T.text2};text-decoration:line-through;">${fmtVal(p.preco_original)}</span>
+          <span style="font-size:11px;color:${T.text};font-weight:500;">${fmtVal(p.preco_desconto)}</span>
         </div>
       </div>
+
       <div style="text-align:right;flex-shrink:0;">
-        <div style="font-size:11px;font-weight:500;color:${corDias};background:${corDias}18;border-radius:4px;padding:3px 10px;">${labelDias}</div>
-        ${p.finish_date ? `<div style="font-size:10px;color:${T.text2};margin-top:4px;">até ${fmtData(p.finish_date)}</div>` : ""}
+        <div style="font-size:11px;font-weight:600;color:${corDias};background:${corDias}18;border-radius:4px;padding:3px 10px;min-width:52px;text-align:center;display:inline-block;${animBadge}">${labelDias}</div>
+        ${p.finish_date ? `<div style="font-size:10px;color:${T.text2};margin-top:5px;">até ${fmtData(p.finish_date)}</div>` : ""}
       </div>
     </div>`;
   }).join("");
