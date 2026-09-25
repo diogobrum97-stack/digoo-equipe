@@ -9797,6 +9797,9 @@ window.promState = {
 };
 
 window.renderPromocoes = async function renderPromocoes(panel) {
+  // Expor tokens temporariamente para debug
+  window._dbgTokenFilial = state?.ml_token_filial?.access_token;
+  window._dbgTokenMatriz = state?.ml_token?.access_token;
   const BACKEND = "https://digoo-backend.vercel.app";
   const fmtVal = v => `R$ ${Number(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
   const fmtData = d => d ? new Date(d).toLocaleDateString("pt-BR") : "—";
