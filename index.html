@@ -9942,7 +9942,7 @@ function renderListaPromocoes(container, promocoes, BACKEND, fmtVal, fmtData, to
     if (tokenBg) {
       fetch(`${BACKEND}/api/ml-vendas?action=buscar-vendas-promocao`, {
         method: "POST", headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ item_ids: itemIds, token: tokenBg })
+        body: JSON.stringify({ itens: promocoes.map(p => ({ item_id: p.item_id, start_date: p.start_date })), token: tokenBg })
       }).then(r => r.json()).then(d => {
         if (d.ok && d.vendas) {
           itemIds.forEach((id, idx) => {
@@ -9959,10 +9959,13 @@ function renderListaPromocoes(container, promocoes, BACKEND, fmtVal, fmtData, to
     const tend = v.tendencia ?? 0;
     const cor = tend >= 10 ? T.cVerde : tend <= -10 ? T.cVermelho : T.text2;
     const label = tend > 0 ? `↑ +${tend}%` : tend < 0 ? `↓ ${tend}%` : "→ 0%";
+    const vendas = v.vendas_na_promo ?? v.total ?? 0;
+    const mediaDia = v.media_dia ?? 0;
+    const diasAtivo = v.dias_ativo ?? 30;
     el.innerHTML = `
-      <div style="font-size:10px;color:${T.text2};">Tendência</div>
+      <div style="font-size:10px;color:${T.text2};">Na promoção</div>
       <div style="font-size:14px;font-weight:600;color:${cor};margin-top:3px;">${label}</div>
-      <div style="font-size:10px;color:${T.text2};">${v.total||0} un (30d)</div>`;
+      <div style="font-size:10px;color:${T.text2};">${vendas} un · ${mediaDia}/dia</div>`;
   }
 
   // Carregar drawer com análise e botões
