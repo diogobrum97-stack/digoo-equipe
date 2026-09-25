@@ -9852,7 +9852,9 @@ function renderListaPromocoes(container, promocoes, BACKEND, fmtVal, fmtData, to
     return;
   }
 
-  const cards = promocoes.map((p) => {
+  let expandedId = null;
+
+  const cards = promocoes.map((p, idx) => {
     const diasRestantes = p.dias_restantes;
     const urgente = diasRestantes !== null && diasRestantes <= 3;
     const atencao = diasRestantes !== null && diasRestantes > 3 && diasRestantes <= 7;
@@ -9860,32 +9862,138 @@ function renderListaPromocoes(container, promocoes, BACKEND, fmtVal, fmtData, to
     const corBorda = urgente ? T.cVermelho : atencao ? T.cAmarelo : T.border;
     const labelDias = diasRestantes === null ? "Sem data" : diasRestantes <= 0 ? "Vencida" : `${diasRestantes}d`;
     const animBadge = urgente ? "animation:pulse-badge 1s ease-in-out infinite;" : "";
+    const cardId = `prom-card-${idx}`;
+    const drawerId = `prom-drawer-${idx}`;
 
-    return `<div onclick="window.promState.detalhe={item_id:'${p.item_id}',conta:window.promState.conta};window.renderPromocoes(document.querySelector('.prom-container'));"
-      style="background:${T.card};border:0.5px solid ${corBorda};border-radius:12px;padding:14px;cursor:pointer;display:flex;flex-direction:column;gap:10px;"
-      onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
-      <div style="display:flex;align-items:flex-start;gap:10px;">
-        <img src="${p.thumbnail||''}" style="width:48px;height:48px;border-radius:8px;object-fit:contain;background:${T.bg3};flex-shrink:0;" onerror="this.style.display='none'">
-        <div style="min-width:0;flex:1;">
-          <div style="font-size:12px;font-weight:500;color:${T.text};overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${p.titulo}</div>
-          <div style="font-size:10px;color:${T.text2};margin-top:2px;">${p.sku||p.item_id}</div>
+    return `<div style="background:${T.card};border:0.5px solid ${corBorda};border-radius:12px;overflow:hidden;">
+      <div style="padding:14px;cursor:pointer;"
+        onclick="(function(){
+          var d=document.getElementById('${drawerId}');
+          var open=d.style.display==='block';
+          document.querySelectorAll('[id^=prom-drawer-]').forEach(function(el){el.style.display='none';});
+          d.style.display=open?'none':'block';
+          if(!open && !d.dataset.loaded) {
+            d.dataset.loaded='1';
+            window._loadPromDrawer('${p.item_id}','${idx}');
+          }
+        })()">
+        <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;">
+          <img src="${p.thumbnail||''}" style="width:44px;height:44px;border-radius:8px;object-fit:contain;background:${T.bg3};flex-shrink:0;" onerror="this.style.display='none'">
+          <div style="min-width:0;flex:1;">
+            <div style="font-size:12px;font-weight:500;color:${T.text};overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${p.titulo}</div>
+            <div style="font-size:10px;color:${T.text2};margin-top:1px;">${p.sku||p.item_id}</div>
+          </div>
+          <div style="font-size:11px;font-weight:600;color:${corDias};background:${corDias}18;border-radius:4px;padding:2px 8px;white-space:nowrap;${animBadge}">${labelDias}</div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:15px;font-weight:600;color:${T.cVerde};">${p.desconto_pct}% off</span>
+            <span style="font-size:11px;color:${T.text2};text-decoration:line-through;">${fmtVal(p.preco_original)}</span>
+            <span style="font-size:12px;font-weight:500;color:${T.text};">${fmtVal(p.preco_desconto)}</span>
+          </div>
+          <div style="font-size:10px;color:${T.text2};">${p.finish_date ? "até "+fmtData(p.finish_date) : ""}</div>
         </div>
       </div>
-      <div style="display:flex;align-items:flex-end;justify-content:space-between;">
-        <div>
-          <div style="font-size:16px;font-weight:600;color:${T.cVerde};">${p.desconto_pct}% off</div>
-          <div style="font-size:11px;color:${T.text2};text-decoration:line-through;">${fmtVal(p.preco_original)}</div>
-          <div style="font-size:13px;font-weight:500;color:${T.text};">${fmtVal(p.preco_desconto)}</div>
-        </div>
-        <div style="text-align:right;">
-          <div style="font-size:11px;font-weight:600;color:${corDias};background:${corDias}18;border-radius:4px;padding:3px 10px;min-width:44px;text-align:center;display:inline-block;${animBadge}">${labelDias}</div>
-          ${p.finish_date ? `<div style="font-size:10px;color:${T.text2};margin-top:4px;">até ${fmtData(p.finish_date)}</div>` : ""}
-        </div>
+      <div id="${drawerId}" style="display:none;border-top:0.5px solid ${T.border};">
+        <div style="padding:12px 14px;font-size:11px;color:${T.text2};">Carregando...</div>
       </div>
     </div>`;
   }).join("");
 
   container.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;">${cards}</div>`;
+
+  // Função para carregar drawer de cada card
+  window._loadPromDrawer = async function(itemId, idx) {
+    const drawer = document.getElementById(`prom-drawer-${idx}`);
+    if (!drawer) return;
+    const promo = (window.promState.promocoes[window.promState.conta]||[]).find(p => p.item_id === itemId);
+    if (!promo) return;
+
+    const diasRestantes = promo.dias_restantes;
+    const urgente = diasRestantes !== null && diasRestantes <= 3;
+    const atencao = diasRestantes !== null && diasRestantes > 3 && diasRestantes <= 7;
+    const corAcao = urgente ? T.cVermelho : atencao ? T.cAmarelo : T.cAzul;
+
+    // Buscar histórico do Firebase
+    const histKey = `${window.promState.conta}_${itemId}`;
+    if (!window.promState.historico[histKey]) {
+      try {
+        const snap = await get(ref(db, `/promocoes_historico/${itemId}`));
+        window.promState.historico[histKey] = snap.val() ? Object.values(snap.val()).sort((a,b) => new Date(b.data_inicio)-new Date(a.data_inicio)) : [];
+      } catch(e) { window.promState.historico[histKey] = []; }
+    }
+    const hist = window.promState.historico[histKey];
+
+    // Buscar análise do Claude se tiver histórico
+    let analise = hist.length >= 2 ? null : "Histórico insuficiente para análise (mínimo 2 períodos).";
+    if (hist.length >= 2) {
+      try {
+        const res = await fetch(`${BACKEND}/api/ml-vendas?action=analisar-promocao`, {
+          method: "POST", headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({ titulo: promo.titulo, sku: promo.sku, historico: hist })
+        });
+        const d = await res.json();
+        analise = d.analise || analise;
+      } catch(e) { analise = "Erro ao gerar análise."; }
+    }
+
+    drawer.innerHTML = `
+      <div style="padding:12px 14px;display:flex;flex-direction:column;gap:10px;">
+        <div style="background:${T.bg3};border-radius:8px;padding:10px 12px;font-size:11px;color:${T.text};line-height:1.6;display:flex;gap:8px;align-items:flex-start;">
+          <span style="font-size:14px;flex-shrink:0;">✨</span>
+          <span>${analise}</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button onclick="window._abrirRenovarInline('${itemId}','${idx}',${promo.preco_original},${promo.desconto_pct})"
+            style="flex:1;font-size:12px;padding:7px 12px;border-radius:8px;border:0.5px solid ${corAcao};background:${corAcao}18;color:${corAcao};cursor:pointer;font-weight:500;">
+            Renovar promoção
+          </button>
+          <a href="${promo.permalink}" target="_blank"
+            style="font-size:12px;padding:7px 12px;border-radius:8px;border:0.5px solid ${T.border};background:${T.card};color:${T.text2};cursor:pointer;text-decoration:none;display:flex;align-items:center;">
+            Ver anúncio
+          </a>
+          <button onclick="window.promState.detalhe={item_id:'${itemId}',conta:window.promState.conta};window.renderPromocoes(document.querySelector('.prom-container'));"
+            style="font-size:12px;padding:7px 12px;border-radius:8px;border:0.5px solid ${T.border};background:${T.card};color:${T.text2};cursor:pointer;">
+            Histórico
+          </button>
+        </div>
+        <div id="prom-renovar-inline-${idx}" style="display:none;background:${T.bg3};border-radius:8px;padding:10px 12px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+            <div>
+              <div style="font-size:10px;color:${T.text2};margin-bottom:3px;">Novo desconto (%)</div>
+              <input id="prom-desc-${idx}" type="number" min="5" max="80" value="${promo.desconto_pct}"
+                style="width:100%;padding:6px 8px;border-radius:6px;border:0.5px solid ${T.border};background:${T.card};color:${T.text};font-size:12px;">
+            </div>
+            <div>
+              <div style="font-size:10px;color:${T.text2};margin-bottom:3px;">Nova data de fim</div>
+              <input id="prom-data-${idx}" type="date" value="${new Date(Date.now()+30*24*60*60*1000).toISOString().slice(0,10)}"
+                style="width:100%;padding:6px 8px;border-radius:6px;border:0.5px solid ${T.border};background:${T.card};color:${T.text};font-size:12px;">
+            </div>
+          </div>
+          <div id="prom-preco-${idx}" style="font-size:11px;color:${T.text2};margin-bottom:8px;"></div>
+          <div style="display:flex;gap:8px;">
+            <button onclick="window.confirmarRenovacao('${itemId}',${promo.preco_original},'${token}','${idx}')"
+              style="flex:1;font-size:12px;padding:7px;border-radius:6px;border:0.5px solid ${T.cAzul};background:${T.cAzul};color:#fff;cursor:pointer;">Confirmar</button>
+            <button onclick="document.getElementById('prom-renovar-inline-${idx}').style.display='none';"
+              style="font-size:12px;padding:7px 12px;border-radius:6px;border:0.5px solid ${T.border};background:${T.card};color:${T.text2};cursor:pointer;">Cancelar</button>
+          </div>
+          <div id="prom-status-${idx}" style="font-size:11px;margin-top:6px;"></div>
+        </div>
+      </div>`;
+
+    // Listener no input de desconto
+    const inp = document.getElementById(`prom-desc-${idx}`);
+    const precoEl = document.getElementById(`prom-preco-${idx}`);
+    if (inp && precoEl) {
+      const calc = () => { precoEl.textContent = `Novo preço: ${fmtVal(promo.preco_original*(1-parseFloat(inp.value||0)/100))}`; };
+      calc(); inp.addEventListener("input", calc);
+    }
+  };
+
+  window._abrirRenovarInline = function(itemId, idx, precoOriginal, descontoAtual) {
+    const el = document.getElementById(`prom-renovar-inline-${idx}`);
+    if (el) el.style.display = el.style.display === "block" ? "none" : "block";
+  };
 }
 
 
