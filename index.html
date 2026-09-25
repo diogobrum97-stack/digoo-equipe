@@ -9959,13 +9959,14 @@ function renderListaPromocoes(container, promocoes, BACKEND, fmtVal, fmtData, to
     const tend = v.tendencia ?? 0;
     const cor = tend >= 10 ? T.cVerde : tend <= -10 ? T.cVermelho : T.text2;
     const label = tend > 0 ? `↑ +${tend}%` : tend < 0 ? `↓ ${tend}%` : "→ 0%";
-    const vendas = v.vendas_na_promo ?? v.total ?? 0;
+    const vendas = v.vendas_na_promo ?? 0;
+    const antes = v.vendas_antes_promo ?? 0;
     const mediaDia = v.media_dia ?? 0;
-    const diasAtivo = v.dias_ativo ?? 30;
+    const tooltip = antes > 0 ? `${vendas} un com desc. vs ${antes} un antes` : `${vendas} un desde o início`;
     el.innerHTML = `
-      <div style="font-size:10px;color:${T.text2};">Na promoção</div>
+      <div style="font-size:10px;color:${T.text2};">vs. antes da promo</div>
       <div style="font-size:14px;font-weight:600;color:${cor};margin-top:3px;">${label}</div>
-      <div style="font-size:10px;color:${T.text2};">${vendas} un · ${mediaDia}/dia</div>`;
+      <div style="font-size:10px;color:${T.text2};" title="${tooltip}">${vendas} un · ${mediaDia}/dia</div>`;
   }
 
   // Carregar drawer com análise e botões
