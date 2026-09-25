@@ -9866,7 +9866,7 @@ function renderListaPromocoes(container, promocoes, BACKEND, fmtVal, fmtData, to
     return `<div style="background:${T.card};border:0.5px solid ${corBorda};border-radius:12px;overflow:hidden;">
 
       <!-- Cabeçalho clicável -->
-      <div style="padding:16px;cursor:pointer;"
+      <div style="padding:18px;cursor:pointer;"
         onclick="(function(){
           var d=document.getElementById('${drawerId}');
           var open=d.style.display==='block';
@@ -9905,7 +9905,7 @@ function renderListaPromocoes(container, promocoes, BACKEND, fmtVal, fmtData, to
           </div>
           <div style="background:${T.bg3};border-radius:8px;padding:10px;">
             <div style="font-size:10px;color:${T.text2};">Tipo</div>
-            <div style="font-size:12px;font-weight:500;color:${T.text};margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.tipo_promo||"Desconto"}</div>
+            <div style="font-size:12px;font-weight:500;color:${T.text};margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${({PRICE_DISCOUNT:"Desconto %",DEAL:"Oferta do dia",LIGHTNING:"Relâmpago",SELLER_CAMPAIGN:"Campanha",MARKETPLACE_CAMPAIGN:"Campanha ML",SMART:"Smart"})[p.tipo_promo]||p.tipo_promo||"Desconto"}</div>
             <div style="font-size:10px;color:${T.text2};">promoção</div>
           </div>
         </div>
@@ -9918,7 +9918,7 @@ function renderListaPromocoes(container, promocoes, BACKEND, fmtVal, fmtData, to
     </div>`;
   }).join("");
 
-  container.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:14px;">${cards}</div>`;
+  container.innerHTML = `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;">${cards}</div>`;
 
   // Carregar drawer com análise e botões
   window._loadPromDrawer = async function(itemId, idx) {
