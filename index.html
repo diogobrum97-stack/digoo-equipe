@@ -9903,10 +9903,10 @@ function renderListaPromocoes(container, promocoes, BACKEND, fmtVal, fmtData, to
             <div style="font-size:14px;font-weight:600;color:${T.text};margin-top:3px;">${p.start_date ? fmtData(p.start_date) : "—"}</div>
             <div style="font-size:10px;color:${T.text2};">da promoção</div>
           </div>
-          <div style="background:${T.bg3};border-radius:8px;padding:10px;">
-            <div style="font-size:10px;color:${T.text2};">Tipo</div>
-            <div style="font-size:12px;font-weight:500;color:${T.text};margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${({PRICE_DISCOUNT:"Desconto %",DEAL:"Oferta do dia",LIGHTNING:"Relâmpago",SELLER_CAMPAIGN:"Campanha",MARKETPLACE_CAMPAIGN:"Campanha ML",SMART:"Smart"})[p.tipo_promo]||p.tipo_promo||"Desconto"}</div>
-            <div style="font-size:10px;color:${T.text2};">promoção</div>
+          <div id="prom-tend-${idx}" style="background:${T.bg3};border-radius:8px;padding:10px;">
+            <div style="font-size:10px;color:${T.text2};">Tendência</div>
+            <div style="font-size:14px;font-weight:600;color:${T.text2};margin-top:3px;">—</div>
+            <div style="font-size:10px;color:${T.text2};">carregando</div>
           </div>
         </div>
       </div>
@@ -9919,6 +9919,48 @@ function renderListaPromocoes(container, promocoes, BACKEND, fmtVal, fmtData, to
   }).join("");
 
   container.innerHTML = `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;">${cards}</div>`;
+
+  // Buscar tendências do Firebase e dispara atualização em background
+  (async () => {
+    const itemIds = promocoes.map(p => p.item_id);
+    // 1. Ler do Firebase (cache)
+    const fbReads = await Promise.all(itemIds.map(async (id, idx) => {
+      try {
+        const snap = await get(ref(db, `/promocoes_vendas/${id}`));
+        const v = snap.val();
+        if (v) _atualizarTendCard(idx, v);
+        return !!v;
+      } catch(e) { return false; }
+    }));
+
+    // 2. Disparar atualização em background (sem await — não bloqueia)
+    const contaAtual = window.promState.conta;
+    const tokenBg = contaAtual === "filial" ? (state?.ml_token_filial?.access_token) : (state?.ml_token?.access_token);
+    if (tokenBg) {
+      fetch(`${BACKEND}/api/ml-vendas?action=buscar-vendas-promocao`, {
+        method: "POST", headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ item_ids: itemIds, token: tokenBg })
+      }).then(r => r.json()).then(d => {
+        if (d.ok && d.vendas) {
+          itemIds.forEach((id, idx) => {
+            if (d.vendas[id]) _atualizarTendCard(idx, d.vendas[id]);
+          });
+        }
+      }).catch(() => {});
+    }
+  })();
+
+  function _atualizarTendCard(idx, v) {
+    const el = document.getElementById(`prom-tend-${idx}`);
+    if (!el) return;
+    const tend = v.tendencia ?? 0;
+    const cor = tend >= 10 ? T.cVerde : tend <= -10 ? T.cVermelho : T.text2;
+    const label = tend > 0 ? `↑ +${tend}%` : tend < 0 ? `↓ ${tend}%` : "→ 0%";
+    el.innerHTML = `
+      <div style="font-size:10px;color:${T.text2};">Tendência</div>
+      <div style="font-size:14px;font-weight:600;color:${cor};margin-top:3px;">${label}</div>
+      <div style="font-size:10px;color:${T.text2};">${v.total||0} un (30d)</div>`;
+  }
 
   // Carregar drawer com análise e botões
   window._loadPromDrawer = async function(itemId, idx) {
