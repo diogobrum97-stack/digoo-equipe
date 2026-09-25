@@ -9810,6 +9810,12 @@ async function renderPromocoes(panel) {
   // Cabeçalho com abas Matriz / Filial
   const tokenFilial = state?.ml_token_filial?.access_token;
   const tokenMatriz = state?.ml_token?.access_token;
+
+  panel.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div style="font-size:14px;font-weight:500;color:${T.text};">Promoções</div>
+      <div style="display:flex;gap:6px;">
+        <button id="prom-btn-filial" onclick="promState.conta='filial';promState.promocoes.filial=null;renderPromocoes(document.querySelector('.prom-container'));"
           style="font-size:11px;padding:4px 12px;border-radius:20px;border:0.5px solid ${promState.conta==='filial'?T.border2:T.border};background:${promState.conta==='filial'?T.bg3:'transparent'};color:${promState.conta==='filial'?T.text:T.text2};cursor:pointer;font-weight:${promState.conta==='filial'?500:400};">Filial SP</button>
         ${tokenMatriz ? `<button id="prom-btn-matriz" onclick="promState.conta='matriz';promState.promocoes.matriz=null;renderPromocoes(document.querySelector('.prom-container'));"
           style="font-size:11px;padding:4px 12px;border-radius:20px;border:0.5px solid ${promState.conta==='matriz'?T.border2:T.border};background:${promState.conta==='matriz'?T.bg3:'transparent'};color:${promState.conta==='matriz'?T.text:T.text2};cursor:pointer;font-weight:${promState.conta==='matriz'?500:400};">Matriz RS</button>` : ""}
