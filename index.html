@@ -275,6 +275,13 @@ const T = {
   get okBor()   { return T.isLight ? "#86efac" : "#2d5a2d"; },
   get okTxt()   { return T.isLight ? "#15803d" : "#10b981"; },
   get cardShadow() { return T.isLight ? "0 1px 4px rgba(0,0,0,0.08)" : "none"; },
+  // Cores semânticas adaptadas ao tema — usar nos cards da sidebar
+  get cVerde()  { return T.isLight ? "#15803d" : "#10b981"; },
+  get cVermelho(){ return T.isLight ? "#c0392b" : "#E24B4A"; },
+  get cAzul()   { return T.isLight ? "#1d4ed8" : "#3b82f6"; },
+  get cAmarelo(){ return T.isLight ? "#b45309" : "#f0b400"; },
+  get cLaranja(){ return T.isLight ? "#c2410c" : "#f97316"; },
+  get cRoxo()   { return T.isLight ? "#6d28d9" : "#8b5cf6"; },
 };
 
 window.toggleTheme = function() {
@@ -2793,15 +2800,15 @@ function renderDashboard(panel, color) {
   const pendGrid = document.createElement("div");
   pendGrid.style.cssText = "display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;";
 
-  const corTarefas = urgentes > 0 ? "#E24B4A" : importantes > 0 ? "#f0b400" : "#10b981";
+  const corTarefas = urgentes > 0 ? T.cVermelho : importantes > 0 ? T.cAmarelo : T.cVerde;
   const valTarefas = (urgentes+importantes+normais) > 0 ? (urgentes+importantes+normais) : "✓";
   const subTarefas = (urgentes+importantes+normais) > 0 ? "em aberto" : "Em dia";
 
-  const corPerg = perguntasTotal > 0 ? "#3b82f6" : "#10b981";
+  const corPerg = perguntasTotal > 0 ? T.cAzul : T.cVerde;
   const valPerg = perguntasTotal > 0 ? perguntasTotal : "✓";
   const subPerg = perguntasTotal > 0 ? (perguntasSugeridas > 0 ? perguntasSugeridas+" sug." : "sem sug.") : "Em dia";
 
-  const corEst = alertasCount > 0 ? "#E24B4A" : "#10b981";
+  const corEst = alertasCount > 0 ? T.cVermelho : T.cVerde;
   const valEst = alertasCount > 0 ? alertasCount : "✓";
   const subEst = alertasCount > 0 ? "alertas" : "Em dia";
 
@@ -2829,7 +2836,7 @@ function renderDashboard(panel, color) {
   const pickingCard = document.createElement("div");
   pickingCard.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:14px 16px;`;
 
-  const corPick = pickingTotal > 0 ? "#3b82f6" : "#10b981";
+  const corPick = pickingTotal > 0 ? T.cAzul : T.cVerde;
   const valPick = pickingTotal > 0 ? pickingTotal : "✓";
   const subPick = pickingTotal > 0 ? "pedido"+(pickingTotal>1?"s":"")+" pronto"+(pickingTotal>1?"s":"") : "Em dia";
 
@@ -2874,7 +2881,7 @@ function renderDashboard(panel, color) {
       const rascCard = document.createElement("div");
       rascCard.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:14px 16px;`;
 
-      const corRasc = rascTotal > 0 ? "#f0b400" : "#10b981";
+      const corRasc = rascTotal > 0 ? T.cAmarelo : T.cVerde;
       const valRasc = rascTotal > 0 ? rascTotal : "✓";
       const subRasc = rascTotal > 0 ? "rascunho"+(rascTotal>1?"s":"") : "Em dia";
 
@@ -2968,8 +2975,8 @@ function renderDashboard(panel, color) {
       const totalFiscal = (window._fiscalAgrupado||[]).filter(e => e.diff <= 7).length;
       const totalVenc = totalContas + totalFiscal;
 
-      const corContas = "#E24B4A";
-      const corFiscal = "#f97316";
+      const corContas = T.cVermelho;
+      const corFiscal = T.cLaranja;
 
       const totalValContas = proximos.reduce((s,c) => s + Number(c.valor||0), 0);
       const fmtValV = v => `R$ ${Number(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
@@ -3012,7 +3019,7 @@ function renderDashboard(panel, color) {
         const diaLabel = vencida ? "Vencida" : hoje ? "Hoje" : c.dias===1?"Amanhã":(c.dias+"d");
         const dtFmt = c.dataVencimento ? c.dataVencimento.slice(8,10)+"/"+c.dataVencimento.slice(5,7)+"/"+c.dataVencimento.slice(0,4) : "—";
         const detalhes = mkCell("Vencimento", dtFmt) + `<div><div style="font-size:9px;color:${T.text2};margin-bottom:1px;">Valor</div><div style="font-size:11px;font-weight:600;color:${T.text};">${fmtValV(c.valor||0)}</div></div>`;
-        const barraExtra = (hoje || vencida) ? `style="width:2px;height:12px;background:#E24B4A;border-radius:2px;flex-shrink:0;display:inline-block;animation:pulse-red 1s ease-in-out infinite;"` : `style="width:2px;height:12px;background:${cor};border-radius:2px;flex-shrink:0;display:inline-block;"`;
+        const barraExtra = (hoje || vencida) ? `style="width:2px;height:12px;background:${T.cVermelho};border-radius:2px;flex-shrink:0;display:inline-block;animation:pulse-red 1s ease-in-out infinite;"` : `style="width:2px;height:12px;background:${cor};border-radius:2px;flex-shrink:0;display:inline-block;"`;
         return mkVencRow(c.fornecedor||"—", cor, diaLabel, detalhes, barraExtra, vencida || hoje);
       }).join("");
 
@@ -3116,8 +3123,8 @@ function renderDashboard(panel, color) {
           </div>`;
       };
 
-      const linhasNfse = nfseHoje.map(n => mkDoc(n, "#3b82f6", "NFS-e", "prestadorRazaoSocial", "valorServicos", "numero", "linkNfse")).join("");
-      const linhasNfe  = nfeHoje.map(n => mkDoc(n, "#10b981", "NF-e", "emitenteRazaoSocial", "valor", "numero", "linkNfe")).join("");
+      const linhasNfse = nfseHoje.map(n => mkDoc(n, T.cAzul, "NFS-e", "prestadorRazaoSocial", "valorServicos", "numero", "linkNfse")).join("");
+      const linhasNfe  = nfeHoje.map(n => mkDoc(n, T.cVerde, "NF-e", "emitenteRazaoSocial", "valor", "numero", "linkNfe")).join("");
 
       const titulo = totalGeral > 0 ? `Documentos hoje · ${totalGeral}` : "Documentos hoje";
 
@@ -3128,8 +3135,8 @@ function renderDashboard(panel, color) {
         </div>
         <div id="sbar-content-docs">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
-            ${mkContador("NFS-e","#3b82f6",nfseHoje,"valorServicos")}
-            ${mkContador("NF-e","#10b981",nfeHoje,"valor")}
+            ${mkContador("NFS-e",T.cAzul,nfseHoje,"valorServicos")}
+            ${mkContador("NF-e",T.cVerde,nfeHoje,"valor")}
           </div>
           <div style="border-top:0.5px solid ${T.border};padding-top:8px;display:flex;flex-direction:column;gap:2px;max-height:260px;overflow-y:auto;">
             ${linhasNfse}${linhasNfe}
