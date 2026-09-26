@@ -1839,33 +1839,28 @@ async function fetchPerguntas() {
     perguntasState.lista = todasPerguntas.filter(p => !dispensadas[p.question_id]);
     perguntasState._fetchedAt = Date.now();
 
-    // Salvar rascunhos sugeridos pelo Claude no Firebase
+    // Salvar rascunhos sugeridos pelo Claude no Firebase — um registro por pergunta, com até 3 sugestões
     todasPerguntas.forEach(async p => {
       if (!p.criar_rascunho || !p.criar_rascunho.length) return;
-      const sugestoes = Array.isArray(p.criar_rascunho) ? p.criar_rascunho : [p.criar_rascunho];
-      for (const s of sugestoes) {
-        if (!s.titulo_sugerido) continue;
-        const id = `perg_${p.question_id}_${Date.now()}_${Math.random().toString(36).slice(2,6)}`;
-        try {
-          // Só salvar se não existir ainda para essa pergunta
-          const snapExist = await get(ref(db, `/anuncios_rascunho`));
-          const existentes = snapExist.val() || {};
-          const jaExiste = Object.values(existentes).some(r => r.question_id === p.question_id && r.titulo_sugerido === s.titulo_sugerido);
-          if (!jaExiste) {
-            await set(ref(db, `/anuncios_rascunho/${id}`), {
-              id, status: "pendente",
-              titulo_sugerido: s.titulo_sugerido,
-              descricao_sugerida: s.descricao_sugerida || "",
-              motivo: s.motivo || "",
-              question_id: p.question_id,
-              item_id: p.item_id,
-              produto: p.produto,
-              pergunta: p.pergunta,
-              criado_em: Date.now(),
-            });
-          }
-        } catch(e) {}
-      }
+      const sugestoes = (Array.isArray(p.criar_rascunho) ? p.criar_rascunho : [p.criar_rascunho]).slice(0, 3);
+      if (!sugestoes.some(s => s.titulo_sugerido)) return;
+      const id = `perg_${p.question_id}`;
+      try {
+        // Só salvar se não existir ainda para essa question_id
+        const snapExist = await get(ref(db, `/anuncios_rascunho/${id}`));
+        if (!snapExist.exists()) {
+          await set(ref(db, `/anuncios_rascunho/${id}`), {
+            id, status: "pendente",
+            titulo_sugerido: sugestoes[0]?.titulo_sugerido || "",
+            sugestoes: sugestoes,
+            question_id: p.question_id,
+            item_id: p.item_id,
+            produto: p.produto,
+            pergunta: p.pergunta,
+            criado_em: Date.now(),
+          });
+        }
+      } catch(e) {}
     });
     if (falhas.length > 0) {
       perguntasState.erro = `Aviso: não foi possível buscar perguntas de ${falhas.map(f => f.conta === "matriz" ? "Matriz RS" : "Filial SP").join(", ")}.`;
@@ -10314,10 +10309,19 @@ async function renderAnunciosRascunho(panel) {
   try {
     const snap = await get(ref(db, "/anuncios_rascunho"));
     const dados = snap.val() || {};
-    const rascunhos = Object.entries(dados)
+    const todos = Object.entries(dados)
       .map(([id, r]) => ({ id, ...r }))
       .filter(r => r.status === "pendente")
       .sort((a, b) => (b.criado_em||0) - (a.criado_em||0));
+
+    // Deduplicar por question_id — manter só o mais recente
+    const vistosQid = new Set();
+    const rascunhos = todos.filter(r => {
+      const key = r.question_id || r.id;
+      if (vistosQid.has(key)) return false;
+      vistosQid.add(key);
+      return true;
+    });
 
     panel.innerHTML = "";
 
