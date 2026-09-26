@@ -10356,11 +10356,11 @@ async function renderAnunciosRascunho(panel) {
             <div style="flex:1;">
               <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
                 <span style="font-size:10px;color:${T.text2};">📦</span>
-                <span style="font-size:11px;font-weight:600;color:${T.text};">${r.produto_origem_titulo || r.item_id_origem || "—"}</span>
+                <span style="font-size:11px;font-weight:600;color:${T.text};">${r.produto_origem_titulo || r.produto || r.item_id_origem || "—"}</span>
               </div>
               <div style="display:flex;align-items:flex-start;gap:6px;">
                 <span style="font-size:10px;color:${T.text2};margin-top:1px;">💬</span>
-                <span style="font-size:11px;color:${T.text2};font-style:italic;">${r.pergunta_origem||"—"}</span>
+                <span style="font-size:11px;color:${T.text2};font-style:italic;">${r.pergunta_origem || r.pergunta || "—"}</span>
               </div>
             </div>
             <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
