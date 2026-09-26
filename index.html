@@ -1840,13 +1840,12 @@ async function fetchPerguntas() {
     perguntasState._fetchedAt = Date.now();
 
     // Salvar rascunhos sugeridos pelo Claude no Firebase — um registro por pergunta, com até 3 sugestões
-    todasPerguntas.forEach(async p => {
-      if (!p.criar_rascunho || !p.criar_rascunho.length) return;
+    for (const p of todasPerguntas) {
+      if (!p.criar_rascunho || !p.criar_rascunho.length) continue;
       const sugestoes = (Array.isArray(p.criar_rascunho) ? p.criar_rascunho : [p.criar_rascunho]).slice(0, 3);
-      if (!sugestoes.some(s => s.titulo_sugerido)) return;
+      if (!sugestoes.some(s => s.titulo_sugerido)) continue;
       const id = `perg_${p.question_id}`;
       try {
-        // Só salvar se não existir ainda para essa question_id
         const snapExist = await get(ref(db, `/anuncios_rascunho/${id}`));
         if (!snapExist.exists()) {
           await set(ref(db, `/anuncios_rascunho/${id}`), {
@@ -1859,9 +1858,10 @@ async function fetchPerguntas() {
             pergunta: p.pergunta,
             criado_em: Date.now(),
           });
+          console.log("[rascunho] salvo:", id, sugestoes[0]?.titulo_sugerido);
         }
-      } catch(e) {}
-    });
+      } catch(e) { console.warn("[rascunho] erro ao salvar:", id, e.message); }
+    }
     if (falhas.length > 0) {
       perguntasState.erro = `Aviso: não foi possível buscar perguntas de ${falhas.map(f => f.conta === "matriz" ? "Matriz RS" : "Filial SP").join(", ")}.`;
     }
