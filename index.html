@@ -1838,6 +1838,35 @@ async function fetchPerguntas() {
     const todasPerguntas = sucesso.flatMap(r => r.perguntas);
     perguntasState.lista = todasPerguntas.filter(p => !dispensadas[p.question_id]);
     perguntasState._fetchedAt = Date.now();
+
+    // Salvar rascunhos sugeridos pelo Claude no Firebase
+    todasPerguntas.forEach(async p => {
+      if (!p.criar_rascunho || !p.criar_rascunho.length) return;
+      const sugestoes = Array.isArray(p.criar_rascunho) ? p.criar_rascunho : [p.criar_rascunho];
+      for (const s of sugestoes) {
+        if (!s.titulo_sugerido) continue;
+        const id = `perg_${p.question_id}_${Date.now()}_${Math.random().toString(36).slice(2,6)}`;
+        try {
+          // Só salvar se não existir ainda para essa pergunta
+          const snapExist = await get(ref(db, `/anuncios_rascunho`));
+          const existentes = snapExist.val() || {};
+          const jaExiste = Object.values(existentes).some(r => r.question_id === p.question_id && r.titulo_sugerido === s.titulo_sugerido);
+          if (!jaExiste) {
+            await set(ref(db, `/anuncios_rascunho/${id}`), {
+              id, status: "pendente",
+              titulo_sugerido: s.titulo_sugerido,
+              descricao_sugerida: s.descricao_sugerida || "",
+              motivo: s.motivo || "",
+              question_id: p.question_id,
+              item_id: p.item_id,
+              produto: p.produto,
+              pergunta: p.pergunta,
+              criado_em: Date.now(),
+            });
+          }
+        } catch(e) {}
+      }
+    });
     if (falhas.length > 0) {
       perguntasState.erro = `Aviso: não foi possível buscar perguntas de ${falhas.map(f => f.conta === "matriz" ? "Matriz RS" : "Filial SP").join(", ")}.`;
     }
@@ -1992,12 +2021,13 @@ function renderPerguntasTab(container) {
         ` : !p.requires_attention ? `
           <div style="font-size:10px;color:#666;margin-bottom:6px;">Resposta ${enviadoAuto || enviado ? "enviada" : "sugerida (editável)"}</div>
           <textarea id="pergunta-resp-${p.question_id}" ${enviadoAuto || enviado ? "disabled" : ""} style="width:100%;background:${T.bg};border:1px solid ${enviadoAuto ? T.border : T.text};border-radius:6px;padding:10px 12px;color:${enviadoAuto ? T.text3 : T.text};font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;resize:vertical;min-height:60px;margin-bottom:10px;">${p.suggested_answer}</textarea>
-          ${p.criar_rascunho ? `
+          ${p.criar_rascunho && p.criar_rascunho.length ? `
           <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#f59e0b18;border:0.5px solid #f59e0b44;border-radius:8px;margin-bottom:10px;">
             <span style="font-size:16px;">📋</span>
             <div>
               <div style="font-size:11px;font-weight:600;color:#f59e0b;">Rascunho criado — aguardando aprovação</div>
-              <div style="font-size:10px;color:${T.text2};margin-top:1px;">${p.criar_rascunho.titulo_sugerido||""}</div>
+              <div style="font-size:10px;color:${T.text2};margin-top:1px;">${(Array.isArray(p.criar_rascunho) ? p.criar_rascunho[0] : p.criar_rascunho)?.titulo_sugerido||""}</div>
+              ${Array.isArray(p.criar_rascunho) && p.criar_rascunho.length > 1 ? `<div style="font-size:10px;color:${T.text2};">+${p.criar_rascunho.length-1} sugestão(ões)</div>` : ""}
             </div>
           </div>` : ""}
           ${p.produto_identificado ? `
@@ -2887,8 +2917,8 @@ function renderDashboard(panel, color) {
 
       const rascListHtml = rascunhos.slice(0,5).map(r => `
         <div style="display:flex;align-items:center;gap:5px;padding:4px 0;">
-          <span style="width:2px;height:12px;background:#f0b400;border-radius:2px;display:inline-block;flex-shrink:0;"></span>
-          <span style="font-size:11px;color:${T.text2};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(r.titulo_sugerido||r.titulo||"—").substring(0,32)}</span>
+          <span style="width:2px;height:12px;background:${T.cAmarelo};border-radius:2px;display:inline-block;flex-shrink:0;"></span>
+          <span style="font-size:11px;color:${T.text2};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(r.titulo_sugerido||r.titulo||r.nome||"—").substring(0,36)}</span>
         </div>`).join("");
 
       const rascDrawerInner = rascTotal > 0
