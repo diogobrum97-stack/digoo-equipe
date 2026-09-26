@@ -2905,7 +2905,7 @@ function renderDashboard(panel, color) {
       const dados = snap.val() || {};
       const rascunhos = Object.entries(dados)
         .map(([id, r]) => ({ id, ...r }))
-        .filter(r => r.status === "pendente");
+        .filter(r => r.status === "pendente" && (r.titulo_sugerido || r.titulo));
       const rascTotal = rascunhos.length;
 
       const rascCard = document.createElement("div");
@@ -2916,13 +2916,13 @@ function renderDashboard(panel, color) {
       const subRasc = rascTotal > 0 ? "rascunho"+(rascTotal>1?"s":"") : "Em dia";
 
       const rascListHtml = rascunhos.slice(0,5).map(r => `
-        <div style="display:flex;align-items:center;gap:5px;padding:4px 0;">
+        <div onclick="window._diogotab='anuncios-rascunho';window._renderTab?.();" style="display:flex;align-items:center;gap:5px;padding:5px 0;cursor:pointer;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
           <span style="width:2px;height:12px;background:${T.cAmarelo};border-radius:2px;display:inline-block;flex-shrink:0;"></span>
           <span style="font-size:11px;color:${T.text2};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(r.titulo_sugerido||r.titulo||r.nome||"—").substring(0,36)}</span>
         </div>`).join("");
 
       const rascDrawerInner = rascTotal > 0
-        ? `<div style="border-top:0.5px solid ${T.border};padding-top:8px;margin-top:8px;max-height:200px;overflow-y:auto;">${rascListHtml}<div onclick="window._diogotab='clonagem';render();" style="text-align:center;font-size:10px;color:${T.text2};padding:6px 0;cursor:pointer;">Ver anúncios →</div></div>`
+        ? `<div style="border-top:0.5px solid ${T.border};padding-top:8px;margin-top:8px;max-height:200px;overflow-y:auto;">${rascListHtml}<div onclick="window._diogotab='anuncios-rascunho';window._renderTab?.();" style="text-align:center;font-size:10px;color:${T.text2};padding:6px 0;cursor:pointer;">Ver anúncios →</div></div>`
         : `<div style="border-top:0.5px solid ${T.border};padding-top:8px;margin-top:8px;font-size:11px;color:#10b981;">Nenhum rascunho pendente ✓</div>`;
 
       const anunciosGrid = document.createElement("div");
@@ -5771,6 +5771,7 @@ function renderChatModal(memberName, color) {
 }
 
 function render(){
+  window._renderTab = render;
   if(!currentUser) return;
   try{
   setSyncing(false);
