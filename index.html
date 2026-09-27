@@ -1840,27 +1840,29 @@ async function fetchPerguntas() {
     perguntasState._fetchedAt = Date.now();
 
     // Salvar rascunhos sugeridos pelo Claude no Firebase — um registro por pergunta, com até 3 sugestões
-    for (const p of todasPerguntas) {
-      if (!p.criar_rascunho || !p.criar_rascunho.length) continue;
-      const sugestoes = (Array.isArray(p.criar_rascunho) ? p.criar_rascunho : [p.criar_rascunho]).slice(0, 3);
-      if (!sugestoes.some(s => s.titulo_sugerido)) continue;
-      const id = `perg_${p.question_id}`;
+    const pergComRascunho = todasPerguntas.filter(p => p.criar_rascunho?.length);
+    if (pergComRascunho.length > 0) {
       try {
-        const snapExist = await get(ref(db, `/anuncios_rascunho/${id}`));
-        if (!snapExist.exists()) {
+        const snapExistAll = await get(ref(db, '/anuncios_rascunho'));
+        const existentes = snapExistAll.val() || {};
+        for (const p of pergComRascunho) {
+          const id = `perg_${p.question_id}`;
+          if (existentes[id]) continue; // já existe — não salvar
+          const sugestoes = (Array.isArray(p.criar_rascunho) ? p.criar_rascunho : [p.criar_rascunho]).slice(0, 3);
+          if (!sugestoes.some(s => s.titulo_sugerido)) continue;
           await set(ref(db, `/anuncios_rascunho/${id}`), {
             id, status: "pendente",
             titulo_sugerido: sugestoes[0]?.titulo_sugerido || "",
-            sugestoes: sugestoes,
+            sugestoes,
             question_id: p.question_id,
             item_id: p.item_id,
             produto: p.produto,
             pergunta: p.pergunta,
             criado_em: Date.now(),
           });
-          console.log("[rascunho] salvo:", id, sugestoes[0]?.titulo_sugerido);
+          console.log("[rascunho] salvo:", id);
         }
-      } catch(e) { console.warn("[rascunho] erro ao salvar:", id, e.message); }
+      } catch(e) { console.warn("[rascunho] erro:", e.message); }
     }
     if (falhas.length > 0) {
       perguntasState.erro = `Aviso: não foi possível buscar perguntas de ${falhas.map(f => f.conta === "matriz" ? "Matriz RS" : "Filial SP").join(", ")}.`;
