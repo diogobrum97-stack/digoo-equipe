@@ -10468,7 +10468,7 @@ async function renderAnunciosRascunho(panel) {
               let itemOrigInfo = { categoria: "—", atributos: [], thumbnail: "", listing_type: "" };
               try {
                 const tokenParaBusca = window._mlTokenFilialRasc || window._mlTokenMatrizRasc;
-                const origRes = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=buscar-item-detalhes&item_id=${r.item_id}&token=${tokenParaBusca}`);
+                const origRes = await fetch(`https://digoo-backend.vercel.app/api/ml-vendas?action=buscar-item-detalhes&item_id=${r.item_id}&token=${tokenParaBusca}`);
                 const origData = await origRes.json();
                 if (origData.ok) {
                   itemOrigInfo.categoria = origData.categoria || "—";
