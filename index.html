@@ -1845,11 +1845,18 @@ async function fetchPerguntas() {
       try {
         const snapExistAll = await get(ref(db, '/anuncios_rascunho'));
         const existentes = snapExistAll.val() || {};
+        const perguntasJaSalvas = new Set(Object.values(existentes).map(r => r.pergunta?.trim().toLowerCase()));
+        const qidsJaSalvos = new Set(Object.values(existentes).map(r => String(r.question_id)));
+
         for (const p of pergComRascunho) {
           const id = `perg_${p.question_id}`;
-          if (existentes[id]) continue; // já existe — não salvar
-          const sugestoes = (Array.isArray(p.criar_rascunho) ? p.criar_rascunho : [p.criar_rascunho]).slice(0, 3);
-          if (!sugestoes.some(s => s.titulo_sugerido)) continue;
+          const perguntaNorm = p.pergunta?.trim().toLowerCase();
+          // Pular se já existe por question_id OU por texto idêntico da pergunta
+          if (existentes[id] || qidsJaSalvos.has(String(p.question_id)) || perguntasJaSalvas.has(perguntaNorm)) continue;
+          const sugestoes = (Array.isArray(p.criar_rascunho) ? p.criar_rascunho : [p.criar_rascunho])
+            .filter(s => s.titulo_sugerido)
+            .slice(0, 3);
+          if (!sugestoes.length) continue;
           await set(ref(db, `/anuncios_rascunho/${id}`), {
             id, status: "pendente",
             titulo_sugerido: sugestoes[0]?.titulo_sugerido || "",
@@ -1860,7 +1867,9 @@ async function fetchPerguntas() {
             pergunta: p.pergunta,
             criado_em: Date.now(),
           });
-          console.log("[rascunho] salvo:", id);
+          // Registrar localmente para evitar duplicata dentro do mesmo carregamento
+          perguntasJaSalvas.add(perguntaNorm);
+          qidsJaSalvos.add(String(p.question_id));
         }
       } catch(e) { console.warn("[rascunho] erro:", e.message); }
     }
