@@ -10463,6 +10463,30 @@ async function renderAnunciosRascunho(panel) {
               modal = document.createElement("div");
               modal.id = modalId;
               modal.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;`;
+              modal.innerHTML = `<div style="background:${T.card};border:0.5px solid ${T.border};border-radius:14px;padding:24px;max-width:500px;width:92%;text-align:center;color:${T.text2};font-size:13px;">Carregando dados do produto base...</div>`;
+              document.body.appendChild(modal);
+
+              // Buscar dados do item original via endpoint público (sem token)
+              let itemOrigInfo = { categoria: "—", atributos: [], thumbnail: "", listing_type: "", pictures_count: 0 };
+              try {
+                const origRes = await fetch(`https://digoo-backend.vercel.app/api/ml-vendas?action=buscar-item-detalhes&item_id=${r.item_id}&token=${window._mlTokenFilialRasc || window._mlTokenMatrizRasc}`);
+                const origData = await origRes.json();
+                if (origData.ok) {
+                  itemOrigInfo.categoria = origData.categoria || "—";
+                  itemOrigInfo.thumbnail = origData.thumbnail || "";
+                  itemOrigInfo.listing_type = origData.listing_type || "";
+                  itemOrigInfo.atributos = origData.atributos || [];
+                  itemOrigInfo.pictures_count = origData.pictures_count || 0;
+                }
+              } catch(e) {}
+
+              const atributosHtml = itemOrigInfo.atributos.length
+                ? itemOrigInfo.atributos.map(a => `
+                    <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid ${T.border};">
+                      <span style="font-size:11px;color:${T.text2};">${a.name}</span>
+                      <span style="font-size:11px;color:${T.text};font-weight:500;">${a.value_name}</span>
+                    </div>`).join("")
+                : `<div style="font-size:11px;color:${T.text2};">Sem atributos disponíveis</div>`;
 
               modal.innerHTML = `
                 <div style="background:${T.card};border:0.5px solid ${T.border};border-radius:14px;padding:24px;max-width:500px;width:92%;max-height:90vh;overflow-y:auto;">
@@ -10489,13 +10513,27 @@ async function renderAnunciosRascunho(panel) {
                   </div>
 
                   <div style="background:${T.bg3};border-radius:8px;padding:12px;margin-bottom:12px;">
-                    <div style="font-size:10px;color:${T.text2};margin-bottom:4px;">Produto base (fotos, categoria e atributos serão copiados de)</div>
-                    <div style="font-size:12px;font-weight:500;color:${T.text};">${r.produto || r.item_id}</div>
-                    <div style="font-size:10px;color:${T.text2};margin-top:4px;">${r.item_id}</div>
+                    <div style="font-size:10px;color:${T.text2};margin-bottom:6px;">Copiado do produto base · ${r.item_id}</div>
+                    <div style="display:flex;gap:10px;align-items:flex-start;">
+                      ${itemOrigInfo.thumbnail ? `<img src="${itemOrigInfo.thumbnail}" style="width:56px;height:56px;border-radius:6px;object-fit:contain;background:${T.card};flex-shrink:0;">` : ""}
+                      <div style="flex:1;min-width:0;">
+                        <div style="font-size:12px;font-weight:500;color:${T.text};margin-bottom:4px;">${r.produto || r.item_id}</div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                          <span style="font-size:10px;color:${T.text2};">📁 ${itemOrigInfo.categoria}</span>
+                          <span style="font-size:10px;color:${T.text2};">🏷️ ${ ({gold_special:'Clássico',gold_premium:'Premium',free:'Grátis'})[itemOrigInfo.listing_type] || itemOrigInfo.listing_type || '—'}</span>
+                          <span style="font-size:10px;color:${T.text2};">🖼️ ${itemOrigInfo.pictures_count} foto(s)</span>
+                        </div>
+                      </div>
+                    </div>
+                    ${itemOrigInfo.atributos.length ? `
+                    <div style="margin-top:10px;border-top:0.5px solid ${T.border};padding-top:8px;">
+                      <div style="font-size:10px;color:${T.text2};margin-bottom:6px;">Atributos que serão copiados</div>
+                      ${atributosHtml}
+                    </div>` : ""}
                   </div>
 
-                  <div style="background:${T.bg3};border-radius:8px;padding:12px;margin-bottom:16px;">
-                    <div style="font-size:10px;color:${T.text2};margin-bottom:4px;">Motivado pela pergunta</div>
+                  <div style="background:${T.bg3};border-radius:8px;padding:10px 12px;margin-bottom:16px;">
+                    <div style="font-size:10px;color:${T.text2};margin-bottom:4px;">Pergunta que originou</div>
                     <div style="font-size:12px;color:${T.text};font-style:italic;">"${r.pergunta || '—'}"</div>
                   </div>
 
