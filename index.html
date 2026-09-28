@@ -1844,7 +1844,9 @@ async function fetchPerguntas() {
     console.log("[rascunho] perguntas com rascunho:", pergComRascunho.length, pergComRascunho.map(p => p.question_id));
     if (pergComRascunho.length > 0) {
       try {
+        console.log("[rascunho] tentando salvar...");
         const snapExistAll = await get(ref(db, '/anuncios_rascunho'));
+        console.log("[rascunho] snap ok, existentes:", Object.keys(snapExistAll.val() || {}));
         const existentes = snapExistAll.val() || {};
         const perguntasJaSalvas = new Set(Object.values(existentes).map(r => r.pergunta?.trim().toLowerCase()));
         const qidsJaSalvos = new Set(Object.values(existentes).map(r => String(r.question_id)));
