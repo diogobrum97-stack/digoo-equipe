@@ -10461,46 +10461,69 @@ async function renderAnunciosRascunho(panel) {
             let modal = document.getElementById(modalId);
             const contasLabel = [pubFilial ? "Filial SP" : "", pubMatriz ? "Matriz RS" : ""].filter(Boolean).join(" + ");
             const precoFmt = "R$ " + preco.toLocaleString("pt-BR", {minimumFractionDigits:2});
-            const produtoBase = (r.produto || r.item_id || "").replace(/'/g, "&#39;");
             if (!modal) {
               modal = document.createElement("div");
               modal.id = modalId;
               modal.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;";
-              const div = document.createElement("div");
-              div.style.cssText = "background:" + T.card + ";border:0.5px solid " + T.border + ";border-radius:14px;padding:24px;max-width:460px;width:92%;";
-              div.innerHTML = [
-                "<div style='font-size:14px;font-weight:600;color:" + T.text + ";margin-bottom:16px;'>Confirmar publicação</div>",
-                "<div style='background:" + T.bg3 + ";border-radius:8px;padding:12px;margin-bottom:10px;'>",
-                  "<div style='font-size:10px;color:" + T.text2 + ";margin-bottom:4px;'>Título</div>",
-                  "<div style='font-size:13px;font-weight:600;color:" + T.text + ";'>" + titulo.replace(/</g,"&lt;") + "</div>",
-                "</div>",
-                "<div style='display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;'>",
-                  "<div style='background:" + T.bg3 + ";border-radius:8px;padding:10px 12px;'>",
-                    "<div style='font-size:10px;color:" + T.text2 + ";margin-bottom:3px;'>Preço</div>",
-                    "<div style='font-size:14px;font-weight:600;color:" + T.cVerde + ";'>" + precoFmt + "</div>",
-                  "</div>",
-                  "<div style='background:" + T.bg3 + ";border-radius:8px;padding:10px 12px;'>",
-                    "<div style='font-size:10px;color:" + T.text2 + ";margin-bottom:3px;'>Estoque</div>",
-                    "<div style='font-size:14px;font-weight:600;color:" + T.text + ";'>" + estoque + " un</div>",
-                  "</div>",
-                  "<div style='background:" + T.bg3 + ";border-radius:8px;padding:10px 12px;'>",
-                    "<div style='font-size:10px;color:" + T.text2 + ";margin-bottom:3px;'>Contas</div>",
-                    "<div style='font-size:12px;font-weight:600;color:" + T.text + ";'>" + contasLabel + "</div>",
-                  "</div>",
-                "</div>",
-                "<div style='background:" + T.bg3 + ";border-radius:8px;padding:10px 12px;margin-bottom:16px;'>",
-                  "<div style='font-size:10px;color:" + T.text2 + ";margin-bottom:3px;'>Base para fotos e atributos</div>",
-                  "<div style='font-size:12px;color:" + T.text + ";'>" + produtoBase + "</div>",
-                "</div>",
-                "<div style='display:flex;gap:8px;'>",
-                  "<button id='" + modalId + "-confirmar' style='flex:1;padding:10px;border-radius:8px;background:#f59e0b;border:none;color:#000;font-size:13px;font-weight:600;cursor:pointer;'>Confirmar e publicar</button>",
-                  "<button id='" + modalId + "-cancelar' style='padding:10px 16px;border-radius:8px;border:0.5px solid " + T.border + ";background:" + T.card + ";color:" + T.text2 + ";font-size:13px;cursor:pointer;'>Cancelar</button>",
-                "</div>",
-                "<div id='" + modalId + "-status' style='font-size:11px;margin-top:10px;text-align:center;'></div>"
-              ].join("");
-              modal.appendChild(div);
+
+              const box = document.createElement("div");
+              box.style.cssText = "background:" + T.card + ";border:0.5px solid " + T.border + ";border-radius:14px;padding:24px;max-width:460px;width:92%;";
+
+              // Título
+              const h = document.createElement("div");
+              h.style.cssText = "font-size:14px;font-weight:600;color:" + T.text + ";margin-bottom:16px;";
+              h.textContent = "Confirmar publicação";
+              box.appendChild(h);
+
+              // Título do anúncio
+              const bTit = document.createElement("div");
+              bTit.style.cssText = "background:" + T.bg3 + ";border-radius:8px;padding:12px;margin-bottom:10px;";
+              bTit.innerHTML = "<div style='font-size:10px;color:" + T.text2 + ";margin-bottom:4px;'>Título</div><div style='font-size:13px;font-weight:600;color:" + T.text + ";'></div>";
+              bTit.querySelector("div:last-child").textContent = titulo;
+              box.appendChild(bTit);
+
+              // Grid preço/estoque/contas
+              const grid = document.createElement("div");
+              grid.style.cssText = "display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;";
+              [["Preço", precoFmt, T.cVerde], ["Estoque", estoque + " un", T.text], ["Contas", contasLabel, T.text]].forEach(function(item) {
+                const c = document.createElement("div");
+                c.style.cssText = "background:" + T.bg3 + ";border-radius:8px;padding:10px 12px;";
+                const lbl = document.createElement("div"); lbl.style.cssText = "font-size:10px;color:" + T.text2 + ";margin-bottom:3px;"; lbl.textContent = item[0];
+                const val = document.createElement("div"); val.style.cssText = "font-size:" + (item[0]==="Contas"?"12":"14") + "px;font-weight:600;color:" + item[2] + ";"; val.textContent = item[1];
+                c.appendChild(lbl); c.appendChild(val); grid.appendChild(c);
+              });
+              box.appendChild(grid);
+
+              // Produto base
+              const bBase = document.createElement("div");
+              bBase.style.cssText = "background:" + T.bg3 + ";border-radius:8px;padding:10px 12px;margin-bottom:16px;";
+              const lblBase = document.createElement("div"); lblBase.style.cssText = "font-size:10px;color:" + T.text2 + ";margin-bottom:3px;"; lblBase.textContent = "Base para fotos e atributos";
+              const valBase = document.createElement("div"); valBase.style.cssText = "font-size:12px;color:" + T.text + ";"; valBase.textContent = r.produto || r.item_id || "";
+              bBase.appendChild(lblBase); bBase.appendChild(valBase);
+              box.appendChild(bBase);
+
+              // Botões
+              const btnRow = document.createElement("div");
+              btnRow.style.cssText = "display:flex;gap:8px;";
+              const btnConf = document.createElement("button");
+              btnConf.id = modalId + "-confirmar";
+              btnConf.style.cssText = "flex:1;padding:10px;border-radius:8px;background:#f59e0b;border:none;color:#000;font-size:13px;font-weight:600;cursor:pointer;";
+              btnConf.textContent = "Confirmar e publicar";
+              const btnCanc = document.createElement("button");
+              btnCanc.style.cssText = "padding:10px 16px;border-radius:8px;border:0.5px solid " + T.border + ";background:" + T.card + ";color:" + T.text2 + ";font-size:13px;cursor:pointer;";
+              btnCanc.textContent = "Cancelar";
+              btnCanc.onclick = function() { modal.remove(); };
+              btnRow.appendChild(btnConf); btnRow.appendChild(btnCanc);
+              box.appendChild(btnRow);
+
+              // Status
+              const statusDiv = document.createElement("div");
+              statusDiv.id = modalId + "-status";
+              statusDiv.style.cssText = "font-size:11px;margin-top:10px;text-align:center;";
+              box.appendChild(statusDiv);
+
+              modal.appendChild(box);
               document.body.appendChild(modal);
-              document.getElementById(modalId + "-cancelar").onclick = function() { modal.remove(); };
             }
               document.body.appendChild(modal);
             }
