@@ -10387,12 +10387,23 @@ async function renderAnunciosRascunho(panel) {
             </div>
           </div>
         </div>
-        <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
+        <div style="padding:14px 16px;">
+          <!-- Tabs de sugestões -->
+          <div style="display:flex;gap:6px;margin-bottom:12px;">
+            ${sugestoes.map((s, si) => `
+              <button onclick="(function(){
+                document.querySelectorAll('[id^=rasc-tab-${r.id}-]').forEach(function(el,i){ el.style.background=i===${si}?'#f59e0b':'transparent'; el.style.color=i===${si}?'#000':'${T.text2}'; });
+                document.querySelectorAll('[id^=rasc-panel-${r.id}-]').forEach(function(el,i){ el.style.display=i===${si}?'block':'none'; });
+              })()"
+                id="rasc-tab-${r.id}-${si}"
+                style="font-size:11px;padding:4px 12px;border-radius:20px;border:0.5px solid #f59e0b;background:${si===0?'#f59e0b':'transparent'};color:${si===0?'#000':'${T.text2}'};cursor:pointer;font-weight:500;">
+                Sugestão ${si+1}
+              </button>`).join("")}
+          </div>
           ${sugestoes.map((s, si) => `
-            <div style="border:0.5px solid ${T.border};border-left:3px solid #f59e0b;border-radius:8px;padding:12px 14px;">
-              <div style="font-size:11px;font-weight:600;color:${T.text};margin-bottom:4px;">${s.titulo_sugerido||"Sem título"}</div>
-              ${s.motivo ? `<div style="font-size:10px;color:${T.text2};font-style:italic;margin-bottom:8px;">💡 ${s.motivo}</div>` : ""}
-              <div style="display:flex;gap:8px;margin-bottom:8px;">
+            <div id="rasc-panel-${r.id}-${si}" style="display:${si===0?'block':'none'};">
+              ${s.motivo ? `<div style="font-size:10px;color:${T.text2};font-style:italic;margin-bottom:10px;padding:6px 10px;background:${T.bg3};border-radius:6px;">💡 ${s.motivo}</div>` : ""}
+              <div style="display:flex;gap:8px;margin-bottom:10px;">
                 <div style="flex:1;">
                   <div style="font-size:9px;color:${T.text2};margin-bottom:3px;">Título</div>
                   <input id="rasc-titulo-${r.id}-${si}" value="${(s.titulo_sugerido||"").replace(/"/g,"&quot;")}" style="width:100%;background:${T.bg};border:0.5px solid ${T.border};border-radius:6px;padding:6px 8px;color:${T.text};font-size:11px;font-family:Inter,sans-serif;box-sizing:border-box;outline:none;">
