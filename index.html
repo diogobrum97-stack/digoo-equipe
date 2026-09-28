@@ -10459,6 +10459,7 @@ async function renderAnunciosRascunho(panel) {
             // Modal de confirmação
             const modalId = `modal-confirm-${r.id}-${si}`;
             let modal = document.getElementById(modalId);
+            const contasLabel = [pubFilial ? "Filial SP" : "", pubMatriz ? "Matriz RS" : ""].filter(Boolean).join(" + ");
             if (!modal) {
               modal = document.createElement("div");
               modal.id = modalId;
@@ -10483,7 +10484,7 @@ async function renderAnunciosRascunho(panel) {
                     </div>
                     <div style="background:${T.bg3};border-radius:8px;padding:10px 12px;">
                       <div style="font-size:10px;color:${T.text2};margin-bottom:3px;">Contas</div>
-                      <div style="font-size:12px;font-weight:600;color:${T.text};">${[pubFilial?'Filial SP':'',pubMatriz?'Matriz RS':''].filter(Boolean).join(' + ')}</div>
+                      <div style="font-size:12px;font-weight:600;color:${T.text};">${contasLabel}</div>
                     </div>
                   </div>
 
