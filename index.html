@@ -10533,9 +10533,10 @@ async function renderAnunciosRascunho(panel) {
                 confirmBtn.disabled = false; confirmBtn.textContent = "Tentar novamente";
               }
             };
-        });
+          }; // fim btnPub.onclick
+        }); // fim sugestoes.forEach
       }, 100);
-    });
+    }); // fim rascunhos.forEach
 
     panel.appendChild(lista);
   } catch(e) {
