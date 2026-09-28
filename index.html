@@ -10455,31 +10455,84 @@ async function renderAnunciosRascunho(panel) {
             if (!titulo) { errEl.textContent="Informe o título."; errEl.style.display="block"; return; }
             if (!preco || preco <= 0) { errEl.textContent="Informe o preço."; errEl.style.display="block"; return; }
             if (!pubFilial && !pubMatriz) { errEl.textContent="Selecione ao menos uma conta."; errEl.style.display="block"; return; }
-            btnPub.disabled = true; btnPub.textContent = "Publicando..."; errEl.style.display = "none";
-            const _s = window._state?.() || {};
-            const contas = [];
-            if (pubFilial && window._mlTokenFilialRasc) contas.push({ label:"Filial SP", token: window._mlTokenFilialRasc });
-            if (pubMatriz && window._mlTokenMatrizRasc) contas.push({ label:"Matriz RS", token: window._mlTokenMatrizRasc });
-            const erros = [], links = [];
-            for (const conta of contas) {
-              try {
-                const res = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=criar-anuncio`, {
-                  method:"POST", headers:{"Content-Type":"application/json"},
-                  body: JSON.stringify({ token: conta.token, titulo, descricao: s.descricao_sugerida||titulo, preco, estoque, item_id_origem: r.item_id })
-                });
-                const data = await res.json();
-                if (data.ok && data.permalink) links.push({ conta: conta.label, link: data.permalink });
-                else erros.push(`${conta.label}: ${data.error||"Erro"}`);
-              } catch(e2) { erros.push(`${conta.label}: ${e2.message}`); }
+
+            // Modal de confirmação
+            const modalId = `modal-confirm-${r.id}-${si}`;
+            let modal = document.getElementById(modalId);
+            if (!modal) {
+              modal = document.createElement("div");
+              modal.id = modalId;
+              modal.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;`;
+              modal.innerHTML = `
+                <div style="background:${T.card};border:0.5px solid ${T.border};border-radius:14px;padding:24px;max-width:480px;width:90%;">
+                  <div style="font-size:14px;font-weight:600;color:${T.text};margin-bottom:16px;">Confirmar publicação</div>
+                  <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
+                    <div style="background:${T.bg3};border-radius:8px;padding:10px 12px;">
+                      <div style="font-size:10px;color:${T.text2};margin-bottom:3px;">Título</div>
+                      <div style="font-size:13px;font-weight:500;color:${T.text};">${titulo}</div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+                      <div style="background:${T.bg3};border-radius:8px;padding:10px 12px;">
+                        <div style="font-size:10px;color:${T.text2};margin-bottom:3px;">Preço</div>
+                        <div style="font-size:13px;font-weight:500;color:${T.cVerde};">R$ ${preco.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+                      </div>
+                      <div style="background:${T.bg3};border-radius:8px;padding:10px 12px;">
+                        <div style="font-size:10px;color:${T.text2};margin-bottom:3px;">Estoque</div>
+                        <div style="font-size:13px;font-weight:500;color:${T.text};">${estoque} un</div>
+                      </div>
+                      <div style="background:${T.bg3};border-radius:8px;padding:10px 12px;">
+                        <div style="font-size:10px;color:${T.text2};margin-bottom:3px;">Contas</div>
+                        <div style="font-size:11px;font-weight:500;color:${T.text};">${[pubFilial?'Filial SP':'',pubMatriz?'Matriz RS':''].filter(Boolean).join(' + ')}</div>
+                      </div>
+                    </div>
+                    <div style="background:${T.bg3};border-radius:8px;padding:10px 12px;">
+                      <div style="font-size:10px;color:${T.text2};margin-bottom:3px;">Produto base (fotos e atributos)</div>
+                      <div style="font-size:12px;color:${T.text};">${r.produto || r.item_id}</div>
+                    </div>
+                  </div>
+                  <div style="display:flex;gap:8px;">
+                    <button id="${modalId}-confirmar" style="flex:1;padding:10px;border-radius:8px;background:#f59e0b;border:none;color:#000;font-size:13px;font-weight:600;cursor:pointer;">Confirmar e publicar</button>
+                    <button onclick="document.getElementById('${modalId}').remove()" style="padding:10px 16px;border-radius:8px;border:0.5px solid ${T.border};background:${T.card};color:${T.text2};font-size:13px;cursor:pointer;">Cancelar</button>
+                  </div>
+                  <div id="${modalId}-status" style="font-size:11px;margin-top:10px;text-align:center;"></div>
+                </div>`;
+              document.body.appendChild(modal);
             }
-            if (links.length > 0) {
-              await set(ref(db, `/anuncios_rascunho/${r.id}`), { ...r, status:"publicado", links_publicados: links, publicado_em: Date.now() });
-              renderAnunciosRascunho(panel);
-            } else {
-              errEl.textContent = erros.join(" | "); errEl.style.display = "block";
-              btnPub.disabled = false; btnPub.textContent = "Publicar";
-            }
-          };
+            modal.style.display = "flex";
+
+            document.getElementById(`${modalId}-confirmar`).onclick = async () => {
+              const confirmBtn = document.getElementById(`${modalId}-confirmar`);
+              const statusEl = document.getElementById(`${modalId}-status`);
+              confirmBtn.disabled = true; confirmBtn.textContent = "Publicando...";
+              statusEl.textContent = ""; statusEl.style.color = T.text2;
+
+              const _s = window._state?.() || {};
+              const contas = [];
+              if (pubFilial && window._mlTokenFilialRasc) contas.push({ label:"Filial SP", token: window._mlTokenFilialRasc });
+              if (pubMatriz && window._mlTokenMatrizRasc) contas.push({ label:"Matriz RS", token: window._mlTokenMatrizRasc });
+              const erros = [], links = [];
+              for (const conta of contas) {
+                try {
+                  const res = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=criar-anuncio`, {
+                    method:"POST", headers:{"Content-Type":"application/json"},
+                    body: JSON.stringify({ token: conta.token, titulo, descricao: s.descricao_sugerida||titulo, preco, estoque, item_id_origem: r.item_id })
+                  });
+                  const data = await res.json();
+                  if (data.ok && data.permalink) links.push({ conta: conta.label, link: data.permalink });
+                  else erros.push(`${conta.label}: ${data.error||"Erro"}`);
+                } catch(e2) { erros.push(`${conta.label}: ${e2.message}`); }
+              }
+              if (links.length > 0) {
+                statusEl.style.color = T.cVerde;
+                statusEl.innerHTML = links.map(l => `✓ ${l.conta}: <a href="${l.link}" target="_blank" style="color:${T.cVerde};">Ver anúncio</a>`).join("<br>");
+                await set(ref(db, `/anuncios_rascunho/${r.id}`), { ...r, status:"publicado", links_publicados: links, publicado_em: Date.now() });
+                setTimeout(() => { modal.remove(); renderAnunciosRascunho(panel); }, 3000);
+              } else {
+                statusEl.style.color = "#e8432d";
+                statusEl.textContent = erros.join(" | ");
+                confirmBtn.disabled = false; confirmBtn.textContent = "Tentar novamente";
+              }
+            };
         });
       }, 100);
     });
