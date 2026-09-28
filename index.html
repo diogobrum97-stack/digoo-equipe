@@ -1841,6 +1841,7 @@ async function fetchPerguntas() {
 
     // Salvar rascunhos sugeridos pelo Claude no Firebase — um registro por pergunta, com até 3 sugestões
     const pergComRascunho = todasPerguntas.filter(p => p.criar_rascunho?.length);
+    console.log("[rascunho] perguntas com rascunho:", pergComRascunho.length, pergComRascunho.map(p => p.question_id));
     if (pergComRascunho.length > 0) {
       try {
         const snapExistAll = await get(ref(db, '/anuncios_rascunho'));
