@@ -10453,9 +10453,10 @@ async function renderAnunciosRascunho(panel) {
             if (!preco || preco <= 0) { errEl.textContent="Informe o preço."; errEl.style.display="block"; return; }
             if (!pubFilial && !pubMatriz) { errEl.textContent="Selecione ao menos uma conta."; errEl.style.display="block"; return; }
             btnPub.disabled = true; btnPub.textContent = "Publicando..."; errEl.style.display = "none";
+            const _s = window._state?.() || {};
             const contas = [];
-            if (pubFilial && state.ml_token_filial?.access_token) contas.push({ label:"Filial SP", token: state.ml_token_filial.access_token });
-            if (pubMatriz && state.ml_token?.access_token) contas.push({ label:"Matriz RS", token: state.ml_token.access_token });
+            if (pubFilial && _s.ml_token_filial?.access_token) contas.push({ label:"Filial SP", token: _s.ml_token_filial.access_token });
+            if (pubMatriz && _s.ml_token?.access_token) contas.push({ label:"Matriz RS", token: _s.ml_token.access_token });
             const erros = [], links = [];
             for (const conta of contas) {
               try {
