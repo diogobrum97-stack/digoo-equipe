@@ -10320,6 +10320,9 @@ window.confirmarRenovacao = async function(item_id, precoOriginal, token) {
 };
 
 async function renderAnunciosRascunho(panel) {
+  // Expor tokens para uso nos onclicks inline
+  window._mlTokenFilialRasc = window._state?.()?.ml_token_filial?.access_token;
+  window._mlTokenMatrizRasc = window._state?.()?.ml_token?.access_token;
   panel.innerHTML = `<div style="padding:20px;font-size:13px;color:${T.text2};">Carregando rascunhos...</div>`;
   try {
     const snap = await get(ref(db, "/anuncios_rascunho"));
@@ -10455,8 +10458,8 @@ async function renderAnunciosRascunho(panel) {
             btnPub.disabled = true; btnPub.textContent = "Publicando..."; errEl.style.display = "none";
             const _s = window._state?.() || {};
             const contas = [];
-            if (pubFilial && _s.ml_token_filial?.access_token) contas.push({ label:"Filial SP", token: _s.ml_token_filial.access_token });
-            if (pubMatriz && _s.ml_token?.access_token) contas.push({ label:"Matriz RS", token: _s.ml_token.access_token });
+            if (pubFilial && window._mlTokenFilialRasc) contas.push({ label:"Filial SP", token: window._mlTokenFilialRasc });
+            if (pubMatriz && window._mlTokenMatrizRasc) contas.push({ label:"Matriz RS", token: window._mlTokenMatrizRasc });
             const erros = [], links = [];
             for (const conta of contas) {
               try {
