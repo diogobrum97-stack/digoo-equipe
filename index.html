@@ -10464,24 +10464,18 @@ async function renderAnunciosRascunho(panel) {
               modal.id = modalId;
               modal.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;`;
 
-              // Buscar detalhes do item original para mostrar no modal
-              let itemOrigInfo = { categoria: "Carregando...", atributos: [], thumbnail: "", listing_type: "" };
+              // Buscar detalhes do item original via backend para evitar CORS
+              let itemOrigInfo = { categoria: "—", atributos: [], thumbnail: "", listing_type: "" };
               try {
-                const origRes = await fetch(`https://api.mercadolibre.com/items/${r.item_id}?attributes=category_id,thumbnail,listing_type_id,attributes`, {
-                  headers: { Authorization: `Bearer ${window._mlTokenFilialRasc || window._mlTokenMatrizRasc}` }
-                });
+                const tokenParaBusca = window._mlTokenFilialRasc || window._mlTokenMatrizRasc;
+                const origRes = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=buscar-item-detalhes&item_id=${r.item_id}&token=${tokenParaBusca}`);
                 const origData = await origRes.json();
-                // Buscar nome da categoria
-                try {
-                  const catRes = await fetch(`https://api.mercadolibre.com/categories/${origData.category_id}`);
-                  const catData = await catRes.json();
-                  itemOrigInfo.categoria = catData.name || origData.category_id;
-                } catch(e) { itemOrigInfo.categoria = origData.category_id || "—"; }
-                itemOrigInfo.thumbnail = origData.thumbnail || "";
-                itemOrigInfo.listing_type = origData.listing_type_id || "";
-                itemOrigInfo.atributos = (origData.attributes || [])
-                  .filter(a => a.value_name && !['SELLER_SKU','ITEM_CONDITION'].includes(a.id))
-                  .slice(0, 8);
+                if (origData.ok) {
+                  itemOrigInfo.categoria = origData.categoria || "—";
+                  itemOrigInfo.thumbnail = origData.thumbnail || "";
+                  itemOrigInfo.listing_type = origData.listing_type || "";
+                  itemOrigInfo.atributos = origData.atributos || [];
+                }
               } catch(e) {}
 
               const atributosHtml = itemOrigInfo.atributos.length
