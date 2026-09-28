@@ -1848,18 +1848,17 @@ async function fetchPerguntas() {
         const snapExistAll = await get(ref(db, '/anuncios_rascunho'));
         console.log("[rascunho] snap ok, existentes:", Object.keys(snapExistAll.val() || {}));
         const existentes = snapExistAll.val() || {};
-
-        // Chave de deduplicação: item_id + primeiros 40 chars da pergunta (normalizado)
-        const chaveDedup = r => `${r.item_id||""}_${(r.pergunta||"").trim().toLowerCase().slice(0,40)}`;
-        const chavesExistentes = new Set(Object.values(existentes).map(chaveDedup));
-        const qidsExistentes = new Set(Object.values(existentes).map(r => String(r.question_id)));
+        const perguntasJaSalvas = new Set(Object.values(existentes).map(r => r.pergunta?.trim().toLowerCase()));
+        const qidsJaSalvos = new Set(Object.values(existentes).map(r => String(r.question_id)));
 
         for (const p of pergComRascunho) {
           const id = `perg_${p.question_id}`;
-          const chave = `${p.item_id||""}_${(p.pergunta||"").trim().toLowerCase().slice(0,40)}`;
-          if (existentes[id] || qidsExistentes.has(String(p.question_id)) || chavesExistentes.has(chave)) continue;
+          const perguntaNorm = p.pergunta?.trim().toLowerCase();
+          // Pular se já existe por question_id OU por texto idêntico da pergunta
+          if (existentes[id] || qidsJaSalvos.has(String(p.question_id)) || perguntasJaSalvas.has(perguntaNorm)) continue;
           const sugestoes = (Array.isArray(p.criar_rascunho) ? p.criar_rascunho : [p.criar_rascunho])
-            .filter(s => s.titulo_sugerido).slice(0, 3);
+            .filter(s => s.titulo_sugerido)
+            .slice(0, 3);
           if (!sugestoes.length) continue;
           await set(ref(db, `/anuncios_rascunho/${id}`), {
             id, status: "pendente",
@@ -1871,9 +1870,9 @@ async function fetchPerguntas() {
             pergunta: p.pergunta,
             criado_em: Date.now(),
           });
-          chavesExistentes.add(chave);
-          qidsExistentes.add(String(p.question_id));
-          console.log("[rascunho] salvo:", id);
+          // Registrar localmente para evitar duplicata dentro do mesmo carregamento
+          perguntasJaSalvas.add(perguntaNorm);
+          qidsJaSalvos.add(String(p.question_id));
         }
       } catch(e) { console.warn("[rascunho] erro:", e.message); }
     }
