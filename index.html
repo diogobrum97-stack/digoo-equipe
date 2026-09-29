@@ -3214,6 +3214,8 @@ function renderDashboard(panel, color) {
     } catch(e) { console.log("email-sbar:", e.message); }
 
     function renderCardEmail(naoLidos) {
+      // Não inserir se já existe
+      if (document.getElementById("email-sbar-card")) return;
       const total = naoLidos.length;
       const emailListHtml = naoLidos.slice(0, 4).map(e => {
         const nome = e.from?.name || e.from?.address || e.from || "—";
@@ -3227,7 +3229,7 @@ function renderDashboard(panel, color) {
         </div>`;
       }).join("");
 
-      const cardEmail = `<div style="background:${T.card};border:0.5px solid ${T.border};border-radius:12px;padding:14px 16px;margin-top:10px;">
+      const cardEmail = `<div id="email-sbar-card" style="background:${T.card};border:0.5px solid ${T.border};border-radius:12px;padding:14px 16px;margin-top:10px;">
         <div style="font-size:11px;font-weight:500;color:${T.text2};margin-bottom:8px;">Email</div>
         <div style="width:100%;height:2px;background:${T.cAzul};border-radius:2px;margin-bottom:10px;"></div>
         <div style="font-size:10px;color:${T.text2};text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">NÃO LIDOS</div>
@@ -9900,6 +9902,7 @@ let emailState = { emails: null, emailAberto: null, carregando: false };
 window.renderEmail = async function(panel) {
   // Guard: evitar chamadas simultâneas
   if (emailState.carregando && !emailState.emailAberto) return;
+  if (emailState.renderizandoDetalhe) return;
 
   const fmtData = d => d ? new Date(d).toLocaleDateString("pt-BR", {day:"2-digit",month:"2-digit",year:"2-digit",hour:"2-digit",minute:"2-digit"}) : "—";
 
@@ -10069,6 +10072,7 @@ async function renderEmailDetalhe(panel, fmtData) {
 
   // Buscar conteúdo via backend
   const corpoEl = document.getElementById("email-corpo");
+  emailState.renderizandoDetalhe = true;
   try {
     const res = await fetch("https://digoo-backend.vercel.app/api/ml-vendas?action=email-ler&id=" + encodeURIComponent(id) + "&mailbox_id=" + encodeURIComponent(mbId));
     const d = await res.json();
@@ -10078,8 +10082,8 @@ async function renderEmailDetalhe(panel, fmtData) {
       const html = msg.html || "";
       if (corpoEl) {
         if (html) {
-          corpoEl.style.cssText = "flex:1;overflow:hidden;border-top:0.5px solid " + T.border + ";padding-top:12px;";
-          corpoEl.innerHTML = "<iframe id='email-iframe' style='width:100%;height:100%;border:none;background:#fff;border-radius:6px;display:block;'></iframe>";
+          corpoEl.style.cssText = "flex:1;overflow:hidden;border-top:0.5px solid " + T.border + ";padding-top:12px;min-height:0;";
+          corpoEl.innerHTML = "<iframe id='email-iframe' style='width:100%;height:100%;min-height:0;border:none;background:#fff;border-radius:6px;display:block;'></iframe>";
           const iframe = document.getElementById("email-iframe");
           if (iframe) {
             iframe.srcdoc = "<html><head><style>body{font-family:sans-serif;font-size:13px;color:#111;background:#fff;padding:8px;margin:0;word-break:break-word;} a{color:#3483fa;} *{max-width:100%;}</style></head><body>" + html + "</body></html>";
@@ -10098,6 +10102,8 @@ async function renderEmailDetalhe(panel, fmtData) {
     }
   } catch(err) {
     if (corpoEl) corpoEl.textContent = "Erro: " + err.message;
+  } finally {
+    emailState.renderizandoDetalhe = false;
   }
 
   const cardResp = document.createElement("div");
