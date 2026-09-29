@@ -6709,7 +6709,7 @@ function render(){
           }else if(window._diogotab==="email"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
             let emailContainer = panel.querySelector(".email-container");
-            if(!emailContainer){ emailContainer=document.createElement("div"); emailContainer.className="email-container"; emailContainer.style.cssText="min-height:200px;width:100%;padding:16px;"; panel.appendChild(emailContainer); }
+            if(!emailContainer){ emailContainer=document.createElement("div"); emailContainer.className="email-container"; emailContainer.style.cssText="display:flex;flex-direction:column;width:100%;height:100%;padding:16px;box-sizing:border-box;overflow:hidden;"; panel.appendChild(emailContainer); }
             window.renderEmail(emailContainer);
           }else if(window._diogotab==="contas-pagar"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto"; panel.style.flex="1";
@@ -10057,7 +10057,7 @@ async function renderEmailDetalhe(panel, fmtData) {
   panel.appendChild(voltarBtn);
 
   const cardMsg = document.createElement("div");
-  cardMsg.style.cssText = "background:" + T.card + ";border:0.5px solid " + T.border + ";border-radius:12px;padding:16px;margin-bottom:12px;";
+  cardMsg.style.cssText = "background:" + T.card + ";border:0.5px solid " + T.border + ";border-radius:12px;padding:16px;margin-bottom:12px;flex:1;display:flex;flex-direction:column;overflow:hidden;";
   cardMsg.innerHTML = "<div style='font-size:14px;font-weight:600;color:" + T.text + ";margin-bottom:10px;'>" + assunto + "</div>" +
     "<div style='display:flex;justify-content:space-between;margin-bottom:12px;'>" +
       "<div><div style='font-size:12px;font-weight:500;color:" + T.text + ";'>" + nome + "</div>" +
@@ -10078,7 +10078,8 @@ async function renderEmailDetalhe(panel, fmtData) {
       const html = msg.html || "";
       if (corpoEl) {
         if (html) {
-          corpoEl.innerHTML = "<iframe id='email-iframe' style='width:100%;height:calc(100vh - 280px);min-height:400px;border:none;background:#fff;border-radius:6px;'></iframe>";
+          corpoEl.style.cssText = "flex:1;overflow:hidden;border-top:0.5px solid " + T.border + ";padding-top:12px;";
+          corpoEl.innerHTML = "<iframe id='email-iframe' style='width:100%;height:100%;border:none;background:#fff;border-radius:6px;display:block;'></iframe>";
           const iframe = document.getElementById("email-iframe");
           if (iframe) {
             iframe.srcdoc = "<html><head><style>body{font-family:sans-serif;font-size:13px;color:#111;background:#fff;padding:8px;margin:0;word-break:break-word;} a{color:#3483fa;} *{max-width:100%;}</style></head><body>" + html + "</body></html>";
