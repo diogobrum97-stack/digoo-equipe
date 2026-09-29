@@ -3194,14 +3194,26 @@ function renderDashboard(panel, color) {
     } catch(e) { console.log("docs-hoje-sbar:", e.message); }
   })();
 
-  // Card Email — emails não lidos
+  // Card Email — emails não lidos (cache separado do emailState da aba)
   (async () => {
     try {
+      if (emailState.emails) {
+        // Usar cache já carregado se disponível
+        const naoLidos = emailState.emails.filter(e => e.unseen);
+        renderCardEmail(naoLidos);
+        return;
+      }
       const res = await fetch(`https://digoo-backend.vercel.app/api/ml-vendas?action=email-listar&limit=20`);
       const d = await res.json();
       if (!d.ok) return;
-      const emails = d.data || d.messages || d.items || [];
-      const naoLidos = emails.filter(e => !e.seen && !e.read);
+      const msgs = d.messages || d.data?.messages || d.data || d.items || [];
+      const emails = Array.isArray(msgs) ? msgs : [];
+      // Salvar no emailState para reaproveitar na aba
+      if (!emailState.emails) { emailState.emails = emails; emailState.mailbox_id = d.mailbox_id; }
+      renderCardEmail(emails.filter(e => e.unseen));
+    } catch(e) { console.log("email-sbar:", e.message); }
+
+    function renderCardEmail(naoLidos) {
       const total = naoLidos.length;
       const emailListHtml = naoLidos.slice(0, 4).map(e => {
         const nome = e.from?.name || e.from?.address || e.from || "—";
@@ -3228,7 +3240,7 @@ function renderDashboard(panel, color) {
 
       const sbarEl = document.getElementById("dash-sidebar");
       if (sbarEl) sbarEl.insertAdjacentHTML("beforeend", cardEmail);
-    } catch(e) { console.log("email-sbar:", e.message); }
+    }
   })();
   // Buscar perguntas (com sugestão de IA) uma vez por sessão, reaproveitado pela aba dedicada
   if(perguntasState.lista === null && !perguntasState.carregando && !perguntasState.erro) {
@@ -9886,6 +9898,9 @@ const EMAIL_BACKEND = "https://digoo-backend.vercel.app";
 let emailState = { emails: null, emailAberto: null, carregando: false };
 
 window.renderEmail = async function(panel) {
+  // Guard: evitar chamadas simultâneas
+  if (emailState.carregando && !emailState.emailAberto) return;
+
   const fmtData = d => d ? new Date(d).toLocaleDateString("pt-BR", {day:"2-digit",month:"2-digit",year:"2-digit",hour:"2-digit",minute:"2-digit"}) : "—";
 
   if (emailState.emailAberto) {
@@ -9923,6 +9938,7 @@ window.renderEmail = async function(panel) {
   panel.appendChild(lista);
 
   if (!emailState.emails) {
+    emailState.carregando = true;
     try {
       const res = await fetch("https://digoo-backend.vercel.app/api/ml-vendas?action=email-listar&limit=50");
       const d = await res.json();
@@ -9932,9 +9948,11 @@ window.renderEmail = async function(panel) {
       emailState.emails = Array.isArray(msgs) ? msgs : [];
       console.log("[email] total:", emailState.emails.length, "mbId:", d.mailbox_id, "keys:", emailState.emails[0] ? Object.keys(emailState.emails[0]) : []);
     } catch(err) {
+      emailState.carregando = false;
       lista.innerHTML = "<div style='color:#e8432d;font-size:13px;'>Erro: " + err.message + "</div>";
       return;
     }
+    emailState.carregando = false;
   }
 
   const emails = emailState.emails;
