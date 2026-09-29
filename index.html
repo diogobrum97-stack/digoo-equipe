@@ -9928,7 +9928,7 @@ window.renderEmail = async function(panel) {
       const d = await res.json();
       if (!d.ok) throw new Error(d.error);
       emailState.mailbox_id = d.mailbox_id;
-      const msgs = d.data?.messages || d.data || d.messages || d.items || [];
+      const msgs = d.messages || d.data?.messages || d.data || d.items || [];
       emailState.emails = Array.isArray(msgs) ? msgs : [];
       console.log("[email] total:", emailState.emails.length, "mbId:", d.mailbox_id, "keys:", emailState.emails[0] ? Object.keys(emailState.emails[0]) : []);
     } catch(err) {
