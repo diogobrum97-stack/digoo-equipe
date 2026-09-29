@@ -9893,105 +9893,197 @@ window.renderEmail = async function(panel) {
     return;
   }
 
-  panel.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-      <div>
-        <div style="font-size:14px;font-weight:500;color:${T.text};">Caixa de entrada</div>
-        <div style="font-size:11px;color:${T.text2};margin-top:2px;">diogo@digoo.com.br</div>
-      </div>
-      <button onclick="emailState.emails=null;window.renderEmail(document.querySelector('.email-container'));"
-        style="font-size:12px;padding:6px 12px;border-radius:8px;border:0.5px solid ${T.border};background:${T.card};color:${T.text2};cursor:pointer;">
-        Atualizar
-      </button>
-    </div>
-    <div id="email-lista">Carregando...</div>`;
+  if (!emailState.selecionados) emailState.selecionados = new Set();
+  const selecionados = emailState.selecionados;
+
+  panel.innerHTML = "";
+
+  // Header
+  const header = document.createElement("div");
+  header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;";
+  const headerLeft = document.createElement("div");
+  headerLeft.innerHTML = "<div style='font-size:14px;font-weight:500;color:" + T.text + ";'>Caixa de entrada</div><div style='font-size:11px;color:" + T.text2 + ";margin-top:2px;'>diogo@digoo.com.br</div>";
+  const btnAtualizar = document.createElement("button");
+  btnAtualizar.textContent = "Atualizar";
+  btnAtualizar.style.cssText = "font-size:12px;padding:6px 12px;border-radius:8px;border:0.5px solid " + T.border + ";background:" + T.card + ";color:" + T.text2 + ";cursor:pointer;";
+  btnAtualizar.onclick = () => { emailState.emails = null; emailState.mailbox_id = null; emailState.selecionados = new Set(); window.renderEmail(panel); };
+  header.appendChild(headerLeft);
+  header.appendChild(btnAtualizar);
+  panel.appendChild(header);
+
+  // Barra de ações
+  const barraAcoes = document.createElement("div");
+  barraAcoes.id = "email-barra-acoes";
+  barraAcoes.style.cssText = "display:none;align-items:center;gap:8px;margin-bottom:12px;padding:8px 12px;background:" + T.bg3 + ";border-radius:8px;border:0.5px solid " + T.border + ";";
+  panel.appendChild(barraAcoes);
+
+  const lista = document.createElement("div");
+  lista.id = "email-lista";
+  lista.innerHTML = "<div style='color:" + T.text2 + ";font-size:13px;padding:20px 0;'>Carregando...</div>";
+  panel.appendChild(lista);
 
   if (!emailState.emails) {
-    emailState.carregando = true;
     try {
-      const res = await fetch(`https://digoo-backend.vercel.app/api/ml-vendas?action=email-listar&limit=30`);
+      const res = await fetch("https://digoo-backend.vercel.app/api/ml-vendas?action=email-listar&limit=50");
       const d = await res.json();
       if (!d.ok) throw new Error(d.error);
-      emailState.emails = d.data || d.messages || d.items || [];
-    } catch(e) {
-      panel.querySelector("#email-lista").innerHTML = `<div style="color:#e8432d;font-size:13px;">Erro: ${e.message}</div>`;
+      emailState.mailbox_id = d.mailbox_id;
+      const msgs = d.data?.messages || d.data || d.messages || d.items || [];
+      emailState.emails = Array.isArray(msgs) ? msgs : [];
+      console.log("[email] total:", emailState.emails.length, "mbId:", d.mailbox_id, "keys:", emailState.emails[0] ? Object.keys(emailState.emails[0]) : []);
+    } catch(err) {
+      lista.innerHTML = "<div style='color:#e8432d;font-size:13px;'>Erro: " + err.message + "</div>";
       return;
-    } finally { emailState.carregando = false; }
+    }
   }
 
   const emails = emailState.emails;
-  if (!emails.length) {
-    panel.querySelector("#email-lista").innerHTML = `<div style="font-size:13px;color:${T.text2};">Nenhum email encontrado.</div>`;
-    return;
-  }
+  if (!emails.length) { lista.innerHTML = "<div style='font-size:13px;color:" + T.text2 + ";'>Nenhum email encontrado.</div>"; return; }
 
-  panel.querySelector("#email-lista").innerHTML = emails.map((e, i) => {
-    const lido = e.seen || e.read || false;
-    const de = e.from?.address || e.from || "—";
-    const nome = e.from?.name || de;
+  const atualizarBarra = () => {
+    const n = selecionados.size;
+    barraAcoes.style.display = n > 0 ? "flex" : "none";
+    barraAcoes.innerHTML = "";
+    const countEl = document.createElement("span");
+    countEl.style.cssText = "font-size:12px;color:" + T.text + ";flex:1;";
+    countEl.textContent = n + " selecionado" + (n !== 1 ? "s" : "");
+    const btnExc = document.createElement("button");
+    btnExc.textContent = "Excluir";
+    btnExc.style.cssText = "font-size:12px;padding:6px 14px;border-radius:6px;background:#e8432d;border:none;color:#fff;cursor:pointer;font-weight:500;";
+    btnExc.onclick = async () => {
+      btnExc.disabled = true; btnExc.textContent = "Excluindo...";
+      const uids = Array.from(selecionados);
+      try {
+        const res = await fetch("https://digoo-backend.vercel.app/api/ml-vendas?action=email-excluir", {
+          method: "POST", headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({ mailbox_id: emailState.mailbox_id, uids })
+        });
+        const d = await res.json();
+        if (d.ok) {
+          emailState.emails = (emailState.emails || []).filter(em => !uids.includes(String(em.uid || em.id)));
+          emailState.selecionados = new Set();
+          window.renderEmail(panel);
+        } else { btnExc.disabled = false; btnExc.textContent = "Excluir"; }
+      } catch(e2) { btnExc.disabled = false; btnExc.textContent = "Excluir"; }
+    };
+    const btnCanc = document.createElement("button");
+    btnCanc.textContent = "Cancelar";
+    btnCanc.style.cssText = "font-size:12px;padding:6px 12px;border-radius:6px;border:0.5px solid " + T.border + ";background:" + T.card + ";color:" + T.text2 + ";cursor:pointer;";
+    btnCanc.onclick = () => { emailState.selecionados = new Set(); window.renderEmail(panel); };
+    barraAcoes.appendChild(countEl); barraAcoes.appendChild(btnExc); barraAcoes.appendChild(btnCanc);
+  };
+
+  lista.innerHTML = "";
+  emails.forEach((e, i) => {
+    const lido = e.seen || e.read || (e.flags && e.flags.includes("\\Seen")) || false;
+    const uid = String(e.uid || e.id || i);
+    const nome = e.from?.name || e.from?.address || (typeof e.from === "string" ? e.from : "—");
     const assunto = e.subject || "(sem assunto)";
-    const data = fmtData(e.date || e.created_at || e.received_at);
-    return `<div onclick="emailState.emailAberto='${e.id||e.uid||i}';window.renderEmail(document.querySelector('.email-container'));"
-      style="background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer;display:flex;gap:12px;align-items:flex-start;"
-      onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
-      <div style="width:8px;height:8px;border-radius:50%;background:${lido?T.border:T.cAzul};flex-shrink:0;margin-top:5px;"></div>
-      <div style="flex:1;min-width:0;">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
-          <div style="font-size:12px;font-weight:${lido?400:600};color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nome}</div>
-          <div style="font-size:10px;color:${T.text2};flex-shrink:0;margin-left:8px;">${data}</div>
-        </div>
-        <div style="font-size:12px;color:${lido?T.text2:T.text};font-weight:${lido?400:500};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${assunto}</div>
-        <div style="font-size:11px;color:${T.text2};margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.preview||e.snippet||""}</div>
-      </div>
-    </div>`;
-  }).join("");
+    const data = fmtData(e.date || e.internalDate || e.created_at || e.received_at);
+    const preview = e.preview || e.snippet || "";
+    const sel = selecionados.has(uid);
+
+    const card = document.createElement("div");
+    card.style.cssText = "background:" + (sel ? T.bg3 : T.card) + ";border:0.5px solid " + (sel ? T.cAzul : T.border) + ";border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer;display:flex;gap:10px;align-items:flex-start;transition:opacity 0.1s;";
+    card.onmouseover = () => card.style.opacity = "0.8";
+    card.onmouseout = () => card.style.opacity = "1";
+
+    const chk = document.createElement("input");
+    chk.type = "checkbox"; chk.checked = sel;
+    chk.style.cssText = "width:14px;height:14px;cursor:pointer;flex-shrink:0;margin-top:3px;accent-color:" + T.cAzul + ";";
+    chk.onclick = ev => {
+      ev.stopPropagation();
+      if (chk.checked) selecionados.add(uid); else selecionados.delete(uid);
+      card.style.background = chk.checked ? T.bg3 : T.card;
+      card.style.border = "0.5px solid " + (chk.checked ? T.cAzul : T.border);
+      atualizarBarra();
+    };
+
+    const ponto = document.createElement("div");
+    ponto.style.cssText = "width:8px;height:8px;border-radius:50%;background:" + (lido ? "transparent" : T.cAzul) + ";border:1px solid " + (lido ? T.border : T.cAzul) + ";flex-shrink:0;margin-top:4px;";
+
+    const body = document.createElement("div");
+    body.style.cssText = "flex:1;min-width:0;";
+    body.innerHTML = "<div style='display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px;'>" +
+      "<div style='font-size:12px;font-weight:" + (lido?400:600) + ";color:" + T.text + ";overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:75%;'>" + nome + "</div>" +
+      "<div style='font-size:10px;color:" + T.text2 + ";flex-shrink:0;'>" + data + "</div></div>" +
+      "<div style='font-size:12px;color:" + (lido?T.text2:T.text) + ";font-weight:" + (lido?400:500) + ";overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px;'>" + assunto + "</div>" +
+      "<div style='font-size:11px;color:" + T.text2 + ";overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'>" + preview + "</div>";
+
+    card.appendChild(chk); card.appendChild(ponto); card.appendChild(body);
+    card.onclick = () => { emailState.emailAberto = uid; emailState.emailAbertoObj = e; window.renderEmail(panel); };
+    lista.appendChild(card);
+  });
+
+  atualizarBarra();
 };
+
 
 async function renderEmailDetalhe(panel, fmtData) {
   const id = emailState.emailAberto;
-  panel.innerHTML = `<div style="padding:20px;font-size:13px;color:${T.text2};">Carregando...</div>`;
+  const mbId = emailState.mailbox_id;
+  panel.innerHTML = "<div style='padding:20px;font-size:13px;color:" + T.text2 + ";'>Carregando...</div>";
 
   try {
-    const res = await fetch(`https://digoo-backend.vercel.app/api/ml-vendas?action=email-ler&id=${encodeURIComponent(id)}`);
+    const res = await fetch("https://digoo-backend.vercel.app/api/ml-vendas?action=email-ler&id=" + encodeURIComponent(id) + "&mailbox_id=" + encodeURIComponent(mbId));
     const d = await res.json();
     if (!d.ok) throw new Error(d.error);
     const msg = d.message;
-    const de = msg.from?.address || msg.from || "—";
+    const de = msg.from?.address || msg.from?.name || (typeof msg.from === "string" ? msg.from : "—");
     const nome = msg.from?.name || de;
     const assunto = msg.subject || "(sem assunto)";
-    const corpo = msg.html || msg.text || msg.body || "(sem conteúdo)";
-    const data = fmtData(msg.date || msg.created_at);
+    const data = fmtData(msg.date || msg.internalDate || msg.created_at);
+    const texto = msg.text?.plain || msg.text || msg.body || msg.snippet || "(sem conteúdo)";
+    const html = msg.html || msg.text?.html || "";
 
-    panel.innerHTML = `
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
-        <button onclick="emailState.emailAberto=null;window.renderEmail(document.querySelector('.email-container'));"
-          style="background:none;border:none;cursor:pointer;color:${T.text2};font-size:13px;padding:0;">← Caixa de entrada</button>
-      </div>
-      <div style="background:${T.card};border:0.5px solid ${T.border};border-radius:12px;padding:16px;margin-bottom:12px;">
-        <div style="font-size:14px;font-weight:600;color:${T.text};margin-bottom:10px;">${assunto}</div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-          <div><div style="font-size:11px;font-weight:500;color:${T.text};">${nome}</div><div style="font-size:10px;color:${T.text2};">${de}</div></div>
-          <div style="font-size:11px;color:${T.text2};">${data}</div>
-        </div>
-        <div style="border-top:0.5px solid ${T.border};padding-top:12px;font-size:13px;color:${T.text};line-height:1.6;max-height:400px;overflow-y:auto;">
-          ${msg.html ? `<iframe srcdoc="${msg.html.replace(/"/g,'&quot;')}" style="width:100%;min-height:300px;border:none;"></iframe>` : `<pre style="white-space:pre-wrap;font-family:inherit;">${msg.text||corpo}</pre>`}
-        </div>
-      </div>
-      <div style="background:${T.card};border:0.5px solid ${T.border};border-radius:12px;padding:14px;">
-        <div style="font-size:12px;font-weight:500;color:${T.text};margin-bottom:8px;">Responder</div>
-        <textarea id="email-resposta" placeholder="Digite sua resposta..." style="width:100%;height:100px;padding:8px;border-radius:8px;border:0.5px solid ${T.border};background:${T.bg3};color:${T.text};font-size:12px;resize:vertical;font-family:inherit;box-sizing:border-box;"></textarea>
-        <div style="display:flex;justify-content:flex-end;margin-top:8px;">
-          <button onclick="window._enviarEmailResposta('${id}','${de}','Re: ${assunto.replace(/'/g,"")}')"
-            style="font-size:12px;padding:8px 16px;border-radius:8px;background:${T.cAzul};border:none;color:#fff;cursor:pointer;font-weight:500;">Enviar resposta</button>
-        </div>
-        <div id="email-resposta-status" style="font-size:11px;margin-top:6px;text-align:right;"></div>
-      </div>`;
-  } catch(e) {
-    panel.innerHTML = `<div style="padding:20px;color:#e8432d;font-size:13px;">Erro: ${e.message}</div>`;
+    panel.innerHTML = "";
+
+    const voltarBtn = document.createElement("button");
+    voltarBtn.textContent = "← Caixa de entrada";
+    voltarBtn.style.cssText = "background:none;border:none;cursor:pointer;color:" + T.text2 + ";font-size:13px;padding:0;margin-bottom:16px;display:block;";
+    voltarBtn.onclick = () => { emailState.emailAberto = null; emailState.emailAbertoObj = null; window.renderEmail(panel); };
+    panel.appendChild(voltarBtn);
+
+    const cardMsg = document.createElement("div");
+    cardMsg.style.cssText = "background:" + T.card + ";border:0.5px solid " + T.border + ";border-radius:12px;padding:16px;margin-bottom:12px;";
+    cardMsg.innerHTML = "<div style='font-size:14px;font-weight:600;color:" + T.text + ";margin-bottom:10px;'>" + assunto + "</div>" +
+      "<div style='display:flex;justify-content:space-between;margin-bottom:12px;'>" +
+        "<div><div style='font-size:11px;font-weight:500;color:" + T.text + ";'>" + nome + "</div>" +
+        "<div style='font-size:10px;color:" + T.text2 + ";'>" + de + "</div></div>" +
+        "<div style='font-size:11px;color:" + T.text2 + ";'>" + data + "</div>" +
+      "</div>" +
+      "<div style='border-top:0.5px solid " + T.border + ";padding-top:12px;font-size:13px;color:" + T.text + ";line-height:1.6;max-height:400px;overflow-y:auto;'>" +
+        (html ? "<iframe srcdoc=\"\" id='email-iframe' style='width:100%;min-height:300px;border:none;'></iframe>" : "<pre style='white-space:pre-wrap;font-family:inherit;margin:0;'>" + texto + "</pre>") +
+      "</div>";
+    panel.appendChild(cardMsg);
+
+    if (html) {
+      const iframe = document.getElementById("email-iframe");
+      if (iframe) iframe.srcdoc = html.replace(/"/g, "&quot;");
+    }
+
+    const cardResp = document.createElement("div");
+    cardResp.style.cssText = "background:" + T.card + ";border:0.5px solid " + T.border + ";border-radius:12px;padding:14px;";
+    cardResp.innerHTML = "<div style='font-size:12px;font-weight:500;color:" + T.text + ";margin-bottom:8px;'>Responder</div>";
+    const textarea = document.createElement("textarea");
+    textarea.id = "email-resposta";
+    textarea.placeholder = "Digite sua resposta...";
+    textarea.style.cssText = "width:100%;height:100px;padding:8px;border-radius:8px;border:0.5px solid " + T.border + ";background:" + T.bg3 + ";color:" + T.text + ";font-size:12px;resize:vertical;font-family:inherit;box-sizing:border-box;";
+    const btnEnviar = document.createElement("button");
+    btnEnviar.textContent = "Enviar resposta";
+    btnEnviar.style.cssText = "font-size:12px;padding:8px 16px;border-radius:8px;background:" + T.cAzul + ";border:none;color:#fff;cursor:pointer;font-weight:500;margin-top:8px;float:right;";
+    btnEnviar.onclick = () => window._enviarEmailResposta(id, de, "Re: " + assunto, mbId);
+    const statusDiv = document.createElement("div");
+    statusDiv.id = "email-resposta-status";
+    statusDiv.style.cssText = "font-size:11px;margin-top:8px;text-align:right;clear:both;";
+    cardResp.appendChild(textarea); cardResp.appendChild(btnEnviar); cardResp.appendChild(statusDiv);
+    panel.appendChild(cardResp);
+  } catch(err) {
+    panel.innerHTML = "<div style='padding:20px;color:#e8432d;font-size:13px;'>Erro: " + err.message + "</div>";
   }
 }
 
-window._enviarEmailResposta = async function(id, para, assunto) {
+window._enviarEmailResposta = async function(id, para, assunto, mailbox_id) {
   const texto = document.getElementById("email-resposta")?.value?.trim();
   const statusEl = document.getElementById("email-resposta-status");
   if (!texto) { if(statusEl) statusEl.textContent = "Digite a resposta."; return; }
@@ -9999,7 +10091,7 @@ window._enviarEmailResposta = async function(id, para, assunto) {
   try {
     const res = await fetch(`https://digoo-backend.vercel.app/api/ml-vendas?action=email-responder`, {
       method: "POST", headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({ id, para, assunto, texto })
+      body: JSON.stringify({ id, para, assunto, texto, mailbox_id: mailbox_id || emailState.mailbox_id })
     });
     const d = await res.json();
     if (d.ok || res.ok) {
