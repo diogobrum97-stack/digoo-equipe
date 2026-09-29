@@ -3197,7 +3197,7 @@ function renderDashboard(panel, color) {
   // Card Email — emails não lidos
   (async () => {
     try {
-      const res = await fetch(`https://digoo-backend.vercel.app/api/email-hostinger?action=listar&limit=20`);
+      const res = await fetch(`https://digoo-backend.vercel.app/api/ml-vendas?action=email-listar&limit=20`);
       const d = await res.json();
       if (!d.ok) return;
       const emails = d.data || d.messages || d.items || [];
@@ -9909,7 +9909,7 @@ window.renderEmail = async function(panel) {
   if (!emailState.emails) {
     emailState.carregando = true;
     try {
-      const res = await fetch(`${EMAIL_BACKEND}/api/email-hostinger?action=listar&limit=30`);
+      const res = await fetch(`https://digoo-backend.vercel.app/api/ml-vendas?action=email-listar&limit=30`);
       const d = await res.json();
       if (!d.ok) throw new Error(d.error);
       emailState.emails = d.data || d.messages || d.items || [];
@@ -9952,7 +9952,7 @@ async function renderEmailDetalhe(panel, fmtData) {
   panel.innerHTML = `<div style="padding:20px;font-size:13px;color:${T.text2};">Carregando...</div>`;
 
   try {
-    const res = await fetch(`${EMAIL_BACKEND}/api/email-hostinger?action=ler&id=${encodeURIComponent(id)}`);
+    const res = await fetch(`https://digoo-backend.vercel.app/api/ml-vendas?action=email-ler&id=${encodeURIComponent(id)}`);
     const d = await res.json();
     if (!d.ok) throw new Error(d.error);
     const msg = d.message;
@@ -9997,7 +9997,7 @@ window._enviarEmailResposta = async function(id, para, assunto) {
   if (!texto) { if(statusEl) statusEl.textContent = "Digite a resposta."; return; }
   if(statusEl) { statusEl.textContent = "Enviando..."; statusEl.style.color = T.text2; }
   try {
-    const res = await fetch(`${EMAIL_BACKEND}/api/email-hostinger?action=responder`, {
+    const res = await fetch(`https://digoo-backend.vercel.app/api/ml-vendas?action=email-responder`, {
       method: "POST", headers: {"Content-Type":"application/json"},
       body: JSON.stringify({ id, para, assunto, texto })
     });
