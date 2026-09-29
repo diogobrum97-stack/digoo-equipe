@@ -9975,7 +9975,7 @@ window.renderEmail = async function(panel) {
 
   lista.innerHTML = "";
   emails.forEach((e, i) => {
-    const lido = e.seen || e.read || (e.flags && e.flags.includes("\\Seen")) || false;
+    const lido = !e.unseen;
     const uid = String(e.uid || e.id || i);
     const nome = e.from?.name || e.from?.address || (typeof e.from === "string" ? e.from : "—");
     const assunto = e.subject || "(sem assunto)";
@@ -10029,12 +10029,12 @@ async function renderEmailDetalhe(panel, fmtData) {
     const d = await res.json();
     if (!d.ok) throw new Error(d.error);
     const msg = d.message;
-    const de = msg.from?.address || msg.from?.name || (typeof msg.from === "string" ? msg.from : "—");
+    const de = msg.from?.address || (typeof msg.from === "string" ? msg.from : "—");
     const nome = msg.from?.name || de;
     const assunto = msg.subject || "(sem assunto)";
-    const data = fmtData(msg.date || msg.internalDate || msg.created_at);
-    const texto = msg.text?.plain || msg.text || msg.body || msg.snippet || "(sem conteúdo)";
-    const html = msg.html || msg.text?.html || "";
+    const data = fmtData(msg.date);
+    const texto = msg.text || "(sem conteúdo)";
+    const html = msg.html || "";
 
     panel.innerHTML = "";
 
