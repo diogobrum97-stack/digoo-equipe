@@ -10060,9 +10060,11 @@ async function renderEmailDetalhe(panel, fmtData) {
       const html = msg.html || "";
       if (corpoEl) {
         if (html) {
-          corpoEl.innerHTML = "<iframe id='email-iframe' style='width:100%;min-height:300px;border:none;'></iframe>";
+          corpoEl.innerHTML = "<iframe id='email-iframe' style='width:100%;min-height:300px;border:none;background:#fff;border-radius:6px;'></iframe>";
           const iframe = document.getElementById("email-iframe");
-          if (iframe) { iframe.srcdoc = html; }
+          if (iframe) {
+            iframe.srcdoc = "<html><head><style>body{font-family:sans-serif;font-size:13px;color:#111;background:#fff;padding:8px;margin:0;word-break:break-word;} a{color:#3483fa;} *{max-width:100%;}</style></head><body>" + html + "</body></html>";
+          }
         } else if (texto) {
           corpoEl.style.color = T.text;
           corpoEl.style.lineHeight = "1.6";
