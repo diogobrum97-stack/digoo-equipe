@@ -10392,39 +10392,16 @@ window.renderPromocoes = async function renderPromocoes(panel) {
     window._promoCarregarCatalogo = async function() {
       const token = window.promState.conta === 'filial' ? state?.ml_token_filial?.access_token : state?.ml_token?.access_token;
       if (!token) return;
+      const BACKEND = 'https://digoo-backend.vercel.app';
       try {
-        // Primeiro tenta pegar do catálogo já em memória (usado pelas perguntas)
-        const fbUrl = 'https://digoo-equipe-default-rtdb.firebaseio.com';
-        // Buscar seller_id via ML
-        const meRes = await fetch('https://api.mercadolibre.com/users/me', { headers: { Authorization: `Bearer ${token}` } });
-        const me = await meRes.json();
-        if (!me.id) return;
-        const fbSnap = await fetch(`${fbUrl}/catalogo_ml/${me.id}.json`);
-        const fbData = await fbSnap.json();
-        if (fbData && fbData.itens && fbData.itens.length) {
-          window._promoCatalogoCache = fbData.itens;
-          console.log('[promo] catálogo carregado:', fbData.itens.length, 'itens');
-          return;
+        const res = await fetch(`${BACKEND}/api/ml-vendas?action=buscar-catalogo&token=${token}`);
+        const data = await res.json();
+        if (data.ok && data.itens && data.itens.length) {
+          window._promoCatalogoCache = data.itens;
+          console.log('[promo] catálogo carregado:', data.itens.length, 'itens, source:', data.source);
+        } else {
+          console.warn('[promo] catálogo vazio ou erro:', data.error);
         }
-        // Fallback: buscar direto do ML
-        console.log('[promo] Firebase vazio, buscando do ML...');
-        const ids = [];
-        for (let offset = 0; offset < 200; offset += 50) {
-          const r = await fetch(`https://api.mercadolibre.com/users/${me.id}/items/search?status=active&limit=50&offset=${offset}`, { headers: { Authorization: `Bearer ${token}` } });
-          const d = await r.json();
-          const batch = d.results || [];
-          ids.push(...batch);
-          if (batch.length < 50) break;
-        }
-        const itens = [];
-        for (let i = 0; i < ids.length; i += 20) {
-          const lote = ids.slice(i, i+20);
-          const r = await fetch(`https://api.mercadolibre.com/items?ids=${lote.join(',')}&attributes=id,title,seller_sku,available_quantity,price`, { headers: { Authorization: `Bearer ${token}` } });
-          const arr = await r.json();
-          arr.forEach(e => { if (e.code === 200 && e.body) itens.push({ id: e.body.id, titulo: e.body.title, sku: e.body.seller_sku||'', estoque: e.body.available_quantity||0, preco: e.body.price||0, status: 'active' }); });
-        }
-        window._promoCatalogoCache = itens;
-        console.log('[promo] catálogo ML carregado:', itens.length, 'itens');
       } catch(e) { console.error('[promo] erro ao carregar catálogo:', e.message); }
     };
 
@@ -10455,20 +10432,34 @@ window.renderPromocoes = async function renderPromocoes(panel) {
       if (!val) return;
       res.innerHTML = `<div style="font-size:12px;color:${T.text2};">Buscando...</div>`;
       const token = window.promState.conta === 'filial' ? state?.ml_token_filial?.access_token : state?.ml_token?.access_token;
+      const BACKEND = 'https://digoo-backend.vercel.app';
       try {
-        let item = (window._promoCatalogoCache||[]).find(i => (i.sku||'').toLowerCase() === val.toLowerCase() || i.id === val.toUpperCase());
-        if (!item && (val.toUpperCase().startsWith('MLB') || /^\d+$/.test(val))) {
+        // Primeiro tenta no cache
+        let item = (window._promoCatalogoCache||[]).find(i =>
+          (i.sku||'').toLowerCase() === val.toLowerCase() ||
+          (i.id||'').toLowerCase() === val.toLowerCase() ||
+          (i.titulo||'').toLowerCase().includes(val.toLowerCase())
+        );
+        // Se não achou no cache e parece um MLB ou número, busca via backend
+        if (!item) {
           const itemId = /^\d+$/.test(val) ? `MLB${val}` : val.toUpperCase();
-          const r = await fetch(`https://api.mercadolibre.com/items/${itemId}?attributes=id,title,seller_sku,available_quantity,price`, { headers: { Authorization: `Bearer ${token}` } });
+          const r = await fetch(`${BACKEND}/api/ml-vendas?action=buscar-item-detalhes&item_id=${itemId}&token=${token}`);
           const d = await r.json();
-          if (d.id) item = { id: d.id, titulo: d.title, sku: d.seller_sku||'', estoque: d.available_quantity||0, preco: d.price||0 };
+          if (d.ok) item = { id: itemId, titulo: itemId, sku: itemId, estoque: 0, preco: 0 };
+          // Tentar pegar preço real
+          if (d.ok) {
+            const prRes = await fetch(`${BACKEND}/api/ml-vendas?prices=1&token=${token}`);
+            const prData = await prRes.json();
+            const found = (prData.prices||[]).find(p => p.id === itemId);
+            if (found) item = { ...item, sku: found.sku||itemId, preco: found.price||0 };
+          }
         }
-        if (!item) { res.innerHTML = `<div style="font-size:12px;color:#E24B4A;">Produto não encontrado</div>`; return; }
+        if (!item) { res.innerHTML = `<div style="font-size:12px;color:#E24B4A;">Produto não encontrado. Tente o MLB completo (ex: MLB1234567890)</div>`; return; }
         const jaSel = window._promoSelecionados.find(s => s.id === item.id);
         res.innerHTML = `<div onclick="window._promoToggleSel('${item.id}','${(item.titulo||'').replace(/'/g,"\\'")}',${item.estoque||0},${item.preco||0})" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;cursor:pointer;background:${jaSel?T.cAzul+'22':T.bg3};border:0.5px solid ${jaSel?T.cAzul:T.border};">
           <div style="width:14px;height:14px;border-radius:4px;border:1.5px solid ${jaSel?T.cAzul:T.border};background:${jaSel?T.cAzul:'transparent'};flex-shrink:0;display:flex;align-items:center;justify-content:center;">${jaSel?'<span style="color:#fff;font-size:9px;">✓</span>':''}</div>
           <div style="min-width:0;">
-            <div style="font-size:11px;font-weight:500;color:${T.text};">${item.titulo||item.id}</div>
+            <div style="font-size:11px;font-weight:500;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item.titulo||item.id}</div>
             <div style="font-size:10px;color:${T.text2};">${item.sku||item.id} · R$ ${Number(item.preco||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
           </div>
         </div>`;
