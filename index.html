@@ -2508,7 +2508,7 @@ function renderDashboard(panel, color) {
   const dashErroRecente = dashData?.erro && (agora - (dashData._fetchedAt||0)) < 30000;
   // Só tenta buscar se o token ML Filial já carregou do Firebase
   const tokenFilialPronto = !!state.ml_token_filial?.access_token;
-  if(!dashLoading && !dashErroRecente && tokenFilialPronto && (!dashData || dashData.erro || (agora - (dashData._fetchedAt||0)) > 150*1000)) {
+  if(!dashLoading && !dashErroRecente && tokenFilialPronto && (!dashData || dashData.erro || (agora - (dashData._fetchedAt||0)) > 60*1000)) {
     window._fetchDashboard();
   }
 
@@ -9221,7 +9221,7 @@ setInterval(runAutoRefresh, 5 * 60 * 1000); // e a cada 5 minutos (era 15, token
 setInterval(() => {
   if(window._diogotab === "dashboard" && !dashLoading) {
     const agora = Date.now();
-    if(!dashData || dashData.erro || (agora - (dashData._fetchedAt||0)) > 150*1000) {
+    if(!dashData || dashData.erro || (agora - (dashData._fetchedAt||0)) > 60*1000) {
       fetchDashboard();
     }
   }
@@ -10073,6 +10073,20 @@ async function renderEmailDetalhe(panel, fmtData) {
     "</div>" +
     "<div id='email-corpo' style='border-top:0.5px solid " + T.border + ";padding-top:12px;font-size:13px;color:" + T.text2 + ";'>Carregando conteúdo...</div>";
   panel.appendChild(cardMsg);
+
+  // Marcar como lido ao abrir
+  if (mbId && id) {
+    fetch("https://digoo-backend.vercel.app/api/ml-vendas?action=email-marcar-lido", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ mailbox_id: mbId, uid: id })
+    }).then(() => {
+      // Atualizar cache local
+      if (emailState.emails) {
+        const email = emailState.emails.find(e => String(e.uid || e.id) === String(id));
+        if (email) email.unseen = false;
+      }
+    }).catch(() => {});
+  }
 
   // Buscar conteúdo via backend
   const corpoEl = document.getElementById("email-corpo");
