@@ -10287,9 +10287,245 @@ window.renderPromocoes = async function renderPromocoes(panel) {
           style="font-size:11px;padding:4px 12px;border-radius:20px;border:0.5px solid ${window.promState.conta==='filial'?T.border2:T.border};background:${window.promState.conta==='filial'?T.bg3:'transparent'};color:${window.promState.conta==='filial'?T.text:T.text2};cursor:pointer;font-weight:${window.promState.conta==='filial'?500:400};">Filial SP</button>
         ${tokenMatriz ? `<button id="prom-btn-matriz" onclick="window.promState.conta='matriz';window.promState.promocoes.matriz=null;renderPromocoes(document.querySelector('.prom-container'));"
           style="font-size:11px;padding:4px 12px;border-radius:20px;border:0.5px solid ${window.promState.conta==='matriz'?T.border2:T.border};background:${window.promState.conta==='matriz'?T.bg3:'transparent'};color:${window.promState.conta==='matriz'?T.text:T.text2};cursor:pointer;font-weight:${window.promState.conta==='matriz'?500:400};">Matriz RS</button>` : ""}
+        <button onclick="window._abrirModalPromo()" style="font-size:11px;padding:4px 14px;border-radius:20px;border:0.5px solid ${T.cAzul};background:${T.cAzul}18;color:${T.cAzul};cursor:pointer;font-weight:500;">+ Nova promoção</button>
       </div>
     </div>
     <div id="prom-lista">Carregando...</div>`;
+
+  // ── Modal Nova Promoção ────────────────────────────────────────────────────
+  if (!document.getElementById('modal-nova-promo')) {
+    const modalEl = document.createElement('div');
+    modalEl.id = 'modal-nova-promo';
+    modalEl.style.cssText = `display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;`;
+    modalEl.innerHTML = `
+      <div style="background:${T.card};border:0.5px solid ${T.border};border-radius:14px;padding:24px;width:560px;max-width:95vw;max-height:85vh;overflow-y:auto;position:relative;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+          <div style="font-size:14px;font-weight:600;color:${T.text};">Nova promoção</div>
+          <button onclick="document.getElementById('modal-nova-promo').style.display='none';" style="background:none;border:none;color:${T.text2};font-size:18px;cursor:pointer;padding:0;">✕</button>
+        </div>
+
+        <!-- Modo: buscar / SKU direto -->
+        <div style="display:flex;gap:0;margin-bottom:16px;border-bottom:0.5px solid ${T.border};">
+          <button id="promo-modo-busca" onclick="window._promoSetModo('busca')" style="font-size:12px;font-weight:600;padding:6px 16px;background:none;border:none;cursor:pointer;color:${T.cAzul};border-bottom:2px solid ${T.cAzul};">Buscar produto</button>
+          <button id="promo-modo-sku" onclick="window._promoSetModo('sku')" style="font-size:12px;font-weight:600;padding:6px 16px;background:none;border:none;cursor:pointer;color:${T.text2};border-bottom:2px solid transparent;">SKU direto</button>
+        </div>
+
+        <!-- Busca por nome -->
+        <div id="promo-painel-busca">
+          <input id="promo-input-busca" placeholder="Digite o nome do produto..." style="width:100%;padding:9px 12px;border-radius:8px;border:0.5px solid ${T.border};background:${T.bg3};color:${T.text};font-size:12px;box-sizing:border-box;margin-bottom:8px;" oninput="window._promoBuscar(this.value)">
+          <div id="promo-resultados-busca" style="max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;"></div>
+        </div>
+
+        <!-- SKU direto -->
+        <div id="promo-painel-sku" style="display:none;">
+          <div style="display:flex;gap:8px;margin-bottom:8px;">
+            <input id="promo-input-sku" placeholder="SKU ou MLB..." style="flex:1;padding:9px 12px;border-radius:8px;border:0.5px solid ${T.border};background:${T.bg3};color:${T.text};font-size:12px;">
+            <button onclick="window._promoBuscarSku()" style="padding:9px 16px;border-radius:8px;border:0.5px solid ${T.border};background:${T.bg3};color:${T.text};font-size:12px;cursor:pointer;white-space:nowrap;">Buscar</button>
+          </div>
+          <div id="promo-resultado-sku"></div>
+        </div>
+
+        <!-- Selecionados -->
+        <div id="promo-selecionados-wrap" style="display:none;margin-top:12px;">
+          <div style="font-size:11px;font-weight:600;color:${T.text2};margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Selecionados</div>
+          <div id="promo-selecionados-lista" style="display:flex;flex-direction:column;gap:4px;max-height:140px;overflow-y:auto;margin-bottom:14px;"></div>
+
+          <!-- Configuração da promoção -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+            <div>
+              <div style="font-size:11px;color:${T.text2};margin-bottom:4px;">Modo de desconto</div>
+              <select id="promo-modo-desc" onchange="window._promoToggleDesc()" style="width:100%;padding:8px 10px;border-radius:8px;border:0.5px solid ${T.border};background:${T.bg3};color:${T.text};font-size:12px;">
+                <option value="preco">Preço fixo (R$)</option>
+                <option value="pct">Percentual (%)</option>
+              </select>
+            </div>
+            <div id="promo-desc-wrap">
+              <div style="font-size:11px;color:${T.text2};margin-bottom:4px;" id="promo-desc-label">Preço com desconto</div>
+              <input id="promo-input-desc" type="number" step="0.01" placeholder="R$ 0,00" style="width:100%;padding:8px 10px;border-radius:8px;border:0.5px solid ${T.border};background:${T.bg3};color:${T.text};font-size:12px;box-sizing:border-box;">
+            </div>
+          </div>
+          <div style="margin-bottom:14px;">
+            <div style="font-size:11px;color:${T.text2};margin-bottom:4px;">Data de término</div>
+            <input id="promo-input-data" type="date" style="width:100%;padding:8px 10px;border-radius:8px;border:0.5px solid ${T.border};background:${T.bg3};color:${T.text};font-size:12px;box-sizing:border-box;">
+          </div>
+          <div id="promo-aviso" style="font-size:11px;color:#f0b400;margin-bottom:10px;display:none;"></div>
+          <button id="promo-btn-aplicar" onclick="window._promoAplicar()" style="width:100%;padding:11px;border-radius:8px;background:${T.cAzul};border:none;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">Aplicar promoção</button>
+          <div id="promo-status" style="margin-top:10px;font-size:12px;text-align:center;"></div>
+        </div>
+      </div>`;
+    document.body.appendChild(modalEl);
+
+    // Estado do modal
+    window._promoSelecionados = [];
+    window._promoCatalogoCache = null;
+
+    window._abrirModalPromo = function() {
+      const modal = document.getElementById('modal-nova-promo');
+      modal.style.display = 'flex';
+      window._promoSelecionados = [];
+      window._promoAtualizarSelecionados();
+      document.getElementById('promo-input-busca').value = '';
+      document.getElementById('promo-resultados-busca').innerHTML = '';
+      document.getElementById('promo-resultado-sku').innerHTML = '';
+      document.getElementById('promo-status').innerHTML = '';
+      // Data padrão: 30 dias a partir de hoje
+      const d = new Date(); d.setDate(d.getDate() + 30);
+      document.getElementById('promo-input-data').value = d.toISOString().slice(0,10);
+      window._promoSetModo('busca');
+      // Pré-carregar catálogo se não tiver cache
+      if (!window._promoCatalogoCache) window._promoCarregarCatalogo();
+    };
+
+    window._promoSetModo = function(modo) {
+      document.getElementById('promo-painel-busca').style.display = modo === 'busca' ? 'block' : 'none';
+      document.getElementById('promo-painel-sku').style.display = modo === 'sku' ? 'block' : 'none';
+      document.getElementById('promo-modo-busca').style.cssText += `;color:${modo==='busca'?T.cAzul:T.text2};border-bottom:2px solid ${modo==='busca'?T.cAzul:'transparent'};`;
+      document.getElementById('promo-modo-sku').style.cssText += `;color:${modo==='sku'?T.cAzul:T.text2};border-bottom:2px solid ${modo==='sku'?T.cAzul:'transparent'};`;
+    };
+
+    window._promoToggleDesc = function() {
+      const modo = document.getElementById('promo-modo-desc').value;
+      document.getElementById('promo-desc-label').textContent = modo === 'preco' ? 'Preço com desconto' : 'Desconto (%)';
+      document.getElementById('promo-input-desc').placeholder = modo === 'preco' ? 'R$ 0,00' : '10';
+    };
+
+    window._promoCarregarCatalogo = async function() {
+      const token = window.promState.conta === 'filial' ? state?.ml_token_filial?.access_token : state?.ml_token?.access_token;
+      if (!token) return;
+      try {
+        const fbUrl = 'https://digoo-equipe-default-rtdb.firebaseio.com';
+        // Buscar seller_id via /users/me
+        const meRes = await fetch('https://api.mercadolibre.com/users/me', { headers: { Authorization: `Bearer ${token}` } });
+        const me = await meRes.json();
+        if (!me.id) return;
+        const fbSnap = await fetch(`${fbUrl}/catalogo_ml/${me.id}.json`);
+        const fbData = await fbSnap.json();
+        if (fbData && fbData.itens) {
+          window._promoCatalogoCache = fbData.itens.filter(i => i.status === 'active');
+        }
+      } catch(e) {}
+    };
+
+    window._promoBuscar = function(texto) {
+      const lista = document.getElementById('promo-resultados-busca');
+      if (!texto || texto.length < 2) { lista.innerHTML = ''; return; }
+      const catalogo = window._promoCatalogoCache || [];
+      const q = texto.toLowerCase();
+      const resultados = catalogo.filter(i => (i.titulo||'').toLowerCase().includes(q) || (i.sku||'').toLowerCase().includes(q)).slice(0,8);
+      if (!resultados.length) { lista.innerHTML = `<div style="font-size:12px;color:${T.text2};padding:6px;">Nenhum produto encontrado</div>`; return; }
+      lista.innerHTML = resultados.map(i => {
+        const jaSel = window._promoSelecionados.find(s => s.id === i.id);
+        return `<div onclick="window._promoToggleSel('${i.id}','${(i.titulo||'').replace(/'/g,"\\'")}',${i.estoque||0},${0})" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;cursor:pointer;background:${jaSel?T.cAzul+'22':T.bg3};border:0.5px solid ${jaSel?T.cAzul:T.border};">
+          <div style="width:14px;height:14px;border-radius:4px;border:1.5px solid ${jaSel?T.cAzul:T.border};background:${jaSel?T.cAzul:'transparent'};flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+            ${jaSel?'<span style="color:#fff;font-size:9px;font-weight:700;">✓</span>':''}
+          </div>
+          <div style="min-width:0;flex:1;">
+            <div style="font-size:11px;font-weight:500;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${i.titulo||''}</div>
+            <div style="font-size:10px;color:${T.text2};">${i.sku||''} · ${i.estoque||0} un em estoque</div>
+          </div>
+        </div>`;
+      }).join('');
+    };
+
+    window._promoBuscarSku = async function() {
+      const val = document.getElementById('promo-input-sku').value.trim();
+      const res = document.getElementById('promo-resultado-sku');
+      if (!val) return;
+      res.innerHTML = `<div style="font-size:12px;color:${T.text2};">Buscando...</div>`;
+      const token = window.promState.conta === 'filial' ? state?.ml_token_filial?.access_token : state?.ml_token?.access_token;
+      try {
+        // Tentar por SKU no catálogo cache
+        let item = (window._promoCatalogoCache||[]).find(i => (i.sku||'').toLowerCase() === val.toLowerCase() || i.id === val);
+        if (!item) {
+          // Tentar buscar direto no ML se for MLB...
+          if (val.startsWith('MLB')) {
+            const r = await fetch(`https://digoo-backend.vercel.app/api/ml-vendas?action=buscar-item-detalhes&item_id=${val}&token=${token}`);
+            const d = await r.json();
+            if (d.ok) item = { id: val, titulo: val, sku: val, estoque: 0, preco: 0 };
+          }
+        }
+        if (!item) { res.innerHTML = `<div style="font-size:12px;color:#E24B4A;">Produto não encontrado</div>`; return; }
+        const jaSel = window._promoSelecionados.find(s => s.id === item.id);
+        res.innerHTML = `<div onclick="window._promoToggleSel('${item.id}','${(item.titulo||'').replace(/'/g,"\\'")}',${item.estoque||0},${item.preco||0})" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;cursor:pointer;background:${jaSel?T.cAzul+'22':T.bg3};border:0.5px solid ${jaSel?T.cAzul:T.border};">
+          <div style="width:14px;height:14px;border-radius:4px;border:1.5px solid ${jaSel?T.cAzul:T.border};background:${jaSel?T.cAzul:'transparent'};flex-shrink:0;display:flex;align-items:center;justify-content:center;">${jaSel?'<span style="color:#fff;font-size:9px;">✓</span>':''}</div>
+          <div style="min-width:0;">
+            <div style="font-size:11px;font-weight:500;color:${T.text};">${item.titulo||item.id}</div>
+            <div style="font-size:10px;color:${T.text2};">${item.sku||''}</div>
+          </div>
+        </div>`;
+      } catch(e) { res.innerHTML = `<div style="font-size:12px;color:#E24B4A;">Erro: ${e.message}</div>`; }
+    };
+
+    window._promoToggleSel = function(id, titulo, estoque, preco) {
+      const idx = window._promoSelecionados.findIndex(s => s.id === id);
+      if (idx >= 0) window._promoSelecionados.splice(idx, 1);
+      else window._promoSelecionados.push({ id, titulo, estoque, preco });
+      window._promoAtualizarSelecionados();
+      // Re-renderizar resultados de busca
+      const q = document.getElementById('promo-input-busca')?.value;
+      if (q) window._promoBuscar(q);
+    };
+
+    window._promoAtualizarSelecionados = function() {
+      const wrap = document.getElementById('promo-selecionados-wrap');
+      const lista = document.getElementById('promo-selecionados-lista');
+      if (!window._promoSelecionados.length) { wrap.style.display = 'none'; return; }
+      wrap.style.display = 'block';
+      lista.innerHTML = window._promoSelecionados.map(s =>
+        `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-radius:7px;background:${T.bg3};border:0.5px solid ${T.border};">
+          <div style="font-size:11px;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">${s.titulo}</div>
+          <button onclick="window._promoToggleSel('${s.id}','${s.titulo.replace(/'/g,"\\'")}',${s.estoque},${s.preco})" style="background:none;border:none;color:${T.text2};cursor:pointer;font-size:13px;flex-shrink:0;padding:0 0 0 8px;">✕</button>
+        </div>`
+      ).join('');
+    };
+
+    window._promoAplicar = async function() {
+      const selecionados = window._promoSelecionados;
+      if (!selecionados.length) { document.getElementById('promo-aviso').style.display='block'; document.getElementById('promo-aviso').textContent='Selecione ao menos um produto.'; return; }
+      const modoDesc = document.getElementById('promo-modo-desc').value;
+      const descVal = parseFloat(document.getElementById('promo-input-desc').value);
+      const dataFim = document.getElementById('promo-input-data').value;
+      if (!descVal || !dataFim) { document.getElementById('promo-aviso').style.display='block'; document.getElementById('promo-aviso').textContent='Preencha o desconto e a data de término.'; return; }
+      document.getElementById('promo-aviso').style.display='none';
+      const token = window.promState.conta === 'filial' ? state?.ml_token_filial?.access_token : state?.ml_token?.access_token;
+      const finish = dataFim + 'T23:59:59';
+      const btn = document.getElementById('promo-btn-aplicar');
+      const statusEl = document.getElementById('promo-status');
+      btn.disabled = true; btn.textContent = 'Aplicando...';
+      let ok = 0, erros = [];
+      for (const item of selecionados) {
+        let dealPrice;
+        if (modoDesc === 'pct') {
+          if (!item.preco) { erros.push(`${item.titulo}: preço original não disponível para calcular %`); continue; }
+          dealPrice = Math.round(item.preco * (1 - descVal/100) * 100) / 100;
+        } else {
+          dealPrice = descVal;
+        }
+        try {
+          const res = await fetch('https://digoo-backend.vercel.app/api/ml-vendas?action=renovar-promocao', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ item_id: item.id, deal_price: dealPrice, finish_date: finish, token })
+          });
+          const d = await res.json();
+          if (d.ok) ok++;
+          else erros.push(`${item.titulo}: ${d.error||'erro'}`);
+        } catch(e) { erros.push(`${item.titulo}: ${e.message}`); }
+        statusEl.innerHTML = `<span style="color:${T.text2};">Aplicando ${ok+erros.length}/${selecionados.length}...</span>`;
+      }
+      btn.disabled = false; btn.textContent = 'Aplicar promoção';
+      statusEl.innerHTML = ok > 0
+        ? `<span style="color:#00a63e;">✓ ${ok} promoç${ok>1?'ões aplicadas':'ão aplicada'} com sucesso${erros.length?` · ${erros.length} erro(s)`:''}</span>`
+        : `<span style="color:#E24B4A;">Erro: ${erros[0]||'falha desconhecida'}</span>`;
+      if (ok > 0) {
+        window.promState.promocoes[window.promState.conta] = null;
+        setTimeout(() => {
+          document.getElementById('modal-nova-promo').style.display = 'none';
+          renderPromocoes(document.querySelector('.prom-container'));
+        }, 1800);
+      }
+    };
+  }
 
   const token = window.promState.conta === "filial" ? tokenFilial : tokenMatriz;
   if (!token) {
