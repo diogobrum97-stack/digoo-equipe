@@ -3000,8 +3000,7 @@ function renderDashboard(panel, color) {
     const temItens = naoLidos.length > 0 || leads.length > 0;
 
     emailCard.innerHTML = `
-      <div style="font-size:11px;font-weight:500;color:${T.text2};margin-bottom:8px;">Email</div>
-      <div style="width:100%;height:2px;background:${T.cAzul};border-radius:2px;margin-bottom:10px;"></div>
+      <div style="font-size:11px;font-weight:500;color:${T.text2};margin-bottom:10px;">Email</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
         ${mkContEmail("Inbox", T.cAzul, totalInbox, totalInbox > 0 ? "não lidos" : "Em dia ✓")}
         ${mkContEmail("Leads", "#00a63e", totalLeads, totalLeads > 0 ? "do site" : "—")}
