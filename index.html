@@ -10405,21 +10405,31 @@ window.renderPromocoes = async function renderPromocoes(panel) {
     window._promoCarregarProdutos = async function(forceRefresh) {
       const lista = document.getElementById('promo-lista-produtos');
       if (!lista) return;
-      lista.innerHTML = `<div style="font-size:12px;color:${T.text2};padding:20px 0;text-align:center;">Carregando...</div>`;
       const token = window.promState.conta === 'filial' ? state?.ml_token_filial?.access_token : state?.ml_token?.access_token;
       if (!token) { lista.innerHTML = `<div style="font-size:12px;color:#E24B4A;text-align:center;">Token não disponível</div>`; return; }
+
+      // Mostrar cache imediatamente se tiver (sem spinner)
+      if (window._promoCatalogoCache && window._promoCatalogoCache.length && !forceRefresh) {
+        window._promoRenderLista('');
+      } else {
+        lista.innerHTML = `<div style="font-size:12px;color:${T.text2};padding:20px 0;text-align:center;">Carregando produtos...</div>`;
+      }
+
       try {
-        const url = `https://digoo-backend.vercel.app/api/ml-vendas?action=buscar-catalogo&token=${token}${forceRefresh?'&refresh=1':''}`;
+        // Sempre busca fresco do ML (com thumbnail, SKU e preço reais)
+        const url = `https://digoo-backend.vercel.app/api/ml-vendas?action=buscar-catalogo&token=${token}&refresh=1`;
         const res = await fetch(url);
         const d = await res.json();
         if (d.ok && d.itens && d.itens.length) {
           window._promoCatalogoCache = d.itens.filter(i => i.status === 'active');
-          window._promoRenderLista('');
-        } else {
+          window._promoRenderLista(document.getElementById('promo-filtro')?.value || '');
+        } else if (!window._promoCatalogoCache?.length) {
           lista.innerHTML = `<div style="font-size:12px;color:${T.text2};padding:20px 0;text-align:center;">Nenhum produto encontrado</div>`;
         }
       } catch(e) {
-        lista.innerHTML = `<div style="font-size:12px;color:#E24B4A;text-align:center;">Erro: ${e.message}</div>`;
+        if (!window._promoCatalogoCache?.length) {
+          lista.innerHTML = `<div style="font-size:12px;color:#E24B4A;text-align:center;">Erro: ${e.message}</div>`;
+        }
       }
     };
 
