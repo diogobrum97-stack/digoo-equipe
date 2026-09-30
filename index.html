@@ -6653,6 +6653,7 @@ function render(){
            }
           }else if(window._diogotab==="dashboard"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
+            panel.innerHTML = "";
             renderDashboard(panel, color);
           }else if(window._diogotab==="estoque"){
             if(diogoCardFullscreen || diogIsFullAuto){panel.style.maxHeight="none";panel.style.overflowY="auto";}else{panel.style.maxHeight="";panel.style.overflowY="";}
