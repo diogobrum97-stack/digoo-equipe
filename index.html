@@ -2952,7 +2952,57 @@ function renderDashboard(panel, color) {
   })();
 
   dashGrid.appendChild(statusBar);
-  // Placeholder para o card de email — inserido depois dos outros cards async
+
+  // Card Email — criado sincronamente na sidebar, atualizado com dados do cache ou fetch
+  const emailCard = document.createElement("div");
+  emailCard.id = "email-sbar-card";
+  emailCard.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:12px;padding:14px 16px;`;
+
+  function _renderEmailCard(emails) {
+    const naoLidos = (emails || []).filter(e => e.unseen);
+    const total = naoLidos.length;
+    const lista = naoLidos.slice(0, 4).map(e => {
+      const nome = e.from?.name || e.from?.address || e.from || "—";
+      const assunto = e.subject || "(sem assunto)";
+      return `<div onclick="window._diogotab='email';window._renderTab?.();" style="display:flex;align-items:center;gap:5px;padding:5px 0;cursor:pointer;border-bottom:0.5px solid ${T.border};" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
+        <span style="width:6px;height:6px;border-radius:50%;background:${T.cAzul};flex-shrink:0;"></span>
+        <div style="min-width:0;">
+          <div style="font-size:11px;font-weight:600;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nome}</div>
+          <div style="font-size:10px;color:${T.text2};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${assunto}</div>
+        </div>
+      </div>`;
+    }).join("");
+    emailCard.innerHTML = `
+      <div style="font-size:11px;font-weight:500;color:${T.text2};margin-bottom:8px;">Email</div>
+      <div style="width:100%;height:2px;background:${T.cAzul};border-radius:2px;margin-bottom:10px;"></div>
+      <div style="font-size:10px;color:${T.text2};text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">NÃO LIDOS</div>
+      <div style="font-size:28px;font-weight:500;color:${total>0?T.cAzul:T.text};">${total}</div>
+      <div style="font-size:11px;color:${T.text2};margin-bottom:${total>0?'10px':'0'};">emails</div>
+      ${total > 0 ? `<div style="border-top:0.5px solid ${T.border};padding-top:8px;">${lista}
+        <div onclick="window._diogotab='email';window._renderTab?.();" style="text-align:center;font-size:10px;color:${T.text2};padding:6px 0;cursor:pointer;">Ver todos →</div>
+      </div>` : ""}`;
+  }
+
+  if (emailState.emails) {
+    _renderEmailCard(emailState.emails);
+  } else {
+    emailCard.innerHTML = `
+      <div style="font-size:11px;font-weight:500;color:${T.text2};margin-bottom:8px;">Email</div>
+      <div style="width:100%;height:2px;background:${T.cAzul};border-radius:2px;margin-bottom:10px;"></div>
+      <div style="font-size:11px;color:${T.text2};">Carregando...</div>`;
+    fetch("https://digoo-backend.vercel.app/api/ml-vendas?action=email-listar&limit=20")
+      .then(r => r.json())
+      .then(d => {
+        if (!d.ok) return;
+        const msgs = d.messages || d.data?.messages || d.data || d.items || [];
+        emailState.emails = Array.isArray(msgs) ? msgs : [];
+        emailState.mailbox_id = d.mailbox_id;
+        // Atualizar só se o card ainda está no DOM
+        if (document.getElementById("email-sbar-card") === emailCard) _renderEmailCard(emailState.emails);
+      })
+      .catch(e => console.log("email-sbar:", e.message));
+  }
+  statusBar.appendChild(emailCard);
   window._sbarApply = function() {};
 
   // Toggle cores sidebar cards — inicializado antes dos cards async
@@ -3195,68 +3245,6 @@ function renderDashboard(panel, color) {
     } catch(e) { console.log("docs-hoje-sbar:", e.message); }
   })();
 
-  // Card Email — emails não lidos (carrega só uma vez por sessão)
-  if (!window._emailSbarCarregado) {
-    window._emailSbarCarregado = true;
-    (async () => {
-      try {
-        if (!emailState.emails) {
-          const res = await fetch(`https://digoo-backend.vercel.app/api/ml-vendas?action=email-listar&limit=20`);
-          const d = await res.json();
-          if (!d.ok) return;
-          const msgs = d.messages || d.data?.messages || d.data || d.items || [];
-          emailState.emails = Array.isArray(msgs) ? msgs : [];
-          emailState.mailbox_id = d.mailbox_id;
-        }
-        const naoLidos = emailState.emails.filter(e => e.unseen);
-        const total = naoLidos.length;
-        const emailListHtml = naoLidos.slice(0, 4).map(e => {
-          const nome = e.from?.name || e.from?.address || e.from || "—";
-          const assunto = e.subject || "(sem assunto)";
-          return `<div onclick="window._diogotab='email';window._renderTab?.();" style="display:flex;align-items:center;gap:5px;padding:5px 0;cursor:pointer;border-bottom:0.5px solid ${T.border};" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
-            <span style="width:6px;height:6px;border-radius:50%;background:${T.cAzul};flex-shrink:0;"></span>
-            <div style="min-width:0;">
-              <div style="font-size:11px;font-weight:600;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nome}</div>
-              <div style="font-size:10px;color:${T.text2};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${assunto}</div>
-            </div>
-          </div>`;
-        }).join("");
-
-        const cardHtmlEmail = `<div id="email-sbar-card" style="background:${T.card};border:0.5px solid ${T.border};border-radius:12px;padding:14px 16px;">
-          <div style="font-size:11px;font-weight:500;color:${T.text2};margin-bottom:8px;">Email</div>
-          <div style="width:100%;height:2px;background:${T.cAzul};border-radius:2px;margin-bottom:10px;"></div>
-          <div style="font-size:10px;color:${T.text2};text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">NÃO LIDOS</div>
-          <div style="font-size:28px;font-weight:500;color:${total>0?T.cAzul:T.text};">${total}</div>
-          <div style="font-size:11px;color:${T.text2};margin-bottom:${total>0?'10px':'0'};">emails</div>
-          ${total > 0 ? `<div style="border-top:0.5px solid ${T.border};padding-top:8px;">${emailListHtml}
-            <div onclick="window._diogotab='email';window._renderTab?.();" style="text-align:center;font-size:10px;color:${T.text2};padding:6px 0;cursor:pointer;">Ver todos →</div>
-          </div>` : ""}
-        </div>`;
-
-        // Remover card antigo se existir e reinserir no lugar certo
-        const antigo = document.getElementById("email-sbar-card");
-        if (antigo) antigo.remove();
-        const sbar = document.getElementById("dash-sidebar");
-        if (sbar) sbar.insertAdjacentHTML("beforeend", cardHtmlEmail);
-      } catch(e) { console.log("email-sbar:", e.message); }
-    })();
-  } else if (emailState.emails) {
-    // Re-render após volta ao dashboard — recriar card com dados em cache
-    const antigo = document.getElementById("email-sbar-card");
-    if (!antigo) {
-      const naoLidos = emailState.emails.filter(e => e.unseen);
-      const total = naoLidos.length;
-      const mini = `<div id="email-sbar-card" style="background:${T.card};border:0.5px solid ${T.border};border-radius:12px;padding:14px 16px;">
-        <div style="font-size:11px;font-weight:500;color:${T.text2};margin-bottom:8px;">Email</div>
-        <div style="width:100%;height:2px;background:${T.cAzul};border-radius:2px;margin-bottom:10px;"></div>
-        <div style="font-size:10px;color:${T.text2};text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">NÃO LIDOS</div>
-        <div style="font-size:28px;font-weight:500;color:${total>0?T.cAzul:T.text};">${total}</div>
-        <div style="font-size:11px;color:${T.text2};">emails</div>
-      </div>`;
-      const sbar = document.getElementById("dash-sidebar");
-      if (sbar) sbar.insertAdjacentHTML("beforeend", mini);
-    }
-  }
   // Buscar perguntas (com sugestão de IA) uma vez por sessão, reaproveitado pela aba dedicada
   if(perguntasState.lista === null && !perguntasState.carregando && !perguntasState.erro) {
     fetchPerguntas().then(() => render());
@@ -6653,7 +6641,6 @@ function render(){
            }
           }else if(window._diogotab==="dashboard"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
-            window._emailSbarCarregado = false;
             renderDashboard(panel, color);
           }else if(window._diogotab==="estoque"){
             if(diogoCardFullscreen || diogIsFullAuto){panel.style.maxHeight="none";panel.style.overflowY="auto";}else{panel.style.maxHeight="";panel.style.overflowY="";}
