@@ -2575,7 +2575,7 @@ function renderDashboard(panel, color) {
   const vendasGrid = document.createElement("div");
   vendasGrid.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;";
   vendasGrid.appendChild(mkVendaCard("Hoje · Filial SP", fmtFull(dF.fatHoje), "↑ EM TEMPO REAL", "#3b82f6", "#3b82f6"));
-  vendasGrid.appendChild(mkVendaCard("Mês atual · Filial SP", fmt(dF.fatMes), `${dF.pedidosMes} PEDIDOS`, "#10b981", "#10b981"));
+  vendasGrid.appendChild(mkVendaCard("Mês atual · Filial SP", fmt(dF.fatMes), `${dF.pedidosMes} PEDIDOS`, T.cVerde, T.cVerde));
   if (dM) {
     vendasGrid.appendChild(mkVendaCard("Hoje · Matriz RS", fmtFull(dM.fatHoje), `${dF.percDia}% DO DIA`, "#8b5cf6", "#8b5cf6"));
     vendasGrid.appendChild(mkVendaCard("Mês · Matriz RS", fmt(dM.fatMes), (dM.pedidosMes||0)+" PEDIDOS", "#f59e0b", "#f59e0b"));
