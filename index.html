@@ -10067,10 +10067,11 @@ async function renderEmailDetalhe(panel, fmtData) {
   const data = fmtData(emailObj.date);
 
   panel.innerHTML = "";
+  panel.style.cssText = "display:flex;flex-direction:column;width:100%;height:100%;padding:16px;box-sizing:border-box;overflow:hidden;";
 
   const voltarBtn = document.createElement("button");
   voltarBtn.textContent = "← Caixa de entrada";
-  voltarBtn.style.cssText = "background:none;border:none;cursor:pointer;color:" + T.text2 + ";font-size:13px;padding:0;margin-bottom:16px;display:block;";
+  voltarBtn.style.cssText = "background:none;border:none;cursor:pointer;color:" + T.text2 + ";font-size:13px;padding:0;margin-bottom:16px;display:block;text-align:left;align-self:flex-start;width:auto;";
   voltarBtn.onclick = () => { emailState.emailAberto = null; emailState.emailAbertoObj = null; window.renderEmail(panel); };
   panel.appendChild(voltarBtn);
 
