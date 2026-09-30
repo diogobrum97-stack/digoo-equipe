@@ -10938,12 +10938,10 @@ window.abrirRenovarModal = function(item_id, precoOriginal, precoDesconto, desco
 };
 
 window.confirmarRenovacao = async function(item_id, precoOriginal, token, idx) {
-  // Suporta chamada do inline (com idx) e do modal de detalhe (sem idx)
-  const sufixo = idx !== undefined ? `-${idx}` : '';
   const descEl = idx !== undefined ? document.getElementById(`prom-desc-${idx}`) : document.getElementById("prom-novo-desconto");
   const dataEl = idx !== undefined ? document.getElementById(`prom-data-${idx}`) : document.getElementById("prom-nova-data");
   const statusEl = idx !== undefined ? document.getElementById(`prom-status-${idx}`) : document.getElementById("prom-renovar-status");
-  if (!descEl || !dataEl) return;
+  if (!descEl || !dataEl || !statusEl) return;
 
   const desconto = parseFloat(descEl.value);
   const finish_date = dataEl.value;
@@ -10951,44 +10949,79 @@ window.confirmarRenovacao = async function(item_id, precoOriginal, token, idx) {
   if (!finish_date) { statusEl.textContent = "Data de fim obrigatória."; statusEl.style.color = T.cVermelho; return; }
 
   const deal_price = Math.round(precoOriginal * (1 - desconto/100) * 100) / 100;
-  statusEl.textContent = "Renovando..."; statusEl.style.color = T.text2;
+  const BACKEND = "https://digoo-backend.vercel.app";
 
-  try {
-    const BACKEND = "https://digoo-backend.vercel.app";
-    const res = await fetch(`${BACKEND}/api/ml-vendas?action=renovar-promocao`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ item_id, deal_price, finish_date: finish_date + "T23:59:59", token })
-    });
-    const d = await res.json();
-    if (d.ok) {
-      // Salvar no histórico Firebase
-      const { item_id: iid, conta } = window.promState.detalhe;
-      const histKey = `${conta}_${iid}`;
-      const hist = window.promState.historico[histKey] || [];
-      // Fechar período anterior
-      if (hist.length) {
-        const ultimo = hist[0];
-        if (!ultimo.data_fim) {
-          await set(ref(db, `/promocoes_historico/${iid}/${ultimo.key || Date.now()-1}`), { ...ultimo, data_fim: new Date().toISOString().slice(0,10) });
+  const aplicar = async () => {
+    statusEl.textContent = "Aplicando nova promoção..."; statusEl.style.color = T.text2;
+    try {
+      const res = await fetch(`${BACKEND}/api/ml-vendas?action=renovar-promocao`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ item_id, deal_price, finish_date: finish_date + "T23:59:59", token })
+      });
+      const d = await res.json();
+      if (d.ok) {
+        // Salvar no histórico Firebase (só quando vier do detalhe)
+        if (window.promState?.detalhe) {
+          const { item_id: iid, conta } = window.promState.detalhe;
+          const histKey = `${conta}_${iid}`;
+          const hist = window.promState.historico?.[histKey] || [];
+          if (hist.length && hist[0] && !hist[0].data_fim) {
+            await set(ref(db, `/promocoes_historico/${iid}/${hist[0].key || Date.now()-1}`), { ...hist[0], data_fim: new Date().toISOString().slice(0,10) });
+          }
+          const novaKey = Date.now().toString();
+          await set(ref(db, `/promocoes_historico/${iid}/${novaKey}`), { data_inicio: new Date().toISOString().slice(0,10), data_fim: null, desconto_pct: desconto, preco_original: precoOriginal, preco_desconto: deal_price, finish_date, vendas: null, media_dia: null, key: novaKey });
+          if (window.promState.historico) window.promState.historico[histKey] = null;
+          window.promState.detalhe = null;
         }
+        window.promState.promocoes[window.promState.conta] = null;
+        statusEl.innerHTML = `<span style="color:${T.cVerde};">✓ Promoção aplicada com sucesso!</span>`;
+        setTimeout(() => renderPromocoes(document.querySelector(".prom-container")), 1200);
+      } else {
+        statusEl.innerHTML = `<span style="color:${T.cVermelho};">${d.error || "Erro ao aplicar promoção"}</span>`;
       }
-      const novoRegistro = { data_inicio: new Date().toISOString().slice(0,10), data_fim: null, desconto_pct: desconto, preco_original: precoOriginal, preco_desconto: deal_price, finish_date, vendas: null, media_dia: null };
-      const novaKey = Date.now().toString();
-      await set(ref(db, `/promocoes_historico/${iid}/${novaKey}`), { ...novoRegistro, key: novaKey });
+    } catch(e) { statusEl.innerHTML = `<span style="color:${T.cVermelho};">Erro: ${e.message}</span>`; }
+  };
 
-      // Limpar cache e recarregar
-      window.promState.historico[histKey] = null;
-      window.promState.promocoes[conta] = null;
-      window.promState.detalhe = null;
-      statusEl.textContent = "Renovada com sucesso!"; statusEl.style.color = T.cVerde;
-      setTimeout(() => renderPromocoes(document.querySelector(".prom-container")), 1000);
+  // Verificar se tem promoção ativa
+  statusEl.textContent = "Verificando status..."; statusEl.style.color = T.text2;
+  try {
+    const checkRes = await fetch(`${BACKEND}/api/ml-vendas?action=status-promocao&item_id=${item_id}&token=${token}`);
+    const checkData = await checkRes.json();
+
+    if (checkData.candidato) {
+      // Já é candidato — aplica direto
+      await aplicar();
+    } else if (checkData.ativa) {
+      // Tem promoção ativa — encerrar primeiro
+      statusEl.textContent = "Encerrando promoção atual..."; statusEl.style.color = T.text2;
+      const delRes = await fetch(`${BACKEND}/api/ml-vendas?action=encerrar-promocao`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ item_id, token })
+      });
+      const delData = await delRes.json();
+      if (!delData.ok) { statusEl.innerHTML = `<span style="color:${T.cVermelho};">Erro ao encerrar: ${delData.error}</span>`; return; }
+
+      // Aguardar até 20s para o item voltar a candidato
+      statusEl.textContent = "Aguardando processamento do ML..."; statusEl.style.color = T.text2;
+      let candidato = false;
+      for (let i = 0; i < 8; i++) {
+        await new Promise(r => setTimeout(r, 2500));
+        const c = await fetch(`${BACKEND}/api/ml-vendas?action=status-promocao&item_id=${item_id}&token=${token}`);
+        const cd = await c.json();
+        if (cd.candidato) { candidato = true; break; }
+        statusEl.textContent = `Aguardando ML... (${(i+1)*2}s)`;
+      }
+      if (candidato) {
+        await aplicar();
+      } else {
+        statusEl.innerHTML = `<span style="color:#f0b400;">⚠ Promoção encerrada, mas o ML ainda está processando. Tente aplicar novamente em alguns minutos.</span>`;
+      }
+    } else if (checkData.pendente) {
+      statusEl.innerHTML = `<span style="color:#f0b400;">⚠ Há uma operação pendente neste item. Aguarde alguns minutos e tente novamente.</span>`;
     } else {
-      statusEl.textContent = d.error || "Erro ao renovar."; statusEl.style.color = T.cVermelho;
+      await aplicar();
     }
-  } catch(e) {
-    statusEl.textContent = "Erro: " + e.message; statusEl.style.color = T.cVermelho;
-  }
+  } catch(e) { statusEl.innerHTML = `<span style="color:${T.cVermelho};">Erro: ${e.message}</span>`; }
 };
 
 async function renderAnunciosRascunho(panel) {
