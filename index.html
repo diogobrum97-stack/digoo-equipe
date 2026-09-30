@@ -10345,14 +10345,17 @@ window.renderPromocoes = async function renderPromocoes(panel) {
             </div>
 
             <!-- Info do produto -->
-            <div style="background:${T.bg3};border:0.5px solid ${T.border};border-radius:10px;padding:12px;margin-bottom:16px;">
-              <div style="font-size:12px;font-weight:600;color:${T.text};margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.titulo}</div>
-              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
-                <div><div style="font-size:10px;color:${T.text2};">SKU</div><div style="font-size:12px;font-weight:500;color:${T.text};">${p.sku||'—'}</div></div>
-                <div><div style="font-size:10px;color:${T.text2};">Preço atual</div><div style="font-size:12px;font-weight:500;color:${T.text};">${p.preco>0?'R$ '+Number(p.preco).toLocaleString('pt-BR',{minimumFractionDigits:2}):'—'}</div></div>
-                <div><div style="font-size:10px;color:${T.text2};">Estoque</div><div style="font-size:12px;font-weight:500;color:${T.text};">${p.estoque||0} un</div></div>
+            <div style="background:${T.bg3};border:0.5px solid ${T.border};border-radius:10px;padding:12px;margin-bottom:16px;display:flex;gap:12px;align-items:flex-start;">
+              ${p.thumbnail ? `<img src="${p.thumbnail}" style="width:56px;height:56px;border-radius:8px;object-fit:contain;background:${T.bg};flex-shrink:0;" onerror="this.style.display='none'">` : ''}
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:12px;font-weight:600;color:${T.text};margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.titulo}</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+                  <div><div style="font-size:10px;color:${T.text2};">SKU</div><div style="font-size:12px;font-weight:500;color:${T.text};">${p.sku||'—'}</div></div>
+                  <div><div style="font-size:10px;color:${T.text2};">Preço atual</div><div style="font-size:12px;font-weight:500;color:${T.text};">${p.preco>0?'R$ '+Number(p.preco).toLocaleString('pt-BR',{minimumFractionDigits:2}):'—'}</div></div>
+                  <div><div style="font-size:10px;color:${T.text2};">Estoque</div><div style="font-size:12px;font-weight:500;color:${T.text};">${p.estoque||0} un</div></div>
+                </div>
+                <div style="margin-top:6px;"><div style="font-size:10px;color:${T.text2};">MLB</div><div style="font-size:11px;color:${T.text2};">${p.id}</div></div>
               </div>
-              <div style="margin-top:6px;"><div style="font-size:10px;color:${T.text2};">MLB</div><div style="font-size:11px;color:${T.text2};">${p.id}</div></div>
             </div>
 
             <!-- Configuração -->
@@ -10435,35 +10438,41 @@ window.renderPromocoes = async function renderPromocoes(panel) {
       itens.forEach(i => {
         const precoStr = i.preco > 0 ? `R$ ${Number(i.preco).toLocaleString('pt-BR',{minimumFractionDigits:2})}` : '—';
         const div = document.createElement('div');
-        div.style.cssText = `display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:8px;cursor:pointer;background:${T.bg3};border:0.5px solid ${T.border};`;
-        div.innerHTML = `<div style="min-width:0;flex:1;margin-right:10px;"><div style="font-size:11px;font-weight:500;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${i.titulo||''}</div><div style="font-size:10px;color:${T.text2};">${i.sku||''} · ${precoStr} · ${i.estoque||0} un</div></div><div style="font-size:10px;color:${T.cAzul};font-weight:600;flex-shrink:0;">Selecionar →</div>`;
+        div.style.cssText = `display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;background:${T.bg3};border:0.5px solid ${T.border};`;
+        const thumbEl = document.createElement('img');
+        if (i.thumbnail) {
+          thumbEl.src = i.thumbnail;
+          thumbEl.onerror = () => { thumbEl.style.display = 'none'; };
+        }
+        thumbEl.style.cssText = `width:40px;height:40px;border-radius:6px;object-fit:contain;background:${T.bg};flex-shrink:0;${i.thumbnail?'':'display:none;'}`;
+        const infoEl = document.createElement('div');
+        infoEl.style.cssText = 'min-width:0;flex:1;';
+        infoEl.innerHTML = `<div style="font-size:11px;font-weight:500;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${i.titulo||''}</div><div style="font-size:10px;color:${T.text2};margin-top:2px;">${i.sku||'—'} · ${precoStr} · ${i.estoque||0} un</div>`;
+        const selEl = document.createElement('div');
+        selEl.style.cssText = `font-size:10px;color:${T.cAzul};font-weight:600;flex-shrink:0;white-space:nowrap;`;
+        selEl.textContent = 'Selecionar →';
+        div.appendChild(thumbEl);
+        div.appendChild(infoEl);
+        div.appendChild(selEl);
         div.addEventListener('mouseover', () => { div.style.background = T.cAzul+'18'; div.style.borderColor = T.cAzul; });
         div.addEventListener('mouseout', () => { div.style.background = T.bg3; div.style.borderColor = T.border; });
         div.addEventListener('click', async () => {
-          div.innerHTML = div.innerHTML.replace('Selecionar →', 'Carregando...');
+          selEl.textContent = 'Carregando...';
           const token = window.promState.conta === 'filial' ? state?.ml_token_filial?.access_token : state?.ml_token?.access_token;
           try {
-            // Buscar detalhe completo do item — sempre tem seller_sku e price
             const r = await fetch(`https://digoo-backend.vercel.app/api/ml-vendas?action=buscar-item-detalhes&item_id=${i.id}&token=${token}`);
             const d = await r.json();
             if (d.ok) {
               if (d.sku) i.sku = d.sku;
               if (d.price) i.preco = d.price;
               if (d.available_quantity) i.estoque = d.available_quantity;
+              if (d.thumbnail) i.thumbnail = d.thumbnail;
             }
-            // Buscar preço se não tiver
             if (!i.preco) {
               const sr = await fetch(`https://digoo-backend.vercel.app/api/ml-vendas?action=status-promocao&item_id=${i.id}&token=${token}`);
               const sd = await sr.json();
               const pd = (sd.promos||[]).find(p => p.original_price > 0);
               if (pd) i.preco = pd.original_price;
-            }
-            // Último fallback: prices endpoint
-            if (!i.sku || !i.preco) {
-              const pr = await fetch(`https://digoo-backend.vercel.app/api/ml-vendas?prices=1&token=${token}`);
-              const prd = await pr.json();
-              const found = (prd.prices||[]).find(p => p.id === i.id);
-              if (found) { i.sku = i.sku || found.sku || ''; i.preco = i.preco || found.price || 0; }
             }
           } catch(e) {}
           window._promoProdutoSel = i;
@@ -10474,7 +10483,6 @@ window.renderPromocoes = async function renderPromocoes(panel) {
       });
     };
 
-    // ── Atualizar preview do preço ──
     window._promoAtualizarPreview = function() {
       const tipo = document.getElementById('promo-tipo')?.value;
       const val = parseFloat(document.getElementById('promo-valor')?.value);
