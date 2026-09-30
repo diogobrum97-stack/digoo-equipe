@@ -10312,7 +10312,10 @@ window.renderPromocoes = async function renderPromocoes(panel) {
 
         <!-- Busca por nome -->
         <div id="promo-painel-busca">
-          <input id="promo-input-busca" placeholder="Digite o nome do produto..." style="width:100%;padding:9px 12px;border-radius:8px;border:0.5px solid ${T.border};background:${T.bg3};color:${T.text};font-size:12px;box-sizing:border-box;margin-bottom:8px;" oninput="window._promoBuscar(this.value)">
+          <input id="promo-input-busca" placeholder="Digite o nome do produto..." style="width:100%;padding:9px 12px;border-radius:8px;border:0.5px solid ${T.border};background:${T.bg3};color:${T.text};font-size:12px;box-sizing:border-box;margin-bottom:4px;" oninput="window._promoBuscar(this.value)">
+          <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
+            <button onclick="window._promoRefreshCatalogo()" id="promo-btn-refresh" style="font-size:10px;color:${T.text2};background:none;border:none;cursor:pointer;padding:2px 0;">↻ Atualizar catálogo</button>
+          </div>
           <div id="promo-resultados-busca" style="max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;"></div>
         </div>
 
@@ -10387,6 +10390,23 @@ window.renderPromocoes = async function renderPromocoes(panel) {
       const modo = document.getElementById('promo-modo-desc').value;
       document.getElementById('promo-desc-label').textContent = modo === 'preco' ? 'Preço com desconto' : 'Desconto (%)';
       document.getElementById('promo-input-desc').placeholder = modo === 'preco' ? 'R$ 0,00' : '10';
+    };
+
+    window._promoRefreshCatalogo = async function() {
+      const btn = document.getElementById('promo-btn-refresh');
+      if (btn) { btn.textContent = '↻ Atualizando...'; btn.disabled = true; }
+      window._promoCatalogoCache = null;
+      const token = window.promState.conta === 'filial' ? state?.ml_token_filial?.access_token : state?.ml_token?.access_token;
+      try {
+        const res = await fetch(`https://digoo-backend.vercel.app/api/ml-vendas?action=buscar-catalogo&token=${token}&refresh=1`);
+        const d = await res.json();
+        if (d.ok && d.itens) {
+          window._promoCatalogoCache = d.itens;
+          if (btn) { btn.textContent = `↻ ${d.itens.length} produtos carregados`; btn.disabled = false; }
+          const q = document.getElementById('promo-input-busca')?.value;
+          if (q) window._promoBuscar(q);
+        }
+      } catch(e) { if (btn) { btn.textContent = '↻ Erro ao atualizar'; btn.disabled = false; } }
     };
 
     window._promoCarregarCatalogo = async function() {
