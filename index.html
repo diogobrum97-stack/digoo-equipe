@@ -10414,11 +10414,48 @@ window.renderPromocoes = async function renderPromocoes(panel) {
         if (d.ok && d.itens && d.itens.length) {
           window._promoCatalogoCache = d.itens.filter(i => i.status === 'active');
           window._promoRenderLista(document.getElementById('promo-filtro')?.value || '');
+          // Enriquecer itens sem SKU/preço em background
+          window._promoEnriquecerLista(token);
         } else {
           lista.innerHTML = `<div style="font-size:12px;color:${T.text2};padding:20px 0;text-align:center;">Nenhum produto encontrado</div>`;
         }
       } catch(e) {
         lista.innerHTML = `<div style="font-size:12px;color:#E24B4A;text-align:center;">Erro: ${e.message}</div>`;
+      }
+    };
+
+    // Busca dados completos dos itens que vieram sem SKU/preço do cache
+    window._promoEnriquecerLista = async function(token) {
+      const catalogo = window._promoCatalogoCache || [];
+      const semDados = catalogo.filter(i => !i.sku || !i.preco || !i.thumbnail);
+      if (!semDados.length) return;
+      // Buscar em lotes de 20 via prices + detalhe
+      const ids = semDados.map(i => i.id);
+      for (let i = 0; i < ids.length; i += 20) {
+        const lote = ids.slice(i, i + 20);
+        try {
+          const r = await fetch(`https://api.mercadolibre.com/items?ids=${lote.join(',')}&attributes=id,seller_sku,price,thumbnail,available_quantity`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          // CORS vai bloquear — usar backend
+        } catch(e) {}
+        // Usar backend prices para enriquecer em batch
+        try {
+          const r = await fetch(`https://digoo-backend.vercel.app/api/ml-vendas?prices=1&token=${token}`);
+          const d = await r.json();
+          if (d.ok && d.prices) {
+            let updated = false;
+            d.prices.forEach(p => {
+              const item = catalogo.find(i => i.id === p.id);
+              if (item) {
+                if (!item.sku && p.sku) { item.sku = p.sku; updated = true; }
+                if (!item.preco && p.price) { item.preco = p.price; updated = true; }
+              }
+            });
+            if (updated) window._promoRenderLista(document.getElementById('promo-filtro')?.value || '');
+          }
+        } catch(e) {}
+        break; // prices endpoint já retorna tudo de uma vez
       }
     };
 
