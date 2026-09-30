@@ -276,7 +276,7 @@ const T = {
   get okTxt()   { return T.isLight ? "#15803d" : "#10b981"; },
   get cardShadow() { return T.isLight ? "0 1px 4px rgba(0,0,0,0.08)" : "none"; },
   // Cores semânticas adaptadas ao tema — usar nos cards da sidebar
-  get cVerde()  { return T.isLight ? "#00a650" : "#10b981"; },
+  get cVerde()  { return T.isLight ? "#00a63e" : "#00a63e"; },
   get cVermelho(){ return T.isLight ? "#e8003d" : "#E24B4A"; },
   get cAzul()   { return T.isLight ? "#3483fa" : "#3b82f6"; },
   get cAmarelo(){ return T.isLight ? "#d4820a" : "#f0b400"; },
@@ -2988,7 +2988,7 @@ function renderDashboard(panel, color) {
       const assunto = l.subject || "(sem assunto)";
       const dt = l.recebido_em ? new Date(l.recebido_em).toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"}) : "";
       return `<div onclick="window._diogotab='email';window._renderTab?.();" style="display:flex;align-items:center;gap:5px;padding:4px 0;cursor:pointer;border-bottom:0.5px solid ${T.border};" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
-        <span style="width:2px;height:12px;background:#10b981;border-radius:2px;flex-shrink:0;"></span>
+        <span style="width:2px;height:12px;background:#00a63e;border-radius:2px;flex-shrink:0;"></span>
         <div style="min-width:0;">
           <div style="font-size:11px;font-weight:600;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${assunto}</div>
           <div style="font-size:10px;color:${T.text2};">via digoo.com.br${dt?' · '+dt:''}</div>
@@ -3004,7 +3004,7 @@ function renderDashboard(panel, color) {
       <div style="width:100%;height:2px;background:${T.cAzul};border-radius:2px;margin-bottom:10px;"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
         ${mkContEmail("Inbox", T.cAzul, totalInbox, totalInbox > 0 ? "não lidos" : "Em dia ✓")}
-        ${mkContEmail("Leads", "#10b981", totalLeads, totalLeads > 0 ? "do site" : "—")}
+        ${mkContEmail("Leads", "#00a63e", totalLeads, totalLeads > 0 ? "do site" : "—")}
       </div>
       <div style="border-top:0.5px solid ${T.border};padding-top:8px;display:flex;flex-direction:column;gap:2px;max-height:200px;overflow-y:auto;">
         ${todasLinhas}
