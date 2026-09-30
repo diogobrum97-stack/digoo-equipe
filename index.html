@@ -2963,58 +2963,53 @@ function renderDashboard(panel, color) {
     const naoLidos = (emails || []).filter(e => e.unseen);
     const totalInbox = naoLidos.length;
     const leads = (window._emailFormularios||[]);
-    const totalLeads = leads.filter(f => !f.lido).length;
+    const totalLeads = leads.length;
 
-    const abaInboxAtiva = _emailCardAba === "inbox";
+    const mkContEmail = (label, cor, count, sub) =>
+      `<div data-cor="${cor}" data-prop="borderTopColor" style="border-top:1px solid ${cor};padding-top:6px;opacity:${count > 0 ? 1 : 0.35};">
+        <div data-cor="${cor}" data-prop="color" style="font-size:10px;font-weight:600;color:${cor};text-transform:uppercase;letter-spacing:0.5px;">${label}</div>
+        <div style="font-size:20px;font-weight:600;color:${T.text};line-height:1.2;">${count}</div>
+        <div style="font-size:10px;color:${T.text2};">${sub}</div>
+      </div>`;
 
-    // Abas
-    const abas = `<div style="display:flex;gap:0;margin-bottom:10px;border-bottom:0.5px solid ${T.border};">
-      <div onclick="window._emailCardAba='inbox';_emailCardAba='inbox';_renderEmailCard(emailState.emails);" style="font-size:11px;font-weight:600;padding:0 0 6px 0;margin-right:14px;cursor:pointer;color:${abaInboxAtiva?T.cAzul:T.text2};border-bottom:${abaInboxAtiva?`2px solid ${T.cAzul}`:'2px solid transparent'};transition:color .15s;">
-        Inbox${totalInbox>0?` <span style="background:${T.cAzul};color:#fff;border-radius:10px;font-size:9px;padding:1px 5px;margin-left:3px;">${totalInbox}</span>`:''}
-      </div>
-      <div onclick="window._emailCardAba='leads';_emailCardAba='leads';_renderEmailCard(emailState.emails);" style="font-size:11px;font-weight:600;padding:0 0 6px 0;cursor:pointer;color:${!abaInboxAtiva?T.cAzul:T.text2};border-bottom:${!abaInboxAtiva?`2px solid ${T.cAzul}`:'2px solid transparent'};transition:color .15s;">
-        Leads${totalLeads>0?` <span style="background:${T.cAzul};color:#fff;border-radius:10px;font-size:9px;padding:1px 5px;margin-left:3px;">${totalLeads}</span>`:''}
-      </div>
-    </div>`;
+    const linhasInbox = naoLidos.slice(0,4).map(e => {
+      const nome = e.from?.name || e.from?.address || e.from || "—";
+      const assunto = e.subject || "(sem assunto)";
+      return `<div onclick="window._diogotab='email';window._renderTab?.();" style="display:flex;align-items:center;gap:5px;padding:4px 0;cursor:pointer;border-bottom:0.5px solid ${T.border};" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
+        <span style="width:2px;height:12px;background:${T.cAzul};border-radius:2px;flex-shrink:0;"></span>
+        <div style="min-width:0;">
+          <div style="font-size:11px;font-weight:600;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nome}</div>
+          <div style="font-size:10px;color:${T.text2};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${assunto}</div>
+        </div>
+      </div>`;
+    }).join("");
 
-    let conteudo = "";
-    if (abaInboxAtiva) {
-      const lista = naoLidos.slice(0, 4).map(e => {
-        const nome = e.from?.name || e.from?.address || e.from || "—";
-        const assunto = e.subject || "(sem assunto)";
-        return `<div onclick="window._diogotab='email';window._renderTab?.();" style="display:flex;align-items:center;gap:5px;padding:5px 0;cursor:pointer;border-bottom:0.5px solid ${T.border};" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
-          <span style="width:6px;height:6px;border-radius:50%;background:${T.cAzul};flex-shrink:0;"></span>
-          <div style="min-width:0;">
-            <div style="font-size:11px;font-weight:600;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nome}</div>
-            <div style="font-size:10px;color:${T.text2};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${assunto}</div>
-          </div>
-        </div>`;
-      }).join("");
-      conteudo = totalInbox > 0
-        ? `${lista}<div onclick="window._diogotab='email';window._renderTab?.();" style="text-align:center;font-size:10px;color:${T.text2};padding:6px 0;cursor:pointer;">Ver todos →</div>`
-        : `<div style="font-size:11px;color:${T.text2};padding:8px 0;">Nenhum email não lido</div>`;
-    } else {
-      const listaLeads = leads.slice(0, 4).map(l => {
-        const assunto = l.subject || "(sem assunto)";
-        const dt = l.recebido_em ? new Date(l.recebido_em).toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"}) : "";
-        return `<div onclick="window._diogotab='email';window._emailSubTab='leads';window._renderTab?.();" style="display:flex;align-items:center;gap:5px;padding:5px 0;cursor:pointer;border-bottom:0.5px solid ${T.border};" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
-          <span style="width:6px;height:6px;border-radius:50%;background:${T.cAzul};flex-shrink:0;"></span>
-          <div style="min-width:0;flex:1;">
-            <div style="font-size:11px;font-weight:600;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${assunto}</div>
-            <div style="font-size:10px;color:${T.text2};">via digoo.com.br${dt?' · '+dt:''}</div>
-          </div>
-          ${!l.lido?`<span style="width:6px;height:6px;border-radius:50%;background:${T.cAzul};flex-shrink:0;"></span>`:''}
-        </div>`;
-      }).join("");
-      conteudo = leads.length > 0
-        ? `${listaLeads}<div onclick="window._diogotab='email';window._emailSubTab='leads';window._renderTab?.();" style="text-align:center;font-size:10px;color:${T.text2};padding:6px 0;cursor:pointer;">Ver todos →</div>`
-        : `<div style="font-size:11px;color:${T.text2};padding:8px 0;">Nenhum lead recebido</div>`;
-    }
+    const linhasLeads = leads.slice(0,4).map(l => {
+      const assunto = l.subject || "(sem assunto)";
+      const dt = l.recebido_em ? new Date(l.recebido_em).toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"}) : "";
+      return `<div onclick="window._diogotab='email';window._renderTab?.();" style="display:flex;align-items:center;gap:5px;padding:4px 0;cursor:pointer;border-bottom:0.5px solid ${T.border};" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
+        <span style="width:2px;height:12px;background:#10b981;border-radius:2px;flex-shrink:0;"></span>
+        <div style="min-width:0;">
+          <div style="font-size:11px;font-weight:600;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${assunto}</div>
+          <div style="font-size:10px;color:${T.text2};">via digoo.com.br${dt?' · '+dt:''}</div>
+        </div>
+      </div>`;
+    }).join("");
+
+    const todasLinhas = linhasInbox + linhasLeads;
+    const temItens = naoLidos.length > 0 || leads.length > 0;
 
     emailCard.innerHTML = `
       <div style="font-size:11px;font-weight:500;color:${T.text2};margin-bottom:8px;">Email</div>
       <div style="width:100%;height:2px;background:${T.cAzul};border-radius:2px;margin-bottom:10px;"></div>
-      ${abas}${conteudo}`;
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+        ${mkContEmail("Inbox", T.cAzul, totalInbox, totalInbox > 0 ? "não lidos" : "Em dia ✓")}
+        ${mkContEmail("Leads", "#10b981", totalLeads, totalLeads > 0 ? "do site" : "—")}
+      </div>
+      <div style="border-top:0.5px solid ${T.border};padding-top:8px;display:flex;flex-direction:column;gap:2px;max-height:200px;overflow-y:auto;">
+        ${todasLinhas}
+        ${!temItens ? `<div style="font-size:11px;color:${T.text2};padding:4px 0;">Nenhum email não lido</div>` : ""}
+      </div>`;
   }
   window._emailCardAba = "inbox";
 
