@@ -3191,13 +3191,6 @@ function renderDashboard(panel, color) {
         sbar.insertAdjacentHTML("beforeend", cardHtml);
         window._sbarApply();
         if (!window._sbarColorState['docs']) window._sbarToggleColor('docs');
-        // Inserir placeholder do email aqui, depois dos documentos
-        if (!document.getElementById("email-sbar-card")) {
-          const ph = document.createElement("div");
-          ph.id = "email-sbar-card";
-          ph.style.display = "none";
-          sbar.appendChild(ph);
-        }
       }
     } catch(e) { console.log("docs-hoje-sbar:", e.message); }
   })();
@@ -3216,18 +3209,6 @@ function renderDashboard(panel, color) {
           emailState.mailbox_id = d.mailbox_id;
         }
         const naoLidos = emailState.emails.filter(e => e.unseen);
-        renderCardEmail(naoLidos);
-      } catch(e) { console.log("email-sbar:", e.message); }
-
-      function renderCardEmail(naoLidos) {
-        let cardEl = document.getElementById("email-sbar-card");
-        if (!cardEl) {
-          const sbar = document.getElementById("dash-sidebar");
-          if (!sbar) return;
-          cardEl = document.createElement("div");
-          cardEl.id = "email-sbar-card";
-          sbar.appendChild(cardEl);
-        }
         const total = naoLidos.length;
         const emailListHtml = naoLidos.slice(0, 4).map(e => {
           const nome = e.from?.name || e.from?.address || e.from || "—";
@@ -3240,8 +3221,8 @@ function renderDashboard(panel, color) {
             </div>
           </div>`;
         }).join("");
-        cardEl.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:12px;padding:14px 16px;`;
-        cardEl.innerHTML = `
+
+        const cardHtmlEmail = `<div id="email-sbar-card" style="background:${T.card};border:0.5px solid ${T.border};border-radius:12px;padding:14px 16px;">
           <div style="font-size:11px;font-weight:500;color:${T.text2};margin-bottom:8px;">Email</div>
           <div style="width:100%;height:2px;background:${T.cAzul};border-radius:2px;margin-bottom:10px;"></div>
           <div style="font-size:10px;color:${T.text2};text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">NÃO LIDOS</div>
@@ -3249,9 +3230,32 @@ function renderDashboard(panel, color) {
           <div style="font-size:11px;color:${T.text2};margin-bottom:${total>0?'10px':'0'};">emails</div>
           ${total > 0 ? `<div style="border-top:0.5px solid ${T.border};padding-top:8px;">${emailListHtml}
             <div onclick="window._diogotab='email';window._renderTab?.();" style="text-align:center;font-size:10px;color:${T.text2};padding:6px 0;cursor:pointer;">Ver todos →</div>
-          </div>` : ""}`;
-      }
+          </div>` : ""}
+        </div>`;
+
+        // Remover card antigo se existir e reinserir no lugar certo
+        const antigo = document.getElementById("email-sbar-card");
+        if (antigo) antigo.remove();
+        const sbar = document.getElementById("dash-sidebar");
+        if (sbar) sbar.insertAdjacentHTML("beforeend", cardHtmlEmail);
+      } catch(e) { console.log("email-sbar:", e.message); }
     })();
+  } else if (emailState.emails) {
+    // Re-render após volta ao dashboard — recriar card com dados em cache
+    const antigo = document.getElementById("email-sbar-card");
+    if (!antigo) {
+      const naoLidos = emailState.emails.filter(e => e.unseen);
+      const total = naoLidos.length;
+      const mini = `<div id="email-sbar-card" style="background:${T.card};border:0.5px solid ${T.border};border-radius:12px;padding:14px 16px;">
+        <div style="font-size:11px;font-weight:500;color:${T.text2};margin-bottom:8px;">Email</div>
+        <div style="width:100%;height:2px;background:${T.cAzul};border-radius:2px;margin-bottom:10px;"></div>
+        <div style="font-size:10px;color:${T.text2};text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">NÃO LIDOS</div>
+        <div style="font-size:28px;font-weight:500;color:${total>0?T.cAzul:T.text};">${total}</div>
+        <div style="font-size:11px;color:${T.text2};">emails</div>
+      </div>`;
+      const sbar = document.getElementById("dash-sidebar");
+      if (sbar) sbar.insertAdjacentHTML("beforeend", mini);
+    }
   }
   // Buscar perguntas (com sugestão de IA) uma vez por sessão, reaproveitado pela aba dedicada
   if(perguntasState.lista === null && !perguntasState.carregando && !perguntasState.erro) {
