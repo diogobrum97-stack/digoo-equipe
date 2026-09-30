@@ -10506,8 +10506,18 @@ window.renderPromocoes = async function renderPromocoes(panel) {
       for (const item of selecionados) {
         let dealPrice;
         if (modoDesc === 'pct') {
-          if (!item.preco) { erros.push(`${item.titulo}: preço original não disponível para calcular %`); continue; }
-          dealPrice = Math.round(item.preco * (1 - descVal/100) * 100) / 100;
+          let precoReal = item.preco;
+          if (!precoReal) {
+            // Buscar preço real via status-promocao que já retorna original_price
+            try {
+              const sr = await fetch(`https://digoo-backend.vercel.app/api/ml-vendas?action=status-promocao&item_id=${item.id}&token=${token}`);
+              const sd = await sr.json();
+              const pd = (sd.promos||[]).find(p => p.original_price > 0);
+              precoReal = pd?.original_price || 0;
+            } catch(e) {}
+          }
+          if (!precoReal) { erros.push(`${item.titulo}: preço original não disponível para calcular %`); continue; }
+          dealPrice = Math.round(precoReal * (1 - descVal/100) * 100) / 100;
         } else {
           dealPrice = descVal;
         }
