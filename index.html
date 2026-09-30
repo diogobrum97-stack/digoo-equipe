@@ -2958,56 +2958,65 @@ function renderDashboard(panel, color) {
   emailCard.id = "email-sbar-card";
   emailCard.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:12px;padding:14px 16px;`;
 
+  let _emailCardAba = "inbox";
   function _renderEmailCard(emails) {
     const naoLidos = (emails || []).filter(e => e.unseen);
-    const total = naoLidos.length;
-    const lista = naoLidos.slice(0, 3).map(e => {
-      const nome = e.from?.name || e.from?.address || e.from || "—";
-      const assunto = e.subject || "(sem assunto)";
-      return `<div onclick="window._diogotab='email';window._renderTab?.();" style="display:flex;align-items:center;gap:5px;padding:5px 0;cursor:pointer;border-bottom:0.5px solid ${T.border};" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
-        <span style="width:6px;height:6px;border-radius:50%;background:${T.cAzul};flex-shrink:0;"></span>
-        <div style="min-width:0;">
-          <div style="font-size:11px;font-weight:600;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nome}</div>
-          <div style="font-size:10px;color:${T.text2};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${assunto}</div>
-        </div>
-      </div>`;
-    }).join("");
+    const totalInbox = naoLidos.length;
+    const leads = (window._emailFormularios||[]);
+    const totalLeads = leads.filter(f => !f.lido).length;
 
-    // Badges de vencimentos e leads (lidos do estado global)
-    const vencimentos = window._emailVencimentos || [];
-    const formularios = window._emailFormularios || [];
-    const vencNaoLidos = vencimentos.filter(v => !v.lido).length;
-    const leadNaoLidos = formularios.filter(f => !f.lido).length;
+    const abaInboxAtiva = _emailCardAba === "inbox";
 
-    const badgeVenc = vencNaoLidos > 0
-      ? `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border-radius:7px;background:#E24B4A18;border:0.5px solid #E24B4A44;margin-top:8px;cursor:pointer;" onclick="window._diogotab='email';window._emailSubTab='vencimentos';window._renderTab?.();">
-          <div style="display:flex;align-items:center;gap:5px;">
-            <div style="width:6px;height:6px;border-radius:50%;background:#E24B4A;animation:pulse-red 1s ease-in-out infinite;"></div>
-            <div style="font-size:11px;color:#E24B4A;font-weight:500;">Vence hoje</div>
+    // Abas
+    const abas = `<div style="display:flex;gap:0;margin-bottom:10px;border-bottom:0.5px solid ${T.border};">
+      <div onclick="window._emailCardAba='inbox';_emailCardAba='inbox';_renderEmailCard(emailState.emails);" style="font-size:11px;font-weight:600;padding:0 0 6px 0;margin-right:14px;cursor:pointer;color:${abaInboxAtiva?T.cAzul:T.text2};border-bottom:${abaInboxAtiva?`2px solid ${T.cAzul}`:'2px solid transparent'};transition:color .15s;">
+        Inbox${totalInbox>0?` <span style="background:${T.cAzul};color:#fff;border-radius:10px;font-size:9px;padding:1px 5px;margin-left:3px;">${totalInbox}</span>`:''}
+      </div>
+      <div onclick="window._emailCardAba='leads';_emailCardAba='leads';_renderEmailCard(emailState.emails);" style="font-size:11px;font-weight:600;padding:0 0 6px 0;cursor:pointer;color:${!abaInboxAtiva?T.cAzul:T.text2};border-bottom:${!abaInboxAtiva?`2px solid ${T.cAzul}`:'2px solid transparent'};transition:color .15s;">
+        Leads${totalLeads>0?` <span style="background:${T.cAzul};color:#fff;border-radius:10px;font-size:9px;padding:1px 5px;margin-left:3px;">${totalLeads}</span>`:''}
+      </div>
+    </div>`;
+
+    let conteudo = "";
+    if (abaInboxAtiva) {
+      const lista = naoLidos.slice(0, 4).map(e => {
+        const nome = e.from?.name || e.from?.address || e.from || "—";
+        const assunto = e.subject || "(sem assunto)";
+        return `<div onclick="window._diogotab='email';window._renderTab?.();" style="display:flex;align-items:center;gap:5px;padding:5px 0;cursor:pointer;border-bottom:0.5px solid ${T.border};" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
+          <span style="width:6px;height:6px;border-radius:50%;background:${T.cAzul};flex-shrink:0;"></span>
+          <div style="min-width:0;">
+            <div style="font-size:11px;font-weight:600;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nome}</div>
+            <div style="font-size:10px;color:${T.text2};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${assunto}</div>
           </div>
-          <div style="font-size:11px;font-weight:600;color:#E24B4A;">${vencNaoLidos}</div>
-        </div>` : "";
-
-    const badgeLead = leadNaoLidos > 0
-      ? `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border-radius:7px;background:#3483fa18;border:0.5px solid #3483fa44;margin-top:6px;cursor:pointer;" onclick="window._diogotab='email';window._emailSubTab='leads';window._renderTab?.();">
-          <div style="display:flex;align-items:center;gap:5px;">
-            <div style="width:6px;height:6px;border-radius:50%;background:#3483fa;"></div>
-            <div style="font-size:11px;color:#3483fa;font-weight:500;">Lead do site</div>
+        </div>`;
+      }).join("");
+      conteudo = totalInbox > 0
+        ? `${lista}<div onclick="window._diogotab='email';window._renderTab?.();" style="text-align:center;font-size:10px;color:${T.text2};padding:6px 0;cursor:pointer;">Ver todos →</div>`
+        : `<div style="font-size:11px;color:${T.text2};padding:8px 0;">Nenhum email não lido</div>`;
+    } else {
+      const listaLeads = leads.slice(0, 4).map(l => {
+        const assunto = l.subject || "(sem assunto)";
+        const dt = l.recebido_em ? new Date(l.recebido_em).toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"}) : "";
+        return `<div onclick="window._diogotab='email';window._emailSubTab='leads';window._renderTab?.();" style="display:flex;align-items:center;gap:5px;padding:5px 0;cursor:pointer;border-bottom:0.5px solid ${T.border};" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
+          <span style="width:6px;height:6px;border-radius:50%;background:${T.cAzul};flex-shrink:0;"></span>
+          <div style="min-width:0;flex:1;">
+            <div style="font-size:11px;font-weight:600;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${assunto}</div>
+            <div style="font-size:10px;color:${T.text2};">via digoo.com.br${dt?' · '+dt:''}</div>
           </div>
-          <div style="font-size:11px;font-weight:600;color:#3483fa;">${leadNaoLidos}</div>
-        </div>` : "";
+          ${!l.lido?`<span style="width:6px;height:6px;border-radius:50%;background:${T.cAzul};flex-shrink:0;"></span>`:''}
+        </div>`;
+      }).join("");
+      conteudo = leads.length > 0
+        ? `${listaLeads}<div onclick="window._diogotab='email';window._emailSubTab='leads';window._renderTab?.();" style="text-align:center;font-size:10px;color:${T.text2};padding:6px 0;cursor:pointer;">Ver todos →</div>`
+        : `<div style="font-size:11px;color:${T.text2};padding:8px 0;">Nenhum lead recebido</div>`;
+    }
 
     emailCard.innerHTML = `
       <div style="font-size:11px;font-weight:500;color:${T.text2};margin-bottom:8px;">Email</div>
       <div style="width:100%;height:2px;background:${T.cAzul};border-radius:2px;margin-bottom:10px;"></div>
-      <div style="font-size:10px;color:${T.text2};text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">NÃO LIDOS</div>
-      <div style="font-size:28px;font-weight:500;color:${total>0?T.cAzul:T.text};">${total}</div>
-      <div style="font-size:11px;color:${T.text2};margin-bottom:${(total>0||vencNaoLidos>0||leadNaoLidos>0)?'8px':'0'};">emails</div>
-      ${total > 0 ? `<div style="border-top:0.5px solid ${T.border};padding-top:8px;">${lista}
-        <div onclick="window._diogotab='email';window._renderTab?.();" style="text-align:center;font-size:10px;color:${T.text2};padding:6px 0;cursor:pointer;">Ver todos →</div>
-      </div>` : ""}
-      ${badgeVenc}${badgeLead}`;
+      ${abas}${conteudo}`;
   }
+  window._emailCardAba = "inbox";
 
   window._emailSbarRender = () => _renderEmailCard(emailState.emails);
 
@@ -3091,7 +3100,8 @@ function renderDashboard(panel, color) {
 
       // Contadores para o header lado a lado
       const totalContas = proximos.length;
-      const totalFiscal = (window._fiscalAgrupado||[]).filter(e => e.diff <= 7).length;
+      const guiasEmail = (window._emailVencimentos||[]).filter(v => !v.lido);
+      const totalFiscal = (window._fiscalAgrupado||[]).filter(e => e.diff <= 7).length + guiasEmail.length;
       const totalVenc = totalContas + totalFiscal;
 
       const corContas = T.cVermelho;
@@ -3149,6 +3159,14 @@ function renderDashboard(panel, color) {
         return mkVencRow(e.nome, cor, diaLabel, detalhes, null, false);
       }).join("");
 
+      // Guias do eContador (emails com "Vencimento no dia")
+      const linhasGuias = guiasEmail.slice(0,5).map(g => {
+        const cor = "#E24B4A";
+        const detalhes = mkCell("Valor", g.valor ? `R$ ${g.valor}` : "—") + mkCell("Vencimento", g.vencimento||"Hoje");
+        const barraExtra = `style="width:2px;height:12px;background:${cor};border-radius:2px;flex-shrink:0;display:inline-block;animation:pulse-red 1s ease-in-out infinite;"`;
+        return mkVencRow(g.titulo||g.subject||"Guia fiscal", cor, "Hoje", detalhes, barraExtra, true);
+      }).join("");
+
       const vencTitulo = totalVenc > 0 ? `Vencimentos · ${totalVenc}` : "Vencimentos";
       const vencCardHtml = `<div id="sbar-card-venc" style="background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:14px 16px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
@@ -3160,7 +3178,7 @@ function renderDashboard(panel, color) {
             ${mkContV("Contas", corContas, totalContas, totalContas > 0 ? fmtValV(totalValContas) : "Em dia ✓")}
             ${mkContV("Fiscal", corFiscal, totalFiscal, totalFiscal > 0 ? "obrigações" : "Em dia ✓")}
           </div>
-          ${totalVenc > 0 ? `<div style="border-top:0.5px solid ${T.border};padding-top:8px;display:flex;flex-direction:column;gap:2px;max-height:260px;overflow-y:auto;">${linhasContas}${linhasFiscal}</div>` : ""}
+          ${totalVenc > 0 ? `<div style="border-top:0.5px solid ${T.border};padding-top:8px;display:flex;flex-direction:column;gap:2px;max-height:260px;overflow-y:auto;">${linhasContas}${linhasGuias}${linhasFiscal}</div>` : ""}
         </div>
       </div>`;
 
