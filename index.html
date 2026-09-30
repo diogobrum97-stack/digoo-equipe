@@ -6717,6 +6717,15 @@ function render(){
             let emailContainer = panel.querySelector(".email-container");
             if(!emailContainer){ emailContainer=document.createElement("div"); emailContainer.className="email-container"; emailContainer.style.cssText="display:flex;flex-direction:column;width:100%;height:100%;padding:16px;box-sizing:border-box;overflow:hidden;"; panel.appendChild(emailContainer); }
             window.renderEmail(emailContainer);
+            // Polling a cada 30s enquanto na aba Email
+            if (window._emailPollingInterval) clearInterval(window._emailPollingInterval);
+            window._emailPollingInterval = setInterval(() => {
+              if (window._diogotab !== "email") { clearInterval(window._emailPollingInterval); return; }
+              if (emailState.emailAberto || emailState.carregando) return;
+              emailState.emails = null;
+              emailState.mailbox_id = null;
+              window.renderEmail(document.querySelector(".email-container"));
+            }, 30000);
           }else if(window._diogotab==="contas-pagar"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto"; panel.style.flex="1";
             // Limpa containers de outras abas para evitar conflito
