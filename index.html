@@ -10311,7 +10311,7 @@ window.renderPromocoes = async function renderPromocoes(panel) {
       window._promoCatalogoCache = null;
       window._promoRenderModal();
       modalEl.style.display = 'flex';
-      window._promoCarregarProdutos();
+      window._promoCarregarProdutos(true); // sempre força refresh para ter preço e SKU atualizados
     };
 
     // ── Render do modal (troca de step) ──
@@ -10439,7 +10439,26 @@ window.renderPromocoes = async function renderPromocoes(panel) {
         div.innerHTML = `<div style="min-width:0;flex:1;margin-right:10px;"><div style="font-size:11px;font-weight:500;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${i.titulo||''}</div><div style="font-size:10px;color:${T.text2};">${i.sku||''} · ${precoStr} · ${i.estoque||0} un</div></div><div style="font-size:10px;color:${T.cAzul};font-weight:600;flex-shrink:0;">Selecionar →</div>`;
         div.addEventListener('mouseover', () => { div.style.background = T.cAzul+'18'; div.style.borderColor = T.cAzul; });
         div.addEventListener('mouseout', () => { div.style.background = T.bg3; div.style.borderColor = T.border; });
-        div.addEventListener('click', () => {
+        div.addEventListener('click', async () => {
+          // Buscar dados reais do ML se preço ou SKU estiverem zerados
+          if (!i.preco || !i.sku) {
+            div.innerHTML = div.innerHTML.replace('Selecionar →', 'Carregando...');
+            const token = window.promState.conta === 'filial' ? state?.ml_token_filial?.access_token : state?.ml_token?.access_token;
+            try {
+              const r = await fetch(`https://digoo-backend.vercel.app/api/ml-vendas?action=status-promocao&item_id=${i.id}&token=${token}`);
+              const d = await r.json();
+              // Pegar preço original de qualquer promoção disponível
+              const pd = (d.promos||[]).find(p => p.original_price > 0);
+              if (pd) i.preco = pd.original_price;
+              // Buscar SKU via prices se não tiver
+              if (!i.sku) {
+                const pr = await fetch(`https://digoo-backend.vercel.app/api/ml-vendas?prices=1&token=${token}`);
+                const prd = await pr.json();
+                const found = (prd.prices||[]).find(p => p.id === i.id);
+                if (found) { i.sku = found.sku || ''; i.preco = i.preco || found.price || 0; }
+              }
+            } catch(e) {}
+          }
           window._promoProdutoSel = i;
           window._promoStep = 'configurar';
           window._promoRenderModal();
