@@ -9233,6 +9233,36 @@ setInterval(() => {
     if(!dashData || dashData.erro || (agora - (dashData._fetchedAt||0)) > 60*1000) {
       fetchDashboard();
     }
+
+// ── Listener Firebase para emails novos em tempo real ──────────────────────
+let _ultimaNotifEmail = Date.now();
+onValue(ref(db, "/email_notificacoes"), (snap) => {
+  const notifs = snap.val();
+  if (!notifs) return;
+  const chaves = Object.keys(notifs);
+  // Pegar a notificação mais recente
+  const ultima = notifs[chaves[chaves.length - 1]];
+  if (!ultima || ultima.recebido_em <= _ultimaNotifEmail) return;
+  _ultimaNotifEmail = ultima.recebido_em;
+  console.log("[email] nova notificação:", ultima.from, ultima.subject);
+  // Invalidar cache e atualizar
+  emailState.emails = null;
+  emailState.mailbox_id = null;
+  // Atualizar card do dashboard se visível
+  const emailCard = document.getElementById("email-sbar-card");
+  if (emailCard) {
+    emailCard.innerHTML = `
+      <div style="font-size:11px;font-weight:500;color:${T?.text2 || '#888'};margin-bottom:8px;">Email</div>
+      <div style="width:100%;height:2px;background:#3483fa;border-radius:2px;margin-bottom:10px;"></div>
+      <div style="font-size:11px;color:#3483fa;font-weight:600;">📬 Email novo!</div>
+      <div style="font-size:11px;color:${T?.text2 || '#888'};margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ultima.subject || "(sem assunto)"}</div>`;
+  }
+  // Se estiver na aba email, atualizar lista
+  if (window._diogotab === "email") {
+    const ec = document.querySelector(".email-container");
+    if (ec) window.renderEmail(ec);
+  }
+});
   }
 }, 30 * 1000); // checa a cada 30s, refaz busca se passou de 150s
 
