@@ -340,8 +340,21 @@ try {
     $make->tagICMSTot($std);
 
     // transp
-    $std = new stdClass(); $std->modFrete = 1; // 1 = frete por conta do destinatário/importador
+    $transp = $body['transportadora'] ?? null;
+    $modFrete = isset($transp['modFrete']) ? (int)$transp['modFrete'] : 1;
+    $std = new stdClass(); $std->modFrete = $modFrete;
     $make->tagtransp($std);
+
+    if (!empty($transp['nome'])) {
+        $std = new stdClass();
+        $std->xNome = mb_strtoupper(mb_substr($transp['nome'], 0, 60));
+        $std->CNPJ  = preg_replace('/\D/', '', $transp['cnpj'] ?? '');
+        $std->IE    = !empty($transp['ie']) ? $transp['ie'] : null;
+        $std->xEnder = null;
+        $std->xMun  = null;
+        $std->UF    = null;
+        $make->tagtransporta($std);
+    }
     $std = new stdClass();
     $std->item   = 1;
     $std->pesoL  = '0.000';
