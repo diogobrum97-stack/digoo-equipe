@@ -367,6 +367,22 @@ try {
     $xml = $make->getXML();
     $xmlAssinado = $tools->signNFe($xml);
 
+    // Modo validação — não envia para SEFAZ
+    if (!empty($body['apenas_validar'])) {
+        $domTemp = new DOMDocument();
+        $domTemp->loadXML($xmlAssinado);
+        $chaveNF = $domTemp->getElementsByTagName('infNFe')->item(0)?->getAttribute('Id') ?? '';
+        $chaveNF = preg_replace('/^NFe/', '', $chaveNF);
+        echo json_encode([
+            'ok'       => true,
+            'validado' => true,
+            'chave'    => $chaveNF,
+            'xml'      => $xmlAssinado,
+            'msg'      => 'XML gerado e validado com sucesso. Nao enviado para SEFAZ.',
+        ]);
+        exit;
+    }
+
     // Extrair chave
     $domTemp = new DOMDocument();
     $domTemp->loadXML($xmlAssinado);
