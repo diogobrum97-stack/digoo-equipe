@@ -9532,13 +9532,53 @@ async function renderNfImportacao(container) {
       </div>
 
       <!-- ICMS Global -->
-      <div style="background:${T.bg3};border:0.5px solid ${T.border};border-radius:10px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;gap:16px;">
-        <div style="font-size:12px;color:${T.text};font-weight:500;">Alíquota ICMS (todos os itens):</div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <input id="nfimp-icms-aliq" type="number" value="17.5" step="0.01" style="width:80px;padding:6px 10px;border-radius:6px;border:0.5px solid ${T.border};background:${T.bg};color:${T.text};font-size:13px;text-align:right;">
-          <span style="font-size:13px;color:${T.text2};">%</span>
+      <div style="background:${T.bg3};border:0.5px solid ${T.border};border-radius:10px;padding:14px 16px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <div style="font-size:12px;color:${T.text};font-weight:500;">ICMS (todos os itens):</div>
+          <select id="nfimp-icms-modo" onchange="window._nfimpToggleIcms()"
+            style="padding:5px 8px;border-radius:6px;border:0.5px solid ${T.border};background:${T.bg};color:${T.text};font-size:11px;">
+            <option value="pct">Alíquota (%)</option>
+            <option value="valor">Valor total (R$)</option>
+          </select>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <input id="nfimp-icms-aliq" type="number" value="17.5" step="0.01"
+              style="width:90px;padding:6px 10px;border-radius:6px;border:0.5px solid ${T.border};background:${T.bg};color:${T.text};font-size:13px;text-align:right;">
+            <span id="nfimp-icms-unidade" style="font-size:13px;color:${T.text2};">%</span>
+          </div>
+          <div style="font-size:10px;color:${T.text2};">(base = VMLE + II + frete + seguro por item)</div>
         </div>
-        <div style="font-size:11px;color:${T.text2};">(base = VMLE + II + frete + seguro por item)</div>
+      </div>
+
+      <!-- Transportadora -->
+      <div style="background:${T.bg3};border:0.5px solid ${T.border};border-radius:10px;padding:14px 16px;margin-bottom:16px;">
+        <div style="font-size:12px;font-weight:600;color:${T.text};margin-bottom:10px;">Transportadora</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div>
+            <div style="font-size:10px;color:${T.text2};margin-bottom:3px;">Razão Social</div>
+            <input id="nfimp-transp-nome" type="text" placeholder="Nome da transportadora"
+              style="width:100%;padding:7px 10px;border-radius:6px;border:0.5px solid ${T.border};background:${T.bg};color:${T.text};font-size:11px;box-sizing:border-box;">
+          </div>
+          <div>
+            <div style="font-size:10px;color:${T.text2};margin-bottom:3px;">CNPJ</div>
+            <input id="nfimp-transp-cnpj" type="text" placeholder="00.000.000/0000-00"
+              style="width:100%;padding:7px 10px;border-radius:6px;border:0.5px solid ${T.border};background:${T.bg};color:${T.text};font-size:11px;box-sizing:border-box;">
+          </div>
+          <div>
+            <div style="font-size:10px;color:${T.text2};margin-bottom:3px;">Modal</div>
+            <select id="nfimp-transp-modal"
+              style="width:100%;padding:7px 10px;border-radius:6px;border:0.5px solid ${T.border};background:${T.bg};color:${T.text};font-size:11px;">
+              <option value="1">Por conta do destinatário</option>
+              <option value="0">Por conta do emitente</option>
+              <option value="2">Por conta de terceiros</option>
+              <option value="9">Sem frete</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:10px;color:${T.text2};margin-bottom:3px;">IE (opcional)</div>
+            <input id="nfimp-transp-ie" type="text" placeholder="Inscrição Estadual"
+              style="width:100%;padding:7px 10px;border-radius:6px;border:0.5px solid ${T.border};background:${T.bg};color:${T.text};font-size:11px;box-sizing:border-box;">
+          </div>
+        </div>
       </div>
 
       <!-- Resumo tributos -->
@@ -9599,8 +9639,36 @@ async function renderNfImportacao(container) {
     window._nfimpItens = itensEditados;
   }
 
+  window._nfimpToggleIcms = function() {
+    const modo = document.getElementById('nfimp-icms-modo').value;
+    const unidade = document.getElementById('nfimp-icms-unidade');
+    const input = document.getElementById('nfimp-icms-aliq');
+    if (modo === 'valor') {
+      unidade.textContent = 'R$';
+      input.placeholder = 'ex: 10951,71';
+      input.value = '';
+    } else {
+      unidade.textContent = '%';
+      input.placeholder = '';
+      input.value = '17.5';
+    }
+  };
+
   function _nfimpMontarPayload(apenasValidar) {
-    const icmsAliq = parseFloat(document.getElementById('nfimp-icms-aliq').value) || 17.5;
+    const icmsModo = document.getElementById('nfimp-icms-modo')?.value || 'pct';
+    const icmsVal  = parseFloat(document.getElementById('nfimp-icms-aliq').value) || 0;
+    const icmsAliq = icmsModo === 'pct' ? icmsVal : 17.5; // alíquota só para referência
+    const icmsValorTotal = icmsModo === 'valor' ? icmsVal : 0; // valor fixo total
+
+    // Transportadora
+    const transpNome  = document.getElementById('nfimp-transp-nome')?.value?.trim() || '';
+    const transpCnpj  = (document.getElementById('nfimp-transp-cnpj')?.value || '').replace(/\D/g, '');
+    const transpModal = document.getElementById('nfimp-transp-modal')?.value || '1';
+    const transpIE    = document.getElementById('nfimp-transp-ie')?.value?.trim() || '';
+
+    // Calcular total VMLE para distribuir valor fixo de ICMS proporcionalmente
+    const totalVmle = (window._nfimpItens || []).reduce((s,i) => s + Number(i.vmle||0), 0);
+
     return {
       apenas_validar: apenasValidar,
       duimpNumero: duimpData.numero,
@@ -9613,13 +9681,20 @@ async function renderNfImportacao(container) {
       vSeguro: duimpData.seguro || 0,
       vSiscomex: duimpData.siscomex || 0,
       icmsAliquota: icmsAliq,
-      nNF: 1, // TODO: buscar próximo número
+      nNF: 1,
+      transportadora: transpNome ? { nome: transpNome, cnpj: transpCnpj, modFrete: parseInt(transpModal), ie: transpIE } : null,
       itens: window._nfimpItens.map(it => {
         const vmle = Number(it.vmle || 0);
-        const aliqIcms = icmsAliq;
-        // Base ICMS = VMLE + II + frete proporcional + seguro proporcional (simplificado: usar vBCICMS se preenchido)
-        const vBCICMS = Number(it.baseIcms || it.vmle || 0);
-        const vICMS   = Math.round(vBCICMS * (aliqIcms/100) * 100) / 100;
+        let vBCICMS, vICMS;
+        if (icmsModo === 'valor' && icmsValorTotal > 0 && totalVmle > 0) {
+          // Distribuir valor fixo proporcionalmente ao VMLE de cada item
+          const proporcao = vmle / totalVmle;
+          vICMS   = Math.round(icmsValorTotal * proporcao * 100) / 100;
+          vBCICMS = totalVmle > 0 ? Math.round((vICMS / (icmsAliq / 100)) * 100) / 100 : vmle;
+        } else {
+          vBCICMS = Number(it.baseIcms || vmle);
+          vICMS   = Math.round(vBCICMS * (icmsAliq / 100) * 100) / 100;
+        }
         return {
           sku:      it.sku || '',
           ncm:      it.ncm || '',
@@ -9630,23 +9705,11 @@ async function renderNfImportacao(container) {
           vUnCom:   Number(it.valorUnitario || 0),
           vProd:    Number(it.vmle || 0),
           orig:     8,
-          // ICMS
-          vBCICMS, pICMS: aliqIcms, vICMS,
-          // II
-          vBCII:  vmle,
-          vII:    Number(it.valorII || 0),
-          // IPI
-          vBCIPI: vmle,
-          pIPI:   Number(it.aliqIPI || 0),
-          vIPI:   Number(it.valorIPI || 0),
-          // PIS
-          vBCPIS: Number(it.basePIS || vmle),
-          pPIS:   Number(it.aliqPIS || 0),
-          vPIS:   Number(it.valorPIS || 0),
-          // COFINS
-          vBCCOFINS: Number(it.baseCOFINS || vmle),
-          pCOFINS:   Number(it.aliqCOFINS || 0),
-          vCOFINS:   Number(it.valorCOFINS || 0),
+          vBCICMS, pICMS: icmsAliq, vICMS,
+          vBCII:  vmle, vII:    Number(it.valorII || 0),
+          vBCIPI: vmle, pIPI:   Number(it.aliqIPI || 0), vIPI: Number(it.valorIPI || 0),
+          vBCPIS: Number(it.basePIS || vmle), pPIS:   Number(it.aliqPIS || 0), vPIS: Number(it.valorPIS || 0),
+          vBCCOFINS: Number(it.baseCOFINS || vmle), pCOFINS: Number(it.aliqCOFINS || 0), vCOFINS: Number(it.valorCOFINS || 0),
           vmle,
         };
       }),
