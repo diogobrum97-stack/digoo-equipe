@@ -3059,7 +3059,7 @@ function renderDashboard(panel, color) {
 
   // 4º card — Vencimentos próximos (async, adicionado depois)
   (async () => {
-    const mesAtual = new Date().toISOString().slice(0,7);
+    const mesAtual = new Date().toLocaleString('sv-SE', {timeZone:'America/Sao_Paulo'}).slice(0,7);
     const mesPath = mesAtual.replace("-","/");
     try {
       const snap = await get(ref(db, `/contas_pagar/${mesPath}`));
@@ -3354,7 +3354,7 @@ function renderDashboard(panel, color) {
 
   // ── Card de vencimentos próximos ──────────────────────────────────────────
   (async () => {
-    const mesAtual = new Date().toISOString().slice(0,7);
+    const mesAtual = new Date().toLocaleString('sv-SE', {timeZone:'America/Sao_Paulo'}).slice(0,7);
     const mesPath = mesAtual.replace("-","/");
     try {
       const snap = await get(ref(db, `/contas_pagar/${mesPath}`));
