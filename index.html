@@ -9584,8 +9584,12 @@ async function renderNfImportacao(container) {
           style="padding:10px 20px;border-radius:8px;border:0.5px solid ${T.border};background:${T.bg3};color:${T.text2};font-size:12px;cursor:pointer;">
           ← Novo upload
         </button>
-        <button id="nfimp-btn-emitir" onclick="window._nfimpEmitir()"
-          style="flex:1;padding:11px;border-radius:8px;background:${T.cAzul};border:none;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">
+        <button id="nfimp-btn-validar" onclick="window._nfimpValidar()"
+          style="padding:11px 20px;border-radius:8px;background:${T.bg3};border:0.5px solid ${T.border};color:${T.text};font-size:12px;font-weight:600;cursor:pointer;">
+          Validar XML
+        </button>
+        <button id="nfimp-btn-emitir" onclick="window._nfimpEmitir()" disabled
+          style="flex:1;padding:11px;border-radius:8px;background:#444;border:none;color:#888;font-size:13px;font-weight:600;cursor:not-allowed;">
           Emitir NF-e de Entrada
         </button>
       </div>
@@ -9595,50 +9599,127 @@ async function renderNfImportacao(container) {
     window._nfimpItens = itensEditados;
   }
 
+  function _nfimpMontarPayload(apenasValidar) {
+    const icmsAliq = parseFloat(document.getElementById('nfimp-icms-aliq').value) || 17.5;
+    return {
+      apenas_validar: apenasValidar,
+      duimpNumero: duimpData.numero,
+      dataEmissao: duimpData.dataRegistro,
+      dataEntrada: duimpData.dataRegistro,
+      exportadorNome: duimpData.exportador?.nome || '',
+      exportadorPais: duimpData.exportador?.pais || 'China, República Popular',
+      codPaisExp: duimpData.exportador?.codigoPais || '1058',
+      vFrete: duimpData.frete || 0,
+      vSeguro: duimpData.seguro || 0,
+      vSiscomex: duimpData.siscomex || 0,
+      icmsAliquota: icmsAliq,
+      nNF: 1, // TODO: buscar próximo número
+      itens: window._nfimpItens.map(it => {
+        const vmle = Number(it.vmle || 0);
+        const aliqIcms = icmsAliq;
+        // Base ICMS = VMLE + II + frete proporcional + seguro proporcional (simplificado: usar vBCICMS se preenchido)
+        const vBCICMS = Number(it.baseIcms || it.vmle || 0);
+        const vICMS   = Math.round(vBCICMS * (aliqIcms/100) * 100) / 100;
+        return {
+          sku:      it.sku || '',
+          ncm:      it.ncm || '',
+          xProd:    it.descricao || '',
+          cfop:     '3102',
+          uCom:     it.unidade || 'UN',
+          qCom:     Number(it.quantidade || 1),
+          vUnCom:   Number(it.valorUnitario || 0),
+          vProd:    Number(it.vmle || 0),
+          orig:     8,
+          // ICMS
+          vBCICMS, pICMS: aliqIcms, vICMS,
+          // II
+          vBCII:  vmle,
+          vII:    Number(it.valorII || 0),
+          // IPI
+          vBCIPI: vmle,
+          pIPI:   Number(it.aliqIPI || 0),
+          vIPI:   Number(it.valorIPI || 0),
+          // PIS
+          vBCPIS: Number(it.basePIS || vmle),
+          pPIS:   Number(it.aliqPIS || 0),
+          vPIS:   Number(it.valorPIS || 0),
+          // COFINS
+          vBCCOFINS: Number(it.baseCOFINS || vmle),
+          pCOFINS:   Number(it.aliqCOFINS || 0),
+          vCOFINS:   Number(it.valorCOFINS || 0),
+          vmle,
+        };
+      }),
+    };
+  }
+
+  window._nfimpValidar = async function() {
+    const btn = document.getElementById('nfimp-btn-validar');
+    const btnEmitir = document.getElementById('nfimp-btn-emitir');
+    const statusEl = document.getElementById('nfimp-status');
+    btn.disabled = true; btn.textContent = 'Validando...';
+    statusEl.innerHTML = '';
+    try {
+      const payload = _nfimpMontarPayload(true);
+      const res = await fetch('https://nfe.digoo.com.br/importacao', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const d = await res.json();
+      if (d.ok && d.validado) {
+        statusEl.innerHTML = `<div style="background:${T.okBg||'#00a63e22'};border:0.5px solid #00a63e;border-radius:8px;padding:10px 12px;color:#00a63e;">
+          ✓ XML válido e assinado! Pronto para emitir.<br>
+          <span style="font-size:10px;color:${T.text2};">Chave: ${d.chave?.slice(0,20)||''}...</span>
+        </div>`;
+        btnEmitir.disabled = false;
+        btnEmitir.style.background = T.cAzul;
+        btnEmitir.style.color = '#fff';
+        btnEmitir.style.cursor = 'pointer';
+        window._nfimpXmlValidado = true;
+      } else {
+        statusEl.innerHTML = `<div style="background:#E24B4A22;border:0.5px solid #E24B4A;border-radius:8px;padding:10px 12px;color:#E24B4A;">
+          Erro na validação: ${d.erro || d.xMotivo || 'falha desconhecida'}<br>
+          <span style="font-size:10px;">cStat: ${d.cStat||''}</span>
+        </div>`;
+      }
+    } catch(e) {
+      statusEl.innerHTML = `<span style="color:#E24B4A;">Erro: ${e.message}</span>`;
+    }
+    btn.disabled = false; btn.textContent = 'Validar XML';
+  };
+
   window._nfimpEmitir = async function() {
+    if (!window._nfimpXmlValidado) return;
     const btn = document.getElementById('nfimp-btn-emitir');
     const statusEl = document.getElementById('nfimp-status');
-    const icmsAliq = parseFloat(document.getElementById('nfimp-icms-aliq').value) || 17.5;
 
-    // Validar SKUs
-    const semSku = window._nfimpItens.filter(i => !i.sku);
-    if (semSku.length) {
-      statusEl.innerHTML = `<span style="color:#E24B4A;">Preencha o SKU de todos os itens (${semSku.length} faltando)</span>`;
-      return;
-    }
+    // Confirmação antes de emitir
+    if (!confirm('Confirma a emissão da NF-e de entrada? Esta ação enviará a nota para a SEFAZ.')) return;
 
     btn.disabled = true; btn.textContent = 'Emitindo...';
     statusEl.innerHTML = '';
-
-    // Buscar token Bling
-    const blingSnap = await fetch('https://digoo-equipe-default-rtdb.firebaseio.com/bling_token.json');
-    const blingToken = await blingSnap.json();
-    if (!blingToken?.access_token) {
-      statusEl.innerHTML = `<span style="color:#E24B4A;">Token Bling não encontrado — reconecte o Bling</span>`;
-      btn.disabled = false; btn.textContent = 'Emitir NF-e de Entrada';
-      return;
-    }
-
     try {
-      const res = await fetch(`${BACKEND}/api/bling-produtos?action=emitir-nf-importacao&token=${blingToken.access_token}`, {
+      const payload = _nfimpMontarPayload(false); // sem apenas_validar = emite de verdade
+      const res = await fetch('https://nfe.digoo.com.br/importacao', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          itens: window._nfimpItens,
-          duimp: { numero: duimpData.numero },
-          exportador: duimpData.exportador,
-          dataEmissao: duimpData.dataRegistro,
-          frete: duimpData.frete,
-          seguro: duimpData.seguro,
-          siscomex: duimpData.siscomex,
-          icmsAliquota: icmsAliq,
-        })
+        body: JSON.stringify(payload)
       });
       const d = await res.json();
       if (d.ok) {
-        statusEl.innerHTML = `<span style="color:#00a63e;">✓ NF-e emitida com sucesso! Número: ${d.numero || '—'} · Chave: ${d.chaveAcesso?.slice(0,20)||''}...</span>`;
+        const numero = d.chave ? d.chave.substring(25,34) : '—';
+        statusEl.innerHTML = `<div style="background:${T.okBg||'#00a63e22'};border:0.5px solid #00a63e;border-radius:8px;padding:14px;">
+          <div style="font-size:13px;font-weight:700;color:#00a63e;margin-bottom:8px;">✓ NF-e emitida com sucesso!</div>
+          <div style="font-size:11px;color:${T.text2};">Número: <strong style="color:${T.text};">${numero}</strong></div>
+          <div style="font-size:11px;color:${T.text2};">Chave: <span style="font-family:monospace;font-size:10px;">${d.chave||'—'}</span></div>
+          <div style="font-size:10px;color:${T.text2};margin-top:4px;">Status: ${d.xMotivo||'Autorizado'}</div>
+        </div>`;
         btn.textContent = '✓ Emitida';
+        window._nfimpXmlValidado = false;
       } else {
-        statusEl.innerHTML = `<span style="color:#E24B4A;">Erro: ${d.erro || 'falha desconhecida'}</span><br><span style="font-size:10px;color:${T.text2};">${JSON.stringify(d.detalhe||'').slice(0,200)}</span>`;
+        statusEl.innerHTML = `<div style="background:#E24B4A22;border:0.5px solid #E24B4A;border-radius:8px;padding:10px 12px;color:#E24B4A;">
+          Erro: ${d.erro || d.xMotivo || 'falha'}<br>
+          <span style="font-size:10px;">cStat: ${d.cStat||''}</span>
+        </div>`;
         btn.disabled = false; btn.textContent = 'Emitir NF-e de Entrada';
       }
     } catch(e) {
