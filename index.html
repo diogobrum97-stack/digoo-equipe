@@ -9653,6 +9653,23 @@ async function renderNfImportacao(container) {
     };
   }
 
+  window._nfimpVerDanfe = async function() {
+    if (!window._nfimpXmlGerado) return;
+    try {
+      const res = await fetch('https://nfe.digoo.com.br/danfe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ xml: window._nfimpXmlGerado })
+      });
+      if (!res.ok) { alert('Erro ao gerar DANFE'); return; }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch(e) {
+      alert('Erro: ' + e.message);
+    }
+  };
+
   window._nfimpValidar = async function() {
     const btn = document.getElementById('nfimp-btn-validar');
     const btnEmitir = document.getElementById('nfimp-btn-emitir');
@@ -9667,9 +9684,13 @@ async function renderNfImportacao(container) {
       });
       const d = await res.json();
       if (d.ok && d.validado) {
-        statusEl.innerHTML = `<div style="background:${T.okBg||'#00a63e22'};border:0.5px solid #00a63e;border-radius:8px;padding:10px 12px;color:#00a63e;">
-          ✓ XML válido e assinado! Pronto para emitir.<br>
-          <span style="font-size:10px;color:${T.text2};">Chave: ${d.chave?.slice(0,20)||''}...</span>
+        window._nfimpXmlGerado = d.xml; // guardar XML para DANFE e emissão
+        statusEl.innerHTML = `<div style="background:${T.okBg||'#00a63e22'};border:0.5px solid #00a63e;border-radius:8px;padding:10px 12px;">
+          <div style="color:#00a63e;font-weight:600;margin-bottom:6px;">✓ XML válido e assinado! Pronto para emitir.</div>
+          <div style="font-size:10px;color:${T.text2};margin-bottom:8px;">Chave: ${d.chave?.slice(0,20)||''}...</div>
+          <button onclick="window._nfimpVerDanfe()" style="padding:6px 14px;border-radius:6px;border:0.5px solid #00a63e;background:transparent;color:#00a63e;font-size:11px;cursor:pointer;font-weight:600;">
+            📄 Ver DANFE (pré-visualização)
+          </button>
         </div>`;
         btnEmitir.disabled = false;
         btnEmitir.style.background = T.cAzul;
