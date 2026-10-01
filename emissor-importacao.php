@@ -145,27 +145,25 @@ try {
     $std->fone   = '51981482213';
     $make->tagenderEmit($std);
 
-    // dest — exportador exterior
+    // dest — na NF-e de entrada de importação, o destinatário é o próprio importador
     $std = new stdClass();
-    $std->CNPJ       = null;
-    $std->CPF        = null;
-    $std->idEstrangeiro = preg_replace('/[^a-zA-Z0-9]/', '', $exportadorNome); // identificação estrangeiro
-    $std->xNome      = strtoupper($exportadorNome);
-    $std->indIEDest  = 9; // 9 = não contribuinte
-    $std->IE         = null;
+    $std->CNPJ       = $cnpjEmit;
+    $std->xNome      = 'DIGOO BRASIL IMPORTACAO E DISTRIBUICAO LTDA';
+    $std->indIEDest  = 1; // contribuinte ICMS
+    $std->IE         = $ieEmit;
     $std->email      = null;
     $make->tagdest($std);
 
     $std = new stdClass();
-    $std->xLgr   = $exportadorEnd;
-    $std->nro    = 'SN';
-    $std->xBairro= 'NAO INFORMADO';
-    $std->cMun   = 9999999;
-    $std->xMun   = 'EXTERIOR';
-    $std->UF     = 'EX';
-    $std->CEP    = '00000000';
-    $std->cPais  = (int)$codPaisExp;
-    $std->xPais  = $exportadorPais;
+    $std->xLgr   = $lgrEmit;
+    $std->nro    = $nroEmit;
+    $std->xBairro= $bairroEmit;
+    $std->cMun   = $cMunEmit;
+    $std->xMun   = $xMunEmit;
+    $std->UF     = $ufEmit;
+    $std->CEP    = $cepEmit;
+    $std->cPais  = 1058;
+    $std->xPais  = 'Brasil';
     $make->tagenderDest($std);
 
     // autXML
