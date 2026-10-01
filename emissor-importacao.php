@@ -313,8 +313,7 @@ try {
         $std->nAdicao     = $item;
         $std->nSeqAdic    = 1;
         $std->cFabricante = mb_substr(preg_replace('/[^a-zA-Z0-9 ]/', '', $exportadorNome), 0, 60);
-        $std->vDescDI     = '0.00';
-        $std->nDraw       = null;
+        $std->vDescDI     = null; // omitir quando zero — NFePHP só aceita valores > 0
         $make->tagadi($std);
     }
 
