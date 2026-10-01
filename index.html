@@ -6729,6 +6729,11 @@ function render(){
             let nfFullContainer = panel.querySelector(".nf-full-container");
             if(!nfFullContainer){ nfFullContainer = document.createElement("div"); nfFullContainer.className="nf-full-container"; panel.appendChild(nfFullContainer); }
             renderNfTransferenciaFull(nfFullContainer, color);
+          }else if(window._diogotab==="nf-importacao"){
+            panel.style.maxHeight="none"; panel.style.overflowY="auto";
+            let nfImpContainer = panel.querySelector(".nf-importacao-container");
+            if(!nfImpContainer){ nfImpContainer = document.createElement("div"); nfImpContainer.className="nf-importacao-container"; panel.appendChild(nfImpContainer); }
+            renderNfImportacao(nfImpContainer);
           }else if(window._diogotab==="conferencia"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
             let confContainer = panel.querySelector(".conf-container");
@@ -9444,6 +9449,204 @@ async function nfFullCarregarCmp() {
     }
   } catch(e) {}
 } // upload | processando | preview | emitindo | concluido
+
+// ── NF de Entrada de Importação (DUIMP) ──────────────────────────────────────
+async function renderNfImportacao(container) {
+  const BACKEND = "https://digoo-backend.vercel.app";
+  let duimpData = null; // dados parseados da DUIMP
+  let itensEditados = []; // itens com SKU e ICMS preenchidos pelo usuário
+
+  container.innerHTML = `
+    <div style="max-width:900px;margin:0 auto;padding:20px 0;">
+      <div style="font-size:16px;font-weight:600;color:${T.text};margin-bottom:4px;">NF-e de Entrada — Importação</div>
+      <div style="font-size:12px;color:${T.text2};margin-bottom:20px;">Faça upload do JSON da DUIMP para gerar a NF-e de entrada</div>
+
+      <!-- Step 1: Upload JSON -->
+      <div id="nfimp-step1">
+        <label id="nfimp-label" style="display:block;border:2px dashed ${T.border};border-radius:10px;padding:32px;text-align:center;cursor:pointer;margin-bottom:16px;transition:border-color .2s;"
+          onmouseover="this.style.borderColor='${T.cAzul}'" onmouseout="this.style.borderColor='${T.border}'">
+          <input type="file" id="nfimp-file" accept=".json" style="display:none;">
+          <div style="font-size:24px;margin-bottom:8px;">📄</div>
+          <div style="font-size:13px;font-weight:500;color:${T.text};">Clique para selecionar o JSON da DUIMP</div>
+          <div style="font-size:11px;color:${T.text2};margin-top:4px;">Arquivo .json exportado do Siscomex/Portal Único</div>
+        </label>
+        <div id="nfimp-upload-status" style="font-size:12px;color:${T.text2};text-align:center;"></div>
+      </div>
+
+      <!-- Step 2: Revisão -->
+      <div id="nfimp-step2" style="display:none;"></div>
+    </div>`;
+
+  // Handler do upload
+  document.getElementById('nfimp-file').addEventListener('change', async function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const status = document.getElementById('nfimp-upload-status');
+    status.textContent = 'Processando...';
+    try {
+      const text = await file.text();
+      const json = JSON.parse(text);
+      // Enviar para o backend parsear
+      const res = await fetch(`${BACKEND}/api/bling-produtos?action=parsear-duimp`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(json)
+      });
+      const d = await res.json();
+      if (!d.ok) { status.textContent = 'Erro: ' + (d.erro || 'falha ao parsear'); return; }
+      duimpData = d.resultado;
+      itensEditados = duimpData.itens.map(i => ({ ...i }));
+      status.textContent = '';
+      renderRevisao();
+    } catch(e) {
+      status.textContent = 'Erro: ' + e.message;
+    }
+  });
+
+  function renderRevisao() {
+    const step2 = document.getElementById('nfimp-step2');
+    document.getElementById('nfimp-step1').style.display = 'none';
+    step2.style.display = 'block';
+
+    const totalVmle = itensEditados.reduce((s,i) => s + Number(i.vmle||0), 0);
+    const totalII = itensEditados.reduce((s,i) => s + Number(i.valorII||0), 0);
+    const totalIPI = itensEditados.reduce((s,i) => s + Number(i.valorIPI||0), 0);
+    const totalPIS = itensEditados.reduce((s,i) => s + Number(i.valorPIS||0), 0);
+    const totalCOFINS = itensEditados.reduce((s,i) => s + Number(i.valorCOFINS||0), 0);
+    const fmt = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
+
+    step2.innerHTML = `
+      <!-- Cabeçalho DUIMP -->
+      <div style="background:${T.bg3};border:0.5px solid ${T.border};border-radius:10px;padding:14px 16px;margin-bottom:16px;">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
+          <div><div style="font-size:10px;color:${T.text2};">DUIMP</div><div style="font-size:13px;font-weight:600;color:${T.text};">${duimpData.numero}</div></div>
+          <div><div style="font-size:10px;color:${T.text2};">Data Registro</div><div style="font-size:13px;color:${T.text};">${duimpData.dataRegistro}</div></div>
+          <div><div style="font-size:10px;color:${T.text2};">País Procedência</div><div style="font-size:13px;color:${T.text};">${duimpData.paisProcedencia}</div></div>
+          <div><div style="font-size:10px;color:${T.text2};">Exportador</div><div style="font-size:12px;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${duimpData.exportador?.nome||'—'}</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:10px;">
+          <div><div style="font-size:10px;color:${T.text2};">VMLE Total</div><div style="font-size:13px;font-weight:600;color:${T.text};">${fmt(duimpData.vmleTotal)}</div></div>
+          <div><div style="font-size:10px;color:${T.text2};">Frete</div><div style="font-size:13px;color:${T.text};">${fmt(duimpData.frete)}</div></div>
+          <div><div style="font-size:10px;color:${T.text2};">Seguro</div><div style="font-size:13px;color:${T.text};">${fmt(duimpData.seguro)}</div></div>
+          <div><div style="font-size:10px;color:${T.text2};">SISCOMEX</div><div style="font-size:13px;color:${T.text};">${fmt(duimpData.siscomex)}</div></div>
+        </div>
+      </div>
+
+      <!-- ICMS Global -->
+      <div style="background:${T.bg3};border:0.5px solid ${T.border};border-radius:10px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;gap:16px;">
+        <div style="font-size:12px;color:${T.text};font-weight:500;">Alíquota ICMS (todos os itens):</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input id="nfimp-icms-aliq" type="number" value="17.5" step="0.01" style="width:80px;padding:6px 10px;border-radius:6px;border:0.5px solid ${T.border};background:${T.bg};color:${T.text};font-size:13px;text-align:right;">
+          <span style="font-size:13px;color:${T.text2};">%</span>
+        </div>
+        <div style="font-size:11px;color:${T.text2};">(base = VMLE + II + frete + seguro por item)</div>
+      </div>
+
+      <!-- Resumo tributos -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;">
+        ${[['II',totalII,'#f97316'],['IPI',totalIPI,'#8b5cf6'],['PIS',totalPIS,'#3483fa'],['COFINS',totalCOFINS,'#10b981']].map(([l,v,c]) =>
+          `<div style="background:${T.bg3};border:0.5px solid ${T.border};border-radius:8px;padding:10px 12px;">
+            <div style="font-size:10px;color:${c};font-weight:600;">${l}</div>
+            <div style="font-size:14px;font-weight:600;color:${T.text};">${fmt(v)}</div>
+          </div>`).join('')}
+      </div>
+
+      <!-- Itens -->
+      <div style="font-size:12px;font-weight:600;color:${T.text};margin-bottom:8px;">Itens (${itensEditados.length})</div>
+      <div id="nfimp-itens" style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;">
+        ${itensEditados.map((it, idx) => `
+          <div style="background:${T.bg3};border:0.5px solid ${T.border};border-radius:8px;padding:12px 14px;">
+            <div style="display:grid;grid-template-columns:60px 1fr 100px 100px;gap:10px;align-items:start;margin-bottom:8px;">
+              <div style="font-size:10px;color:${T.text2};">Item ${it.numeroItem}</div>
+              <div style="font-size:11px;font-weight:500;color:${T.text};">${it.descricao || '—'}</div>
+              <div style="font-size:10px;color:${T.text2};">NCM: ${it.ncm}</div>
+              <div style="font-size:10px;color:${T.text2};">${Number(it.quantidade).toLocaleString('pt-BR')} UN</div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr 1fr;gap:8px;margin-bottom:8px;">
+              <div><div style="font-size:9px;color:${T.text2};">VMLE</div><div style="font-size:11px;color:${T.text};">${fmt(it.vmle)}</div></div>
+              <div><div style="font-size:9px;color:#f97316;">II</div><div style="font-size:11px;color:${T.text};">${fmt(it.valorII)}</div></div>
+              <div><div style="font-size:9px;color:#8b5cf6;">IPI (${it.aliqIPI}%)</div><div style="font-size:11px;color:${T.text};">${fmt(it.valorIPI)}</div></div>
+              <div><div style="font-size:9px;color:#3483fa;">PIS</div><div style="font-size:11px;color:${T.text};">${fmt(it.valorPIS)}</div></div>
+              <div><div style="font-size:9px;color:#10b981;">COFINS</div><div style="font-size:11px;color:${T.text};">${fmt(it.valorCOFINS)}</div></div>
+              <div><div style="font-size:9px;color:${T.text2};">Vl Unit</div><div style="font-size:11px;color:${T.text};">${fmt(it.valorUnitario)}</div></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="font-size:10px;color:${T.text2};width:30px;">SKU</div>
+              <input type="text" placeholder="SKU no Bling (obrigatório)" value="${it.sku||''}"
+                onchange="window._nfimpItens[${idx}].sku = this.value"
+                style="flex:1;padding:5px 8px;border-radius:6px;border:0.5px solid ${T.border};background:${T.bg};color:${T.text};font-size:11px;">
+            </div>
+          </div>`).join('')}
+      </div>
+
+      <!-- Botões -->
+      <div style="display:flex;gap:10px;align-items:center;">
+        <button onclick="document.getElementById('nfimp-step1').style.display='block';document.getElementById('nfimp-step2').style.display='none';"
+          style="padding:10px 20px;border-radius:8px;border:0.5px solid ${T.border};background:${T.bg3};color:${T.text2};font-size:12px;cursor:pointer;">
+          ← Novo upload
+        </button>
+        <button id="nfimp-btn-emitir" onclick="window._nfimpEmitir()"
+          style="flex:1;padding:11px;border-radius:8px;background:${T.cAzul};border:none;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">
+          Emitir NF-e de Entrada
+        </button>
+      </div>
+      <div id="nfimp-status" style="margin-top:12px;font-size:12px;text-align:center;"></div>`;
+
+    // Expor itens para edição via onchange
+    window._nfimpItens = itensEditados;
+  }
+
+  window._nfimpEmitir = async function() {
+    const btn = document.getElementById('nfimp-btn-emitir');
+    const statusEl = document.getElementById('nfimp-status');
+    const icmsAliq = parseFloat(document.getElementById('nfimp-icms-aliq').value) || 17.5;
+
+    // Validar SKUs
+    const semSku = window._nfimpItens.filter(i => !i.sku);
+    if (semSku.length) {
+      statusEl.innerHTML = `<span style="color:#E24B4A;">Preencha o SKU de todos os itens (${semSku.length} faltando)</span>`;
+      return;
+    }
+
+    btn.disabled = true; btn.textContent = 'Emitindo...';
+    statusEl.innerHTML = '';
+
+    // Buscar token Bling
+    const blingSnap = await fetch('https://digoo-equipe-default-rtdb.firebaseio.com/bling_token.json');
+    const blingToken = await blingSnap.json();
+    if (!blingToken?.access_token) {
+      statusEl.innerHTML = `<span style="color:#E24B4A;">Token Bling não encontrado — reconecte o Bling</span>`;
+      btn.disabled = false; btn.textContent = 'Emitir NF-e de Entrada';
+      return;
+    }
+
+    try {
+      const res = await fetch(`${BACKEND}/api/bling-produtos?action=emitir-nf-importacao&token=${blingToken.access_token}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          itens: window._nfimpItens,
+          duimp: { numero: duimpData.numero },
+          exportador: duimpData.exportador,
+          dataEmissao: duimpData.dataRegistro,
+          frete: duimpData.frete,
+          seguro: duimpData.seguro,
+          siscomex: duimpData.siscomex,
+          icmsAliquota: icmsAliq,
+        })
+      });
+      const d = await res.json();
+      if (d.ok) {
+        statusEl.innerHTML = `<span style="color:#00a63e;">✓ NF-e emitida com sucesso! Número: ${d.numero || '—'} · Chave: ${d.chaveAcesso?.slice(0,20)||''}...</span>`;
+        btn.textContent = '✓ Emitida';
+      } else {
+        statusEl.innerHTML = `<span style="color:#E24B4A;">Erro: ${d.erro || 'falha desconhecida'}</span><br><span style="font-size:10px;color:${T.text2};">${JSON.stringify(d.detalhe||'').slice(0,200)}</span>`;
+        btn.disabled = false; btn.textContent = 'Emitir NF-e de Entrada';
+      }
+    } catch(e) {
+      statusEl.innerHTML = `<span style="color:#E24B4A;">Erro: ${e.message}</span>`;
+      btn.disabled = false; btn.textContent = 'Emitir NF-e de Entrada';
+    }
+  };
+}
 
 async function renderNfTransferenciaFull(container, color) {
   container.innerHTML = "";
