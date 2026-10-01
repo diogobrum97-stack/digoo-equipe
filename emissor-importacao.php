@@ -176,7 +176,7 @@ try {
         $ncm     = preg_replace('/[^0-9]/', '', $it['ncm'] ?? '84145990');
         $cfop    = $it['cfop']    ?? '3102';
         $xProd   = $it['xProd']   ?? $it['descricao'] ?? 'Mercadoria importada';
-        $cProd   = $it['sku']     ?? str_pad($item, 6, '0', STR_PAD_LEFT);
+        $cProd   = !empty($it['sku']) ? $it['sku'] : ('ITEM' . str_pad($item, 3, '0', STR_PAD_LEFT));
         $qCom    = number_format((float)($it['qCom']   ?? 1), 4, '.', '');
         $vUnCom  = number_format((float)($it['vUnCom'] ?? 0), 10, '.', '');
         $vProd   = number_format((float)($it['vProd']  ?? 0), 2, '.', '');
