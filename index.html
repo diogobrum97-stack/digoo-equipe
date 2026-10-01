@@ -9302,24 +9302,31 @@ onValue(ref(db, "/email_notificacoes"), (snap) => {
 onValue(ref(db, "/email_vencimentos"), (snap) => {
   const dados = snap.val();
   if (!dados) return;
-  window._emailVencimentos = Object.entries(dados).map(([id, v]) => ({ id, ...v }))
+  const novos = Object.entries(dados).map(([id, v]) => ({ id, ...v }))
     .sort((a, b) => b.recebido_em - a.recebido_em);
-  // Atualizar card do dashboard
+  const totalAntes = (window._emailVencimentos||[]).length;
+  const ultimoAntes = (window._emailVencimentos||[])[0]?.id;
+  const ultimoNovo = novos[0]?.id;
+  if (novos.length === totalAntes && ultimoAntes === ultimoNovo) return;
+  window._emailVencimentos = novos;
   const emailCard = document.getElementById("email-sbar-card");
   if (emailCard && window._emailSbarRender) window._emailSbarRender();
-  console.log("[email] vencimentos carregados:", window._emailVencimentos.length);
 });
 
 // Listener formulários (Formspree)
 onValue(ref(db, "/email_formularios"), (snap) => {
   const dados = snap.val();
   if (!dados) return;
-  window._emailFormularios = Object.entries(dados).map(([id, v]) => ({ id, ...v }))
+  const novos = Object.entries(dados).map(([id, v]) => ({ id, ...v }))
     .sort((a, b) => b.recebido_em - a.recebido_em);
-  // Atualizar card do dashboard
+  // Só atualiza se mudou a quantidade ou o mais recente
+  const totalAntes = (window._emailFormularios||[]).length;
+  const ultimoAntes = (window._emailFormularios||[])[0]?.id;
+  const ultimoNovo = novos[0]?.id;
+  if (novos.length === totalAntes && ultimoAntes === ultimoNovo) return;
+  window._emailFormularios = novos;
   const emailCard = document.getElementById("email-sbar-card");
   if (emailCard && window._emailSbarRender) window._emailSbarRender();
-  console.log("[email] formulários carregados:", window._emailFormularios.length);
 });
   }
 }, 30 * 1000); // checa a cada 30s, refaz busca se passou de 150s
