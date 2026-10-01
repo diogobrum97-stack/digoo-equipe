@@ -289,28 +289,32 @@ try {
         $make->tagCOFINS($std);
 
         // DI — Declaração de Importação (DUIMP)
+        $nDILimpo = preg_replace('/[^a-zA-Z0-9\-\/]/', '', $duimpNumero); // limpar caracteres inválidos
         $std = new stdClass();
-        $std->item      = $item;
-        $std->nDI       = $duimpNumero;
-        $std->dDI       = date('Y-m-d', strtotime($dataEmissao));
-        $std->xLocDesemb= 'PORTO DE RIO GRANDE';
-        $std->UFDesemb  = 'RS';
-        $std->dDesemb   = date('Y-m-d', strtotime($dataEntrada));
-        $std->tpViaTransp = 1; // 1 = Marítima
-        $std->vAFRMM    = '0.00';
+        $std->item         = $item;
+        $std->nDI          = $nDILimpo;
+        $std->dDI          = date('Y-m-d', strtotime($dataEmissao));
+        $std->xLocDesemb   = 'PORTO DE RIO GRANDE';
+        $std->UFDesemb     = 'RS';
+        $std->dDesemb      = date('Y-m-d', strtotime($dataEntrada));
+        $std->tpViaTransp  = 1; // 1 = Marítima
+        $std->vAFRMM       = '0.00';
         $std->tpIntermedio = 1; // 1 = importação por conta própria
-        $std->CNPJ      = $cnpjEmit;
-        $std->UFTerceiro = null;
+        $std->CNPJ         = $cnpjEmit;
+        $std->CPF          = null;
+        $std->UFTerceiro   = null;
+        $std->cExportador  = mb_substr(preg_replace('/[^a-zA-Z0-9 ]/', '', $exportadorNome), 0, 60);
         $make->tagDI($std);
 
-        // adi (adição da DI)
+        // adi (adição da DI) — nDI deve ser igual ao nDI da tagDI acima
         $std = new stdClass();
-        $std->item      = $item;
-        $std->nAdicao   = $item;
-        $std->nSeqAdic  = 1;
-        $std->cFabricante = preg_replace('/[^a-zA-Z0-9 ]/', '', $exportadorNome);
-        $std->vDescDI   = '0.00';
-        $std->nDraw     = null;
+        $std->item        = $item;
+        $std->nDI         = $nDILimpo; // DEVE ser igual ao nDI da tagDI
+        $std->nAdicao     = $item;
+        $std->nSeqAdic    = 1;
+        $std->cFabricante = mb_substr(preg_replace('/[^a-zA-Z0-9 ]/', '', $exportadorNome), 0, 60);
+        $std->vDescDI     = '0.00';
+        $std->nDraw       = null;
         $make->tagadi($std);
     }
 
