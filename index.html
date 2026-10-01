@@ -9465,7 +9465,7 @@ async function renderNfImportacao(container) {
       <div id="nfimp-step1">
         <label id="nfimp-label" style="display:block;border:2px dashed ${T.border};border-radius:10px;padding:32px;text-align:center;cursor:pointer;margin-bottom:16px;transition:border-color .2s;"
           onmouseover="this.style.borderColor='${T.cAzul}'" onmouseout="this.style.borderColor='${T.border}'">
-          <input type="file" id="nfimp-file" accept=".json" style="display:none;">
+          <input type="file" id="nfimp-file" accept=".json" style="display:none;" onchange="window._nfimpHandleUpload(this)">
           <div style="font-size:24px;margin-bottom:8px;">📄</div>
           <div style="font-size:13px;font-weight:500;color:${T.text};">Clique para selecionar o JSON da DUIMP</div>
           <div style="font-size:11px;color:${T.text2};margin-top:4px;">Arquivo .json exportado do Siscomex/Portal Único</div>
@@ -9477,9 +9477,9 @@ async function renderNfImportacao(container) {
       <div id="nfimp-step2" style="display:none;"></div>
     </div>`;
 
-  // Handler do upload
-  document.getElementById('nfimp-file').addEventListener('change', async function(e) {
-    const file = e.target.files[0];
+  // Handler do upload — função global para evitar erro de elemento null
+  window._nfimpHandleUpload = async function(input) {
+    const file = input.files[0];
     if (!file) return;
     const status = document.getElementById('nfimp-upload-status');
     status.textContent = 'Processando...';
