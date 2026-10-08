@@ -2709,8 +2709,25 @@ function renderDashboard(panel, color) {
     }
 
     // Chart 1: Vendas diárias (linha) — mês atual vs anterior
-    const { card: card1, canvas: cv1 } = mkChartCard("Vendas diárias", "30 dias");
+    const mesesNomesArr = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+    const _hoje0 = new Date();
+    const _nomeMesAtual = mesesNomesArr[_hoje0.getMonth()];
+    const _nomeMesAnt   = mesesNomesArr[(_hoje0.getMonth() + 11) % 12];
+    const { card: card1, canvas: cv1 } = mkChartCard("Vendas diárias", `${_nomeMesAtual} vs ${_nomeMesAnt}`);
     cv1.id = "dash-chart-diario";
+    // Mini-legenda abaixo do canvas
+    const legendDiv1 = document.createElement("div");
+    legendDiv1.style.cssText = "display:flex;align-items:center;gap:14px;margin-top:8px;";
+    legendDiv1.innerHTML = `
+      <span style="display:flex;align-items:center;gap:5px;font-size:10px;color:${T.text2};">
+        <span style="display:inline-block;width:18px;height:2px;background:${T.cAzul};border-radius:2px;"></span>
+        ${_nomeMesAtual}
+      </span>
+      <span style="display:flex;align-items:center;gap:5px;font-size:10px;color:${T.text3};">
+        <span style="display:inline-block;width:18px;height:0;border-top:2px dashed ${T.border2||T.border};"></span>
+        ${_nomeMesAnt}
+      </span>`;
+    card1.appendChild(legendDiv1);
     chartsRow.appendChild(card1);
 
     // Chart 2: Faturamento mensal (barras)
@@ -2756,13 +2773,15 @@ function renderDashboard(panel, color) {
         }
       }
 
+      const _nomeMesAtualChart = mesesNomesArr[hoje2.getMonth()];
+      const _nomeMesAntChart   = mesesNomesArr[(hoje2.getMonth() + 11) % 12];
       new Chart(cv1, {
         type: "line",
         data: {
           labels: labels30,
           datasets: [
             {
-              label: "Mês atual",
+              label: _nomeMesAtualChart,
               data: dataAtual,
               borderColor: T.cAzul,
               backgroundColor: "transparent",
@@ -2773,7 +2792,7 @@ function renderDashboard(panel, color) {
               spanGaps: false,
             },
             {
-              label: "Mês anterior",
+              label: _nomeMesAntChart,
               data: dataAnterior,
               borderColor: T.border2 || borderClr,
               backgroundColor: "transparent",
@@ -2797,7 +2816,10 @@ function renderDashboard(panel, color) {
               borderWidth: 1,
               titleColor: T.text,
               bodyColor: T.text2,
-              callbacks: { label: ctx => ` R$ ${(ctx.raw||0).toLocaleString("pt-BR")}` }
+              callbacks: {
+                title: ctx => `Dia ${ctx[0].label}`,
+                label: ctx => ` ${ctx.dataset.label}: R$ ${(ctx.raw||0).toLocaleString("pt-BR",{minimumFractionDigits:2})}`
+              }
             }
           },
           scales: {
@@ -2820,7 +2842,6 @@ function renderDashboard(panel, color) {
       const prevChart2 = Chart.getChart(cv2);
       if(prevChart2) prevChart2.destroy();
 
-      const mesesNomes = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
       const mesLabels = [];
       const mesValues = [];
       const hoje3 = new Date();
@@ -2829,17 +2850,17 @@ function renderDashboard(panel, color) {
       if(dashData.historico5m && dashData.historico5m.length > 0) {
         dashData.historico5m.forEach(m => {
           const [y, mo] = m.key.split("-");
-          mesLabels.push(mesesNomes[parseInt(mo)-1]);
+          mesLabels.push(mesesNomesArr[parseInt(mo)-1]);
           mesValues.push(m.total);
         });
       } else {
         for(let i = 4; i >= 1; i--) {
           const d = new Date(hoje3.getFullYear(), hoje3.getMonth() - i, 1);
-          mesLabels.push(mesesNomes[d.getMonth()]);
+          mesLabels.push(mesesNomesArr[d.getMonth()]);
           mesValues.push(0);
         }
       }
-      mesLabels.push(mesesNomes[hoje3.getMonth()] + "*");
+      mesLabels.push(mesesNomesArr[hoje3.getMonth()] + "*");
       mesValues.push(dashData.fatMes || 0);
 
       const bgColors = mesValues.map((_, i) =>
