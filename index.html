@@ -15,6 +15,7 @@
 <link rel="stylesheet" href="style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
 <body>
   <script>
@@ -841,6 +842,51 @@ window._fetchDashboard = async function fetchDashboard() {
       } : null,
       _fetchedAt: Date.now(),
     };
+
+    // Buscar histórico (30 dias + 5 meses anteriores) em background sem bloquear
+    (async () => {
+      try {
+        // Faturamento acumulado em janelas de 30 dias (para calcular cada mês por diferença)
+        const [r30,r60,r90,r120,r150,r180] = await Promise.all([
+          fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${tokenFilial}&days=30`).then(r=>r.json()).catch(()=>null),
+          fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${tokenFilial}&days=60`).then(r=>r.json()).catch(()=>null),
+          fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${tokenFilial}&days=90`).then(r=>r.json()).catch(()=>null),
+          fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${tokenFilial}&days=120`).then(r=>r.json()).catch(()=>null),
+          fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${tokenFilial}&days=150`).then(r=>r.json()).catch(()=>null),
+          fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${tokenFilial}&days=180`).then(r=>r.json()).catch(()=>null),
+        ]);
+
+        const fat30  = r30?.summary?.totalRevenue  || 0;
+        const fat60  = r60?.summary?.totalRevenue  || 0;
+        const fat90  = r90?.summary?.totalRevenue  || 0;
+        const fat120 = r120?.summary?.totalRevenue || 0;
+        const fat150 = r150?.summary?.totalRevenue || 0;
+        const fat180 = r180?.summary?.totalRevenue || 0;
+
+        // Cada "bloco" de 30 dias representa um mês aproximado
+        const blocos = [fat180-fat150, fat150-fat120, fat120-fat90, fat90-fat60, fat60-fat30];
+
+        // Construir labels: 5 meses anteriores
+        const hoje2 = new Date();
+        const mesesNomes = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+        const historico5m = blocos.map((total, i) => {
+          const d = new Date(hoje2.getFullYear(), hoje2.getMonth() - (5 - i), 1);
+          return { key: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`, total: Math.max(0, total) };
+        });
+
+        // Breakdown diário dos últimos 30 dias para chart de linhas
+        const diarioHoje = r30?.daily || r30?.dailySales || null;
+        const diarioAnt  = r60?.daily || r60?.dailySales || null;
+
+        if(dashData && !dashData.erro) {
+          dashData.diario30 = diarioHoje;
+          dashData.diario60 = diarioAnt;
+          dashData.historico5m = historico5m;
+          window._dashData = dashData;
+          render();
+        }
+      } catch(e) { /* histórico não é crítico */ }
+    })();
     // Expor dados para o claude-chat.js (escopo externo)
     window._dashData = dashData;
     // Buscar experiência em background (mais lento — não bloqueia)
@@ -2633,6 +2679,228 @@ function renderDashboard(panel, color) {
   topGrid.appendChild(mkTopCard("Top hoje", top5Merged));
   topGrid.appendChild(mkTopCard("Top mês", top5MesMerged));
   vendasCard.appendChild(vendasGrid);
+
+  // ── Gráficos: Vendas diárias + Faturamento mensal ──────────────────────────
+  if(typeof Chart !== "undefined") {
+    const chartsRow = document.createElement("div");
+    chartsRow.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;";
+
+    function mkChartCard(titulo, subtitulo) {
+      const c = document.createElement("div");
+      c.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:14px 16px;`;
+      const head = document.createElement("div");
+      head.style.cssText = "display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px;";
+      head.innerHTML = `<span style="font-size:11px;font-weight:600;color:${T.text2};text-transform:uppercase;letter-spacing:1px;">${titulo}</span><span style="font-size:10px;color:${T.text3};">${subtitulo}</span>`;
+      const wrap = document.createElement("div");
+      wrap.style.cssText = "position:relative;width:100%;height:110px;";
+      const canvas = document.createElement("canvas");
+      c.appendChild(head);
+      wrap.appendChild(canvas);
+      c.appendChild(wrap);
+      return { card: c, canvas };
+    }
+
+    // Chart 1: Vendas diárias (linha) — mês atual vs anterior
+    const { card: card1, canvas: cv1 } = mkChartCard("Vendas diárias", "30 dias");
+    cv1.id = "dash-chart-diario";
+    chartsRow.appendChild(card1);
+
+    // Chart 2: Faturamento mensal (barras)
+    const { card: card2, canvas: cv2 } = mkChartCard("Faturamento mensal", "6 meses");
+    cv2.id = "dash-chart-fat";
+    chartsRow.appendChild(card2);
+
+    vendasCard.appendChild(chartsRow);
+
+    // Renderizar os charts após o DOM ser inserido
+    requestAnimationFrame(() => {
+      if(!cv1.isConnected || !cv2.isConnected) return; // panel foi re-renderizado antes do RAF
+      const isDark = !T.isLight;
+      const borderClr = T.border;
+      const text3Clr = T.text3;
+
+      // Defaults Chart.js
+      Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+      Chart.defaults.color = text3Clr;
+
+      // ── Chart 1: Vendas diárias ──
+      const prevChart1 = Chart.getChart(cv1);
+      if(prevChart1) prevChart1.destroy();
+
+      // Construir labels e dados dos últimos 30 dias
+      const hoje2 = new Date();
+      const labels30 = [];
+      const dataAtual = new Array(30).fill(null);
+      const dataAnterior = new Array(30).fill(null);
+
+      // Tentar usar daily breakdown da API; caso contrário usar valor acumulado do mês
+      const diario = dashData.diario30;
+      const diarioAnt = dashData.diario60;
+
+      if(diario && Array.isArray(diario) && diario.length > 0) {
+        // API retornou breakdown diário
+        for(let i = 0; i < 30; i++) {
+          const d = new Date(hoje2); d.setDate(d.getDate() - (29 - i));
+          labels30.push(`${d.getDate()}/${d.getMonth()+1}`);
+          dataAtual[i] = diario[i]?.revenue || diario[i]?.total || 0;
+        }
+        if(diarioAnt && Array.isArray(diarioAnt) && diarioAnt.length >= 60) {
+          for(let i = 0; i < 30; i++) dataAnterior[i] = diarioAnt[i]?.revenue || diarioAnt[i]?.total || 0;
+        }
+      } else {
+        // Sem breakdown — mostrar só o mês atual acumulado por dia (simulado linear)
+        const fatMesAtual = dashData.fatMes || 0;
+        const diaAtual = hoje2.getDate();
+        for(let i = 0; i < 30; i++) {
+          const d = new Date(hoje2); d.setDate(d.getDate() - (29 - i));
+          labels30.push(`${d.getDate()}/${d.getMonth()+1}`);
+          // Para dias futuros do mês atual, null
+          const diaNoMes = d.getDate();
+          if(d.getMonth() === hoje2.getMonth() && d.getFullYear() === hoje2.getFullYear()) {
+            dataAtual[i] = diaNoMes <= diaAtual ? Math.round((fatMesAtual / diaAtual) * diaNoMes) : null;
+          }
+        }
+      }
+
+      new Chart(cv1, {
+        type: "line",
+        data: {
+          labels: labels30,
+          datasets: [
+            {
+              label: "Mês atual",
+              data: dataAtual,
+              borderColor: T.cAzul,
+              backgroundColor: "transparent",
+              borderWidth: 2,
+              pointRadius: 0,
+              pointHoverRadius: 3,
+              tension: 0.35,
+              spanGaps: false,
+            },
+            {
+              label: "Mês anterior",
+              data: dataAnterior,
+              borderColor: T.border2 || borderClr,
+              backgroundColor: "transparent",
+              borderWidth: 1.5,
+              borderDash: [4, 3],
+              pointRadius: 0,
+              tension: 0.35,
+              spanGaps: false,
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: "index", intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: T.card,
+              borderColor: T.border,
+              borderWidth: 1,
+              titleColor: T.text,
+              bodyColor: T.text2,
+              callbacks: { label: ctx => ` R$ ${(ctx.raw||0).toLocaleString("pt-BR")}` }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { maxTicksLimit: 6, font: { size: 10 }, color: text3Clr }
+            },
+            y: {
+              grid: { color: borderClr, lineWidth: 0.5 },
+              ticks: {
+                maxTicksLimit: 4, font: { size: 10 }, color: text3Clr,
+                callback: v => v >= 1000 ? "R$" + (v/1000).toFixed(0) + "k" : "R$" + v
+              }
+            }
+          }
+        }
+      });
+
+      // ── Chart 2: Faturamento mensal ──
+      const prevChart2 = Chart.getChart(cv2);
+      if(prevChart2) prevChart2.destroy();
+
+      const mesesNomes = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+      const mesLabels = [];
+      const mesValues = [];
+      const hoje3 = new Date();
+
+      // 5 meses anteriores + mês atual
+      if(dashData.historico5m && dashData.historico5m.length > 0) {
+        dashData.historico5m.forEach(m => {
+          const [y, mo] = m.key.split("-");
+          mesLabels.push(mesesNomes[parseInt(mo)-1]);
+          mesValues.push(m.total);
+        });
+      } else {
+        for(let i = 4; i >= 1; i--) {
+          const d = new Date(hoje3.getFullYear(), hoje3.getMonth() - i, 1);
+          mesLabels.push(mesesNomes[d.getMonth()]);
+          mesValues.push(0);
+        }
+      }
+      mesLabels.push(mesesNomes[hoje3.getMonth()] + "*");
+      mesValues.push(dashData.fatMes || 0);
+
+      const bgColors = mesValues.map((_, i) =>
+        i === mesValues.length - 1 ? T.cAzul : (isDark ? "#ffffff14" : "#00000010")
+      );
+      const borderColors = mesValues.map((_, i) =>
+        i === mesValues.length - 1 ? T.cAzul : borderClr
+      );
+
+      new Chart(cv2, {
+        type: "bar",
+        data: {
+          labels: mesLabels,
+          datasets: [{
+            data: mesValues,
+            backgroundColor: bgColors,
+            borderColor: borderColors,
+            borderWidth: 1,
+            borderRadius: 5,
+            borderSkipped: false,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: T.card,
+              borderColor: T.border,
+              borderWidth: 1,
+              titleColor: T.text,
+              bodyColor: T.text2,
+              callbacks: { label: ctx => ` R$ ${ctx.raw.toLocaleString("pt-BR")}` }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { font: { size: 10 }, color: text3Clr }
+            },
+            y: {
+              grid: { color: borderClr, lineWidth: 0.5 },
+              ticks: {
+                maxTicksLimit: 4, font: { size: 10 }, color: text3Clr,
+                callback: v => v >= 1000 ? "R$" + (v/1000).toFixed(0) + "k" : "R$" + v
+              }
+            }
+          }
+        }
+      });
+    });
+  }
+  // ── fim gráficos ────────────────────────────────────────────────────────────
+
   vendasCard.appendChild(topGrid);
   dashGrid.appendChild(vendasCard);
 
