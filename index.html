@@ -843,45 +843,53 @@ window._fetchDashboard = async function fetchDashboard() {
       _fetchedAt: Date.now(),
     };
 
-    // Buscar histórico (30 dias + 5 meses anteriores) em background sem bloquear
+    // Buscar histórico em background: 5 meses por mês calendário + daily dos 2 últimos meses
     (async () => {
       try {
-        // Faturamento acumulado em janelas de 30 dias (para calcular cada mês por diferença)
-        const [r30,r60,r90,r120,r150,r180] = await Promise.all([
-          fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${tokenFilial}&days=30`).then(r=>r.json()).catch(()=>null),
-          fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${tokenFilial}&days=60`).then(r=>r.json()).catch(()=>null),
-          fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${tokenFilial}&days=90`).then(r=>r.json()).catch(()=>null),
-          fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${tokenFilial}&days=120`).then(r=>r.json()).catch(()=>null),
-          fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${tokenFilial}&days=150`).then(r=>r.json()).catch(()=>null),
-          fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${tokenFilial}&days=180`).then(r=>r.json()).catch(()=>null),
-        ]);
+        const agora = new Date();
 
-        const fat30  = r30?.summary?.totalRevenue  || 0;
-        const fat60  = r60?.summary?.totalRevenue  || 0;
-        const fat90  = r90?.summary?.totalRevenue  || 0;
-        const fat120 = r120?.summary?.totalRevenue || 0;
-        const fat150 = r150?.summary?.totalRevenue || 0;
-        const fat180 = r180?.summary?.totalRevenue || 0;
+        // Helper: from/to de um mês em BRT
+        function mesFromTo(anoMesOffset) {
+          const d = new Date(agora.getFullYear(), agora.getMonth() + anoMesOffset, 1);
+          const ano = d.getFullYear(), mes = d.getMonth();
+          const ultimoDia = new Date(ano, mes+1, 0).getDate();
+          return {
+            key: `${ano}-${String(mes+1).padStart(2,'0')}`,
+            from: encodeURIComponent(`${ano}-${String(mes+1).padStart(2,'0')}-01T00:00:00.000-03:00`),
+            to:   encodeURIComponent(`${ano}-${String(mes+1).padStart(2,'0')}-${ultimoDia}T23:59:59.000-03:00`),
+          };
+        }
 
-        // Cada "bloco" de 30 dias representa um mês aproximado
-        const blocos = [fat180-fat150, fat150-fat120, fat120-fat90, fat90-fat60, fat60-fat30];
-
-        // Construir labels: 5 meses anteriores
-        const hoje2 = new Date();
-        const mesesNomes = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
-        const historico5m = blocos.map((total, i) => {
-          const d = new Date(hoje2.getFullYear(), hoje2.getMonth() - (5 - i), 1);
-          return { key: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`, total: Math.max(0, total) };
+        // 5 meses anteriores via from/to (valores exatos por mês calendário)
+        const mesPromises = [-5,-4,-3,-2,-1].map(offset => {
+          const { key, from, to } = mesFromTo(offset);
+          return fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${tokenFilial}&from=${from}&to=${to}`)
+            .then(r=>r.json()).catch(()=>null)
+            .then(data => ({ key, total: data?.summary?.totalRevenue || 0 }));
         });
 
-        // Breakdown diário dos últimos 30 dias para chart de linhas
-        const diarioHoje = r30?.daily || r30?.dailySales || null;
-        const diarioAnt  = r60?.daily || r60?.dailySales || null;
+        // Daily do mês atual e mês anterior via days= (retorna dailyEvolution)
+        const diaAtualMes2 = agora.getDate();
+        const mesAtualDias = new Date(agora.getFullYear(), agora.getMonth()+1, 0).getDate(); // dias no mês atual
+        const mesAntDias   = new Date(agora.getFullYear(), agora.getMonth(), 0).getDate();   // dias no mês anterior
+        const totalDias    = diaAtualMes2 + mesAntDias;
+
+        const [historico5m, rDaily] = await Promise.all([
+          Promise.all(mesPromises),
+          fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${tokenFilial}&days=${totalDias}`).then(r=>r.json()).catch(()=>null),
+        ]);
+
+        // Separar dailyEvolution: últimos totalDias dias
+        // Os primeiros mesAntDias entradas = mês anterior, o resto = mês atual
+        const daily = rDaily?.dailyEvolution || [];
+        const dailyMesAnt    = daily.slice(0, mesAntDias);
+        const dailyMesAtual  = daily.slice(mesAntDias);
 
         if(dashData && !dashData.erro) {
-          dashData.diario30 = diarioHoje;
-          dashData.diario60 = diarioAnt;
-          dashData.historico5m = historico5m;
+          dashData.historico5m   = historico5m; // já em ordem cronológica [-5..-1]
+          dashData.dailyMesAtual = dailyMesAtual;
+          dashData.dailyMesAnt   = dailyMesAnt;
+          dashData.mesAntDias    = mesAntDias;
           window._dashData = dashData;
           render();
         }
@@ -2727,38 +2735,24 @@ function renderDashboard(panel, color) {
       const prevChart1 = Chart.getChart(cv1);
       if(prevChart1) prevChart1.destroy();
 
-      // Construir labels e dados dos últimos 30 dias
+      // Construir labels e dados: mês atual vs mês anterior (dia a dia)
       const hoje2 = new Date();
-      const labels30 = [];
-      const dataAtual = new Array(30).fill(null);
-      const dataAnterior = new Array(30).fill(null);
+      const dailyAtual = dashData.dailyMesAtual || [];
+      const dailyAnt   = dashData.dailyMesAnt   || [];
+      const mesAntDias = dashData.mesAntDias     || 30;
 
-      // Tentar usar daily breakdown da API; caso contrário usar valor acumulado do mês
-      const diario = dashData.diario30;
-      const diarioAnt = dashData.diario60;
+      // Usar o maior dos dois meses como eixo X (dias 1..N)
+      const nDias = Math.max(dailyAtual.length, dailyAnt.length, hoje2.getDate());
+      const labels30   = Array.from({length: nDias}, (_, i) => String(i+1));
+      const dataAtual  = Array.from({length: nDias}, (_, i) => dailyAtual[i]?.revenue ?? null);
+      const dataAnterior = Array.from({length: nDias}, (_, i) => dailyAnt[i]?.revenue ?? null);
 
-      if(diario && Array.isArray(diario) && diario.length > 0) {
-        // API retornou breakdown diário
-        for(let i = 0; i < 30; i++) {
-          const d = new Date(hoje2); d.setDate(d.getDate() - (29 - i));
-          labels30.push(`${d.getDate()}/${d.getMonth()+1}`);
-          dataAtual[i] = diario[i]?.revenue || diario[i]?.total || 0;
-        }
-        if(diarioAnt && Array.isArray(diarioAnt) && diarioAnt.length >= 60) {
-          for(let i = 0; i < 30; i++) dataAnterior[i] = diarioAnt[i]?.revenue || diarioAnt[i]?.total || 0;
-        }
-      } else {
-        // Sem breakdown — mostrar só o mês atual acumulado por dia (simulado linear)
+      // Fallback: se ainda não chegou o histórico, linha reta simples do mês atual
+      if(!dailyAtual.length) {
         const fatMesAtual = dashData.fatMes || 0;
         const diaAtual = hoje2.getDate();
-        for(let i = 0; i < 30; i++) {
-          const d = new Date(hoje2); d.setDate(d.getDate() - (29 - i));
-          labels30.push(`${d.getDate()}/${d.getMonth()+1}`);
-          // Para dias futuros do mês atual, null
-          const diaNoMes = d.getDate();
-          if(d.getMonth() === hoje2.getMonth() && d.getFullYear() === hoje2.getFullYear()) {
-            dataAtual[i] = diaNoMes <= diaAtual ? Math.round((fatMesAtual / diaAtual) * diaNoMes) : null;
-          }
+        for(let i = 0; i < diaAtual; i++) {
+          dataAtual[i] = Math.round((fatMesAtual / diaAtual) * (i+1));
         }
       }
 
