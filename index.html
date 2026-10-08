@@ -2616,30 +2616,64 @@ function renderDashboard(panel, color) {
   const dF = { fatHoje: dashData.fatHoje, projecaoDia: dashData.projecaoDia, fatMes: dashData.fatMes, pedidosMes: dashData.pedidosMes, percDia: dashData.percDia };
   const dM = dashData.matriz;
 
-  function mkVendaCard(label, valor, badge, badgeBg, borderColor) {
+  // ── KPI cards expandíveis ──
+  // IDs estáveis para toggle
+  const _kpiIds = ["dash-kpi-total","dash-kpi-sp","dash-kpi-rs"];
+
+  function mkTopItemsHTML(lista, accentColor) {
+    if(!lista || !lista.length) return `<div style="font-size:11px;color:${T.text3};padding:8px 0;">Sem vendas hoje</div>`;
+    return lista.map((p, i) => `
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;${i<lista.length-1?`border-bottom:0.5px solid ${T.border};`:''}">
+        <span style="font-size:11px;font-weight:700;width:18px;flex-shrink:0;text-align:center;color:${i===0?accentColor:T.text2};">${i+1}</span>
+        <span style="flex:1;min-width:0;font-size:12px;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.sku||"—"}</span>
+        <div style="flex-shrink:0;text-align:right;">
+          <div style="font-size:12px;font-weight:700;color:${T.text};">${fmt(p.revenue||0)}</div>
+          <div style="font-size:10px;color:${T.text3};">${p.qty} un</div>
+        </div>
+      </div>`).join("");
+  }
+
+  function mkKpiCard(id, label, valor, tagText, tagBg, tagColor, borderColor, topLista, drawerTitle) {
     const d = document.createElement("div");
-    d.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-top:3px solid ${borderColor};border-radius:10px;padding:14px 16px;`;
+    d.id = id;
+    d.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-top:3px solid ${borderColor};border-radius:10px;padding:14px 16px;cursor:pointer;user-select:none;display:flex;flex-direction:column;transition:box-shadow .15s,transform .15s;`;
     d.innerHTML = `
-      <div style="font-size:9px;color:${T.text2};text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;">${label}</div>
-      <div style="font-size:22px;font-weight:700;color:${T.text};font-family:'IBM Plex Mono',monospace;">${valor}</div>
-      <div style="margin-top:8px;"><span style="font-size:10px;font-weight:600;padding:3px 9px;border-radius:5px;background:${badgeBg};color:#fff;">${badge}</span></div>`;
+      <div style="font-size:10px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:${T.text3};margin-bottom:3px;">${label}</div>
+      <div style="font-size:24px;font-weight:800;letter-spacing:-1px;color:${T.text};line-height:1;">${valor}</div>
+      <div style="margin-top:6px;"><span style="display:inline-block;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700;background:${tagBg};color:${tagColor};">${tagText}</span></div>
+      <div class="dash-kpi-drawer" style="overflow:hidden;max-height:0;opacity:0;transition:max-height .3s cubic-bezier(.4,0,.2,1),opacity .25s;">
+        <div style="padding-top:12px;border-top:0.5px solid ${T.border};margin-top:12px;">
+          <div style="font-size:10px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:${T.text2};margin-bottom:10px;">${drawerTitle}</div>
+          ${mkTopItemsHTML(topLista, borderColor)}
+        </div>
+      </div>`;
+    d.addEventListener("click", () => {
+      const drawer = d.querySelector(".dash-kpi-drawer");
+      const isOpen = d.dataset.open === "1";
+      if(isOpen) {
+        drawer.style.maxHeight = "0";
+        drawer.style.opacity  = "0";
+        d.dataset.open = "0";
+        d.style.boxShadow = "";
+        d.style.transform = "";
+      } else {
+        drawer.style.maxHeight = "400px";
+        drawer.style.opacity  = "1";
+        d.dataset.open = "1";
+        d.style.boxShadow = "0 4px 16px #0002";
+        d.style.transform = "translateY(-1px)";
+      }
+    });
     return d;
   }
 
-  const vendasGrid = document.createElement("div");
-  vendasGrid.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;";
-  vendasGrid.appendChild(mkVendaCard("Hoje · Filial SP", fmtFull(dF.fatHoje), "↑ EM TEMPO REAL", "#3b82f6", "#3b82f6"));
-  vendasGrid.appendChild(mkVendaCard("Mês atual · Filial SP", fmt(dF.fatMes), `${dF.pedidosMes} PEDIDOS`, T.cVerde, T.cVerde));
-  if (dM) {
-    vendasGrid.appendChild(mkVendaCard("Hoje · Matriz RS", fmtFull(dM.fatHoje), `${dF.percDia}% DO DIA`, "#8b5cf6", "#8b5cf6"));
-    vendasGrid.appendChild(mkVendaCard("Mês · Matriz RS", fmt(dM.fatMes), (dM.pedidosMes||0)+" PEDIDOS", "#f59e0b", "#f59e0b"));
-  }
-
-  // Top hoje + Top mês — lado a lado
-  const top5 = dashData.top5hoje || [];
-  const top10 = dashData.top10mes || [];
+  // ── Dados merge SP + RS ───────────────────────────────────────────────────
+  // Top hoje SP / RS individuais
+  const top5SP = (dashData.top5hoje || []).slice(0,5);
+  const top5RS = (dashData.matriz?.top5hoje || []).slice(0,5);
 
   // Mesclar Matriz com Filial para top hoje
+  const top5 = dashData.top5hoje || [];
   const top5Matriz = dashData.matriz?.top5hoje || [];
   const mergedHoje = {};
   [...top5, ...top5Matriz].forEach(p => {
@@ -2651,6 +2685,7 @@ function renderDashboard(panel, color) {
   const top5Merged = Object.values(mergedHoje).sort((a,b) => b.revenue - a.revenue).slice(0,5);
 
   // Mesclar Matriz com Filial para top mês
+  const top10 = dashData.top10mes || [];
   const top10Matriz = dashData.matriz?.top10mes || [];
   const mergedMes = {};
   [...top10, ...top10Matriz].forEach(p => {
@@ -2660,6 +2695,33 @@ function renderDashboard(panel, color) {
     mergedMes[k].revenue += Number(p.revenue || 0);
   });
   const top5MesMerged = Object.values(mergedMes).sort((a,b) => b.revenue - a.revenue).slice(0,5);
+
+  const vendasGrid = document.createElement("div");
+  vendasGrid.style.cssText = "display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;";
+  // Card 1: Total consolidado hoje
+  vendasGrid.appendChild(mkKpiCard(
+    "dash-kpi-total",
+    "Total hoje · SP + RS",
+    fmtFull((dF.fatHoje||0) + (dM?.fatHoje||0)),
+    "↑ Em tempo real", "#3b82f618", "#3b82f6", "#3b82f6",
+    top5Merged, "Mais vendidos hoje"
+  ));
+  // Card 2: Hoje SP
+  vendasGrid.appendChild(mkKpiCard(
+    "dash-kpi-sp",
+    "Hoje · Filial SP",
+    fmtFull(dF.fatHoje),
+    "↑ Em tempo real", "#34c75918", "#34c759", "#34c759",
+    top5SP, "Mais vendidos hoje · SP"
+  ));
+  // Card 3: Hoje RS
+  vendasGrid.appendChild(mkKpiCard(
+    "dash-kpi-rs",
+    "Hoje · Matriz RS",
+    fmtFull(dM?.fatHoje||0),
+    `${dF.percDia||0}% do dia`, "#8b5cf618", "#8b5cf6", "#8b5cf6",
+    top5RS, "Mais vendidos hoje · RS"
+  ));
 
   function mkTopCard(titulo, lista) {
     const c = document.createElement("div");
@@ -2682,25 +2744,18 @@ function renderDashboard(panel, color) {
     return c;
   }
 
-  const topGrid = document.createElement("div");
-  topGrid.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;";
-  topGrid.appendChild(mkTopCard("Top hoje", top5Merged));
-  topGrid.appendChild(mkTopCard("Top mês", top5MesMerged));
   vendasCard.appendChild(vendasGrid);
 
-  // ── Gráficos: Vendas diárias + Faturamento mensal ──────────────────────────
+  // ── Gráficos: Faturamento mensal (full width) + linha inferior ─────────────
   if(typeof Chart !== "undefined") {
-    const chartsRow = document.createElement("div");
-    chartsRow.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;";
-
-    function mkChartCard(titulo, subtitulo) {
+    function mkChartCard(titulo, subtitulo, height) {
       const c = document.createElement("div");
       c.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:14px 16px;`;
       const head = document.createElement("div");
       head.style.cssText = "display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px;";
       head.innerHTML = `<span style="font-size:11px;font-weight:600;color:${T.text2};text-transform:uppercase;letter-spacing:1px;">${titulo}</span><span style="font-size:10px;color:${T.text3};">${subtitulo}</span>`;
       const wrap = document.createElement("div");
-      wrap.style.cssText = "position:relative;width:100%;height:110px;";
+      wrap.style.cssText = `position:relative;width:100%;height:${height||110}px;`;
       const canvas = document.createElement("canvas");
       c.appendChild(head);
       wrap.appendChild(canvas);
@@ -2708,11 +2763,22 @@ function renderDashboard(panel, color) {
       return { card: c, canvas };
     }
 
-    // Chart 1: Vendas diárias (linha) — mês atual vs anterior
     const mesesNomesArr = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
     const _hoje0 = new Date();
     const _nomeMesAtual = mesesNomesArr[_hoje0.getMonth()];
     const _nomeMesAnt   = mesesNomesArr[(_hoje0.getMonth() + 11) % 12];
+
+    // ── Faturamento mensal — full width ──────────────────────────────────────
+    const { card: card2, canvas: cv2 } = mkChartCard("Faturamento mensal", "SP + RS · 6 meses", 130);
+    cv2.id = "dash-chart-fat";
+    card2.style.marginBottom = "12px";
+    vendasCard.appendChild(card2);
+
+    // ── Linha inferior: Vendas diárias + Top mês ─────────────────────────────
+    const bottomRow = document.createElement("div");
+    bottomRow.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;";
+
+    // Chart 1: Vendas diárias (linha) — mês atual vs anterior
     const { card: card1, canvas: cv1 } = mkChartCard("Vendas diárias", `${_nomeMesAtual} vs ${_nomeMesAnt}`);
     cv1.id = "dash-chart-diario";
     // Mini-legenda abaixo do canvas
@@ -2728,14 +2794,12 @@ function renderDashboard(panel, color) {
         ${_nomeMesAnt}
       </span>`;
     card1.appendChild(legendDiv1);
-    chartsRow.appendChild(card1);
+    bottomRow.appendChild(card1);
 
-    // Chart 2: Faturamento mensal (barras)
-    const { card: card2, canvas: cv2 } = mkChartCard("Faturamento mensal", "6 meses");
-    cv2.id = "dash-chart-fat";
-    chartsRow.appendChild(card2);
+    // Top mês — coluna direita
+    bottomRow.appendChild(mkTopCard("Top mês · SP + RS", top5MesMerged));
 
-    vendasCard.appendChild(chartsRow);
+    vendasCard.appendChild(bottomRow);
 
     // Renderizar os charts após o DOM ser inserido
     requestAnimationFrame(() => {
@@ -2916,7 +2980,6 @@ function renderDashboard(panel, color) {
   }
   // ── fim gráficos ────────────────────────────────────────────────────────────
 
-  vendasCard.appendChild(topGrid);
   dashGrid.appendChild(vendasCard);
 
   // Tarefas
