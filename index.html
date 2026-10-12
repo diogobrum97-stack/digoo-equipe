@@ -3379,8 +3379,10 @@ function renderDashboard(panel, color) {
   function _renderEmailCard(emails) {
     const naoLidos = (emails || []).filter(e => e.unseen);
     const totalInbox = naoLidos.length;
+    const leadsVistos = JSON.parse(localStorage.getItem("digoo_leads_vistos") || "[]");
     const leads = (window._emailFormularios||[]);
-    const totalLeads = leads.length;
+    const leadsNaoLidos = leads.filter(l => !leadsVistos.includes(l.id));
+    const totalLeads = leadsNaoLidos.length;
 
     const mkContEmail = (label, cor, count, sub) =>
       `<div data-cor="${cor}" data-prop="borderTopColor" style="border-top:1px solid ${cor};padding-top:6px;opacity:${count > 0 ? 1 : 0.35};">
@@ -3401,10 +3403,10 @@ function renderDashboard(panel, color) {
       </div>`;
     }).join("");
 
-    const linhasLeads = leads.slice(0,4).map(l => {
+    const linhasLeads = leadsNaoLidos.slice(0,4).map(l => {
       const assunto = l.subject || "(sem assunto)";
       const dt = l.recebido_em ? new Date(l.recebido_em).toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"}) : "";
-      return `<div onclick="window._diogotab='email';window._renderTab?.();" style="display:flex;align-items:center;gap:5px;padding:4px 0;cursor:pointer;border-bottom:0.5px solid ${T.border};" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
+      return `<div onclick="window._marcarLeadsLidos?.();window._diogotab='email';window._renderTab?.();" style="display:flex;align-items:center;gap:5px;padding:4px 0;cursor:pointer;border-bottom:0.5px solid ${T.border};" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
         <span style="width:2px;height:12px;background:#00a63e;border-radius:2px;flex-shrink:0;"></span>
         <div style="min-width:0;">
           <div style="font-size:11px;font-weight:600;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${assunto}</div>
@@ -3414,7 +3416,7 @@ function renderDashboard(panel, color) {
     }).join("");
 
     const todasLinhas = linhasInbox + linhasLeads;
-    const temItens = naoLidos.length > 0 || leads.length > 0;
+    const temItens = naoLidos.length > 0 || leadsNaoLidos.length > 0;
 
     emailCard.innerHTML = `
       <div style="font-size:11px;font-weight:500;color:${T.text2};margin-bottom:10px;">Email</div>
@@ -9750,6 +9752,15 @@ onValue(ref(db, "/email_formularios"), (snap) => {
   const emailCard = document.getElementById("email-sbar-card");
   if (emailCard && window._emailSbarRender) window._emailSbarRender();
 });
+
+// Marca todos os leads atuais como vistos no localStorage
+window._marcarLeadsLidos = function() {
+  try {
+    const ids = (window._emailFormularios||[]).map(l => l.id);
+    localStorage.setItem("digoo_leads_vistos", JSON.stringify(ids));
+    if (window._emailSbarRender) window._emailSbarRender();
+  } catch(e) {}
+};
   }
 }, 30 * 1000); // checa a cada 30s, refaz busca se passou de 150s
 
