@@ -2169,7 +2169,7 @@ function renderPerguntasTab(container) {
           const token = p.conta === "matriz" ? state.ml_token?.access_token : state.ml_token_filial?.access_token;
           if (!token) { alert("Token ML não conectado para esta conta."); btnExcluir.disabled = false; btnExcluir.innerHTML = "🗑 Excluir pergunta"; return; }
           try {
-            const data = await fetch(`https://digoo-backend.vercel.app/api/ml-vendas?action=excluir-pergunta`, {
+            const data = await fetch(`https://digoo-backend.vercel.app/api/ml-vendas?action=excluir-pergunta&token=${encodeURIComponent(token)}&question_id=${p.question_id}`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ question_id: p.question_id, token }),
@@ -2202,7 +2202,7 @@ function renderPerguntasTab(container) {
           const token = p.conta === "matriz" ? state.ml_token?.access_token : state.ml_token_filial?.access_token;
           if (!token) { alert("Token ML não conectado para esta conta."); btnBloquear.disabled = false; btnBloquear.innerHTML = "🚫 Bloquear comprador"; return; }
           try {
-            const data = await fetch(`https://digoo-backend.vercel.app/api/ml-vendas?action=bloquear-comprador`, {
+            const data = await fetch(`https://digoo-backend.vercel.app/api/ml-vendas?action=bloquear-comprador&token=${encodeURIComponent(token)}&from_user=${p.from_user}`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ from_user: p.from_user, token }),
