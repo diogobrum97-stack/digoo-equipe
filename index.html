@@ -2110,6 +2110,10 @@ function renderPerguntasTab(container) {
             <button id="pergunta-dispensar-${p.question_id}" style="padding:9px 18px;border-radius:6px;background:none;border:1px solid ${T.border};color:#666;font-size:12px;font-weight:600;cursor:pointer;">Dispensar</button>
           </div>
         `}
+        <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid ${T.border};">
+          <button id="pergunta-excluir-${p.question_id}" style="display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:6px;background:none;border:1px solid #ef444444;color:#ef4444;font-size:11px;font-weight:600;cursor:pointer;" title="Excluir pergunta">🗑 Excluir pergunta</button>
+          ${p.from_user ? `<button id="pergunta-bloquear-${p.question_id}" style="display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:6px;background:none;border:1px solid #f0a06044;color:#f0a060;font-size:11px;font-weight:600;cursor:pointer;" title="Bloquear comprador">🚫 Bloquear comprador</button>` : ""}
+        </div>
       `;
       wrap.appendChild(card);
 
@@ -2152,6 +2156,69 @@ function renderPerguntasTab(container) {
             perguntasState.lista = perguntasState.lista.filter(item => item.question_id !== p.question_id);
           }
           refreshPerguntasUI();
+        };
+      }
+
+      // ── Excluir pergunta ──
+      const btnExcluir = card.querySelector(`#pergunta-excluir-${p.question_id}`);
+      if (btnExcluir) {
+        btnExcluir.onclick = async () => {
+          if (!confirm(`Excluir esta pergunta do Mercado Livre?\n\n"${p.pergunta.substring(0, 80)}..."\n\nEssa ação é permanente.`)) return;
+          btnExcluir.disabled = true;
+          btnExcluir.textContent = "Excluindo...";
+          const token = p.conta === "matriz" ? state.tokenMatriz : state.token;
+          try {
+            const data = await fetch(`https://digoo-backend.vercel.app/api/ml-vendas?action=excluir-pergunta`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ question_id: p.question_id, token }),
+            }).then(r => r.json());
+            if (data.ok) {
+              if (perguntasState.lista) perguntasState.lista = perguntasState.lista.filter(item => item.question_id !== p.question_id);
+              set(ref(db, `/perguntas_dispensadas/${p.question_id}`), true);
+              refreshPerguntasUI();
+            } else {
+              btnExcluir.disabled = false;
+              btnExcluir.innerHTML = "🗑 Excluir pergunta";
+              alert("Erro ao excluir: " + (data.error || JSON.stringify(data.raw)));
+            }
+          } catch (e) {
+            btnExcluir.disabled = false;
+            btnExcluir.innerHTML = "🗑 Excluir pergunta";
+            alert("Erro: " + e.message);
+          }
+        };
+      }
+
+      // ── Bloquear comprador ──
+      const btnBloquear = card.querySelector(`#pergunta-bloquear-${p.question_id}`);
+      if (btnBloquear) {
+        btnBloquear.onclick = async () => {
+          const nomeComprador = p.nome_comprador || `usuário ${p.from_user}`;
+          if (!confirm(`Bloquear ${nomeComprador} no Mercado Livre?\n\nEle não poderá mais comprar seus anúncios.`)) return;
+          btnBloquear.disabled = true;
+          btnBloquear.textContent = "Bloqueando...";
+          const token = p.conta === "matriz" ? state.tokenMatriz : state.token;
+          try {
+            const data = await fetch(`https://digoo-backend.vercel.app/api/ml-vendas?action=bloquear-comprador`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ from_user: p.from_user, token }),
+            }).then(r => r.json());
+            if (data.ok) {
+              btnBloquear.innerHTML = "🚫 Bloqueado ✓";
+              btnBloquear.style.color = "#10b981";
+              btnBloquear.style.borderColor = "#10b98144";
+            } else {
+              btnBloquear.disabled = false;
+              btnBloquear.innerHTML = "🚫 Bloquear comprador";
+              alert("Erro ao bloquear: " + (data.error || JSON.stringify(data.raw)));
+            }
+          } catch (e) {
+            btnBloquear.disabled = false;
+            btnBloquear.innerHTML = "🚫 Bloquear comprador";
+            alert("Erro: " + e.message);
+          }
         };
       }
     });
