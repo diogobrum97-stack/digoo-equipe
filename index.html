@@ -2169,19 +2169,21 @@ function renderPerguntasTab(container) {
           const token = p.conta === "matriz" ? state.ml_token?.access_token : state.ml_token_filial?.access_token;
           if (!token) { alert("Token ML não conectado para esta conta."); btnExcluir.disabled = false; btnExcluir.innerHTML = "🗑 Excluir pergunta"; return; }
           try {
-            const data = await fetch(`https://digoo-backend.vercel.app/api/ml-vendas?action=excluir-pergunta&token=${encodeURIComponent(token)}&question_id=${p.question_id}`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ question_id: p.question_id, token }),
-            }).then(r => r.json());
-            if (data.ok) {
+            // Chamar ML diretamente (DELETE /questions/{id})
+            const r = await fetch(`https://api.mercadolibre.com/questions/${p.question_id}`, {
+              method: "DELETE",
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            const ok = r.ok || r.status === 204;
+            if (ok) {
               if (perguntasState.lista) perguntasState.lista = perguntasState.lista.filter(item => item.question_id !== p.question_id);
               set(ref(db, `/perguntas_dispensadas/${p.question_id}`), true);
               refreshPerguntasUI();
             } else {
+              const raw = await r.json().catch(() => ({}));
               btnExcluir.disabled = false;
               btnExcluir.innerHTML = "🗑 Excluir pergunta";
-              alert("Erro ao excluir: " + (data.error || JSON.stringify(data.raw)));
+              alert("Erro ao excluir: " + (raw?.message || raw?.error || `HTTP ${r.status}`));
             }
           } catch (e) {
             btnExcluir.disabled = false;
@@ -2202,19 +2204,26 @@ function renderPerguntasTab(container) {
           const token = p.conta === "matriz" ? state.ml_token?.access_token : state.ml_token_filial?.access_token;
           if (!token) { alert("Token ML não conectado para esta conta."); btnBloquear.disabled = false; btnBloquear.innerHTML = "🚫 Bloquear comprador"; return; }
           try {
-            const data = await fetch(`https://digoo-backend.vercel.app/api/ml-vendas?action=bloquear-comprador&token=${encodeURIComponent(token)}&from_user=${p.from_user}`, {
+            // Buscar seller_id via /users/me
+            const meRes = await fetch("https://api.mercadolibre.com/users/me", { headers: { Authorization: `Bearer ${token}` } });
+            const me = await meRes.json();
+            if (!me.id) throw new Error("Token inválido ou expirado");
+            // Bloquear comprador
+            const r = await fetch(`https://api.mercadolibre.com/users/${me.id}/blocked_users`, {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ from_user: p.from_user, token }),
-            }).then(r => r.json());
-            if (data.ok) {
+              headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+              body: JSON.stringify({ user: { id: Number(p.from_user) } }),
+            });
+            if (r.ok) {
               btnBloquear.innerHTML = "🚫 Bloqueado ✓";
               btnBloquear.style.color = "#10b981";
               btnBloquear.style.borderColor = "#10b98144";
+              btnBloquear.disabled = false;
             } else {
+              const raw = await r.json().catch(() => ({}));
               btnBloquear.disabled = false;
               btnBloquear.innerHTML = "🚫 Bloquear comprador";
-              alert("Erro ao bloquear: " + (data.error || JSON.stringify(data.raw)));
+              alert("Erro ao bloquear: " + (raw?.message || raw?.error || `HTTP ${r.status}`));
             }
           } catch (e) {
             btnBloquear.disabled = false;
