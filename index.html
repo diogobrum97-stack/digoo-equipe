@@ -2166,7 +2166,8 @@ function renderPerguntasTab(container) {
           if (!confirm(`Excluir esta pergunta do Mercado Livre?\n\n"${p.pergunta.substring(0, 80)}..."\n\nEssa ação é permanente.`)) return;
           btnExcluir.disabled = true;
           btnExcluir.textContent = "Excluindo...";
-          const token = p.conta === "matriz" ? state.tokenMatriz : state.token;
+          const token = p.conta === "matriz" ? state.ml_token?.access_token : state.ml_token_filial?.access_token;
+          if (!token) { alert("Token ML não conectado para esta conta."); btnExcluir.disabled = false; btnExcluir.innerHTML = "🗑 Excluir pergunta"; return; }
           try {
             const data = await fetch(`https://digoo-backend.vercel.app/api/ml-vendas?action=excluir-pergunta`, {
               method: "POST",
@@ -2198,7 +2199,8 @@ function renderPerguntasTab(container) {
           if (!confirm(`Bloquear ${nomeComprador} no Mercado Livre?\n\nEle não poderá mais comprar seus anúncios.`)) return;
           btnBloquear.disabled = true;
           btnBloquear.textContent = "Bloqueando...";
-          const token = p.conta === "matriz" ? state.tokenMatriz : state.token;
+          const token = p.conta === "matriz" ? state.ml_token?.access_token : state.ml_token_filial?.access_token;
+          if (!token) { alert("Token ML não conectado para esta conta."); btnBloquear.disabled = false; btnBloquear.innerHTML = "🚫 Bloquear comprador"; return; }
           try {
             const data = await fetch(`https://digoo-backend.vercel.app/api/ml-vendas?action=bloquear-comprador`, {
               method: "POST",
