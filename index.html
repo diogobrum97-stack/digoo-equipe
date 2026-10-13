@@ -10443,9 +10443,9 @@ async function renderNfTransferenciaFull(container, color) {
       row.innerHTML = `
         <div style="font-size:12px;font-weight:700;color:#3B82F6;font-family:'IBM Plex Mono',monospace;min-width:48px;">NF ${nf.chave.replace(/_/g,"/")}</div>
         <div style="flex:1;font-size:11px;color:${T.text2};">${dataStr}</div>
-        <div style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap;${temComp
-          ? `background:#10b98118;color:#10b981;border:0.5px solid #10b98144;`
-          : `background:#ff3d3d14;color:#e8432d;border:0.5px solid #ff3d3d33;`
+        <div style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap;letter-spacing:.1px;${temComp
+          ? `background:#34c75922;color:#34c759;border:0.5px solid #34c75955;`
+          : `background:#ff453a22;color:#ff6b63;border:0.5px solid #ff453a55;`
         }">${temComp ? `✓ Compl. ${nf.nfComplementarNumero}` : "Sem complementar"}</div>`;
       histWrap.appendChild(row);
     });
@@ -13285,12 +13285,12 @@ async function renderNfsEmitidas(panel) {
     // Badge complementar
     if (temComp) {
       const badge = document.createElement("span");
-      badge.style.cssText = "font-size:11px;font-weight:600;background:#10b98118;color:#10b981;border-radius:20px;padding:3px 12px;border:0.5px solid #10b98144;white-space:nowrap;";
+      badge.style.cssText = "font-size:11px;font-weight:700;background:#34c75922;color:#34c759;border-radius:20px;padding:3px 12px;border:0.5px solid #34c75955;white-space:nowrap;letter-spacing:.1px;";
       badge.textContent = `✓ Complementar NF ${nf.nfComplementarNumero}`;
       direita.appendChild(badge);
     } else {
       const badge = document.createElement("span");
-      badge.style.cssText = "font-size:11px;font-weight:500;background:#ff3d3d14;color:#e8432d;border-radius:20px;padding:3px 12px;border:0.5px solid #ff3d3d33;white-space:nowrap;";
+      badge.style.cssText = "font-size:11px;font-weight:700;background:#ff453a22;color:#ff6b63;border-radius:20px;padding:3px 12px;border:0.5px solid #ff453a55;white-space:nowrap;letter-spacing:.1px;";
       badge.textContent = "Sem complementar";
       direita.appendChild(badge);
     }
