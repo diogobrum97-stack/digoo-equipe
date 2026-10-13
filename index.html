@@ -4386,46 +4386,55 @@ async function initCalcIpi(task, numeroManual){
   let nfData = state.nfes_processadas?.[chave];
   let erro = null;
 
-  if(!nfData?.itens?.length && chave){
-    calcIpiState[task.id] = { produtos: [], frete: 0, ipiOriginal: 0, carregando: true };
-    render();
+  // Busca do Bling se: não tem itens no Firebase OU não tem ipiOriginal salvo ainda
+  const precisaBuscarBling = chave && (!nfData?.itens?.length || !nfData?.ipiOriginal);
+  if(precisaBuscarBling){
+    if(!nfData?.itens?.length){
+      calcIpiState[task.id] = { produtos: [], frete: 0, ipiOriginal: 0, carregando: true };
+      render();
+    }
     try{
       const r = await fetch(`${BLING_PROXY}/api/bling-produtos?notaCompleta=${encodeURIComponent(chave)}`);
       const d = await r.json();
       if(r.ok && d?.data){
         const corpo = d.data;
         const itensBrutos = corpo.itens || corpo.itensNota || [];
-        const itensExtraidos = itensBrutos.map(it => ({
-          sku: it.codigo || null,
-          produto: it.descricao || "",
-          ncm: String(it.classificacaoFiscal || "").replace(/\D/g, ""),
-          quantidade: Number(it.quantidade) || 0,
-          valorUnit: Number(it.valor) || 0,
-        })).filter(it => it.sku);
-        if(!itensExtraidos.length){
-          erro = `A nota #${chave} foi encontrada, mas nenhum item com SKU veio nela. Confere se o SKU está cadastrado nos produtos dessa nota no Bling.`;
+        // Só atualiza itens se não tinham sido salvos antes
+        if(!nfData?.itens?.length){
+          const itensExtraidos = itensBrutos.map(it => ({
+            sku: it.codigo || null,
+            produto: it.descricao || "",
+            ncm: String(it.classificacaoFiscal || "").replace(/\D/g, ""),
+            quantidade: Number(it.quantidade) || 0,
+            valorUnit: Number(it.valor) || 0,
+          })).filter(it => it.sku);
+          if(!itensExtraidos.length){
+            erro = `A nota #${chave} foi encontrada, mas nenhum item com SKU veio nela. Confere se o SKU está cadastrado nos produtos dessa nota no Bling.`;
+          }
+          nfData = { ...(nfData||{}), itens: itensExtraidos };
+          set(ref(db, `/nfes_processadas/${chave}/itens`), itensExtraidos);
         }
-        // Calcula o total de IPI da NF original — tenta múltiplos caminhos pois
-        // o Bling v3 pode usar diferentes nomes de campo dependendo da versão
-        let ipiTotalNF = itensBrutos.reduce((acc, it) => {
-          // Tenta valorIPI direto ou dentro de sub-objeto impostos/ipi
-          const ipiItem = Number(it.valorIPI) || Number(it.ipi?.vIPI) || Number(it.impostos?.ipi?.vIPI) || 0;
-          return acc + ipiItem;
-        }, 0);
-        // Fallback: totalizadores da nota (campo totais.icmsTot.vIPI ou similar)
-        if (!ipiTotalNF) {
-          const tot = corpo.totais || corpo.impostos || {};
-          ipiTotalNF = Number(tot.vIPI) || Number(tot.icmsTot?.vIPI) || 0;
+        // Sempre tenta extrair o IPI — tenta múltiplos caminhos
+        if(!nfData?.ipiOriginal){
+          let ipiTotalNF = itensBrutos.reduce((acc, it) => {
+            const ipiItem = Number(it.valorIPI) || Number(it.ipi?.vIPI) || Number(it.impostos?.ipi?.vIPI) || 0;
+            return acc + ipiItem;
+          }, 0);
+          // Fallback: totalizadores da nota
+          if (!ipiTotalNF) {
+            const tot = corpo.totais || corpo.impostos || {};
+            ipiTotalNF = Number(tot.vIPI) || Number(tot.icmsTot?.vIPI) || 0;
+          }
+          if (ipiTotalNF > 0) {
+            nfData = { ...(nfData||{}), ipiOriginal: ipiTotalNF, ipiOriginalAuto: true };
+            set(ref(db, `/nfes_processadas/${chave}/ipiOriginal`), ipiTotalNF);
+          }
         }
-        if (ipiTotalNF > 0) nfData = { ...(nfData||{}), ipiOriginal: ipiTotalNF, ipiOriginalAuto: true };
-        nfData = { ...(nfData||{}), itens: itensExtraidos };
-        set(ref(db, `/nfes_processadas/${chave}/itens`), itensExtraidos);
-        if (ipiTotalNF > 0) set(ref(db, `/nfes_processadas/${chave}/ipiOriginal`), ipiTotalNF);
       }else{
-        erro = d?.error || `Não achei a nota #${chave} no Bling (erro ${r.status}).`;
+        if(!nfData?.itens?.length) erro = d?.error || `Não achei a nota #${chave} no Bling (erro ${r.status}).`;
       }
     }catch(e){
-      erro = `Erro de conexão ao buscar a nota #${chave}: ${e.message}`;
+      if(!nfData?.itens?.length) erro = `Erro de conexão ao buscar a nota #${chave}: ${e.message}`;
     }
   }else if(!chave){
     erro = "Não consegui identificar o número dessa NF a partir da tarefa. Digite o número manualmente abaixo.";
