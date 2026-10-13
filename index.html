@@ -13192,7 +13192,8 @@ async function renderNfsEmitidas(panel) {
   const lista = document.createElement("div");
   lista.style.cssText = "display:flex;flex-direction:column;gap:8px;";
 
-  // Recupera silenciosamente do Bling as NFs sem processedAt (emitidas pelo fluxo Full antigo)
+  // Recupera silenciosamente do Bling as NFs sem processedAt ou sem dataEmissao
+  // (inclui NFs que têm itens salvos de kit mas sem data — precisam sobrescrever com itens reais da NF)
   const nfsSemDados = nfs.filter(nf => !nf.processedAt && !nf.dataEmissao);
   if (nfsSemDados.length) {
     Promise.all(nfsSemDados.map(async nf => {
@@ -13213,13 +13214,18 @@ async function renderNfsEmitidas(panel) {
         const dataEmissao = (corpo.dataEmissao || "").slice(0, 10) || null;
         const naturezaNome = corpo.naturezaOperacao?.nome || "Transferência de Mercadorias p/ Filial";
         const chaveAcBling = corpo.chaveAcesso || null;
+        const ts = dataEmissao ? new Date(dataEmissao + "T12:00:00").getTime() : Date.now();
+        // update para os campos de metadata
         await update(ref(db, `/nfes_processadas/${nf.chave}`), {
           natureza: naturezaNome,
           dataEmissao: dataEmissao,
-          processedAt: dataEmissao ? new Date(dataEmissao + "T12:00:00").getTime() : Date.now(),
-          itens: itensParaSalvar.length ? itensParaSalvar : null,
+          processedAt: ts,
           ...(chaveAcBling ? { chaveAcesso: chaveAcBling } : {}),
         });
+        // set separado para itens — garante sobrescrever itens de kit que podem ter sido salvos antes
+        if (itensParaSalvar.length) {
+          await set(ref(db, `/nfes_processadas/${nf.chave}/itens`), itensParaSalvar);
+        }
       } catch(e) { /* ignora erros silenciosos */ }
     })).then(() => renderNfsEmitidas(panel)); // re-renderiza com os dados recuperados
   }
@@ -13306,6 +13312,35 @@ async function renderNfsEmitidas(panel) {
       menu.style.cssText = `position:fixed;z-index:9999;background:${T.card};border:0.5px solid ${T.border};border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.25);min-width:200px;padding:4px 0;top:${dotsRect.bottom+4}px;right:${window.innerWidth-dotsRect.right}px;`;
 
       const opcoes = [
+        { label: "↻ Sincronizar com Bling", fn: async () => {
+          const numeroNF = nf.chave?.replace(/_/g, "/") || nf.chave;
+          try {
+            const r = await fetch(`${BLING_PROXY}/api/bling-produtos?notaCompleta=${encodeURIComponent(numeroNF)}`);
+            const d = await r.json();
+            if (!r.ok || !d?.data) { alert("Não achei a nota no Bling: " + (d?.error || r.status)); return; }
+            const corpo = d.data;
+            const itensBrutos = corpo.itens || [];
+            const itensParaSalvar = itensBrutos.map(it => ({
+              sku: it.codigo || null,
+              produto: it.descricao || "",
+              ncm: String(it.classificacaoFiscal || "").replace(/\D/g,""),
+              quantidade: Number(it.quantidade) || 0,
+              valorUnit: Number(it.valor) || 0,
+            })).filter(it => it.sku);
+            const dataEmissao = (corpo.dataEmissao || "").slice(0,10) || null;
+            const naturezaNome = corpo.naturezaOperacao?.nome || "Transferência de Mercadorias p/ Filial";
+            const chaveAcBling = corpo.chaveAcesso || null;
+            const ts = dataEmissao ? new Date(dataEmissao + "T12:00:00").getTime() : Date.now();
+            await update(ref(db, `/nfes_processadas/${nf.chave}`), {
+              natureza: naturezaNome,
+              dataEmissao: dataEmissao,
+              processedAt: ts,
+              ...(chaveAcBling ? { chaveAcesso: chaveAcBling } : {}),
+            });
+            if (itensParaSalvar.length) await set(ref(db, `/nfes_processadas/${nf.chave}/itens`), itensParaSalvar);
+            renderNfsEmitidas(panel);
+          } catch(e) { alert("Erro ao sincronizar: " + e.message); }
+        }},
         { label: "Baixar XML", fn: async () => {
           const chave = nf.chaveComplementar || nf.chaveAcesso || "";
           if (!chave) { alert("Chave de acesso não disponível."); return; }
