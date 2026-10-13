@@ -794,6 +794,33 @@ const FISCAL_EVENTS = [
 let dashData = null;
 let dashLoading = false;
 
+// ── Faturamento YTD / Meta Anual ──────────────────────────────────────────
+let ytdData = null;
+let ytdLoading = false;
+let ytdFetchedAt = 0;
+
+async function fetchYtd() {
+  if (ytdLoading) return;
+  // Cache de 30 minutos — dados históricos não mudam rápido
+  if (ytdData && (Date.now() - ytdFetchedAt) < 30 * 60 * 1000) return;
+  const tokenMatriz = state.ml_token?.access_token;
+  const tokenFilial = state.ml_token_filial?.access_token;
+  if (!tokenMatriz && !tokenFilial) return;
+  ytdLoading = true;
+  try {
+    const token = tokenMatriz || tokenFilial;
+    const url = `${VERCEL_BACKEND}/api/ml-vendas?action=faturamento-ytd&token=${token}${tokenFilial && tokenMatriz ? `&token_filial=${tokenFilial}` : ""}`;
+    const r = await fetch(url);
+    const d = await r.json();
+    if (d.ok) {
+      ytdData = d;
+      ytdFetchedAt = Date.now();
+      render();
+    }
+  } catch (e) { console.warn("YTD fetch:", e.message); }
+  ytdLoading = false;
+}
+
 let dashExperiencia = null;
 async function fetchExperiencia() {
   try {
@@ -910,8 +937,9 @@ window._fetchDashboard = async function fetchDashboard() {
     })();
     // Expor dados para o claude-chat.js (escopo externo)
     window._dashData = dashData;
-    // Buscar experiência em background (mais lento — não bloqueia)
+    // Buscar experiência e YTD em background (mais lentos — não bloqueiam)
     if(!dashExperiencia) fetchExperiencia();
+    fetchYtd();
   } catch(e) {
     dashData = { erro: e.message, _fetchedAt: Date.now() }; // _fetchedAt evita retry imediato
   }
@@ -2829,6 +2857,131 @@ function renderDashboard(panel, color) {
   }
 
   vendasCard.appendChild(vendasGrid);
+
+  // ── Card de Faturamento YTD + Meta Anual ─────────────────────────────────
+  {
+    const ytdCard = document.createElement("div");
+    ytdCard.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:16px 18px;margin-bottom:12px;`;
+
+    if (!ytdData && ytdLoading) {
+      ytdCard.innerHTML = `<div style="font-size:12px;color:${T.text2};text-align:center;padding:20px 0;">Carregando faturamento YTD…</div>`;
+    } else if (!ytdData) {
+      // Sem dados ainda: mostra placeholder sutil com botão para buscar
+      ytdCard.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:11px;font-weight:600;color:${T.text2};text-transform:uppercase;letter-spacing:1px;">Faturamento YTD · Meta 2026</span>
+          <span id="ytd-fetch-btn" style="font-size:11px;color:${T.text3};cursor:pointer;text-decoration:underline;">Carregar</span>
+        </div>
+        <div style="font-size:11px;color:${T.text3};margin-top:8px;">Clique em "Carregar" ou aguarde o próximo refresh do dashboard.</div>`;
+      const btn = ytdCard.querySelector("#ytd-fetch-btn");
+      if (btn) btn.onclick = () => fetchYtd();
+    } else {
+      const pct = ytdData.pct_meta || 0;
+      const barColor = pct >= 100 ? "#22c55e" : pct >= 75 ? "#3b82f6" : pct >= 50 ? "#f59e0b" : "#ef4444";
+      const barW = Math.min(pct, 100);
+
+      // Cabeçalho
+      const head = document.createElement("div");
+      head.style.cssText = "display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;";
+      head.innerHTML = `
+        <span style="font-size:11px;font-weight:600;color:${T.text2};text-transform:uppercase;letter-spacing:1px;">Faturamento YTD · Meta 2026</span>
+        <span style="font-size:10px;color:${T.text3};">atualizado ${new Date(ytdFetchedAt).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}</span>`;
+      ytdCard.appendChild(head);
+
+      // Linha principal: total e meta
+      const mainRow = document.createElement("div");
+      mainRow.style.cssText = "display:flex;align-items:flex-end;gap:16px;margin-bottom:10px;flex-wrap:wrap;";
+      mainRow.innerHTML = `
+        <div>
+          <div style="font-size:26px;font-weight:700;color:${T.text};letter-spacing:-1px;">${fmtFull(ytdData.total)}</div>
+          <div style="font-size:11px;color:${T.text2};margin-top:1px;">faturado em ${ytdData.ano}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;padding-bottom:4px;">
+          <span style="font-size:20px;font-weight:700;color:${barColor};">${pct.toFixed(1)}%</span>
+          <span style="font-size:11px;color:${T.text3};">da meta de ${fmtFull(ytdData.meta)}</span>
+        </div>`;
+      ytdCard.appendChild(mainRow);
+
+      // Barra de progresso
+      const barWrap = document.createElement("div");
+      barWrap.style.cssText = `background:${T.border};border-radius:4px;height:8px;margin-bottom:14px;overflow:hidden;`;
+      barWrap.innerHTML = `<div style="width:${barW}%;height:100%;background:${barColor};border-radius:4px;transition:width .6s;"></div>`;
+      ytdCard.appendChild(barWrap);
+
+      // Métricas secundárias
+      const metricsRow = document.createElement("div");
+      metricsRow.style.cssText = "display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;";
+
+      const mkMetric = (label, value, sub) => `
+        <div style="background:${T.border}22;border:0.5px solid ${T.border};border-radius:8px;padding:10px 12px;">
+          <div style="font-size:10px;color:${T.text3};text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">${label}</div>
+          <div style="font-size:16px;font-weight:700;color:${T.text};">${value}</div>
+          ${sub ? `<div style="font-size:10px;color:${T.text3};margin-top:2px;">${sub}</div>` : ""}
+        </div>`;
+
+      const faltaMeta = Math.max(0, ytdData.meta - ytdData.total);
+      metricsRow.innerHTML =
+        mkMetric("Projeção Anual", fmtFull(ytdData.projecao_anual),
+          ytdData.projecao_anual >= ytdData.meta ? "✅ Acima da meta" : `falta ${fmtFull(ytdData.meta - ytdData.projecao_anual)} p/ meta`) +
+        mkMetric("Média Mensal", fmtFull(ytdData.media_mensal),
+          `${ytdData.meses_equivalentes} meses equiv.`) +
+        mkMetric("Falta p/ Meta", faltaMeta > 0 ? fmtFull(faltaMeta) : "✅ Meta atingida",
+          faltaMeta > 0 ? `${(100 - pct).toFixed(1)}% restante` : "Parabéns!");
+      ytdCard.appendChild(metricsRow);
+
+      // Linha de contas (Matriz + Filial)
+      if (ytdData.contas) {
+        const contasRow = document.createElement("div");
+        contasRow.style.cssText = "display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;";
+        const mkConta = (nome, dados) => {
+          if (!dados) return "";
+          const pctConta = ytdData.total > 0 ? ((dados.total / ytdData.total) * 100).toFixed(1) : "0.0";
+          return `
+            <div style="flex:1;min-width:140px;background:${T.border}22;border:0.5px solid ${T.border};border-radius:8px;padding:10px 12px;">
+              <div style="font-size:10px;color:${T.text3};text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">${nome}</div>
+              <div style="font-size:15px;font-weight:700;color:${T.text};">${fmtFull(dados.total)}</div>
+              <div style="font-size:10px;color:${T.text3};margin-top:2px;">${pctConta}% do total · ${dados.pedidos} pedidos</div>
+            </div>`;
+        };
+        contasRow.innerHTML =
+          mkConta("Matriz RS", ytdData.contas.matriz) +
+          mkConta("Filial SP", ytdData.contas.filial);
+        ytdCard.appendChild(contasRow);
+      }
+
+      // Mini gráfico de barras por mês (texto simples)
+      if (ytdData.por_mes && Object.keys(ytdData.por_mes).length > 0) {
+        const meses = Object.keys(ytdData.por_mes).sort();
+        const maxVal = Math.max(...meses.map(m => ytdData.por_mes[m]));
+        const nomeMes = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+
+        const chartWrap = document.createElement("div");
+        chartWrap.style.cssText = "margin-top:4px;";
+        const chartLabel = document.createElement("div");
+        chartLabel.style.cssText = `font-size:10px;color:${T.text3};text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;`;
+        chartLabel.textContent = "Por mês";
+        chartWrap.appendChild(chartLabel);
+
+        const barsRow = document.createElement("div");
+        barsRow.style.cssText = "display:flex;align-items:flex-end;gap:4px;height:54px;";
+        meses.forEach(m => {
+          const val = ytdData.por_mes[m];
+          const h = maxVal > 0 ? Math.max(4, Math.round((val / maxVal) * 50)) : 4;
+          const mesIdx = parseInt(m.split("-")[1], 10) - 1;
+          const col = document.createElement("div");
+          col.style.cssText = "display:flex;flex-direction:column;align-items:center;flex:1;gap:2px;";
+          col.innerHTML = `
+            <div title="${fmtFull(val)}" style="width:100%;height:${h}px;background:${barColor};border-radius:3px 3px 0 0;min-width:8px;cursor:default;"></div>
+            <div style="font-size:9px;color:${T.text3};">${nomeMes[mesIdx] || m}</div>`;
+          barsRow.appendChild(col);
+        });
+        chartWrap.appendChild(barsRow);
+        ytdCard.appendChild(chartWrap);
+      }
+    }
+
+    vendasCard.appendChild(ytdCard);
+  }
 
   // ── Gráficos: Faturamento mensal (full width) + linha inferior ─────────────
   if(typeof Chart !== "undefined") {
