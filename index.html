@@ -2858,107 +2858,6 @@ function renderDashboard(panel, color) {
 
   vendasCard.appendChild(vendasGrid);
 
-  // ── Card de Faturamento YTD + Meta Anual ─────────────────────────────────
-  {
-    const ytdCard = document.createElement("div");
-    ytdCard.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:16px 18px;margin-bottom:12px;`;
-
-    if (!ytdData && ytdLoading) {
-      ytdCard.innerHTML = `
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-          <span style="font-size:11px;font-weight:600;color:${T.text2};text-transform:uppercase;letter-spacing:1px;">Faturamento YTD · Meta 2026</span>
-        </div>
-        <div style="font-size:12px;color:${T.text3};text-align:center;padding:16px 0;">Carregando…</div>`;
-    } else if (!ytdData) {
-      ytdCard.innerHTML = `
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-          <span style="font-size:11px;font-weight:600;color:${T.text2};text-transform:uppercase;letter-spacing:1px;">Faturamento YTD · Meta 2026</span>
-          <span id="ytd-fetch-btn" style="font-size:11px;color:${T.text3};cursor:pointer;text-decoration:underline;">Carregar</span>
-        </div>
-        <div style="font-size:11px;color:${T.text3};margin-top:8px;">Carrega junto com o próximo refresh do dashboard.</div>`;
-      const btn = ytdCard.querySelector("#ytd-fetch-btn");
-      if (btn) btn.onclick = () => fetchYtd();
-    } else {
-      const pct      = ytdData.pct_meta || 0;
-      const acColor  = pct >= 100 ? "#22c55e" : pct >= 65 ? "#3b82f6" : pct >= 40 ? "#f59e0b" : "#ef4444";
-      const faltaMeta = Math.max(0, ytdData.meta - ytdData.total);
-
-      // Cabeçalho
-      const head = document.createElement("div");
-      head.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;";
-      head.innerHTML = `
-        <span style="font-size:11px;font-weight:600;color:${T.text2};text-transform:uppercase;letter-spacing:1px;">Faturamento YTD · Meta 2026</span>
-        <span style="font-size:10px;color:${T.text3};">atualizado ${new Date(ytdFetchedAt).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}</span>`;
-      ytdCard.appendChild(head);
-
-      // Corpo: donut SVG à esquerda + métricas à direita
-      const body = document.createElement("div");
-      body.style.cssText = "display:flex;align-items:center;gap:20px;margin-bottom:14px;";
-
-      // Donut SVG (120×120)
-      const circ = 2 * Math.PI * 48;
-      const filled = Math.min(pct / 100, 1) * circ;
-      const donutWrap = document.createElement("div");
-      donutWrap.style.cssText = "flex-shrink:0;position:relative;width:110px;height:110px;";
-      donutWrap.innerHTML = `
-        <svg viewBox="0 0 120 120" width="110" height="110">
-          <circle cx="60" cy="60" r="48" fill="none" stroke="${T.border}" stroke-width="11"/>
-          <circle cx="60" cy="60" r="48" fill="none" stroke="${acColor}" stroke-width="11"
-            stroke-dasharray="${filled} ${circ}" stroke-dashoffset="${circ * 0.25}"
-            stroke-linecap="round"/>
-        </svg>
-        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;">
-          <span style="font-size:19px;font-weight:700;color:${acColor};line-height:1;">${pct.toFixed(1)}%</span>
-          <span style="font-size:9px;color:${T.text3};margin-top:2px;">da meta</span>
-        </div>`;
-      body.appendChild(donutWrap);
-
-      // Métricas à direita
-      const metrics = document.createElement("div");
-      metrics.style.cssText = "flex:1;min-width:0;display:flex;flex-direction:column;gap:10px;";
-      metrics.innerHTML = `
-        <div>
-          <div style="font-size:24px;font-weight:700;color:${T.text};letter-spacing:-.5px;line-height:1;">${fmtFull(ytdData.total)}</div>
-          <div style="font-size:11px;color:${T.text2};margin-top:3px;">faturado em ${ytdData.ano} (Matriz + Filial)</div>
-        </div>
-        <div style="display:flex;gap:18px;flex-wrap:wrap;">
-          <div>
-            <div style="font-size:10px;color:${T.text3};text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;">Projeção dez</div>
-            <div style="font-size:14px;font-weight:600;color:${T.text};">${fmtFull(ytdData.projecao_anual)}</div>
-          </div>
-          <div>
-            <div style="font-size:10px;color:${T.text3};text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;">Média / mês</div>
-            <div style="font-size:14px;font-weight:600;color:${T.text};">${fmtFull(ytdData.media_mensal)}</div>
-          </div>
-          <div>
-            <div style="font-size:10px;color:${T.text3};text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;">Falta p/ meta</div>
-            <div style="font-size:14px;font-weight:600;color:${faltaMeta > 0 ? "#ef4444" : "#22c55e"};">${faltaMeta > 0 ? fmtFull(faltaMeta) : "Atingida ✓"}</div>
-          </div>
-        </div>`;
-      body.appendChild(metrics);
-      ytdCard.appendChild(body);
-
-      // Chips Matriz + Filial
-      if (ytdData.contas) {
-        const contasRow = document.createElement("div");
-        contasRow.style.cssText = "display:flex;gap:8px;";
-        const mkConta = (nome, dados) => {
-          if (!dados || !dados.total) return "";
-          const pctC = ytdData.total > 0 ? Math.round(dados.total / ytdData.total * 100) : 0;
-          return `<div style="flex:1;border:0.5px solid ${T.border};border-radius:8px;padding:8px 10px;">
-            <div style="font-size:10px;color:${T.text3};text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;">${nome}</div>
-            <div style="font-size:14px;font-weight:600;color:${T.text};">${fmtFull(dados.total)}</div>
-            <div style="font-size:10px;color:${T.text3};margin-top:2px;">${pctC}% do total · ${dados.pedidos} pedidos</div>
-          </div>`;
-        };
-        contasRow.innerHTML = mkConta("Matriz RS", ytdData.contas.matriz) + mkConta("Filial SP", ytdData.contas.filial);
-        ytdCard.appendChild(contasRow);
-      }
-    }
-
-    vendasCard.appendChild(ytdCard);
-  }
-
   // ── Gráficos: Faturamento mensal (full width) + linha inferior ─────────────
   if(typeof Chart !== "undefined") {
     function mkChartCard(titulo, subtitulo, height) {
@@ -3427,6 +3326,104 @@ function renderDashboard(panel, color) {
   pendCard.appendChild(cTarefas._drw);
   pendCard.appendChild(cPerg._drw);
   pendCard.appendChild(cEst._drw);
+  // ── Card Meta YTD (primeiro card do sidebar) ─────────────────────────────
+  {
+    const ytdSide = document.createElement("div");
+    ytdSide.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:16px 18px;`;
+
+    if (!ytdData && ytdLoading) {
+      ytdSide.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <span style="font-size:10px;font-weight:600;color:${T.text3};text-transform:uppercase;letter-spacing:.09em;">Meta 2026</span>
+        </div>
+        <div style="font-size:12px;color:${T.text3};text-align:center;padding:20px 0;">Carregando…</div>`;
+    } else if (!ytdData) {
+      ytdSide.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:10px;font-weight:600;color:${T.text3};text-transform:uppercase;letter-spacing:.09em;">Meta 2026</span>
+          <span id="ytd-side-btn" style="font-size:11px;color:${T.text3};cursor:pointer;text-decoration:underline;">Carregar</span>
+        </div>
+        <div style="font-size:11px;color:${T.text3};margin-top:8px;">Carrega no próximo refresh.</div>`;
+      const btn = ytdSide.querySelector("#ytd-side-btn");
+      if (btn) btn.onclick = () => { fetchYtd(); };
+    } else {
+      const pct      = ytdData.pct_meta || 0;
+      const acColor  = pct >= 100 ? "#22c55e" : pct >= 65 ? "#3b82f6" : pct >= 40 ? "#f59e0b" : "#ef4444";
+      const faltaMeta = Math.max(0, ytdData.meta - ytdData.total);
+      const brlk = v => {
+        if (v >= 1_000_000) return "R$ " + (v / 1_000_000).toFixed(1).replace(".", ",") + "M";
+        return "R$ " + Math.round(v / 1000) + "k";
+      };
+      const brlFull = v => "R$ " + Number(v).toLocaleString("pt-BR", {maximumFractionDigits: 0});
+
+      // Cabeçalho
+      const head = document.createElement("div");
+      head.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;";
+      head.innerHTML = `
+        <span style="font-size:10px;font-weight:600;color:${T.text3};text-transform:uppercase;letter-spacing:.09em;">Meta 2026</span>
+        <span style="font-size:10px;color:${T.text3};font-family:monospace;">atualizado ${new Date(ytdFetchedAt).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}</span>`;
+      ytdSide.appendChild(head);
+
+      // Donut SVG centralizado
+      const circR = 60, strokeW = 12;
+      const circLen = 2 * Math.PI * circR;
+      const filledLen = Math.min(pct / 100, 1) * circLen;
+      const donutWrap = document.createElement("div");
+      donutWrap.style.cssText = "display:flex;justify-content:center;margin-bottom:16px;";
+      donutWrap.innerHTML = `
+        <div style="position:relative;width:150px;height:150px;flex-shrink:0;">
+          <svg viewBox="0 0 150 150" width="150" height="150">
+            <circle cx="75" cy="75" r="${circR}" fill="none" stroke="${T.border}" stroke-width="${strokeW}"/>
+            <circle cx="75" cy="75" r="${circR}" fill="none" stroke="${acColor}" stroke-width="${strokeW}"
+              stroke-dasharray="${filledLen} ${circLen}" stroke-dashoffset="${circLen * 0.25}"
+              stroke-linecap="round"/>
+          </svg>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;text-align:center;">
+            <span style="font-size:28px;font-weight:700;color:${acColor};line-height:1;font-variant-numeric:tabular-nums;">${pct.toFixed(1)}%</span>
+            <span style="font-size:10px;color:${T.text3};margin-top:4px;">da meta</span>
+          </div>
+        </div>`;
+      ytdSide.appendChild(donutWrap);
+
+      // 3 valores em grade: Faturado · Meta · Falta
+      const vals = document.createElement("div");
+      vals.style.cssText = `display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;width:100%;margin-bottom:14px;`;
+      vals.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:12px 8px;">
+          <span style="font-size:10px;color:${T.text3};text-transform:uppercase;letter-spacing:.07em;">Faturado</span>
+          <span style="font-size:18px;font-weight:700;color:${T.text};font-variant-numeric:tabular-nums;line-height:1;">${brlk(ytdData.total)}</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:12px 8px;border-left:0.5px solid ${T.border};border-right:0.5px solid ${T.border};">
+          <span style="font-size:10px;color:${T.text3};text-transform:uppercase;letter-spacing:.07em;">Meta</span>
+          <span style="font-size:18px;font-weight:700;color:${T.text2};font-variant-numeric:tabular-nums;line-height:1;">${brlk(ytdData.meta)}</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:12px 8px;">
+          <span style="font-size:10px;color:${T.text3};text-transform:uppercase;letter-spacing:.07em;">Falta</span>
+          <span style="font-size:18px;font-weight:700;color:${faltaMeta > 0 ? "#ef4444" : "#22c55e"};font-variant-numeric:tabular-nums;line-height:1;">${faltaMeta > 0 ? brlk(faltaMeta) : "✓"}</span>
+        </div>`;
+      ytdSide.appendChild(vals);
+
+      // Chips Matriz + Filial
+      if (ytdData.contas) {
+        const chips = document.createElement("div");
+        chips.style.cssText = "display:flex;gap:8px;";
+        const mkChip = (nome, dados) => {
+          if (!dados || !dados.total) return "";
+          const pctC = ytdData.total > 0 ? Math.round(dados.total / ytdData.total * 100) : 0;
+          return `<div style="flex:1;border:0.5px solid ${T.border};border-radius:8px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center;">
+            <span style="font-size:10px;font-weight:600;color:${T.text3};text-transform:uppercase;letter-spacing:.09em;">${nome}</span>
+            <span style="font-size:14px;font-weight:600;color:${T.text};font-variant-numeric:tabular-nums;">${brlFull(dados.total)}</span>
+            <span style="font-size:10px;color:${T.text3};">${pctC}% do total · ${dados.pedidos} pedidos</span>
+          </div>`;
+        };
+        chips.innerHTML = mkChip("Matriz RS", ytdData.contas.matriz) + mkChip("Filial SP", ytdData.contas.filial);
+        ytdSide.appendChild(chips);
+      }
+    }
+
+    statusBar.appendChild(ytdSide);
+  }
+
   statusBar.appendChild(pendCard);
 
   // ── Card Operações ──
