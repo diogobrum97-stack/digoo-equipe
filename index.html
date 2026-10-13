@@ -13192,12 +13192,44 @@ async function renderNfsEmitidas(panel) {
   const lista = document.createElement("div");
   lista.style.cssText = "display:flex;flex-direction:column;gap:8px;";
 
+  // Recupera silenciosamente do Bling as NFs sem processedAt (emitidas pelo fluxo Full antigo)
+  const nfsSemDados = nfs.filter(nf => !nf.processedAt && !nf.dataEmissao);
+  if (nfsSemDados.length) {
+    Promise.all(nfsSemDados.map(async nf => {
+      const numeroNF = nf.chave?.replace(/_/g, "/") || nf.chave;
+      try {
+        const r = await fetch(`${BLING_PROXY}/api/bling-produtos?notaCompleta=${encodeURIComponent(numeroNF)}`);
+        const d = await r.json();
+        if (!r.ok || !d?.data) return;
+        const corpo = d.data;
+        const itensBrutos = corpo.itens || [];
+        const itensParaSalvar = itensBrutos.map(it => ({
+          sku: it.codigo || null,
+          produto: it.descricao || "",
+          ncm: String(it.classificacaoFiscal || "").replace(/\D/g,""),
+          quantidade: Number(it.quantidade) || 0,
+          valorUnit: Number(it.valor) || 0,
+        })).filter(it => it.sku);
+        const dataEmissao = (corpo.dataEmissao || "").slice(0, 10) || null;
+        const naturezaNome = corpo.naturezaOperacao?.nome || "Transferência de Mercadorias p/ Filial";
+        const chaveAcBling = corpo.chaveAcesso || null;
+        await update(ref(db, `/nfes_processadas/${nf.chave}`), {
+          natureza: naturezaNome,
+          dataEmissao: dataEmissao,
+          processedAt: dataEmissao ? new Date(dataEmissao + "T12:00:00").getTime() : Date.now(),
+          itens: itensParaSalvar.length ? itensParaSalvar : null,
+          ...(chaveAcBling ? { chaveAcesso: chaveAcBling } : {}),
+        });
+      } catch(e) { /* ignora erros silenciosos */ }
+    })).then(() => renderNfsEmitidas(panel)); // re-renderiza com os dados recuperados
+  }
+
   nfs.forEach(nf => {
     const tsDate = nf.processedAt ? new Date(nf.processedAt) : (nf.dataEmissao ? new Date(nf.dataEmissao + "T12:00:00") : null);
-    const data = tsDate ? tsDate.toLocaleDateString("pt-BR") : "—";
+    const data = tsDate ? tsDate.toLocaleDateString("pt-BR") : "recuperando...";
     const hora = nf.processedAt ? new Date(nf.processedAt).toLocaleTimeString("pt-BR", {hour:"2-digit",minute:"2-digit"}) : (nf.dataEmissao ? "" : "");
     const natureza = nf.natureza || "Transferência de Mercadorias p/ Filial";
-    const itens = Array.isArray(nf.itens) ? nf.itens.length : "—";
+    const itens = Array.isArray(nf.itens) ? nf.itens.length : ((!nf.processedAt && !nf.dataEmissao) ? "..." : "—");
     const temComp = !!nf.nfComplementarNumero;
     const numero = nf.chave?.replace(/_/g, "/") || "—";
 
