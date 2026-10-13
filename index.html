@@ -10729,6 +10729,14 @@ function renderNfFullEmitirModal(itens) {
         if (!calcIpiState[taskFake.id]) {
           await initCalcIpi(taskFake, numeroNF);
         }
+        // Preenche ipiOriginal com o total de IPI da NF recém-emitida (vem direto dos itens do nfFullState)
+        if (calcIpiState[taskFake.id]) {
+          const ipiDaEmissao = (itens || []).reduce((s, it) => s + Number(it.valorIPI || 0), 0);
+          if (ipiDaEmissao > 0 && !calcIpiState[taskFake.id].ipiOriginal) {
+            calcIpiState[taskFake.id].ipiOriginal = ipiDaEmissao;
+            calcIpiState[taskFake.id].ipiOriginalAuto = true;
+          }
+        }
         const overlayComp = document.createElement("div");
         overlayComp.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;overflow-y:auto;display:flex;align-items:flex-start;justify-content:center;padding:20px;";
         const boxComp = document.createElement("div");
