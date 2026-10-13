@@ -4422,16 +4422,21 @@ async function initCalcIpi(task, numeroManual){
           nfData = { ...(nfData||{}), itens: itensExtraidos };
           set(ref(db, `/nfes_processadas/${chave}/itens`), itensExtraidos);
         }
-        // Sempre tenta extrair o IPI — tenta múltiplos caminhos
+        // Sempre tenta extrair o IPI — usa ipiTotal calculado pelo backend (via tributosCalculados)
         if(!nfData?.ipiOriginal){
-          let ipiTotalNF = itensBrutos.reduce((acc, it) => {
-            const ipiItem = Number(it.valorIPI) || Number(it.ipi?.vIPI) || Number(it.impostos?.ipi?.vIPI) || 0;
-            return acc + ipiItem;
-          }, 0);
-          // Fallback: totalizadores da nota
+          // Backend já calcula ipiTotal somando tributosCalculados (código '2' = IPI) por item
+          let ipiTotalNF = Number(d.ipiTotal) || 0;
+          // Fallbacks locais caso o backend não tenha conseguido
           if (!ipiTotalNF) {
-            const tot = corpo.totais || corpo.impostos || {};
-            ipiTotalNF = Number(tot.vIPI) || Number(tot.icmsTot?.vIPI) || 0;
+            ipiTotalNF = itensBrutos.reduce((acc, it) => {
+              const tributos = it.tributosCalculados || [];
+              const ipiTrib = tributos.find(t => String(t.tributo?.codigo || t.codigo || '') === '2');
+              return acc + Number(ipiTrib?.valor || ipiTrib?.valorTributo || it.valorIPI || it.ipi?.valor || 0);
+            }, 0);
+          }
+          if (!ipiTotalNF) {
+            const tot = corpo.totais || corpo.totalImpostos || corpo.impostos || {};
+            ipiTotalNF = Number(tot.ipi || tot.vIPI || tot.totalIpi || 0);
           }
           if (ipiTotalNF > 0) {
             nfData = { ...(nfData||{}), ipiOriginal: ipiTotalNF, ipiOriginalAuto: true };
@@ -13294,7 +13299,6 @@ async function renderNfsEmitidas(panel) {
           }
           // Usar valores resolvidos do calcIpiState (podem vir do Bling ou do Firebase)
           const chaveAcesso44 = calcIpiState[taskFake.id]?.chaveAcesso || nf.chaveAcesso || "";
-          const ipiResolvido = calcIpiState[taskFake.id]?.ipiOriginal || nf.ipiOriginal || 0;
           // Abrir modal com calculadora completa
           const overlay = document.createElement("div");
           overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;overflow-y:auto;display:flex;align-items:flex-start;justify-content:center;padding:20px;";
@@ -13310,22 +13314,15 @@ async function renderNfsEmitidas(panel) {
           closeBtn.onclick = () => overlay.remove();
           titleDiv.appendChild(closeBtn);
           box.appendChild(titleDiv);
-          // Card de referência — chave de acesso e IPI original (usando valores resolvidos)
-          const refCard = document.createElement("div");
-          refCard.style.cssText = `background:${T.bg3};border:0.5px solid ${T.border};border-radius:8px;padding:10px 14px;margin-bottom:16px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;`;
-          const ipiValor = ipiResolvido > 0
-            ? `R$ ${Number(ipiResolvido).toLocaleString("pt-BR",{minimumFractionDigits:2})} <span style="font-size:9px;color:#10b981;font-weight:600;background:#10b98118;border:0.5px solid #10b98144;border-radius:10px;padding:1px 7px;margin-left:4px;">auto</span>`
-            : `<span style="color:${T.text3};font-size:11px;">não disponível</span>`;
-          refCard.innerHTML = `
-            <div style="flex:1;min-width:0;">
-              <div style="font-size:9px;font-weight:600;color:${T.text3};letter-spacing:.8px;margin-bottom:3px;">CHAVE DE ACESSO DA ORIGINAL</div>
-              <div style="font-size:11px;color:${chaveAcesso44 ? T.text : T.text3};font-family:'IBM Plex Mono',monospace;word-break:break-all;">${chaveAcesso44 || "—"}</div>
-            </div>
-            <div style="flex-shrink:0;text-align:right;">
-              <div style="font-size:9px;font-weight:600;color:${T.text3};letter-spacing:.8px;margin-bottom:3px;">IPI DA ORIGINAL</div>
-              <div style="font-size:14px;font-weight:700;color:#f0b400;">${ipiValor}</div>
-            </div>`;
-          box.appendChild(refCard);
+          // Card de referência — apenas chave de acesso (IPI fica no campo abaixo da calculadora)
+          if (chaveAcesso44) {
+            const refCard = document.createElement("div");
+            refCard.style.cssText = `background:${T.bg3};border:0.5px solid ${T.border};border-radius:8px;padding:10px 14px;margin-bottom:16px;`;
+            refCard.innerHTML = `
+              <div style="font-size:9px;font-weight:600;color:${T.text3};letter-spacing:.8px;margin-bottom:4px;">CHAVE DE ACESSO DA ORIGINAL</div>
+              <div style="font-size:11px;color:${T.text};font-family:'IBM Plex Mono',monospace;word-break:break-all;">${chaveAcesso44}</div>`;
+            box.appendChild(refCard);
+          }
           // Calculadora completa
           renderCalcIpiPanel(box, taskFake);
 
