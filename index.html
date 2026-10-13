@@ -10756,10 +10756,23 @@ function renderNfFullEmitirModal(itens) {
       nfFullState.fase = "concluido";
       nfFullState.nfEmitida = { numero: data.numero, chave: data.chaveAcesso, status: data.status };
 
-      // Salvar chaveAcesso no Firebase para uso futuro na complementar de IPI
+      // Salvar dados completos no Firebase para aparecer corretamente em NFs Emitidas
       if (data.numero && data.chaveAcesso) {
         const chaveFirebase = String(data.numero).replace(/[.#$\[\]\/]/g, "_");
-        update(ref(db, `/nfes_processadas/${chaveFirebase}`), { chaveAcesso: data.chaveAcesso }).catch(() => {});
+        const itensParaSalvar = (nfFullState.itens || []).map(it => ({
+          sku: it.sku || it.codigo || null,
+          produto: it.descricao || it.produto || "",
+          ncm: String(it.ncm || it.classificacaoFiscal || "").replace(/\D/g,""),
+          quantidade: Number(it.quantidade) || 0,
+          valorUnit: Number(it.custo || it.valorUnit || 0),
+        })).filter(it => it.sku);
+        update(ref(db, `/nfes_processadas/${chaveFirebase}`), {
+          chaveAcesso: data.chaveAcesso,
+          natureza: "Transferência de Mercadorias p/ Filial",
+          processedAt: Date.now(),
+          dataEmissao: new Date().toISOString().slice(0,10),
+          itens: itensParaSalvar.length ? itensParaSalvar : null,
+        }).catch(() => {});
       }
 
       // ── Botão Complementar de IPI ──
@@ -13160,7 +13173,13 @@ async function renderNfsEmitidas(panel) {
   const dados = snap.val() || {};
 
   const nfs = Object.entries(dados).map(([chave, v]) => ({ chave, ...v }))
-    .sort((a, b) => (b.processedAt || 0) - (a.processedAt || 0));
+    .sort((a, b) => {
+      // Prioridade: processedAt, depois número da NF como desempate
+      const tsA = a.processedAt || 0;
+      const tsB = b.processedAt || 0;
+      if (tsB !== tsA) return tsB - tsA;
+      return Number(b.chave) - Number(a.chave);
+    });
 
   if (!nfs.length) {
     const vazio = document.createElement("div");
@@ -13176,8 +13195,8 @@ async function renderNfsEmitidas(panel) {
   nfs.forEach(nf => {
     const tsDate = nf.processedAt ? new Date(nf.processedAt) : (nf.dataEmissao ? new Date(nf.dataEmissao + "T12:00:00") : null);
     const data = tsDate ? tsDate.toLocaleDateString("pt-BR") : "—";
-    const hora = nf.processedAt ? new Date(nf.processedAt).toLocaleTimeString("pt-BR", {hour:"2-digit",minute:"2-digit"}) : "";
-    const natureza = nf.natureza || "Transferência Full";
+    const hora = nf.processedAt ? new Date(nf.processedAt).toLocaleTimeString("pt-BR", {hour:"2-digit",minute:"2-digit"}) : (nf.dataEmissao ? "" : "");
+    const natureza = nf.natureza || "Transferência de Mercadorias p/ Filial";
     const itens = Array.isArray(nf.itens) ? nf.itens.length : "—";
     const temComp = !!nf.nfComplementarNumero;
     const numero = nf.chave?.replace(/_/g, "/") || "—";
