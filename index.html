@@ -13197,9 +13197,11 @@ async function renderNfsEmitidas(panel) {
   const nfsSemDados = nfs.filter(nf => !nf.processedAt && !nf.dataEmissao);
   if (nfsSemDados.length) {
     Promise.all(nfsSemDados.map(async nf => {
-      const numeroNF = nf.chave?.replace(/_/g, "/") || nf.chave;
+      // chave no Firebase é só o número (ex: "020747") — não precisa restaurar barras
+      const numeroNF = String(nf.chave || "").replace(/[_\/]/g, "").replace(/\D/g,"");
+      if (!numeroNF) return;
       try {
-        const r = await fetch(`${BLING_PROXY}/api/bling-produtos?notaCompleta=${encodeURIComponent(numeroNF)}`);
+        const r = await fetch(`${BLING_PROXY}/api/bling-produtos?notaCompleta=${numeroNF}`);
         const d = await r.json();
         if (!r.ok || !d?.data) return;
         const corpo = d.data;
@@ -13313,9 +13315,10 @@ async function renderNfsEmitidas(panel) {
 
       const opcoes = [
         { label: "↻ Sincronizar com Bling", fn: async () => {
-          const numeroNF = nf.chave?.replace(/_/g, "/") || nf.chave;
+          const numeroNF = String(nf.chave || "").replace(/[_\/]/g, "").replace(/\D/g,"");
+          if (!numeroNF) return;
           try {
-            const r = await fetch(`${BLING_PROXY}/api/bling-produtos?notaCompleta=${encodeURIComponent(numeroNF)}`);
+            const r = await fetch(`${BLING_PROXY}/api/bling-produtos?notaCompleta=${numeroNF}`);
             const d = await r.json();
             if (!r.ok || !d?.data) { alert("Não achei a nota no Bling: " + (d?.error || r.status)); return; }
             const corpo = d.data;
