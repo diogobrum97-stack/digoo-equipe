@@ -131,7 +131,16 @@ const BUDGET_HORAS = { superurgente:4, urgente:24, importante:48, normal:72 };
 // Calculadora_IPI (aba ALIQUOTAS_IPI + valores usados linha a linha). NCM não
 // mapeado cai em 0 com aviso, pra não travar o cálculo — dá pra completar aqui.
 const ALIQUOTAS_IPI = { "29319029":0, "73181500":0.065, "83021000":0.0975, "84145990":0, "84733019":0.065, "84733090":0.065 };
-function getAliquotaIPI(ncm){
+function getAliquotaIPI(ncm, sku){
+  // Prioridade: 1) por SKU (mais específico), 2) por NCM no Firebase, 3) hardcoded
+  const s = normSku(sku||"");
+  if(s){
+    let porSku = state.aliquotas_ipi_sku?.[s];
+    if(porSku!=null){
+      if(porSku>1) porSku=porSku/100;
+      return { valor:porSku, conhecido:true, fonte:"sku" };
+    }
+  }
   const n=String(ncm||"").replace(/\D/g,"");
   let extra = state.aliquotas_ipi_extra?.[n];
   if(extra!=null){
@@ -139,13 +148,17 @@ function getAliquotaIPI(ncm){
     // digitou "9.75" pensando em porcentagem (em vez de 0.0975 em fração),
     // corrige sozinho dividindo por 100.
     if(extra>1) extra = extra/100;
-    return { valor:extra, conhecido:true };
+    return { valor:extra, conhecido:true, fonte:"ncm" };
   }
-  return n in ALIQUOTAS_IPI ? { valor:ALIQUOTAS_IPI[n], conhecido:true } : { valor:0, conhecido:false };
+  return n in ALIQUOTAS_IPI ? { valor:ALIQUOTAS_IPI[n], conhecido:true, fonte:"hardcoded" } : { valor:0, conhecido:false };
 }
-function cadastrarAliquotaIPI(ncm, valorPercentual){
+function cadastrarAliquotaIPI(ncm, sku, valorPercentual){
   const n=String(ncm||"").replace(/\D/g,"");
-  if(n) set(ref(db, `/aliquotas_ipi_extra/${n}`), valorPercentual/100); // campo pede % (ex: 9.75), guarda como fração (0.0975)
+  const s=normSku(sku||"");
+  const frac = valorPercentual/100;
+  // Salva por SKU (prioridade) e por NCM (fallback pra SKUs do mesmo NCM sem registro próprio)
+  if(s) set(ref(db, `/aliquotas_ipi_sku/${s}`), frac);
+  if(n) set(ref(db, `/aliquotas_ipi_extra/${n}`), frac);
 }
 const REDUCAO_IPI = 0.10; // % de redução sempre fixo, conforme confirmado
 const PRECOS_VENDA_REFERENCIA_POR_SKU = {
@@ -667,7 +680,7 @@ onValue(ref(db,"/"),snap=>{
   delete d.cte_tomados;
   delete d.nfe_tomadas;
   delete d.nfse_tomadas;
-  d.tasks=d.tasks||{};d.messages=d.messages||{};d.flashes=d.flashes||{};d.notices=d.notices||{};d.ml_token=d.ml_token||null;d.ml_cache=d.ml_cache||null;d.price_changes=d.price_changes||{};d.ml_token_filial=d.ml_token_filial||null;d.last_known_prices=d.last_known_prices||{};d.nfes_processadas=d.nfes_processadas||{};d.categoria_saude=d.categoria_saude||{};d.aliquotas_ipi_extra=d.aliquotas_ipi_extra||{};d.precos_venda_manual=d.precos_venda_manual||{};d.frete_ml_manual=d.frete_ml_manual||{};d.ordem_tarefas=d.ordem_tarefas||[];d.google_token=d.google_token||null;d.fechamentos=d.fechamentos||{};d.config_atributos=d.config_atributos||null;d.config_kits=d.config_kits||null;
+  d.tasks=d.tasks||{};d.messages=d.messages||{};d.flashes=d.flashes||{};d.notices=d.notices||{};d.ml_token=d.ml_token||null;d.ml_cache=d.ml_cache||null;d.price_changes=d.price_changes||{};d.ml_token_filial=d.ml_token_filial||null;d.last_known_prices=d.last_known_prices||{};d.nfes_processadas=d.nfes_processadas||{};d.categoria_saude=d.categoria_saude||{};d.aliquotas_ipi_extra=d.aliquotas_ipi_extra||{};d.aliquotas_ipi_sku=d.aliquotas_ipi_sku||{};d.precos_venda_manual=d.precos_venda_manual||{};d.frete_ml_manual=d.frete_ml_manual||{};d.ordem_tarefas=d.ordem_tarefas||[];d.google_token=d.google_token||null;d.fechamentos=d.fechamentos||{};d.config_atributos=d.config_atributos||null;d.config_kits=d.config_kits||null;
   const seenTasks=JSON.parse(localStorage.getItem("digoo_seen_tasks")||"{}");
   let seenChanged=false;
   Object.entries(d.tasks).filter(([,t])=>t!=null).forEach(([id,task])=>{
@@ -4460,7 +4473,7 @@ async function initCalcIpi(task, numeroManual){
       const precoRef = PRECOS_VENDA_REFERENCIA_NORM[normSku(it.sku)];
       const precoInicial = precoSalvo!=null ? precoSalvo : (precoRef!=null ? precoRef : null);
       const freteManual = state.frete_ml_manual?.[normSku(it.sku)];
-      const sugestao = getAliquotaIPI(it.ncm); // só usada como ponto de partida — sempre editável depois
+      const sugestao = getAliquotaIPI(it.ncm, it.sku); // SKU tem prioridade sobre NCM na busca de alíquota
       return {
         sku: it.sku, produto: it.produto, qtd: it.quantidade, valorNf: it.valorUnit,
         ncm: it.ncm, precoVenda: precoInicial, automatico: true,
@@ -4742,6 +4755,11 @@ function renderCalcIpiPanel(container, task){
             else{ badge.style.color="var(--text3)"; badge.textContent=`${(p.aliquotaValor*100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}%`; }
           }
           recalcular();
+        });
+        inpAliqDet.addEventListener("blur",()=>{
+          // Salva alíquota por SKU (prioridade) e por NCM (fallback) no Firebase
+          // para que a próxima transferência já venha com o valor correto
+          if(p.aliquotaValor!=null && p.sku) cadastrarAliquotaIPI(p.ncm, p.sku, p.aliquotaValor*100);
         });
         campoAliq.appendChild(lblAliq); campoAliq.appendChild(inpAliqDet);
         tdDet.querySelector("div").appendChild(campoAliq);
