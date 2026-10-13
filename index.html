@@ -3326,101 +3326,156 @@ function renderDashboard(panel, color) {
   pendCard.appendChild(cTarefas._drw);
   pendCard.appendChild(cPerg._drw);
   pendCard.appendChild(cEst._drw);
-  // ── Card Meta YTD (primeiro card do sidebar) ─────────────────────────────
+  // ── Card Meta YTD (primeiro card do sidebar, colapsável) ─────────────────
   {
     const ytdSide = document.createElement("div");
-    ytdSide.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:16px 18px;`;
+    ytdSide.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:10px;overflow:hidden;`;
 
-    if (!ytdData && ytdLoading) {
-      ytdSide.innerHTML = `
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-          <span style="font-size:10px;font-weight:600;color:${T.text3};text-transform:uppercase;letter-spacing:.09em;">Meta 2026</span>
-        </div>
-        <div style="font-size:12px;color:${T.text3};text-align:center;padding:20px 0;">Carregando…</div>`;
-    } else if (!ytdData) {
-      ytdSide.innerHTML = `
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-          <span style="font-size:10px;font-weight:600;color:${T.text3};text-transform:uppercase;letter-spacing:.09em;">Meta 2026</span>
-          <span id="ytd-side-btn" style="font-size:11px;color:${T.text3};cursor:pointer;text-decoration:underline;">Carregar</span>
-        </div>
-        <div style="font-size:11px;color:${T.text3};margin-top:8px;">Carrega no próximo refresh.</div>`;
-      const btn = ytdSide.querySelector("#ytd-side-btn");
-      if (btn) btn.onclick = () => { fetchYtd(); };
-    } else {
+    // Estado expandido persiste por sessão
+    let ytdExpanded = false;
+    try { ytdExpanded = sessionStorage.getItem("ytd_expanded") === "1"; } catch(e){}
+
+    const brlk = v => {
+      if (v >= 1_000_000) return "R$ " + (v / 1_000_000).toFixed(1).replace(".", ",") + "M";
+      return "R$ " + Math.round(v / 1000) + "k";
+    };
+    const brlFull = v => "R$ " + Number(v).toLocaleString("pt-BR", {maximumFractionDigits: 0});
+
+    function renderYtdCard() {
+      ytdSide.innerHTML = "";
+
+      if (!ytdData && ytdLoading) {
+        // Estado loading — barra compacta
+        ytdSide.innerHTML = `
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;">
+            <span style="font-size:10px;font-weight:600;color:${T.text3};text-transform:uppercase;letter-spacing:.09em;">Meta 2026</span>
+            <span style="font-size:10px;color:${T.text3};">Carregando…</span>
+          </div>`;
+        return;
+      }
+
+      if (!ytdData) {
+        // Sem dados — barra compacta com botão carregar
+        ytdSide.innerHTML = `
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;">
+            <span style="font-size:10px;font-weight:600;color:${T.text3};text-transform:uppercase;letter-spacing:.09em;">Meta 2026</span>
+            <span id="ytd-side-load" style="font-size:10px;color:${T.text3};cursor:pointer;text-decoration:underline;">Carregar</span>
+          </div>`;
+        ytdSide.querySelector("#ytd-side-load")?.addEventListener("click", () => fetchYtd());
+        return;
+      }
+
       const pct      = ytdData.pct_meta || 0;
       const acColor  = pct >= 100 ? "#22c55e" : pct >= 65 ? "#3b82f6" : pct >= 40 ? "#f59e0b" : "#ef4444";
       const faltaMeta = Math.max(0, ytdData.meta - ytdData.total);
-      const brlk = v => {
-        if (v >= 1_000_000) return "R$ " + (v / 1_000_000).toFixed(1).replace(".", ",") + "M";
-        return "R$ " + Math.round(v / 1000) + "k";
-      };
-      const brlFull = v => "R$ " + Number(v).toLocaleString("pt-BR", {maximumFractionDigits: 0});
 
-      // Cabeçalho
-      const head = document.createElement("div");
-      head.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;";
-      head.innerHTML = `
-        <span style="font-size:10px;font-weight:600;color:${T.text3};text-transform:uppercase;letter-spacing:.09em;">Meta 2026</span>
-        <span style="font-size:10px;color:${T.text3};font-family:monospace;">atualizado ${new Date(ytdFetchedAt).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}</span>`;
-      ytdSide.appendChild(head);
+      // ── Linha compacta (sempre visível) ──────────────────────────────────
+      const chevron = ytdExpanded ? "▲" : "▼";
+      const row = document.createElement("div");
+      row.style.cssText = "display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;user-select:none;";
+      row.innerHTML = `
+        <!-- mini donut SVG 28px -->
+        <div style="flex-shrink:0;position:relative;width:28px;height:28px;">
+          ${(() => {
+            const r2 = 11, sw = 3, c2 = 2 * Math.PI * r2;
+            const f2 = Math.min(pct/100,1)*c2;
+            return `<svg viewBox="0 0 28 28" width="28" height="28">
+              <circle cx="14" cy="14" r="${r2}" fill="none" stroke="${T.border}" stroke-width="${sw}"/>
+              <circle cx="14" cy="14" r="${r2}" fill="none" stroke="${acColor}" stroke-width="${sw}"
+                stroke-dasharray="${f2} ${c2}" stroke-dashoffset="${c2*0.25}" stroke-linecap="round"/>
+            </svg>`;
+          })()}
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+            <span style="font-size:6px;font-weight:700;color:${acColor};">${Math.round(pct)}%</span>
+          </div>
+        </div>
+        <!-- label + valores resumidos -->
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:10px;font-weight:600;color:${T.text3};text-transform:uppercase;letter-spacing:.09em;line-height:1;margin-bottom:3px;">Meta 2026</div>
+          <div style="display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;">
+            <span style="font-size:13px;font-weight:700;color:${T.text};font-variant-numeric:tabular-nums;">${brlk(ytdData.total)}</span>
+            <span style="font-size:10px;color:${T.text3};">de ${brlk(ytdData.meta)}</span>
+            <span style="font-size:11px;font-weight:600;color:${acColor};">${pct.toFixed(1)}%</span>
+          </div>
+        </div>
+        <!-- chevron -->
+        <span style="font-size:9px;color:${T.text3};flex-shrink:0;">${chevron}</span>`;
 
-      // Donut SVG centralizado
+      row.addEventListener("click", () => {
+        ytdExpanded = !ytdExpanded;
+        try { sessionStorage.setItem("ytd_expanded", ytdExpanded ? "1" : "0"); } catch(e){}
+        renderYtdCard();
+      });
+      ytdSide.appendChild(row);
+
+      if (!ytdExpanded) return;
+
+      // ── Conteúdo expandido ────────────────────────────────────────────────
+      const body = document.createElement("div");
+      body.style.cssText = `border-top:0.5px solid ${T.border};padding:16px 14px 14px;`;
+
+      // Donut grande centralizado
       const circR = 60, strokeW = 12;
       const circLen = 2 * Math.PI * circR;
       const filledLen = Math.min(pct / 100, 1) * circLen;
-      const donutWrap = document.createElement("div");
-      donutWrap.style.cssText = "display:flex;justify-content:center;margin-bottom:16px;";
-      donutWrap.innerHTML = `
-        <div style="position:relative;width:150px;height:150px;flex-shrink:0;">
-          <svg viewBox="0 0 150 150" width="150" height="150">
-            <circle cx="75" cy="75" r="${circR}" fill="none" stroke="${T.border}" stroke-width="${strokeW}"/>
-            <circle cx="75" cy="75" r="${circR}" fill="none" stroke="${acColor}" stroke-width="${strokeW}"
-              stroke-dasharray="${filledLen} ${circLen}" stroke-dashoffset="${circLen * 0.25}"
-              stroke-linecap="round"/>
-          </svg>
-          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;text-align:center;">
-            <span style="font-size:28px;font-weight:700;color:${acColor};line-height:1;font-variant-numeric:tabular-nums;">${pct.toFixed(1)}%</span>
-            <span style="font-size:10px;color:${T.text3};margin-top:4px;">da meta</span>
+      body.innerHTML = `
+        <div style="display:flex;justify-content:center;margin-bottom:14px;">
+          <div style="position:relative;width:140px;height:140px;flex-shrink:0;">
+            <svg viewBox="0 0 150 150" width="140" height="140">
+              <circle cx="75" cy="75" r="${circR}" fill="none" stroke="${T.border}" stroke-width="${strokeW}"/>
+              <circle cx="75" cy="75" r="${circR}" fill="none" stroke="${acColor}" stroke-width="${strokeW}"
+                stroke-dasharray="${filledLen} ${circLen}" stroke-dashoffset="${circLen * 0.25}"
+                stroke-linecap="round"/>
+            </svg>
+            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;text-align:center;">
+              <span style="font-size:26px;font-weight:700;color:${acColor};line-height:1;font-variant-numeric:tabular-nums;">${pct.toFixed(1)}%</span>
+              <span style="font-size:10px;color:${T.text3};margin-top:4px;">da meta</span>
+            </div>
+          </div>
+        </div>
+        <!-- 3 valores -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;margin-bottom:12px;">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 6px;">
+            <span style="font-size:10px;color:${T.text3};text-transform:uppercase;letter-spacing:.07em;">Faturado</span>
+            <span style="font-size:17px;font-weight:700;color:${T.text};font-variant-numeric:tabular-nums;line-height:1;">${brlk(ytdData.total)}</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 6px;border-left:0.5px solid ${T.border};border-right:0.5px solid ${T.border};">
+            <span style="font-size:10px;color:${T.text3};text-transform:uppercase;letter-spacing:.07em;">Meta</span>
+            <span style="font-size:17px;font-weight:700;color:${T.text2};font-variant-numeric:tabular-nums;line-height:1;">${brlk(ytdData.meta)}</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 6px;">
+            <span style="font-size:10px;color:${T.text3};text-transform:uppercase;letter-spacing:.07em;">Falta</span>
+            <span style="font-size:17px;font-weight:700;color:${faltaMeta > 0 ? "#ef4444" : "#22c55e"};font-variant-numeric:tabular-nums;line-height:1;">${faltaMeta > 0 ? brlk(faltaMeta) : "✓"}</span>
           </div>
         </div>`;
-      ytdSide.appendChild(donutWrap);
-
-      // 3 valores em grade: Faturado · Meta · Falta
-      const vals = document.createElement("div");
-      vals.style.cssText = `display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;width:100%;margin-bottom:14px;`;
-      vals.innerHTML = `
-        <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:12px 8px;">
-          <span style="font-size:10px;color:${T.text3};text-transform:uppercase;letter-spacing:.07em;">Faturado</span>
-          <span style="font-size:18px;font-weight:700;color:${T.text};font-variant-numeric:tabular-nums;line-height:1;">${brlk(ytdData.total)}</span>
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:12px 8px;border-left:0.5px solid ${T.border};border-right:0.5px solid ${T.border};">
-          <span style="font-size:10px;color:${T.text3};text-transform:uppercase;letter-spacing:.07em;">Meta</span>
-          <span style="font-size:18px;font-weight:700;color:${T.text2};font-variant-numeric:tabular-nums;line-height:1;">${brlk(ytdData.meta)}</span>
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:12px 8px;">
-          <span style="font-size:10px;color:${T.text3};text-transform:uppercase;letter-spacing:.07em;">Falta</span>
-          <span style="font-size:18px;font-weight:700;color:${faltaMeta > 0 ? "#ef4444" : "#22c55e"};font-variant-numeric:tabular-nums;line-height:1;">${faltaMeta > 0 ? brlk(faltaMeta) : "✓"}</span>
-        </div>`;
-      ytdSide.appendChild(vals);
 
       // Chips Matriz + Filial
       if (ytdData.contas) {
-        const chips = document.createElement("div");
-        chips.style.cssText = "display:flex;gap:8px;";
         const mkChip = (nome, dados) => {
           if (!dados || !dados.total) return "";
           const pctC = ytdData.total > 0 ? Math.round(dados.total / ytdData.total * 100) : 0;
-          return `<div style="flex:1;border:0.5px solid ${T.border};border-radius:8px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center;">
+          return `<div style="flex:1;border:0.5px solid ${T.border};border-radius:8px;padding:8px;display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center;">
             <span style="font-size:10px;font-weight:600;color:${T.text3};text-transform:uppercase;letter-spacing:.09em;">${nome}</span>
-            <span style="font-size:14px;font-weight:600;color:${T.text};font-variant-numeric:tabular-nums;">${brlFull(dados.total)}</span>
-            <span style="font-size:10px;color:${T.text3};">${pctC}% do total · ${dados.pedidos} pedidos</span>
+            <span style="font-size:13px;font-weight:600;color:${T.text};font-variant-numeric:tabular-nums;">${brlFull(dados.total)}</span>
+            <span style="font-size:10px;color:${T.text3};">${pctC}% · ${dados.pedidos} pedidos</span>
           </div>`;
         };
+        const chips = document.createElement("div");
+        chips.style.cssText = "display:flex;gap:8px;";
         chips.innerHTML = mkChip("Matriz RS", ytdData.contas.matriz) + mkChip("Filial SP", ytdData.contas.filial);
-        ytdSide.appendChild(chips);
+        body.appendChild(chips);
       }
+
+      // timestamp discreto
+      const ts = document.createElement("div");
+      ts.style.cssText = `font-size:10px;color:${T.text3};text-align:right;margin-top:10px;`;
+      ts.textContent = "atualizado " + new Date(ytdFetchedAt).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+      body.appendChild(ts);
+
+      ytdSide.appendChild(body);
     }
 
+    renderYtdCard();
     statusBar.appendChild(ytdSide);
   }
 
