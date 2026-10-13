@@ -4386,8 +4386,8 @@ async function initCalcIpi(task, numeroManual){
   let nfData = state.nfes_processadas?.[chave];
   let erro = null;
 
-  // Busca do Bling se: não tem itens no Firebase OU não tem ipiOriginal salvo ainda
-  const precisaBuscarBling = chave && (!nfData?.itens?.length || !nfData?.ipiOriginal);
+  // Busca do Bling se: não tem itens OU não tem ipiOriginal OU não tem chaveAcesso salva
+  const precisaBuscarBling = chave && (!nfData?.itens?.length || !nfData?.ipiOriginal || !nfData?.chaveAcesso);
   if(precisaBuscarBling){
     if(!nfData?.itens?.length){
       calcIpiState[task.id] = { produtos: [], frete: 0, ipiOriginal: 0, carregando: true };
@@ -4399,6 +4399,14 @@ async function initCalcIpi(task, numeroManual){
       if(r.ok && d?.data){
         const corpo = d.data;
         const itensBrutos = corpo.itens || corpo.itensNota || [];
+        // Sempre tenta extrair e salvar a chaveAcesso
+        if(!nfData?.chaveAcesso){
+          const chaveAcBling = corpo.chaveAcesso || corpo.informacoesComplementares?.chaveAcesso || null;
+          if(chaveAcBling && chaveAcBling.length >= 44){
+            nfData = { ...(nfData||{}), chaveAcesso: chaveAcBling };
+            set(ref(db, `/nfes_processadas/${chave}/chaveAcesso`), chaveAcBling);
+          }
+        }
         // Só atualiza itens se não tinham sido salvos antes
         if(!nfData?.itens?.length){
           const itensExtraidos = itensBrutos.map(it => ({
@@ -4456,6 +4464,7 @@ async function initCalcIpi(task, numeroManual){
       };
     }),
     frete: 0, ipiOriginal: nfData?.ipiOriginal || 0, ipiOriginalAuto: !!(nfData?.ipiOriginalAuto),
+    chaveAcesso: nfData?.chaveAcesso || null,
     erro: erro,
     nfUsada: chave,
     freteComponentes: null, // carregado do Firebase
@@ -10724,6 +10733,12 @@ function renderNfFullEmitirModal(itens) {
       nfFullState.fase = "concluido";
       nfFullState.nfEmitida = { numero: data.numero, chave: data.chaveAcesso, status: data.status };
 
+      // Salvar chaveAcesso no Firebase para uso futuro na complementar de IPI
+      if (data.numero && data.chaveAcesso) {
+        const chaveFirebase = String(data.numero).replace(/[.#$\[\]\/]/g, "_");
+        update(ref(db, `/nfes_processadas/${chaveFirebase}`), { chaveAcesso: data.chaveAcesso }).catch(() => {});
+      }
+
       // ── Botão Complementar de IPI ──
       const btnComplementar = document.createElement("button");
       btnComplementar.textContent = "⊕ Gerar NF Complementar de IPI";
@@ -13262,22 +13277,24 @@ async function renderNfsEmitidas(panel) {
         { label: "Emitir NF Complementar de IPI", fn: async () => {
           // Usar a calculadora completa — criar task fake com número da NF
           const numeroNF = nf.chave?.replace(/_/g, "/") || "";
-          const chaveAcesso44 = nf.chaveAcesso || "";
           const taskFake = { id: "nf-emitida-" + nf.chave, text: "NF de transferência gerada — NF #" + numeroNF, subtarefas: [] };
-          // Inicializar calculadora se não tiver dados
+          // Inicializar calculadora (busca itens + ipiOriginal + chaveAcesso do Bling se faltar algum)
           if (!calcIpiState[taskFake.id]) {
             await initCalcIpi(taskFake, numeroNF);
           }
-          // Injetar chaveAcesso e ipiOriginal do Firebase no calcIpiState
+          // Injetar dados do Firebase no calcIpiState como fallback (caso o Bling não retorne)
           if (calcIpiState[taskFake.id]) {
-            if (chaveAcesso44 && !calcIpiState[taskFake.id].chaveAcesso) {
-              calcIpiState[taskFake.id].chaveAcesso = chaveAcesso44;
+            if (nf.chaveAcesso && !calcIpiState[taskFake.id].chaveAcesso) {
+              calcIpiState[taskFake.id].chaveAcesso = nf.chaveAcesso;
             }
             if (nf.ipiOriginal > 0 && !calcIpiState[taskFake.id].ipiOriginal) {
               calcIpiState[taskFake.id].ipiOriginal = Number(nf.ipiOriginal);
               calcIpiState[taskFake.id].ipiOriginalAuto = true;
             }
           }
+          // Usar valores resolvidos do calcIpiState (podem vir do Bling ou do Firebase)
+          const chaveAcesso44 = calcIpiState[taskFake.id]?.chaveAcesso || nf.chaveAcesso || "";
+          const ipiResolvido = calcIpiState[taskFake.id]?.ipiOriginal || nf.ipiOriginal || 0;
           // Abrir modal com calculadora completa
           const overlay = document.createElement("div");
           overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;overflow-y:auto;display:flex;align-items:flex-start;justify-content:center;padding:20px;";
@@ -13293,11 +13310,11 @@ async function renderNfsEmitidas(panel) {
           closeBtn.onclick = () => overlay.remove();
           titleDiv.appendChild(closeBtn);
           box.appendChild(titleDiv);
-          // Card de referência — chave de acesso e IPI original
+          // Card de referência — chave de acesso e IPI original (usando valores resolvidos)
           const refCard = document.createElement("div");
           refCard.style.cssText = `background:${T.bg3};border:0.5px solid ${T.border};border-radius:8px;padding:10px 14px;margin-bottom:16px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;`;
-          const ipiValor = nf.ipiOriginal > 0
-            ? `R$ ${Number(nf.ipiOriginal).toLocaleString("pt-BR",{minimumFractionDigits:2})} <span style="font-size:9px;color:#10b981;font-weight:600;background:#10b98118;border:0.5px solid #10b98144;border-radius:10px;padding:1px 7px;margin-left:4px;">auto</span>`
+          const ipiValor = ipiResolvido > 0
+            ? `R$ ${Number(ipiResolvido).toLocaleString("pt-BR",{minimumFractionDigits:2})} <span style="font-size:9px;color:#10b981;font-weight:600;background:#10b98118;border:0.5px solid #10b98144;border-radius:10px;padding:1px 7px;margin-left:4px;">auto</span>`
             : `<span style="color:${T.text3};font-size:11px;">não disponível</span>`;
           refCard.innerHTML = `
             <div style="flex:1;min-width:0;">
