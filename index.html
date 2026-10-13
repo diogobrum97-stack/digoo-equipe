@@ -13174,9 +13174,9 @@ async function renderNfsEmitidas(panel) {
 
   const nfs = Object.entries(dados).map(([chave, v]) => ({ chave, ...v }))
     .sort((a, b) => {
-      // Prioridade: processedAt, depois número da NF como desempate
-      const tsA = a.processedAt || 0;
-      const tsB = b.processedAt || 0;
+      // processedAt > dataEmissao > número da chave (desc)
+      const tsA = a.processedAt || (a.dataEmissao ? new Date(a.dataEmissao + "T12:00:00").getTime() : 0);
+      const tsB = b.processedAt || (b.dataEmissao ? new Date(b.dataEmissao + "T12:00:00").getTime() : 0);
       if (tsB !== tsA) return tsB - tsA;
       return Number(b.chave) - Number(a.chave);
     });
