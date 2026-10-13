@@ -13192,45 +13192,7 @@ async function renderNfsEmitidas(panel) {
   const lista = document.createElement("div");
   lista.style.cssText = "display:flex;flex-direction:column;gap:8px;";
 
-  // Recupera silenciosamente do Bling as NFs sem processedAt ou sem dataEmissao
-  // (inclui NFs que têm itens salvos de kit mas sem data — precisam sobrescrever com itens reais da NF)
-  const nfsSemDados = nfs.filter(nf => !nf.processedAt && !nf.dataEmissao);
-  if (nfsSemDados.length) {
-    Promise.all(nfsSemDados.map(async nf => {
-      // chave no Firebase é só o número (ex: "020747") — não precisa restaurar barras
-      const numeroNF = String(nf.chave || "").replace(/[_\/]/g, "").replace(/\D/g,"");
-      if (!numeroNF) return;
-      try {
-        const r = await fetch(`${BLING_PROXY}/api/bling-produtos?notaCompleta=${numeroNF}`);
-        const d = await r.json();
-        if (!r.ok || !d?.data) return;
-        const corpo = d.data;
-        const itensBrutos = corpo.itens || [];
-        const itensParaSalvar = itensBrutos.map(it => ({
-          sku: it.codigo || null,
-          produto: it.descricao || "",
-          ncm: String(it.classificacaoFiscal || "").replace(/\D/g,""),
-          quantidade: Number(it.quantidade) || 0,
-          valorUnit: Number(it.valor) || 0,
-        })).filter(it => it.sku);
-        const dataEmissao = (corpo.dataEmissao || "").slice(0, 10) || null;
-        const naturezaNome = corpo.naturezaOperacao?.nome || "Transferência de Mercadorias p/ Filial";
-        const chaveAcBling = corpo.chaveAcesso || null;
-        const ts = dataEmissao ? new Date(dataEmissao + "T12:00:00").getTime() : Date.now();
-        // update para os campos de metadata
-        await update(ref(db, `/nfes_processadas/${nf.chave}`), {
-          natureza: naturezaNome,
-          dataEmissao: dataEmissao,
-          processedAt: ts,
-          ...(chaveAcBling ? { chaveAcesso: chaveAcBling } : {}),
-        });
-        // set separado para itens — garante sobrescrever itens de kit que podem ter sido salvos antes
-        if (itensParaSalvar.length) {
-          await set(ref(db, `/nfes_processadas/${nf.chave}/itens`), itensParaSalvar);
-        }
-      } catch(e) { /* ignora erros silenciosos */ }
-    })).then(() => renderNfsEmitidas(panel)); // re-renderiza com os dados recuperados
-  }
+
 
   nfs.forEach(nf => {
     const tsDate = nf.processedAt ? new Date(nf.processedAt) : (nf.dataEmissao ? new Date(nf.dataEmissao + "T12:00:00") : null);
