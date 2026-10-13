@@ -3348,7 +3348,10 @@ function renderDashboard(panel, color) {
         // Estado loading — barra compacta
         ytdSide.innerHTML = `
           <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;">
-            <span style="font-size:10px;font-weight:600;color:${T.text3};text-transform:uppercase;letter-spacing:.09em;">Meta 2026</span>
+            <div style="display:flex;align-items:center;gap:5px;">
+              <span style="font-size:10px;font-weight:600;color:${T.text3};text-transform:uppercase;letter-spacing:.09em;">Meta 2026</span>
+              <span style="font-size:9px;font-weight:600;color:#92400e;background:#fef3c7;border:0.5px solid #f59e0b;border-radius:4px;padding:1px 5px;">EM TESTE</span>
+            </div>
             <span style="font-size:10px;color:${T.text3};">Carregando…</span>
           </div>`;
         return;
@@ -3358,7 +3361,10 @@ function renderDashboard(panel, color) {
         // Sem dados — barra compacta com botão carregar
         ytdSide.innerHTML = `
           <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;">
-            <span style="font-size:10px;font-weight:600;color:${T.text3};text-transform:uppercase;letter-spacing:.09em;">Meta 2026</span>
+            <div style="display:flex;align-items:center;gap:5px;">
+              <span style="font-size:10px;font-weight:600;color:${T.text3};text-transform:uppercase;letter-spacing:.09em;">Meta 2026</span>
+              <span style="font-size:9px;font-weight:600;color:#92400e;background:#fef3c7;border:0.5px solid #f59e0b;border-radius:4px;padding:1px 5px;">EM TESTE</span>
+            </div>
             <span id="ytd-side-load" style="font-size:10px;color:${T.text3};cursor:pointer;text-decoration:underline;">Carregar</span>
           </div>`;
         ytdSide.querySelector("#ytd-side-load")?.addEventListener("click", () => fetchYtd());
@@ -3391,7 +3397,10 @@ function renderDashboard(panel, color) {
         </div>
         <!-- label + valores resumidos -->
         <div style="flex:1;min-width:0;">
-          <div style="font-size:10px;font-weight:600;color:${T.text3};text-transform:uppercase;letter-spacing:.09em;line-height:1;margin-bottom:3px;">Meta 2026</div>
+          <div style="display:flex;align-items:center;gap:5px;margin-bottom:3px;">
+            <span style="font-size:10px;font-weight:600;color:${T.text3};text-transform:uppercase;letter-spacing:.09em;line-height:1;">Meta 2026</span>
+            <span style="font-size:9px;font-weight:600;color:#92400e;background:#fef3c7;border:0.5px solid #f59e0b;border-radius:4px;padding:1px 5px;">EM TESTE</span>
+          </div>
           <div style="display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;">
             <span style="font-size:13px;font-weight:700;color:${T.text};font-variant-numeric:tabular-nums;">${brlk(ytdData.total)}</span>
             <span style="font-size:10px;color:${T.text3};">de ${brlk(ytdData.meta)}</span>
