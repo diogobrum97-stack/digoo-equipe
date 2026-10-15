@@ -740,9 +740,12 @@ onValue(ref(db,"/"),snap=>{
     // Se dashboard ainda não carregou, tenta agora que o token chegou
     if(!dashData && !dashLoading) window._fetchDashboard();
   }
-  // Picking — disparar na primeira chegada do token ML Matriz
-  if(d.ml_token?.access_token && !pickingState.fila && !pickingState.carregando) {
-    fetchPickingFila().then(() => render());
+  // Picking — busca na primeira chegada do token, e refresca se os dados têm
+  // mais de 3 min (fila vazia [] não significa "já carregou recentemente").
+  if(d.ml_token?.access_token && !pickingState.carregando) {
+    const agora = Date.now();
+    const precisaAtualizar = !pickingState.fila || (agora - (pickingState._fetchedAt||0)) > 3*60*1000;
+    if(precisaAtualizar) fetchPickingFila().then(() => render());
   }
   if(!cmpSalvando)render();
   if(document.getElementById("ideias-modal-overlay")) renderIdeiasLista();
@@ -1116,6 +1119,7 @@ async function fetchPickingFila() {
       // que o ML ainda mostre pendente até o pacote ser despachado fisicamente.
       const jaConcluidos = state.picking_concluidos || {};
       pickingState.fila = (data.fila || []).filter(p => !jaConcluidos[p.order_id]);
+      pickingState._fetchedAt = Date.now();
     }
   } catch (e) {
     pickingState.carregando = false;
@@ -1196,11 +1200,13 @@ function refreshPickingUI() {
 // estiver visível — não interrompe quem está no meio de uma bipagem, porque
 // o pedido aberto (pedidoAtivo) fica em outra parte do estado e não é afetado.
 async function checarPickingAuto() {
-  const telaAberta = document.querySelector(".picking-bruno-container") || document.querySelector(".picking-diogo-operar-container");
-  if (!telaAberta) return;
+  // Atualiza a fila sempre (pra manter o contador do sidebar atualizado),
+  // mas só dispara refreshPickingUI se a tela de picking estiver aberta.
   if (pickingState.carregando || pickingState.abrindoPedido || pickingState.processandoEtiqueta) return;
   await fetchPickingFila();
-  refreshPickingUI();
+  const telaAberta = document.querySelector(".picking-bruno-container") || document.querySelector(".picking-diogo-operar-container");
+  if (telaAberta) refreshPickingUI();
+  else render(); // atualiza o contador no sidebar
 }
 setInterval(checarPickingAuto, 3 * 60 * 1000); // a cada 3 minutos
 
