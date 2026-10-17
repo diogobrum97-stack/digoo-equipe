@@ -1937,7 +1937,19 @@ async function fetchPerguntas() {
 
     const dispensadas = state.perguntas_dispensadas || {};
     const todasPerguntas = sucesso.flatMap(r => r.perguntas);
-    perguntasState.lista = todasPerguntas.filter(p => !dispensadas[p.question_id]);
+
+    // Mescla com estado anterior: preserva suggested_answer já gerado pra não
+    // sumir entre re-fetches (Claude pode variar entre chamadas — se já tinha
+    // uma sugestão boa, mantém ela enquanto a pergunta não for respondida)
+    const anteriorPorId = Object.fromEntries((perguntasState.lista || []).map(p => [p.question_id, p]));
+    const listaNova = todasPerguntas.map(p => {
+      const anterior = anteriorPorId[p.question_id];
+      if (anterior && !p.suggested_answer && anterior.suggested_answer) {
+        return { ...p, suggested_answer: anterior.suggested_answer };
+      }
+      return p;
+    });
+    perguntasState.lista = listaNova.filter(p => !dispensadas[p.question_id]);
     perguntasState._fetchedAt = Date.now();
 
     // Salvar rascunhos sugeridos pelo Claude no Firebase — um registro por pergunta, com até 3 sugestões
