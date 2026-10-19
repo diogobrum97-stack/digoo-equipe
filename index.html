@@ -2507,6 +2507,14 @@ function renderClonarTab(container) {
     }
   };
 
+  const inputId = container.querySelector("#clonar-input-id");
+  if (inputId) inputId.oninput = (e) => { clonarState.itemBusca = e.target.value; };
+
+  const btnOrigMatriz = container.querySelector("#clonar-origem-matriz");
+  if (btnOrigMatriz) btnOrigMatriz.onclick = () => { clonarState.contaOrigem = "matriz"; renderClonarTab(container); };
+  const btnOrigFilial = container.querySelector("#clonar-origem-filial");
+  if (btnOrigFilial) btnOrigFilial.onclick = () => { clonarState.contaOrigem = "filial"; renderClonarTab(container); };
+
   const inputSku = container.querySelector("#clonar-input-sku");
   if (inputSku) inputSku.oninput = (e) => { clonarState.novoSku = e.target.value; window._clonarAtualizarPreview && window._clonarAtualizarPreview(); };
   const inputQtd = container.querySelector("#clonar-input-qtd");
