@@ -2548,14 +2548,27 @@ function renderClonarTab(container) {
       const data = await r.json();
       clonarState.clonando = false;
       if (!data.ok) {
-        let msg = data.error || "Erro ao clonar o anúncio.";
-        if (data.raw) {
-          msg += "\n\n" + JSON.stringify(data.raw, null, 2);
+        // Erro de GTIN: mensagem amigável com instrução
+        const erroGtin = (data.detalhes || data.raw?.cause || []).some(c => c.message?.includes("GTIN"));
+        if (erroGtin) {
+          const dbg = data._debugGtin || {};
+          let msg = "⚠️ Esta categoria exige código de barras (GTIN/EAN).\n\n";
+          if (!dbg.blingAchou) {
+            msg += `Produto não encontrado no Bling com SKU "${dbg.skuUsado}".\nVerifique se o SKU cadastrado no Bling é igual ao do ML.`;
+          } else if (!dbg.eanEncontrado) {
+            msg += `Produto encontrado no Bling (SKU: ${dbg.skuUsado}), mas sem EAN/GTIN cadastrado.\nCadastre o código de barras no Bling e tente novamente.`;
+          } else {
+            msg += `EAN encontrado no Bling (${dbg.eanEncontrado}), mas o ML rejeitou.\nVerifique se o código de barras está correto.`;
+          }
+          if (dbg.blingResultados?.length) {
+            msg += `\n\nSKUs retornados pelo Bling: ${dbg.blingResultados.join(", ")}`;
+          }
+          clonarState.erro = msg;
+        } else {
+          let msg = data.error || "Erro ao clonar o anúncio.";
+          if (data.raw) msg += "\n\n" + JSON.stringify(data.raw, null, 2);
+          clonarState.erro = msg;
         }
-        if (data._debugGtin) {
-          msg += "\n\n[DEBUG GTIN] " + JSON.stringify(data._debugGtin, null, 2);
-        }
-        clonarState.erro = msg;
       } else {
         clonarState.resultado = data;
       }
