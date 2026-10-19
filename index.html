@@ -2552,6 +2552,9 @@ function renderClonarTab(container) {
         if (data.raw) {
           msg += "\n\n" + JSON.stringify(data.raw, null, 2);
         }
+        if (data._debugGtin) {
+          msg += "\n\n[DEBUG GTIN] " + JSON.stringify(data._debugGtin, null, 2);
+        }
         clonarState.erro = msg;
       } else {
         clonarState.resultado = data;
