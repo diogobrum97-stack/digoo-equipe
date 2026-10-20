@@ -1502,23 +1502,31 @@ function renderPickingTab(panel, quemSou, modoOperar) {
     const temKit = pedido.itens_bipagem.some(l => l.deKit);
     const todosBipados = pedidoTotalmenteBipado();
 
-    const cabecalho = document.createElement("div");
-    cabecalho.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;";
-    cabecalho.innerHTML = `
-      <div>
-        <div style="font-size:15px;font-weight:700;color:#fff;">Pedido #${pedido.order_id}</div>
-        <div style="font-size:11px;color:#888;margin-top:2px;">${pedido.itens[0]?.titulo || ""}</div>
-      </div>
-      ${temKit ? `<div style="padding:4px 10px;border-radius:11px;background:${T.infoBg};border:1px solid ${T.infoBor};color:#5eb3f0;font-size:10px;font-weight:600;">📦 KIT</div>` : ""}
-    `;
-    colDetalhe.appendChild(cabecalho);
-
     const btnFechar = document.createElement("button");
     btnFechar.textContent = "← Voltar pra fila";
     btnFechar.style.cssText = "background:none;border:none;color:#666;font-size:11px;cursor:pointer;margin-bottom:14px;padding:0;";
     btnFechar.onclick = () => fecharPedidoPicking(refresh);
-    colDetalhe.appendChild(btnFechar);
 
+    // Bloco de anuncio: foto + titulo do ML + numero do pedido
+    const blocoAnuncio = document.createElement("div");
+    const fotoUrl = pedido.anuncio_foto || pedido.itens?.[0]?.thumbnail || "";
+    const tituloAnuncio = pedido.anuncio_titulo || pedido.itens?.[0]?.titulo || "Pedido";
+    blocoAnuncio.style.cssText = `display:flex;align-items:center;gap:14px;padding:12px 14px;background:${T.isLight?"#f7f7f7":"#1a1a1a"};border:1px solid ${T.border};border-radius:10px;margin-bottom:14px;`;
+    blocoAnuncio.innerHTML = `
+      ${fotoUrl ? `<img src="${fotoUrl}" style="width:72px;height:72px;object-fit:contain;border-radius:8px;background:${T.isLight?"#eee":"#222"};flex-shrink:0;" onerror="this.style.display='none'">` : `<div style="width:72px;height:72px;border-radius:8px;background:${T.isLight?"#eee":"#222"};flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:22px;">📦</div>`}
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:600;color:${T.text};line-height:1.35;margin-bottom:4px;">${tituloAnuncio}</div>
+        <div style="font-size:11px;color:#888;">Pedido #${pedido.order_id}</div>
+        <div style="font-size:10px;color:#666;margin-top:2px;">${pedido.comprador || ""}</div>
+      </div>
+      ${temKit ? `<div style="padding:4px 10px;border-radius:11px;background:${T.infoBg};border:1px solid ${T.infoBor};color:#5eb3f0;font-size:10px;font-weight:600;flex-shrink:0;">📦 KIT</div>` : ""}
+    `;
+
+    const cabecalho = document.createElement("div");
+    cabecalho.style.cssText = "margin-bottom:6px;";
+    cabecalho.appendChild(btnFechar);
+    cabecalho.appendChild(blocoAnuncio);
+    colDetalhe.appendChild(cabecalho);
     if (pickingState.blingTokenExpirado) {
       const avisoBling = document.createElement("div");
       avisoBling.style.cssText = `display:flex;align-items:center;justify-content:space-between;gap:12px;background:${T.errBg};border:1px solid ${T.errBor};border-radius:8px;padding:10px 14px;margin-bottom:14px;flex-wrap:wrap;`;
