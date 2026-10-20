@@ -1102,28 +1102,28 @@ let pickingState = {
 async function fetchPickingFila() {
   pickingState.carregando = true;
   pickingState.erro = null;
-  const token = state.ml_token?.access_token;
-  if (!token) {
-    pickingState.carregando = false;
-    pickingState.erro = "Token da Matriz não encontrado. Verifique a conexão ML.";
-    return;
-  }
   try {
-    const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=picking-fila&token=${token}`);
-    const data = await r.json();
+    // Lê diretamente do Firebase — o sync VPS atualiza a cada minuto com
+    // pedidos das duas contas (Matriz + Filial), com itens já expandidos.
+    const snap = await get(ref(db, "/pedidos_picking"));
+    const raw = snap.val() || {};
     pickingState.carregando = false;
-    if (!data.ok) {
-      pickingState.erro = data.error || "Erro ao buscar fila de pedidos.";
-    } else {
-      // Não mostra de novo pedidos que a gente já processou por aqui — mesmo
-      // que o ML ainda mostre pendente até o pacote ser despachado fisicamente.
-      const jaConcluidos = state.picking_concluidos || {};
-      pickingState.fila = (data.fila || []).filter(p => !jaConcluidos[p.order_id]);
-      pickingState._fetchedAt = Date.now();
+
+    const jaConcluidos = state.picking_concluidos || {};
+    pickingState.fila = Object.entries(raw)
+      .filter(([key]) => key !== "_sync")
+      .map(([, v]) => v)
+      .filter(p => p && p.order_id && !jaConcluidos[p.order_id]);
+    pickingState._fetchedAt = Date.now();
+
+    // Avisa se o sync está desatualizado (mais de 5 min sem rodar)
+    const syncMeta = raw._sync;
+    if (syncMeta?.ts && Date.now() - syncMeta.ts > 5 * 60 * 1000) {
+      pickingState.erro = `⚠️ Sync pausado há ${Math.round((Date.now() - syncMeta.ts) / 60000)} min. Verifique o servidor.`;
     }
   } catch (e) {
     pickingState.carregando = false;
-    pickingState.erro = "Erro de conexão ao buscar a fila.";
+    pickingState.erro = "Erro ao carregar fila do Firebase: " + e.message;
   }
 }
 
@@ -1152,9 +1152,16 @@ async function buscarProdutoBling(sku) {
 // Cada linha final tem: sku, nome, ean (pode vir vazio), quantidadeNecessaria, quantidadeBipada.
 // Se detectar token do Bling expirado, marca no pickingState pra avisar na tela.
 async function montarItensParaBipar(pedido) {
+  // Se o sync VPS já expandiu os itens (salvo em itens_bipagem no Firebase),
+  // reutiliza diretamente — sem chamar o Bling de novo.
+  if (pedido._itens_expandidos && Array.isArray(pedido.itens_bipagem) && pedido.itens_bipagem.length > 0) {
+    return pedido.itens_bipagem.map(l => ({ ...l, quantidadeBipada: 0 }));
+  }
+
+  // Fallback: busca no Bling como antes (pedido sem itens_bipagem do sync)
   const linhas = [];
   pickingState.blingTokenExpirado = false;
-  for (const item of pedido.itens) {
+  for (const item of (pedido.itens || [])) {
     const info = await buscarProdutoBling(item.sku);
     if (info && info.tokenExpirado) {
       pickingState.blingTokenExpirado = true;
@@ -1298,7 +1305,10 @@ async function finalizarPedidoPicking(refreshFn) {
   refreshPickingUI();
 
   const pedido = pickingState.pedidoAtivo;
-  const token = state.ml_token?.access_token;
+  // Usa o token correto de acordo com a conta do pedido (Matriz ou Filial)
+  const token = (pedido._conta === "Filial")
+    ? (state.ml_token_filial?.access_token || state.ml_token?.access_token)
+    : (state.ml_token?.access_token || state.ml_token_filial?.access_token);
 
   try {
     const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=picking-etiqueta&token=${token}&shipment_ids=${pedido.shipment_id}`);
@@ -1310,32 +1320,47 @@ async function finalizarPedidoPicking(refreshFn) {
       return;
     }
 
-    // Baixa o PDF como arquivo de verdade (não só abre em aba) — é assim que
-    // o AutoPrint consegue detectar e imprimir sozinho, do mesmo jeito que já
-    // funciona com o Bling. Sem aba nova, então o Tab Closer nem precisa agir.
+    // Tenta imprimir automaticamente via servidor local (A82pro, SumatraPDF).
+    // Se o servidor não estiver rodando, faz download manual como fallback.
+    let impressaoAutomatica = false;
     try {
-      const byteChars = atob(data.pdf_base64);
-      const byteNumbers = new Array(byteChars.length);
-      for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `etiqueta_${pedido.order_id}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 10000);
-    } catch (e) { /* se o download falhar por algum motivo, a etiqueta ainda foi gerada no ML normalmente */ }
+      const printRes = await fetch("http://127.0.0.1:5000/imprimir", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pdf_base64: data.pdf_base64, order_id: pedido.order_id }),
+        signal: AbortSignal.timeout(10000),
+      });
+      const printData = await printRes.json();
+      impressaoAutomatica = printData.ok === true;
+    } catch (_) { /* servidor de impressão não disponível — usa download como fallback */ }
+
+    if (!impressaoAutomatica) {
+      // Fallback: baixa o PDF para o operador imprimir manualmente
+      try {
+        const byteChars = atob(data.pdf_base64);
+        const byteNumbers = new Array(byteChars.length);
+        for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: "application/pdf" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `etiqueta_${pedido.order_id}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
+      } catch (e) { /* se o download falhar, a etiqueta ainda foi gerada no ML normalmente */ }
+    }
 
     // Registra como concluído (histórico visível pro Diogo) e remove a trava
     // — inclui a conferência final item a item (esperado x bipado), útil pra
     // investigar reclamação de quantidade errada depois.
     await set(ref(db, `/picking_concluidos/${pedido.order_id}`), {
-      titulo: pedido.itens[0]?.titulo || "",
+      titulo: pedido.itens?.[0]?.titulo || pedido.itens_bipagem?.[0]?.nome || "",
       por: pedido.operador,
       ts: Date.now(),
+      impressao_automatica: impressaoAutomatica,
       itens_final: (pedido.itens_bipagem || []).map(l => ({
         sku: l.sku, nome: l.nome, ean: l.ean || null,
         quantidadeNecessaria: l.quantidadeNecessaria,
