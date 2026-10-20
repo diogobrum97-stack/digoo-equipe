@@ -1503,29 +1503,40 @@ function renderPickingTab(panel, quemSou, modoOperar) {
     const todosBipados = pedidoTotalmenteBipado();
 
     const btnFechar = document.createElement("button");
-    btnFechar.textContent = "← Voltar pra fila";
-    btnFechar.style.cssText = "background:none;border:none;color:#666;font-size:11px;cursor:pointer;margin-bottom:14px;padding:0;";
+    btnFechar.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:5px;"><path d="M19 12H5M5 12l7-7M5 12l7 7"/></svg>Voltar pra fila`;
+    btnFechar.style.cssText = "display:flex;align-items:center;gap:0;background:none;border:none;color:#777;font-size:12px;cursor:pointer;margin-bottom:10px;padding:0;font-family:Inter,sans-serif;";
     btnFechar.onclick = () => fecharPedidoPicking(refresh);
 
     // Bloco de anuncio: foto + titulo do ML + numero do pedido
     const blocoAnuncio = document.createElement("div");
     const fotoUrl = pedido.anuncio_foto || pedido.itens?.[0]?.thumbnail || "";
     const tituloAnuncio = pedido.anuncio_titulo || pedido.itens?.[0]?.titulo || "Pedido";
-    blocoAnuncio.style.cssText = `display:flex;align-items:center;gap:14px;padding:12px 14px;background:${T.isLight?"#f7f7f7":"#1a1a1a"};border:1px solid ${T.border};border-radius:10px;margin-bottom:14px;`;
+    const totalItens = pedido.itens_bipagem.reduce((s, l) => s + l.quantidadeNecessaria, 0);
+    const totalBipados = pedido.itens_bipagem.reduce((s, l) => s + l.quantidadeBipada, 0);
+    const progressPct = totalItens > 0 ? Math.round((totalBipados / totalItens) * 100) : 0;
+    blocoAnuncio.style.cssText = `display:flex;gap:14px;padding:12px 0 14px;border-bottom:0.5px solid ${T.border};align-items:flex-start;`;
     blocoAnuncio.innerHTML = `
-      ${fotoUrl ? `<img src="${fotoUrl}" style="width:72px;height:72px;object-fit:contain;border-radius:8px;background:${T.isLight?"#eee":"#222"};flex-shrink:0;" onerror="this.style.display='none'">` : `<div style="width:72px;height:72px;border-radius:8px;background:${T.isLight?"#eee":"#222"};flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:22px;">📦</div>`}
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:13px;font-weight:600;color:${T.text};line-height:1.35;margin-bottom:4px;">${tituloAnuncio}</div>
-        <div style="font-size:11px;color:#888;">Pedido #${pedido.order_id}</div>
-        <div style="font-size:10px;color:#666;margin-top:2px;">${pedido.comprador || ""}</div>
+      ${fotoUrl ? `<img src="${fotoUrl}" style="width:88px;height:88px;object-fit:contain;border-radius:8px;background:${T.isLight?"#f2f2f2":"#141414"};border:0.5px solid ${T.border};flex-shrink:0;" onerror="this.style.display='none'">` : `<div style="width:88px;height:88px;border-radius:8px;background:${T.isLight?"#f2f2f2":"#141414"};border:0.5px solid ${T.border};flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:26px;">📦</div>`}
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;padding-top:2px;">
+        ${temKit ? `<div style="display:inline-flex;align-items:center;padding:2px 7px;border-radius:3px;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;background:${T.isLight?"#f2f2f2":"#141414"};color:#777;border:0.5px solid ${T.isLight?"#d0d0d0":"#333"};width:fit-content;margin-bottom:2px;">KIT</div>` : ""}
+        <div style="font-size:13px;font-weight:600;color:${T.text};line-height:1.3;">${tituloAnuncio}</div>
+        <div style="margin-top:2px;display:flex;flex-direction:column;gap:1px;">
+          <div style="font-family:monospace;font-size:11px;color:#777;">#${pedido.order_id}</div>
+          <div style="font-size:11px;color:#777;">${pedido.comprador || ""}</div>
+        </div>
       </div>
-      ${temKit ? `<div style="padding:4px 10px;border-radius:11px;background:${T.infoBg};border:1px solid ${T.infoBor};color:#5eb3f0;font-size:10px;font-weight:600;flex-shrink:0;">📦 KIT</div>` : ""}
     `;
+
+    // barra de progresso (sangra até as bordas do card)
+    const progressWrap = document.createElement("div");
+    progressWrap.style.cssText = "height:2px;background:" + (T.isLight?"#f2f2f2":"#141414") + ";margin:0 -18px;";
+    progressWrap.innerHTML = `<div id="picking-progress-bar" style="height:100%;background:#00a63e;width:${progressPct}%;transition:width .35s ease;"></div>`;
 
     const cabecalho = document.createElement("div");
     cabecalho.style.cssText = "margin-bottom:6px;";
     cabecalho.appendChild(btnFechar);
     cabecalho.appendChild(blocoAnuncio);
+    cabecalho.appendChild(progressWrap);
     colDetalhe.appendChild(cabecalho);
     if (pickingState.blingTokenExpirado) {
       const avisoBling = document.createElement("div");
@@ -1537,45 +1548,86 @@ function renderPickingTab(panel, quemSou, modoOperar) {
       colDetalhe.appendChild(avisoBling);
     }
 
+    // label da seção
+    const secLabel = document.createElement("div");
+    secLabel.style.cssText = `padding:10px 0 5px;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#777;`;
+    secLabel.textContent = "Itens para bipar";
+    colDetalhe.appendChild(secLabel);
+
     const listaItens = document.createElement("div");
-    listaItens.style.cssText = "margin-bottom:16px;";
+    listaItens.style.cssText = "display:flex;flex-direction:column;gap:3px;margin-bottom:12px;";
     pedido.itens_bipagem.forEach(l => {
       const completo = l.quantidadeBipada >= l.quantidadeNecessaria;
       const linha = document.createElement("div");
-      linha.style.cssText = `display:flex;align-items:center;gap:10px;padding:10px 12px;background:${T.isLight?"#f2f2f2":"#111111"};border:1px solid ${completo ? T.okBor : T.border};border-radius:8px;margin-bottom:6px;`;
+      linha.style.cssText = `display:flex;align-items:center;gap:12px;padding:10px 10px 10px 12px;border-radius:7px;border:0.5px solid ${completo ? "#00a63e" : T.border};background:${completo ? (T.isLight?"rgba(0,166,62,0.08)":"rgba(0,166,62,0.10)") : (T.isLight?"#f8f8f8":"#0d0d0d")};transition:border-color .25s,background .25s;`;
       linha.innerHTML = `
         <div style="flex:1;min-width:0;">
-          <div style="font-size:12px;color:#fff;">${l.nome}</div>
-          <div style="font-size:10px;color:#666;margin-top:2px;">${l.sku}${l.ean ? ` · EAN ${l.ean}` : " · sem EAN cadastrado, bipa pelo SKU"}</div>
+          <div style="font-size:13px;font-weight:500;color:${T.text};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;">${l.nome}</div>
+          <div style="display:flex;align-items:center;gap:5px;margin-top:3px;">
+            <span style="font-family:monospace;font-size:10px;color:#777;">${l.sku}</span>
+            ${l.ean ? `<span style="color:${T.isLight?"#d0d0d0":"#333"};font-size:10px;">·</span><span style="font-family:monospace;font-size:10px;color:#777;">${l.ean}</span>` : ""}
+          </div>
         </div>
-        <div style="font-size:11px;font-weight:700;color:${completo ? "#10b981" : "#ffffff"};flex-shrink:0;">${l.quantidadeBipada}/${l.quantidadeNecessaria}</div>
-        ${completo ? `<div style="width:24px;height:24px;border-radius:50%;background:#10b981;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span style="color:#000;font-size:12px;font-weight:700;">✓</span></div>` : `<div style="width:24px;height:24px;border-radius:50%;border:2px solid #444;flex-shrink:0;"></div>`}
+        <div style="display:flex;align-items:baseline;gap:2px;flex-shrink:0;">
+          <span style="font-family:monospace;font-size:20px;font-weight:600;color:${completo ? "#00a63e" : (T.isLight?"#555":"#ccc")};min-width:24px;text-align:right;line-height:1;">${l.quantidadeBipada}</span>
+          <span style="font-size:13px;color:#777;margin:0 2px;line-height:1;">/</span>
+          <span style="font-family:monospace;font-size:13px;color:#777;line-height:1;">${l.quantidadeNecessaria}</span>
+        </div>
+        <div style="width:20px;height:20px;border-radius:50%;border:1.5px solid ${completo ? "#00a63e" : (T.isLight?"#d0d0d0":"#333")};background:${completo ? "#00a63e" : "transparent"};flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .25s;">
+          ${completo ? `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>` : ""}
+        </div>
       `;
       listaItens.appendChild(linha);
     });
     colDetalhe.appendChild(listaItens);
 
+    // divider antes do scan
+    const divider = document.createElement("div");
+    divider.style.cssText = `height:0.5px;background:${T.border};margin:0 -18px;`;
+    colDetalhe.appendChild(divider);
+
+    // scan area
+    const scanArea = document.createElement("div");
+    scanArea.style.cssText = "padding:10px 0 12px;position:relative;";
     if (!todosBipados) {
       const bipInput = document.createElement("input");
       bipInput.id = "picking-input-bip";
       bipInput.type = "text";
       bipInput.placeholder = "Bipar código de barras...";
       bipInput.autocomplete = "off";
-      bipInput.style.cssText = "width:100%;background:"+T.bg2+";border:2px solid "+T.text+";border-radius:8px;padding:12px 14px;color:"+T.text+";font-size:13px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;margin-bottom:12px;";
+      bipInput.style.cssText = `width:100%;padding:11px 44px 11px 14px;background:${T.isLight?"#f2f2f2":"#141414"};border:0.5px solid ${T.isLight?"#d0d0d0":"#333"};border-radius:7px;color:${T.text};font-size:14px;font-family:monospace;outline:none;box-sizing:border-box;`;
       bipInput.value = pickingState.bipando;
       bipInput.oninput = (e) => { pickingState.bipando = e.target.value; };
+      bipInput.addEventListener("focus", () => { bipInput.style.borderColor = "#3b82f6"; });
+      bipInput.addEventListener("blur", () => { bipInput.style.borderColor = T.isLight?"#d0d0d0":"#333"; });
       bipInput.addEventListener("keydown", (e) => {
         if (e.key === "Enter") { e.preventDefault(); processarBipagem(bipInput.value, refresh); }
       });
-      colDetalhe.appendChild(bipInput);
-    } else {
-      const btnFinalizar = document.createElement("button");
-      btnFinalizar.disabled = pickingState.processandoEtiqueta;
-      btnFinalizar.style.cssText = `width:100%;padding:14px;border-radius:8px;background:${pickingState.processandoEtiqueta ? "#333" : "#ffffff"};border:none;color:${pickingState.processandoEtiqueta ? "#888" : "#000"};font-size:13px;font-weight:700;cursor:${pickingState.processandoEtiqueta ? "default" : "pointer"};`;
-      btnFinalizar.textContent = pickingState.processandoEtiqueta ? "Gerando etiqueta..." : "🖨 Tudo separado — gerar e imprimir etiqueta";
-      btnFinalizar.onclick = () => finalizarPedidoPicking(refresh);
-      colDetalhe.appendChild(btnFinalizar);
+      const scanIcon = document.createElement("span");
+      scanIcon.style.cssText = "position:absolute;right:12px;top:50%;transform:translateY(-50%);color:#777;pointer-events:none;";
+      scanIcon.innerHTML = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9V5a2 2 0 0 1 2-2h4M3 15v4a2 2 0 0 0 2 2h4M21 9V5a2 2 0 0 0-2-2h-4M21 15v4a2 2 0 0 1-2 2h-4M7 12h10"/></svg>`;
+      scanArea.appendChild(bipInput);
+      scanArea.appendChild(scanIcon);
+    } else if (pickingState.processandoEtiqueta) {
+      const msg = document.createElement("div");
+      msg.style.cssText = `font-size:13px;color:#777;text-align:center;padding:12px 0;`;
+      msg.textContent = "Gerando etiqueta...";
+      scanArea.appendChild(msg);
     }
+    colDetalhe.appendChild(scanArea);
+
+    // footer de status com separador visual
+    const footerDivider = document.createElement("div");
+    footerDivider.style.cssText = `height:0.5px;background:${T.border};margin:0 -18px;`;
+    colDetalhe.appendChild(footerDivider);
+
+    const statusFooter = document.createElement("div");
+    statusFooter.style.cssText = "padding:10px 0 0;display:flex;align-items:center;";
+    const statusText = todosBipados
+      ? `<strong style="color:${T.isLight?"#555":"#ccc"};">${totalBipados} de ${totalItens}</strong> <span style="color:#777;"> itens bipados — ${pickingState.processandoEtiqueta ? "gerando etiqueta..." : "finalizando..."}</span>`
+      : `<strong style="color:${T.isLight?"#555":"#ccc"};">${totalBipados} de ${totalItens}</strong> <span style="color:#777;"> itens bipados</span>`;
+    statusFooter.innerHTML = `<div style="font-size:12px;">${statusText}</div>`;
+    colDetalhe.appendChild(statusFooter);
   }
   row.appendChild(colDetalhe);
 
