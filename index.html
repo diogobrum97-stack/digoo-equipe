@@ -1320,38 +1320,28 @@ async function finalizarPedidoPicking(refreshFn) {
       return;
     }
 
-    // Tenta imprimir automaticamente via servidor local (A82pro, SumatraPDF).
-    // Se o servidor não estiver rodando, faz download manual como fallback.
+    // Baixa o PDF com nome fixo para C:\digoo-etiquetas\ — o VBS AutoPrint
+    // monitora essa pasta e imprime automaticamente na A82pro via SumatraPDF.
+    // O browser salva na pasta de Downloads padrão, mas o Chrome/Edge permitem
+    // configurar Downloads para uma pasta fixa. Orientar o operador a apontar
+    // Downloads para C:\digoo-etiquetas\ nas configurações do browser.
     let impressaoAutomatica = false;
     try {
-      const printRes = await fetch("http://127.0.0.1:5000/imprimir", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pdf_base64: data.pdf_base64, order_id: pedido.order_id }),
-        signal: AbortSignal.timeout(10000),
-      });
-      const printData = await printRes.json();
-      impressaoAutomatica = printData.ok === true;
-    } catch (_) { /* servidor de impressão não disponível — usa download como fallback */ }
-
-    if (!impressaoAutomatica) {
-      // Fallback: baixa o PDF para o operador imprimir manualmente
-      try {
-        const byteChars = atob(data.pdf_base64);
-        const byteNumbers = new Array(byteChars.length);
-        for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
-        const byteArray = new Uint8Array(byteNumbers);
-        const blob = new Blob([byteArray], { type: "application/pdf" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `etiqueta_${pedido.order_id}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(url), 10000);
-      } catch (e) { /* se o download falhar, a etiqueta ainda foi gerada no ML normalmente */ }
-    }
+      const byteChars = atob(data.pdf_base64);
+      const byteNumbers = new Array(byteChars.length);
+      for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `etiqueta_${pedido.order_id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+      impressaoAutomatica = true; // download disparado — VBS vai imprimir
+    } catch (e) { /* falha no download */ }
 
     // Registra como concluído (histórico visível pro Diogo) e remove a trava
     // — inclui a conferência final item a item (esperado x bipado), útil pra
