@@ -1333,23 +1333,14 @@ async function finalizarPedidoPicking(refreshFn) {
       const byteArray = new Uint8Array(byteNumbers);
       const blob = new Blob([byteArray], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
-      // Abre o PDF numa nova aba e dispara o print automático
-      const win = window.open(url, "_blank");
-      if (win) {
-        win.onload = () => { win.focus(); win.print(); };
-        // Fallback: alguns browsers chamam onload antes do PDF renderizar
-        setTimeout(() => { try { win.focus(); win.print(); } catch(e){} }, 1500);
-      } else {
-        // Popup bloqueado — baixa normalmente como fallback
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `etiqueta_${pedido.order_id}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      }
-      setTimeout(() => URL.revokeObjectURL(url), 30000);
-      impressaoAutomatica = true;
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `etiqueta_${pedido.order_id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+      impressaoAutomatica = true; // download disparado — VBS vai imprimir
     } catch (e) { /* falha no download */ }
 
     // Registra como concluído (histórico visível pro Diogo) e remove a trava
