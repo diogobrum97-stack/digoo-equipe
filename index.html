@@ -1327,21 +1327,21 @@ async function finalizarPedidoPicking(refreshFn) {
     // Downloads para C:\digoo-etiquetas\ nas configurações do browser.
     let impressaoAutomatica = false;
     try {
-      const byteChars = atob(data.pdf_base64);
-      const byteNumbers = new Array(byteChars.length);
-      for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `etiqueta_${pedido.order_id}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 10000);
-      impressaoAutomatica = true; // download disparado — VBS vai imprimir
-    } catch (e) { /* falha no download */ }
+      // Envia para o print server local (roda em http://127.0.0.1:5000)
+      const printRes = await fetch("http://127.0.0.1:5000/imprimir", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pdf_base64: data.pdf_base64, order_id: pedido.order_id }),
+      });
+      const printData = await printRes.json();
+      if (printData.ok) {
+        impressaoAutomatica = true;
+      } else {
+        pickingState.erro = "Erro ao imprimir: " + (printData.error || "desconhecido");
+      }
+    } catch (e) {
+      pickingState.erro = "Print server offline: " + e.message;
+    }
 
     // Registra como concluído (histórico visível pro Diogo) e remove a trava
     // — inclui a conferência final item a item (esperado x bipado), útil pra
