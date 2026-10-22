@@ -1320,27 +1320,21 @@ async function finalizarPedidoPicking(refreshFn) {
       return;
     }
 
-    // Baixa o PDF com nome fixo para C:\digoo-etiquetas\ — o VBS AutoPrint
-    // monitora essa pasta e imprime automaticamente na A82pro via SumatraPDF.
-    // O browser salva na pasta de Downloads padrão, mas o Chrome/Edge permitem
-    // configurar Downloads para uma pasta fixa. Orientar o operador a apontar
-    // Downloads para C:\digoo-etiquetas\ nas configurações do browser.
+    // Envia para a fila de impressão no Firebase.
+    // O digoo-print-server rodando no PC ouve esse nó em tempo real
+    // e imprime automaticamente via SumatraPDF na A82pro.
     let impressaoAutomatica = false;
     try {
-      // Envia para o print server local (roda em http://127.0.0.1:5000)
-      const printRes = await fetch("http://127.0.0.1:5000/imprimir", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pdf_base64: data.pdf_base64, order_id: pedido.order_id }),
+      await set(ref(db, `/fila_impressao/${pedido.order_id}`), {
+        pdf_base64: data.pdf_base64,
+        order_id: pedido.order_id,
+        operador: pedido.operador || "",
+        ts: Date.now(),
+        status: "aguardando",
       });
-      const printData = await printRes.json();
-      if (printData.ok) {
-        impressaoAutomatica = true;
-      } else {
-        pickingState.erro = "Erro ao imprimir: " + (printData.error || "desconhecido");
-      }
+      impressaoAutomatica = true;
     } catch (e) {
-      pickingState.erro = "Print server offline: " + e.message;
+      pickingState.erro = "Erro ao enviar para impressão: " + e.message;
     }
 
     // Registra como concluído (histórico visível pro Diogo) e remove a trava
@@ -9413,9 +9407,9 @@ function renderConfig(panel, color) {
   if(!window._configTab) window._configTab = "geral";
   const configTabs = document.createElement("div");
   configTabs.style.cssText = "display:flex;gap:2px;margin-bottom:18px;background:var(--bg3);border-radius:7px;padding:3px;";
-  ["geral","apis"].forEach(t => {
+  [["geral","Geral"],["apis","APIs"],["impressao","Impressão"]].forEach(([t, label]) => {
     const btn = document.createElement("button");
-    btn.textContent = t === "geral" ? "Geral" : "APIs";
+    btn.textContent = label;
     btn.style.cssText = `flex:1;padding:6px;border:none;border-radius:5px;font-size:11px;letter-spacing:1px;cursor:pointer;font-family:inherit;transition:all .15s;background:${window._configTab===t?"var(--bg2)":"none"};color:${window._configTab===t?"var(--text)":"var(--text3)"};font-weight:${window._configTab===t?"600":"400"};`;
     btn.addEventListener("click", () => { window._configTab = t; render(); });
     configTabs.appendChild(btn);
@@ -9487,6 +9481,158 @@ function renderConfig(panel, color) {
       row.appendChild(left); row.appendChild(btn);
       panel.appendChild(row);
     });
+    return;
+  }
+
+  // ── Sub-aba: Impressão ───────────────────────────────────────
+  if(window._configTab === "impressao") {
+    const impTitle = document.createElement("div");
+    impTitle.style.cssText = "font-size:8px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin-bottom:14px;";
+    impTitle.textContent = "Servidor de Impressão";
+    panel.appendChild(impTitle);
+
+    // Card principal de status
+    const card = document.createElement("div");
+    card.style.cssText = "background:var(--bg3);border-radius:10px;padding:16px;margin-bottom:14px;";
+    panel.appendChild(card);
+
+    // Linha: dot + nome + status
+    const headerRow = document.createElement("div");
+    headerRow.style.cssText = "display:flex;align-items:center;gap:10px;margin-bottom:12px;";
+
+    const dot = document.createElement("div");
+    dot.id = "ps-dot";
+    dot.style.cssText = "width:8px;height:8px;border-radius:50%;background:#888;flex-shrink:0;";
+
+    const headerInfo = document.createElement("div");
+    headerInfo.style.cssText = "flex:1;";
+    const nomeSrv = document.createElement("div");
+    nomeSrv.style.cssText = "font-size:12px;font-weight:600;color:var(--text);";
+    nomeSrv.textContent = "digoo-print-server";
+    const statusSrv = document.createElement("div");
+    statusSrv.id = "ps-status";
+    statusSrv.style.cssText = "font-size:11px;color:var(--text3);margin-top:2px;";
+    statusSrv.textContent = "Verificando…";
+    headerInfo.appendChild(nomeSrv);
+    headerInfo.appendChild(statusSrv);
+    headerRow.appendChild(dot);
+    headerRow.appendChild(headerInfo);
+    card.appendChild(headerRow);
+
+    // Grade de detalhes
+    const grid = document.createElement("div");
+    grid.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:8px;";
+
+    const mkCell = (label, id) => {
+      const c = document.createElement("div");
+      c.style.cssText = "background:var(--bg2);border-radius:7px;padding:10px 12px;";
+      const l = document.createElement("div");
+      l.style.cssText = "font-size:9px;letter-spacing:1px;color:var(--text3);text-transform:uppercase;margin-bottom:3px;";
+      l.textContent = label;
+      const v = document.createElement("div");
+      v.id = id;
+      v.style.cssText = "font-size:12px;color:var(--text2);font-weight:500;";
+      v.textContent = "—";
+      c.appendChild(l); c.appendChild(v);
+      return c;
+    };
+
+    grid.appendChild(mkCell("Última resposta", "ps-last"));
+    grid.appendChild(mkCell("Impressora", "ps-printer"));
+    grid.appendChild(mkCell("Na fila", "ps-queue"));
+    grid.appendChild(mkCell("Versão", "ps-version"));
+    card.appendChild(grid);
+
+    // Histórico da fila
+    const histTitle = document.createElement("div");
+    histTitle.style.cssText = "font-size:8px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin-bottom:10px;margin-top:14px;";
+    histTitle.textContent = "Últimas impressões";
+    panel.appendChild(histTitle);
+
+    const histList = document.createElement("div");
+    histList.id = "ps-hist";
+    histList.style.cssText = "display:flex;flex-direction:column;gap:6px;";
+    histList.innerHTML = `<div style="font-size:11px;color:var(--text3);">Carregando…</div>`;
+    panel.appendChild(histList);
+
+    // Lê Firebase para popular o painel (usa db e funções já importadas no topo)
+    (async () => {
+      try {
+        // Status do servidor (heartbeat) — escuta em tempo real
+        onValue(ref(db, "/print_server_status"), (snap) => {
+          const s = snap.val();
+          const dotEl = document.getElementById("ps-dot");
+          const stEl = document.getElementById("ps-status");
+          const lastEl = document.getElementById("ps-last");
+          const printerEl = document.getElementById("ps-printer");
+          const queueEl = document.getElementById("ps-queue");
+          const verEl = document.getElementById("ps-version");
+          if(!dotEl) return; // painel foi desmontado
+
+          if(!s) {
+            dotEl.style.background = "#888";
+            if(stEl) stEl.textContent = "Nenhum sinal recebido";
+            return;
+          }
+
+          const secsAgo = Math.round((Date.now() - s.ts) / 1000);
+          const online = secsAgo < 15;
+          const dotColor = online ? "#22c55e" : secsAgo < 60 ? "#f0b400" : "#e8432d";
+          dotEl.style.background = dotColor;
+          dotEl.style.animation = online ? "" : "siren 1s infinite";
+          if(stEl) { stEl.style.color = dotColor; stEl.textContent = online ? "Conectado" : `Sem sinal há ${secsAgo < 60 ? secsAgo+"s" : Math.round(secsAgo/60)+"min"}`; }
+          if(lastEl) lastEl.textContent = secsAgo < 5 ? "agora" : secsAgo < 60 ? secsAgo+"s atrás" : Math.round(secsAgo/60)+"min atrás";
+          if(printerEl) printerEl.textContent = s.printer || "—";
+          if(queueEl) queueEl.textContent = s.queue_size != null ? String(s.queue_size) : "—";
+          if(verEl) verEl.textContent = s.version || "—";
+        });
+
+        // Últimas 10 impressões da fila (leitura única)
+        const filaSnap = await get(ref(db, "/fila_impressao"));
+        const filaData = filaSnap.val() || {};
+        const histEl = document.getElementById("ps-hist");
+        if(!histEl) return;
+
+        const entries = Object.entries(filaData)
+          .map(([k, v]) => ({ order_id: k, ...v }))
+          .sort((a,b) => (b.ts||0) - (a.ts||0))
+          .slice(0, 10);
+
+        if(entries.length === 0) {
+          histEl.innerHTML = `<div style="font-size:11px;color:var(--text3);">Nenhuma impressão registrada</div>`;
+          return;
+        }
+
+        histEl.innerHTML = "";
+        entries.forEach(e => {
+          const row = document.createElement("div");
+          row.style.cssText = "display:flex;align-items:center;justify-content:space-between;background:var(--bg3);border-radius:7px;padding:10px 12px;";
+
+          const left = document.createElement("div");
+          const oid = document.createElement("div");
+          oid.style.cssText = "font-size:11px;color:var(--text2);font-weight:500;";
+          oid.textContent = e.order_id || "—";
+          const meta = document.createElement("div");
+          meta.style.cssText = "font-size:10px;color:var(--text3);margin-top:2px;";
+          const ago = e.ts ? Math.round((Date.now() - e.ts) / 60000) : null;
+          meta.textContent = (e.operador ? e.operador + " · " : "") + (ago != null ? (ago < 1 ? "agora" : ago+"min atrás") : "");
+          left.appendChild(oid); left.appendChild(meta);
+
+          const badge = document.createElement("div");
+          const st = e.status || "aguardando";
+          const stColor = st === "impresso" ? "#22c55e" : st === "erro" ? "#e8432d" : "#f0b400";
+          badge.style.cssText = `font-size:10px;color:${stColor};background:${stColor}22;border-radius:4px;padding:3px 8px;font-weight:500;`;
+          badge.textContent = st === "impresso" ? "Impresso" : st === "erro" ? "Erro" : "Aguardando";
+
+          row.appendChild(left); row.appendChild(badge);
+          histEl.appendChild(row);
+        });
+      } catch(e) {
+        const histEl = document.getElementById("ps-hist");
+        if(histEl) histEl.innerHTML = `<div style="font-size:11px;color:#e8432d;">Erro ao carregar: ${e.message}</div>`;
+      }
+    })();
+
     return;
   }
 
