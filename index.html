@@ -11,7 +11,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <title>Digoo · Equipe</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=Bebas+Neue&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -1524,7 +1524,7 @@ function renderPickingTab(panel, quemSou, modoOperar) {
         ${temKit ? `<div style="display:inline-flex;align-items:center;padding:2px 7px;border-radius:3px;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;background:${T.isLight?"#f2f2f2":"#141414"};color:#777;border:0.5px solid ${T.isLight?"#d0d0d0":"#333"};width:fit-content;margin-bottom:2px;">KIT</div>` : ""}
         <div style="font-size:13px;font-weight:600;color:${T.text};line-height:1.3;">${tituloAnuncio}</div>
         <div style="margin-top:2px;display:flex;flex-direction:column;gap:1px;">
-          <div style="font-family:monospace;font-size:11px;color:#777;">#${pedido.order_id}</div>
+          <div style="font-family:Inter,sans-serif;font-size:11px;color:#777;">#${pedido.order_id}</div>
           <div style="font-size:11px;color:#777;">${pedido.comprador || ""}</div>
         </div>
       </div>
@@ -1567,14 +1567,14 @@ function renderPickingTab(panel, quemSou, modoOperar) {
         <div style="flex:1;min-width:0;">
           <div style="font-size:13px;font-weight:500;color:${T.text};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;">${l.nome}</div>
           <div style="display:flex;align-items:center;gap:5px;margin-top:3px;">
-            <span style="font-family:monospace;font-size:10px;color:#777;">${l.sku}</span>
-            ${l.ean ? `<span style="color:${T.isLight?"#d0d0d0":"#333"};font-size:10px;">·</span><span style="font-family:monospace;font-size:10px;color:#777;">${l.ean}</span>` : ""}
+            <span style="font-family:Inter,sans-serif;font-size:10px;color:#777;">${l.sku}</span>
+            ${l.ean ? `<span style="color:${T.isLight?"#d0d0d0":"#333"};font-size:10px;">·</span><span style="font-family:Inter,sans-serif;font-size:10px;color:#777;">${l.ean}</span>` : ""}
           </div>
         </div>
         <div style="display:flex;align-items:baseline;gap:2px;flex-shrink:0;">
-          <span style="font-family:monospace;font-size:20px;font-weight:600;color:${completo ? "#00a63e" : (T.isLight?"#555":"#ccc")};min-width:24px;text-align:right;line-height:1;">${l.quantidadeBipada}</span>
+          <span style="font-family:Inter,sans-serif;font-size:20px;font-weight:600;color:${completo ? "#00a63e" : (T.isLight?"#555":"#ccc")};min-width:24px;text-align:right;line-height:1;">${l.quantidadeBipada}</span>
           <span style="font-size:13px;color:#777;margin:0 2px;line-height:1;">/</span>
-          <span style="font-family:monospace;font-size:13px;color:#777;line-height:1;">${l.quantidadeNecessaria}</span>
+          <span style="font-family:Inter,sans-serif;font-size:13px;color:#777;line-height:1;">${l.quantidadeNecessaria}</span>
         </div>
         <div style="width:20px;height:20px;border-radius:50%;border:1.5px solid ${completo ? "#00a63e" : (T.isLight?"#d0d0d0":"#333")};background:${completo ? "#00a63e" : "transparent"};flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .25s;">
           ${completo ? `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>` : ""}
@@ -1598,7 +1598,7 @@ function renderPickingTab(panel, quemSou, modoOperar) {
       bipInput.type = "text";
       bipInput.placeholder = "Bipar código de barras...";
       bipInput.autocomplete = "off";
-      bipInput.style.cssText = `width:100%;padding:11px 44px 11px 14px;background:${T.isLight?"#f2f2f2":"#141414"};border:0.5px solid ${T.isLight?"#d0d0d0":"#333"};border-radius:7px;color:${T.text};font-size:14px;font-family:monospace;outline:none;box-sizing:border-box;`;
+      bipInput.style.cssText = `width:100%;padding:11px 44px 11px 14px;background:${T.isLight?"#f2f2f2":"#141414"};border:0.5px solid ${T.isLight?"#d0d0d0":"#333"};border-radius:7px;color:${T.text};font-size:14px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;`;
       bipInput.value = pickingState.bipando;
       bipInput.oninput = (e) => { pickingState.bipando = e.target.value; };
       bipInput.addEventListener("focus", () => { bipInput.style.borderColor = "#3b82f6"; });
