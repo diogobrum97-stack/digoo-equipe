@@ -1593,10 +1593,22 @@ function renderPickingTab(panel, quemSou, modoOperar) {
       bipInput.value = pickingState.bipando;
       bipInput.oninput = (e) => { pickingState.bipando = e.target.value; };
       bipInput.addEventListener("focus", () => { bipInput.style.borderColor = "#3b82f6"; });
-      bipInput.addEventListener("blur", () => { bipInput.style.borderColor = T.isLight?"#d0d0d0":"#333"; });
+      bipInput.addEventListener("blur", () => {
+        bipInput.style.borderColor = T.isLight?"#d0d0d0":"#333";
+        // Re-foca automaticamente após 80ms, a menos que o pedido tenha sido fechado
+        // ou esteja processando a etiqueta (evita loop com botões interativos)
+        setTimeout(() => {
+          const ativo = document.getElementById("picking-input-bip");
+          if (ativo && pickingState.pedidoAtivo && !pickingState.processandoEtiqueta) {
+            ativo.focus();
+          }
+        }, 80);
+      });
       bipInput.addEventListener("keydown", (e) => {
         if (e.key === "Enter") { e.preventDefault(); processarBipagem(bipInput.value, refresh); }
       });
+      // Foca imediatamente ao renderizar o campo
+      setTimeout(() => { const el = document.getElementById("picking-input-bip"); if (el) el.focus(); }, 50);
       const scanIcon = document.createElement("span");
       scanIcon.style.cssText = "position:absolute;right:12px;top:50%;transform:translateY(-50%);color:#777;pointer-events:none;";
       scanIcon.innerHTML = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9V5a2 2 0 0 1 2-2h4M3 15v4a2 2 0 0 0 2 2h4M21 9V5a2 2 0 0 0-2-2h-4M21 15v4a2 2 0 0 1-2 2h-4M7 12h10"/></svg>`;
