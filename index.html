@@ -1358,6 +1358,15 @@ async function finalizarPedidoPicking(refreshFn) {
       pickingState.fila = pickingState.fila.filter(p => p.order_id !== pedido.order_id);
     }
     pickingState.pedidoAtivo = null;
+
+    // Abre automaticamente o próximo pedido da fila
+    const proximo = pickingState.fila && pickingState.fila[0];
+    if (proximo) {
+      pickingState.processandoEtiqueta = false;
+      refreshPickingUI();
+      await abrirPedidoPicking(proximo, pedido.operador || "");
+      return;
+    }
   } catch (e) {
     pickingState.erro = "Erro ao finalizar: " + e.message;
   }
