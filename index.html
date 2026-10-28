@@ -7520,8 +7520,14 @@ function render(){
           }else if(window._diogotab==="perguntas"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
             let perguntasContainer = panel.querySelector(".perguntas-container");
-            if(!perguntasContainer){ perguntasContainer = document.createElement("div"); perguntasContainer.className="perguntas-container"; panel.appendChild(perguntasContainer); }
-            renderPerguntasTab(perguntasContainer);
+            if(!perguntasContainer){
+              perguntasContainer = document.createElement("div");
+              perguntasContainer.className="perguntas-container";
+              panel.appendChild(perguntasContainer);
+              renderPerguntasTab(perguntasContainer);
+            }
+            // render() do Firebase NÃO rerenderiza perguntas — evita apagar o que o usuário está digitando.
+            // refreshPerguntasUI() cuida dos updates de estado internos (enviar resposta, buscar perguntas).
           }else if(window._diogotab==="picking"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
             if(window._pickingModoDiogo==="operar") panel.style.flex="1";
