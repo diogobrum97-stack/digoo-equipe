@@ -1086,6 +1086,7 @@ async function confirmarLoteClonagem(container) {
 }
 
 let perguntasState = { lista: null, carregando: false, erro: null, enviando: {}, _fetchedAt: 0, rascunhos: {} };
+let _perguntasContainerEl = null; // preservado entre renders
 window._perguntasState = () => perguntasState;
 
 // ═══════════════ Picking & Packing ═══════════════
@@ -2134,7 +2135,7 @@ async function checarPerguntasAuto() {
 setInterval(checarPerguntasAuto, 3 * 60 * 1000); // checa a cada 3 minutos (só quando aba perguntas está ativa)
 
 function refreshPerguntasUI() {
-  const c = document.querySelector(".perguntas-container");
+  const c = _perguntasContainerEl || document.querySelector(".perguntas-container");
   if (c) renderPerguntasTab(c);
 }
 
@@ -7519,12 +7520,16 @@ function render(){
             renderClonarTab(clonarContainer);
           }else if(window._diogotab==="perguntas"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
-            let perguntasContainer = panel.querySelector(".perguntas-container");
-            if(!perguntasContainer){
-              perguntasContainer = document.createElement("div");
-              perguntasContainer.className="perguntas-container";
-              panel.appendChild(perguntasContainer);
-              renderPerguntasTab(perguntasContainer);
+            // _perguntasContainerEl é preservado globalmente — panel é recriado a cada render()
+            // então nunca encontramos .perguntas-container via querySelector no panel novo.
+            if(!_perguntasContainerEl){
+              _perguntasContainerEl = document.createElement("div");
+              _perguntasContainerEl.className="perguntas-container";
+              renderPerguntasTab(_perguntasContainerEl);
+            }
+            // Reanexar ao panel novo (o DOM element persiste com todo seu conteúdo)
+            if(!_perguntasContainerEl.parentNode || _perguntasContainerEl.parentNode !== panel){
+              panel.appendChild(_perguntasContainerEl);
             }
             // render() do Firebase NÃO rerenderiza perguntas — evita apagar o que o usuário está digitando.
             // refreshPerguntasUI() cuida dos updates de estado internos (enviar resposta, buscar perguntas).
