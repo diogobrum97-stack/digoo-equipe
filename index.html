@@ -2106,7 +2106,8 @@ async function enviarRespostaPergunta(p) {
 
 // Verifica e envia automaticamente perguntas com conhecimento prévio confiável (modo automático)
 async function checarPerguntasAuto() {
-  if (!state.perguntas_auto) return;
+  // Só roda se modo automático ativo E a aba de perguntas está aberta
+  if (!state.perguntas_auto || window._diogotab !== "perguntas") return;
   const agora = Date.now();
   if (!perguntasState.carregando && (!perguntasState.lista || (agora - (perguntasState._fetchedAt || 0)) > 150 * 1000)) {
     await fetchPerguntas();
@@ -2126,12 +2127,11 @@ async function checarPerguntasAuto() {
       });
     }
   }
-  if (elegiveis.length && window._diogotab === "perguntas") {
+  if (elegiveis.length) {
     refreshPerguntasUI();
   }
 }
-setInterval(checarPerguntasAuto, 3 * 60 * 1000); // checa a cada 3 minutos
-setTimeout(checarPerguntasAuto, 8000);
+setInterval(checarPerguntasAuto, 3 * 60 * 1000); // checa a cada 3 minutos (só quando aba perguntas está ativa)
 
 function refreshPerguntasUI() {
   const c = document.querySelector(".perguntas-container");
@@ -4047,10 +4047,6 @@ function renderDashboard(panel, color) {
     } catch(e) { console.log("docs-hoje-sbar:", e.message); }
   })();
 
-  // Buscar perguntas (com sugestão de IA) uma vez por sessão, reaproveitado pela aba dedicada
-  if(perguntasState.lista === null && !perguntasState.carregando && !perguntasState.erro) {
-    fetchPerguntas().then(() => render());
-  }
 
 
   // Eventos fiscais — injetados no card de vencimentos da sidebar
@@ -10238,6 +10234,8 @@ setInterval(() => {
     if(!dashData || dashData.erro || (agora - (dashData._fetchedAt||0)) > 60*1000) {
       fetchDashboard();
     }
+  }
+}, 30 * 1000); // checa a cada 30s
 
 // ── Listener Firebase para emails novos em tempo real ──────────────────────
 let _ultimaNotifEmail = Date.now();
@@ -10302,8 +10300,6 @@ window._marcarLeadsLidos = function() {
     if (window._emailSbarRender) window._emailSbarRender();
   } catch(e) {}
 };
-  }
-}, 30 * 1000); // checa a cada 30s, refaz busca se passou de 150s
 
 // ─── CONFERÊNCIA FINANCEIRA ────────────────────────────────────────────────
 // ─── CONFERÊNCIA FINANCEIRA v2 — Google Drive ────────────────────────────────
