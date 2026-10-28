@@ -1085,7 +1085,7 @@ async function confirmarLoteClonagem(container) {
   renderClonarTab(container);
 }
 
-let perguntasState = { lista: null, carregando: false, erro: null, enviando: {}, _fetchedAt: 0 };
+let perguntasState = { lista: null, carregando: false, erro: null, enviando: {}, _fetchedAt: 0, rascunhos: {} };
 window._perguntasState = () => perguntasState;
 
 // ═══════════════ Picking & Packing ═══════════════
@@ -2136,7 +2136,13 @@ setTimeout(checarPerguntasAuto, 8000);
 
 function refreshPerguntasUI() {
   const c = document.querySelector(".perguntas-container");
-  if (c) renderPerguntasTab(c);
+  if (!c) return;
+  // Salva os textos editados nas textareas antes de rerenderizar
+  c.querySelectorAll("textarea[id^='pergunta-resp-']").forEach(el => {
+    const qid = el.id.replace("pergunta-resp-", "");
+    perguntasState.rascunhos[qid] = el.value;
+  });
+  renderPerguntasTab(c);
 }
 
 function renderPerguntasTab(container) {
@@ -2233,7 +2239,7 @@ function renderPerguntasTab(container) {
           </div>
         ` : !p.requires_attention ? `
           <div style="font-size:10px;color:#666;margin-bottom:6px;">Resposta ${enviadoAuto || enviado ? "enviada" : "sugerida (editável)"}</div>
-          <textarea id="pergunta-resp-${p.question_id}" ${enviadoAuto || enviado ? "disabled" : ""} style="width:100%;background:${T.bg};border:1px solid ${enviadoAuto ? T.border : T.text};border-radius:6px;padding:10px 12px;color:${enviadoAuto ? T.text3 : T.text};font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;resize:vertical;min-height:60px;margin-bottom:10px;">${p.suggested_answer}</textarea>
+          <textarea id="pergunta-resp-${p.question_id}" ${enviadoAuto || enviado ? "disabled" : ""} style="width:100%;background:${T.bg};border:1px solid ${enviadoAuto ? T.border : T.text};border-radius:6px;padding:10px 12px;color:${enviadoAuto ? T.text3 : T.text};font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;resize:vertical;min-height:60px;margin-bottom:10px;">${(perguntasState.rascunhos[p.question_id] !== undefined ? perguntasState.rascunhos[p.question_id] : p.suggested_answer)}</textarea>
           ${p.criar_rascunho && p.criar_rascunho.length ? `
           <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#f59e0b18;border:0.5px solid #f59e0b44;border-radius:8px;margin-bottom:10px;">
             <span style="font-size:16px;">📋</span>
@@ -2290,6 +2296,7 @@ function renderPerguntasTab(container) {
               if (perguntasState.lista) {
                 perguntasState.lista = perguntasState.lista.filter(item => item.question_id !== p.question_id);
               }
+              delete perguntasState.rascunhos[p.question_id];
             } else if (data.raw?.error === "not_active_item") {
               perguntasState.enviando[p.question_id] = "inativo";
             } else {
