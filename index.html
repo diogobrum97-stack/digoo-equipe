@@ -2127,8 +2127,7 @@ async function checarPerguntasAuto() {
     }
   }
   if (elegiveis.length && window._diogotab === "perguntas") {
-    const cont = document.querySelector(".perguntas-container");
-    if (cont) renderPerguntasTab(cont);
+    refreshPerguntasUI();
   }
 }
 setInterval(checarPerguntasAuto, 3 * 60 * 1000); // checa a cada 3 minutos
@@ -2136,16 +2135,15 @@ setTimeout(checarPerguntasAuto, 8000);
 
 function refreshPerguntasUI() {
   const c = document.querySelector(".perguntas-container");
-  if (!c) return;
-  // Salva os textos editados nas textareas antes de rerenderizar
-  c.querySelectorAll("textarea[id^='pergunta-resp-']").forEach(el => {
-    const qid = el.id.replace("pergunta-resp-", "");
-    perguntasState.rascunhos[qid] = el.value;
-  });
-  renderPerguntasTab(c);
+  if (c) renderPerguntasTab(c);
 }
 
 function renderPerguntasTab(container) {
+  // Salva rascunhos editados antes de limpar o DOM
+  container.querySelectorAll("textarea[id^='pergunta-resp-']").forEach(el => {
+    const qid = el.id.replace("pergunta-resp-", "");
+    perguntasState.rascunhos[qid] = el.value;
+  });
   container.innerHTML = "";
 
   const wrap = document.createElement("div");
