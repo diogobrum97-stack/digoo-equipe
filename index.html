@@ -7525,14 +7525,15 @@ function render(){
             if(!_perguntasContainerEl){
               _perguntasContainerEl = document.createElement("div");
               _perguntasContainerEl.className="perguntas-container";
-              renderPerguntasTab(_perguntasContainerEl);
             }
             // Reanexar ao panel novo (o DOM element persiste com todo seu conteúdo)
-            if(!_perguntasContainerEl.parentNode || _perguntasContainerEl.parentNode !== panel){
+            if(_perguntasContainerEl.parentNode !== panel){
               panel.appendChild(_perguntasContainerEl);
             }
-            // render() do Firebase NÃO rerenderiza perguntas — evita apagar o que o usuário está digitando.
-            // refreshPerguntasUI() cuida dos updates de estado internos (enviar resposta, buscar perguntas).
+            // Sempre renderiza/atualiza o conteúdo — refreshPerguntasUI salva rascunhos antes de recriar
+            // Isso garante que fetch é disparado na primeira vez e que estado atual é exibido ao voltar à aba
+            refreshPerguntasUI();
+            // render() do Firebase chama refreshPerguntasUI aqui, mas ela salva rascunhos primeiro — textarea preservada.
           }else if(window._diogotab==="picking"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
             if(window._pickingModoDiogo==="operar") panel.style.flex="1";
