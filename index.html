@@ -2207,6 +2207,11 @@ function _atualizarPerguntasUI(container) {
     errBox.style.display = perguntasState.erro ? "block" : "none";
   }
 
+  // Dispara fetch se não tem dados e não está carregando
+  if (!perguntasState.lista && !perguntasState.carregando && !perguntasState.erro) {
+    fetchPerguntas().then(() => refreshPerguntasUI());
+  }
+
   // Se não tem lista ainda, mostra loading ou prompt inicial
   const listaEl = container.querySelector("#perguntas-lista");
   if (!listaEl) return;
@@ -2216,7 +2221,7 @@ function _atualizarPerguntasUI(container) {
     return;
   }
   if (!perguntasState.lista) {
-    listaEl.innerHTML = `<div style="padding:40px 0;text-align:center;font-size:12px;color:#555;">Clique em atualizar para buscar as perguntas pendentes.</div>`;
+    listaEl.innerHTML = `<div style="padding:40px 0;text-align:center;font-size:12px;color:#555;">Buscando...</div>`;
     return;
   }
   if (perguntasState.lista.length === 0) {
