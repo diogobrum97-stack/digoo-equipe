@@ -1085,6 +1085,164 @@ async function confirmarLoteClonagem(container) {
   renderClonarTab(container);
 }
 
+// ═══════════════ Perguntas ML ═══════════════
+let _perg = {
+  lista: null,       // array de perguntas ou null
+  carregando: false,
+  erro: null,
+};
+
+async function pergBuscar() {
+  if (_perg.carregando) return;
+  _perg.carregando = true;
+  _perg.erro = null;
+  pergRender();
+
+  const contas = [
+    { key: "matriz", label: "Matriz RS", token: state.ml_token?.access_token },
+    { key: "filial", label: "Filial SP", token: state.ml_token_filial?.access_token },
+  ].filter(c => c.token);
+
+  if (!contas.length) {
+    _perg.carregando = false;
+    _perg.erro = "Nenhuma conta ML conectada.";
+    pergRender();
+    return;
+  }
+
+  try {
+    const resultados = await Promise.all(contas.map(async c => {
+      try {
+        let lista = [], offset = 0;
+        while (true) {
+          const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=buscar-perguntas&token=${c.token}&offset=${offset}`);
+          if (!r.ok) { if (!offset) return { ok: false, erro: `HTTP ${r.status}` }; break; }
+          const d = await r.json().catch(() => null);
+          if (!d?.ok) { if (!offset) return { ok: false, erro: d?.error || "Erro" }; break; }
+          const lote = (d.perguntas || []).map(p => ({ ...p, _conta: c.label }));
+          lista = lista.concat(lote);
+          if (lote.length < 10) break;
+          offset += 10;
+        }
+        return { ok: true, lista };
+      } catch(e) { return { ok: false, erro: e.message }; }
+    }));
+
+    const erros = resultados.filter(r => !r.ok);
+    const bons = resultados.filter(r => r.ok);
+    if (!bons.length) {
+      _perg.erro = "Erro: " + erros.map(e => e.erro).join(" · ");
+    } else {
+      _perg.lista = bons.flatMap(r => r.lista);
+      if (erros.length) _perg.erro = "Aviso: falha em algumas contas.";
+    }
+  } catch(e) {
+    _perg.erro = "Erro de conexão: " + e.message;
+  }
+
+  _perg.carregando = false;
+  pergRender();
+}
+
+async function pergEnviar(qid, texto) {
+  const p = (_perg.lista || []).find(x => String(x.question_id) === String(qid));
+  if (!p) return;
+  const conta = [
+    { label: "Matriz RS", token: state.ml_token?.access_token },
+    { label: "Filial SP", token: state.ml_token_filial?.access_token },
+  ].find(c => c.label === p._conta);
+  if (!conta?.token) { alert("Token da conta não encontrado."); return; }
+
+  const btn = document.getElementById(`perg-btn-${qid}`);
+  if (btn) { btn.disabled = true; btn.textContent = "Enviando..."; }
+
+  try {
+    const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "responder-pergunta", token: conta.token, question_id: qid, text: texto }),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (d.ok) {
+      _perg.lista = _perg.lista.filter(x => String(x.question_id) !== String(qid));
+      pergRender();
+    } else {
+      if (btn) { btn.disabled = false; btn.textContent = "Enviar"; }
+      alert("Erro ao enviar: " + (d.error || "desconhecido"));
+    }
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = "Enviar"; }
+    alert("Erro: " + e.message);
+  }
+}
+
+function pergRender() {
+  const el = document.getElementById("perg-root");
+  if (!el) return;
+
+  if (_perg.carregando) {
+    el.innerHTML = `<div style="padding:60px 0;text-align:center;font-size:13px;color:#666;">Buscando perguntas...</div>`;
+    return;
+  }
+
+  if (_perg.erro && !_perg.lista) {
+    el.innerHTML = `<div style="padding:40px 0;text-align:center;font-size:12px;color:#e8432d;">${_perg.erro}</div>`;
+    return;
+  }
+
+  if (!_perg.lista) {
+    el.innerHTML = `<div style="padding:60px 0;text-align:center;font-size:13px;color:#666;">Clique em Buscar para carregar as perguntas pendentes.</div>`;
+    return;
+  }
+
+  if (!_perg.lista.length) {
+    el.innerHTML = `<div style="padding:60px 0;text-align:center;font-size:13px;color:#10b981;">✓ Nenhuma pergunta pendente</div>`;
+    return;
+  }
+
+  el.innerHTML = "";
+  if (_perg.erro) {
+    const av = document.createElement("div");
+    av.style.cssText = `margin-bottom:14px;padding:10px 14px;background:#2a1a00;border:1px solid #7a4a00;border-radius:8px;font-size:11px;color:#f59e0b;`;
+    av.textContent = _perg.erro;
+    el.appendChild(av);
+  }
+
+  _perg.lista.forEach(p => {
+    const qid = String(p.question_id);
+    const card = document.createElement("div");
+    card.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:16px 18px;margin-bottom:12px;`;
+
+    const sugestao = p.suggested_answer || "";
+    const requerAtencao = p.requires_attention;
+
+    card.innerHTML = `
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;gap:12px;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:10px;color:${T.text2};margin-bottom:4px;">${p._conta || ""} · ${p.produto || ""}</div>
+          <div style="font-size:13px;color:${T.text};font-weight:500;line-height:1.4;">${p.pergunta || ""}</div>
+        </div>
+        ${requerAtencao ? `<div style="flex-shrink:0;font-size:10px;color:#e8432d;border:1px solid #e8432d;border-radius:99px;padding:2px 8px;">⚠ Atenção</div>` : `<div style="flex-shrink:0;font-size:10px;color:#10b981;border:1px solid #10b981;border-radius:99px;padding:2px 8px;">✓ Sugerida</div>`}
+      </div>
+      <textarea id="perg-ta-${qid}" style="width:100%;box-sizing:border-box;background:${T.bg3};border:1px solid ${T.border};border-radius:8px;color:${T.text};font-size:12px;font-family:inherit;padding:10px 12px;resize:vertical;min-height:72px;line-height:1.5;outline:none;" placeholder="Resposta...">${sugestao}</textarea>
+      <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:8px;">
+        <button onclick="
+          const qid='${qid}';
+          _perg.lista=(_perg.lista||[]).filter(x=>String(x.question_id)!==qid);
+          pergRender();
+        " style="background:transparent;border:1px solid ${T.border};border-radius:6px;padding:6px 14px;color:${T.text2};font-size:11px;cursor:pointer;">Dispensar</button>
+        <button id="perg-btn-${qid}" onclick="
+          const ta=document.getElementById('perg-ta-${qid}');
+          const txt=(ta?.value||'').trim();
+          if(!txt){alert('Digite uma resposta.');return;}
+          pergEnviar('${qid}',txt);
+        " style="background:#3b82f6;border:none;border-radius:6px;padding:6px 16px;color:#fff;font-size:11px;font-weight:600;cursor:pointer;">Enviar</button>
+      </div>
+    `;
+    el.appendChild(card);
+  });
+}
+
 // ═══════════════ Picking & Packing ═══════════════
 let pickingState = {
   fila: null,          // lista de pedidos pendentes de envio
@@ -6380,7 +6538,7 @@ function render(){
             { label: "Dashboard", tab: "dashboard", subs: [] },
             { label: "Tarefas", tab: "tarefas", subs: [] },
             { label: "Equipe", tab: null, subs: [{label:"Concluídas",tab:"concluidas"},{label:"Conversas",tab:"conversas"}] },
-            { label: "Mercado Livre", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência de Compra",tab:"experiencia"},{label:"Clonar Anúncio",tab:"clonar"},{label:"Picking & Packing",tab:"picking"},{label:"Promoções",tab:"promocoes"}] },
+            { label: "Mercado Livre", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência de Compra",tab:"experiencia"},{label:"Clonar Anúncio",tab:"clonar"},{label:"Perguntas",tab:"perguntas"},{label:"Picking & Packing",tab:"picking"},{label:"Promoções",tab:"promocoes"}] },
             { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"},{label:"NF Transferência Full",tab:"nf-full"},{label:"NF Importação",tab:"nf-importacao"},{label:"Contas a Pagar",tab:"contas-pagar"},{label:"NFs Emitidas",tab:"nfs-emitidas"},{label:"Painel Fiscal",tab:"painel-fiscal"}] },
             { label: "Email", tab: "email", subs: [] },
           ].filter(g => {
@@ -6495,7 +6653,7 @@ function render(){
               { label: "Dashboard", tab: "dashboard", subs: [] },
               { label: "Tarefas", tab: "tarefas", subs: [] },
               { label: "Equipe", tab: null, subs: [{label:"Concluídas",tab:"concluidas"},{label:"Conversas",tab:"conversas"}] },
-              { label: "ML", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência",tab:"experiencia"},{label:"Clonar",tab:"clonar"},{label:"Picking",tab:"picking"},{label:"Promoções",tab:"promocoes"}] },
+              { label: "ML", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência",tab:"experiencia"},{label:"Clonar",tab:"clonar"},{label:"Perguntas",tab:"perguntas"},{label:"Picking",tab:"picking"},{label:"Promoções",tab:"promocoes"}] },
               { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"},{label:"NF Transferência Full",tab:"nf-full"}] },
               { label: "📝", tab: null, subs: [], acao: "ideias" },
               { label: "⚙", tab: "config", subs: [] },
@@ -7040,7 +7198,31 @@ function render(){
             let clonarContainer = panel.querySelector(".clonar-container");
             if(!clonarContainer){ clonarContainer = document.createElement("div"); clonarContainer.className="clonar-container"; clonarContainer.style.cssText=`background:${T.card};border:1px solid ${T.border};border-radius:12px;padding:24px;box-shadow:${T.cardShadow};`; panel.appendChild(clonarContainer); }
             renderClonarTab(clonarContainer);
-                    }else if(window._diogotab==="picking"){
+          }else if(window._diogotab==="perguntas"){
+            panel.style.maxHeight="none"; panel.style.overflowY="auto";
+            // Monta o shell uma vez; pergRender() preenche #perg-root sem tocar no header
+            if(!panel.querySelector("#perg-shell")){
+              const shell = document.createElement("div");
+              shell.id = "perg-shell";
+              shell.style.cssText = "max-width:760px;";
+              shell.innerHTML = `
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+                  <div>
+                    <div style="font-size:16px;font-weight:700;color:${T.text};">Perguntas pendentes</div>
+                    <div style="font-size:11px;color:${T.text2};margin-top:2px;">Perguntas pré-venda no Mercado Livre · sugestão de resposta por IA</div>
+                  </div>
+                  <button id="perg-btn-buscar" onclick="pergBuscar()" style="background:#3b82f6;border:none;border-radius:8px;padding:8px 18px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;">↻ Buscar</button>
+                </div>
+                <div id="perg-root"></div>
+              `;
+              panel.appendChild(shell);
+              // Busca automaticamente na primeira abertura
+              if(!_perg.lista && !_perg.carregando) pergBuscar();
+            }
+            const btnB = panel.querySelector("#perg-btn-buscar");
+            if(btnB) btnB.textContent = _perg.carregando ? "Buscando..." : "↻ Buscar";
+            pergRender();
+          }else if(window._diogotab==="picking"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
             if(window._pickingModoDiogo==="operar") panel.style.flex="1";
             let pickingContainer = panel.querySelector(".picking-container");
