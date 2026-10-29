@@ -1223,32 +1223,55 @@ function pergRender() {
   _perg.lista.forEach(p => {
     const qid = String(p.question_id);
     const card = document.createElement("div");
-    card.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:16px 18px;margin-bottom:12px;`;
+    card.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:12px;margin-bottom:12px;overflow:hidden;`;
 
     const sugestao = p.suggested_answer || "";
     const requerAtencao = p.requires_attention;
+    const semSugestao = !sugestao && !requerAtencao;
+    const thumb = p.thumbnail || "";
+
+    // Badge da conta: verde para Filial SP, azul para Matriz RS
+    const contaLabel = p._conta || "";
+    const contaBadgeBg = contaLabel.includes("Filial") ? "#064e3b" : "#1e3a5f";
+    const contaBadgeBorder = contaLabel.includes("Filial") ? "#10b981" : "#3b82f6";
+    const contaBadgeColor = contaLabel.includes("Filial") ? "#10b981" : "#60a5fa";
+
+    // Badge status sugestão
+    const statusBadge = requerAtencao
+      ? `<span style="font-size:10px;color:#e8432d;border:1px solid #e8432d;border-radius:99px;padding:2px 8px;white-space:nowrap;">⚠ Atenção</span>`
+      : semSugestao
+        ? `<span style="font-size:10px;color:#f59e0b;border:1px solid #f59e0b;border-radius:99px;padding:2px 8px;white-space:nowrap;">— Sem sugestão</span>`
+        : `<span style="font-size:10px;color:#10b981;border:1px solid #10b981;border-radius:99px;padding:2px 8px;white-space:nowrap;">✓ IA sugeriu</span>`;
 
     card.innerHTML = `
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;gap:12px;">
+      <!-- Cabeçalho do anúncio -->
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:${T.bg3};border-bottom:1px solid ${T.border};">
+        ${thumb ? `<img src="${thumb}" style="width:36px;height:36px;object-fit:contain;border-radius:6px;flex-shrink:0;background:#fff;" onerror="this.style.display='none'">` : ""}
         <div style="flex:1;min-width:0;">
-          <div style="font-size:10px;color:${T.text2};margin-bottom:4px;">${p._conta || ""} · ${p.produto || ""}</div>
-          <div style="font-size:13px;color:${T.text};font-weight:500;line-height:1.4;">${p.pergunta || ""}</div>
+          <div style="font-size:11px;color:${T.text};font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${(p.produto||"").replace(/"/g,"&quot;")}">${p.produto || "Anúncio"}</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:3px;">
+            <span style="font-size:10px;font-weight:600;color:${contaBadgeColor};background:${contaBadgeBg};border:1px solid ${contaBadgeBorder};border-radius:99px;padding:1px 7px;">${contaLabel}</span>
+          </div>
         </div>
-        ${requerAtencao ? `<div style="flex-shrink:0;font-size:10px;color:#e8432d;border:1px solid #e8432d;border-radius:99px;padding:2px 8px;">⚠ Atenção</div>` : `<div style="flex-shrink:0;font-size:10px;color:#10b981;border:1px solid #10b981;border-radius:99px;padding:2px 8px;">✓ Sugerida</div>`}
+        ${statusBadge}
       </div>
-      <textarea id="perg-ta-${qid}" style="width:100%;box-sizing:border-box;background:${T.bg3};border:1px solid ${T.border};border-radius:8px;color:${T.text};font-size:12px;font-family:inherit;padding:10px 12px;resize:vertical;min-height:72px;line-height:1.5;outline:none;" placeholder="Resposta...">${sugestao}</textarea>
-      <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:8px;">
-        <button onclick="
-          const qid='${qid}';
-          _perg.lista=(_perg.lista||[]).filter(x=>String(x.question_id)!==qid);
-          pergRender();
-        " style="background:transparent;border:1px solid ${T.border};border-radius:6px;padding:6px 14px;color:${T.text2};font-size:11px;cursor:pointer;">Dispensar</button>
-        <button id="perg-btn-${qid}" onclick="
-          const ta=document.getElementById('perg-ta-${qid}');
-          const txt=(ta?.value||'').trim();
-          if(!txt){alert('Digite uma resposta.');return;}
-          pergEnviar('${qid}',txt);
-        " style="background:#3b82f6;border:none;border-radius:6px;padding:6px 16px;color:#fff;font-size:11px;font-weight:600;cursor:pointer;">Enviar</button>
+      <!-- Pergunta -->
+      <div style="padding:12px 16px 10px;">
+        <div style="font-size:13px;color:${T.text};font-weight:500;line-height:1.45;margin-bottom:10px;">${p.pergunta || ""}</div>
+        <textarea id="perg-ta-${qid}" style="width:100%;box-sizing:border-box;background:${T.bg3};border:1px solid ${T.border};border-radius:8px;color:${T.text};font-size:12px;font-family:inherit;padding:10px 12px;resize:vertical;min-height:68px;line-height:1.5;outline:none;" placeholder="Resposta...">${sugestao}</textarea>
+        <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:8px;">
+          <button onclick="
+            const qid='${qid}';
+            _perg.lista=(_perg.lista||[]).filter(x=>String(x.question_id)!==qid);
+            pergRender();
+          " style="background:transparent;border:1px solid ${T.border};border-radius:6px;padding:5px 14px;color:${T.text2};font-size:11px;cursor:pointer;">Dispensar</button>
+          <button id="perg-btn-${qid}" onclick="
+            const ta=document.getElementById('perg-ta-${qid}');
+            const txt=(ta?.value||'').trim();
+            if(!txt){alert('Digite uma resposta.');return;}
+            pergEnviar('${qid}',txt);
+          " style="background:#3b82f6;border:none;border-radius:6px;padding:5px 16px;color:#fff;font-size:11px;font-weight:600;cursor:pointer;">Enviar</button>
+        </div>
       </div>
     `;
     el.appendChild(card);
