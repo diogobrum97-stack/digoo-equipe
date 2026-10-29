@@ -666,7 +666,7 @@ function setupIdentityScreen() {
 }
 function requestNotif(){if("Notification"in window&&Notification.permission==="default")Notification.requestPermission();}
 
-let state={tasks:{},messages:{},flashes:{},notices:{},ordem_tarefas:[],ml_token:null,ml_token_filial:null,bling_token:null,google_token:null,ml_cache:null,price_changes:{},last_known_prices:{},nfes_processadas:{},categoria_saude:{},aliquotas_ipi_extra:{},aliquotas_ipi_sku:{},precos_venda_manual:{},frete_ml_manual:{},fechamentos:{},config_atributos:null,config_kits:null};
+let state={tasks:{},messages:{},flashes:{},notices:{},ordem_tarefas:[],ml_token:null,ml_token_filial:null,bling_token:null,google_token:null,ml_cache:null,price_changes:{},last_known_prices:{},nfes_processadas:{},categoria_saude:{},aliquotas_ipi_extra:{},aliquotas_ipi_sku:{},precos_venda_manual:{},frete_ml_manual:{},fechamentos:{},config_atributos:null,config_kits:null,picking_concluidos:{},picking_locks:{}};
 window._state = () => state; // acesso no console: window._state()
 let prevTasks={},flashQueue={},completionAlerts={},openCard=null,diogoPinUnlocked=false,diogoAutoFullscreen=false,diogoCardFullscreen=false,tabFlashInterval=null,faviconInterval=null,cmpSalvando=false;
 const syncDot=document.getElementById("sync-dot");
@@ -803,6 +803,8 @@ onValue(ref(db,"/frete_ml_manual"),     snap => { state.frete_ml_manual = snap.v
 onValue(ref(db,"/fechamentos"),         snap => { state.fechamentos = snap.val() || {}; });
 onValue(ref(db,"/config_atributos"),    snap => { state.config_atributos = snap.val() || null; });
 onValue(ref(db,"/config_kits"),         snap => { state.config_kits = snap.val() || null; });
+onValue(ref(db,"/picking_concluidos"),  snap => { state.picking_concluidos = snap.val() || {}; });
+onValue(ref(db,"/picking_locks"),       snap => { state.picking_locks = snap.val() || {}; });
 
 function addTask(member,text,prio,sender){
   setSyncing(true);push(ref(db,"/tasks"),{member,text,prio,done:false,delegatedBy:sender||null,createdAt:Date.now()});
