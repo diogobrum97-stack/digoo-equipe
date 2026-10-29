@@ -2216,12 +2216,11 @@ function _atualizarPerguntasUI(container) {
   const listaEl = container.querySelector("#perguntas-lista");
   if (!listaEl) return;
 
-  if (perguntasState.carregando && !perguntasState.lista) {
-    listaEl.innerHTML = `<div style="padding:40px 0;text-align:center;font-size:12px;color:#555;">Buscando perguntas pendentes...</div>`;
-    return;
-  }
   if (!perguntasState.lista) {
-    listaEl.innerHTML = `<div style="padding:40px 0;text-align:center;font-size:12px;color:#555;">Buscando...</div>`;
+    // Só mostra loading/vazio se não há cards já renderizados (evita destruir textarea durante digitação)
+    if (!listaEl.querySelector("[data-qid]")) {
+      listaEl.innerHTML = `<div style="padding:40px 0;text-align:center;font-size:12px;color:#555;">${perguntasState.carregando ? "Buscando perguntas pendentes..." : "Buscando..."}</div>`;
+    }
     return;
   }
   if (perguntasState.lista.length === 0) {
@@ -7481,9 +7480,17 @@ function render(){
               _perguntasContainerEl = document.createElement("div");
               _perguntasContainerEl.className="perguntas-container";
             }
-            // Reanexar ao panel novo sem recriar o conteúdo
+            // Reanexar ao panel novo preservando foco: salva o elemento com foco antes de mover
             if(_perguntasContainerEl.parentNode !== panel){
+              const focusedEl = document.activeElement;
+              const selStart = focusedEl?.selectionStart;
+              const selEnd = focusedEl?.selectionEnd;
               panel.appendChild(_perguntasContainerEl);
+              // Restaura foco após mover (mover no DOM perde o foco)
+              if(focusedEl && _perguntasContainerEl.contains(focusedEl)){
+                focusedEl.focus();
+                if(selStart !== undefined) { try { focusedEl.setSelectionRange(selStart, selEnd); } catch(e){} }
+              }
             }
             // renderPerguntasTab usa DOM incremental — nunca destrói textareas existentes
             refreshPerguntasUI();
