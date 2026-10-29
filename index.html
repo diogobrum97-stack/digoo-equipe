@@ -7530,10 +7530,13 @@ function render(){
             if(_perguntasContainerEl.parentNode !== panel){
               panel.appendChild(_perguntasContainerEl);
             }
-            // Sempre renderiza/atualiza o conteúdo — refreshPerguntasUI salva rascunhos antes de recriar
-            // Isso garante que fetch é disparado na primeira vez e que estado atual é exibido ao voltar à aba
-            refreshPerguntasUI();
-            // render() do Firebase chama refreshPerguntasUI aqui, mas ela salva rascunhos primeiro — textarea preservada.
+            // Só re-renderiza se o usuário NÃO estiver digitando numa textarea de perguntas.
+            // Se estiver digitando, apenas garante que o container está anexado — sem destruir o DOM.
+            const focusedEl = document.activeElement;
+            const usuarioDigitando = focusedEl && focusedEl.id && focusedEl.id.startsWith("pergunta-resp-");
+            if(!usuarioDigitando){
+              refreshPerguntasUI();
+            }
           }else if(window._diogotab==="picking"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
             if(window._pickingModoDiogo==="operar") panel.style.flex="1";
