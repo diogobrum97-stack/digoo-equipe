@@ -7472,22 +7472,16 @@ function render(){
           }else if(window._diogotab==="perguntas"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
             // _perguntasContainerEl é preservado globalmente — panel é recriado a cada render()
-            // então nunca encontramos .perguntas-container via querySelector no panel novo.
             if(!_perguntasContainerEl){
               _perguntasContainerEl = document.createElement("div");
               _perguntasContainerEl.className="perguntas-container";
             }
-            // Reanexar ao panel novo (o DOM element persiste com todo seu conteúdo)
+            // Reanexar ao panel novo sem recriar o conteúdo
             if(_perguntasContainerEl.parentNode !== panel){
               panel.appendChild(_perguntasContainerEl);
             }
-            // Só re-renderiza se o usuário NÃO estiver digitando numa textarea de perguntas.
-            // Se estiver digitando, apenas garante que o container está anexado — sem destruir o DOM.
-            const focusedEl = document.activeElement;
-            const usuarioDigitando = focusedEl && focusedEl.id && focusedEl.id.startsWith("pergunta-resp-");
-            if(!usuarioDigitando){
-              refreshPerguntasUI();
-            }
+            // renderPerguntasTab usa DOM incremental — nunca destrói textareas existentes
+            refreshPerguntasUI();
           }else if(window._diogotab==="picking"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
             if(window._pickingModoDiogo==="operar") panel.style.flex="1";
