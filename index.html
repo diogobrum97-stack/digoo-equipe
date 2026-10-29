@@ -1085,10 +1085,6 @@ async function confirmarLoteClonagem(container) {
   renderClonarTab(container);
 }
 
-let perguntasState = { lista: null, carregando: false, erro: null, enviando: {}, _fetchedAt: 0, rascunhos: {} };
-let _perguntasContainerEl = null; // preservado entre renders
-window._perguntasState = () => perguntasState;
-
 // ═══════════════ Picking & Packing ═══════════════
 let pickingState = {
   fila: null,          // lista de pedidos pendentes de envio
@@ -1978,388 +1974,6 @@ function renderPickingDiogo(panel) {
 
 
 
-
-async function fetchPerguntas() {
-  perguntasState.carregando = true;
-  perguntasState.erro = null;
-
-  const contas = [
-    { key: "matriz", label: "Matriz RS", token: state.ml_token?.access_token },
-    { key: "filial", label: "Filial SP", token: state.ml_token_filial?.access_token },
-  ].filter(c => c.token);
-
-  if (contas.length === 0) {
-    perguntasState.carregando = false;
-    perguntasState.erro = "Nenhuma conta ML conectada. Verifique a conexão ML.";
-    return;
-  }
-
-  try {
-    const resultados = await Promise.all(contas.map(async (c) => {
-      try {
-        const tokenOutro = c.key === "filial" ? state.ml_token?.access_token : state.ml_token_filial?.access_token;
-        const tokenOutroParam = tokenOutro ? `&token_outro=${tokenOutro}` : "";
-        let todasPerguntas = [];
-        let offset = 0;
-        while (true) {
-          const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=buscar-perguntas&token=${c.token}${tokenOutroParam}&offset=${offset}`);
-          if (!r.ok) { if (offset === 0) return { conta: c.key, ok: false, erro: `HTTP ${r.status}` }; break; }
-          const data = await r.json().catch(() => null);
-          if (!data || !data.ok) { if (offset === 0) return { conta: c.key, ok: false, erro: data?.error || "Erro" }; break; }
-          const lote = (data.perguntas || []).map(p => ({ ...p, conta: c.key, contaLabel: c.label }));
-          todasPerguntas = todasPerguntas.concat(lote);
-          if (lote.length < 10) break; // menos de 10 = última página
-          offset += 10;
-        }
-        return { conta: c.key, ok: true, perguntas: todasPerguntas };
-      } catch (e) {
-        return { conta: c.key, ok: false, erro: e.message };
-      }
-    }));
-
-    perguntasState.carregando = false;
-    const falhas = resultados.filter(r => !r.ok);
-    const sucesso = resultados.filter(r => r.ok);
-
-    if (sucesso.length === 0) {
-      perguntasState.erro = "Erro ao buscar perguntas: " + falhas.map(f => f.erro).join(" · ");
-      return;
-    }
-
-    const dispensadas = state.perguntas_dispensadas || {};
-    const todasPerguntas = sucesso.flatMap(r => r.perguntas);
-
-    // Mescla com estado anterior: preserva suggested_answer já gerado pra não
-    // sumir entre re-fetches (Claude pode variar entre chamadas — se já tinha
-    // uma sugestão boa, mantém ela enquanto a pergunta não for respondida)
-    const anteriorPorId = Object.fromEntries((perguntasState.lista || []).map(p => [p.question_id, p]));
-    const listaNova = todasPerguntas.map(p => {
-      const anterior = anteriorPorId[p.question_id];
-      if (anterior && !p.suggested_answer && anterior.suggested_answer) {
-        return { ...p, suggested_answer: anterior.suggested_answer };
-      }
-      return p;
-    });
-    perguntasState.lista = listaNova.filter(p => !dispensadas[p.question_id]);
-    perguntasState._fetchedAt = Date.now();
-
-    // Salvar rascunhos sugeridos pelo Claude no Firebase — um registro por pergunta, com até 3 sugestões
-    const pergComRascunho = todasPerguntas.filter(p => p.criar_rascunho?.length);
-    console.log("[rascunho] perguntas com rascunho:", pergComRascunho.length, pergComRascunho.map(p => p.question_id));
-    if (pergComRascunho.length > 0) {
-      try {
-        console.log("[rascunho] tentando salvar...");
-        const snapExistAll = await get(ref(db, '/anuncios_rascunho'));
-        console.log("[rascunho] snap ok, existentes:", Object.keys(snapExistAll.val() || {}));
-        const existentes = snapExistAll.val() || {};
-
-        // Chave de deduplicação: item_id + primeiros 40 chars da pergunta (normalizado)
-        const chaveDedup = r => `${r.item_id||""}_${(r.pergunta||"").trim().toLowerCase().slice(0,40)}`;
-        const chavesExistentes = new Set(Object.values(existentes).map(chaveDedup));
-        const qidsExistentes = new Set(Object.values(existentes).map(r => String(r.question_id)));
-
-        for (const p of pergComRascunho) {
-          const id = `perg_${p.question_id}`;
-          const chave = `${p.item_id||""}_${(p.pergunta||"").trim().toLowerCase().slice(0,40)}`;
-          if (existentes[id] || qidsExistentes.has(String(p.question_id)) || chavesExistentes.has(chave)) continue;
-          const sugestoes = (Array.isArray(p.criar_rascunho) ? p.criar_rascunho : [p.criar_rascunho])
-            .filter(s => s.titulo_sugerido).slice(0, 3);
-          if (!sugestoes.length) continue;
-          await set(ref(db, `/anuncios_rascunho/${id}`), {
-            id, status: "pendente",
-            titulo_sugerido: sugestoes[0]?.titulo_sugerido || "",
-            sugestoes,
-            question_id: p.question_id,
-            item_id: p.item_id,
-            produto: p.produto,
-            pergunta: p.pergunta,
-            criado_em: Date.now(),
-          });
-          chavesExistentes.add(chave);
-          qidsExistentes.add(String(p.question_id));
-          console.log("[rascunho] salvo:", id);
-        }
-      } catch(e) { console.warn("[rascunho] erro:", e.message); }
-    }
-    if (falhas.length > 0) {
-      perguntasState.erro = `Aviso: não foi possível buscar perguntas de ${falhas.map(f => f.conta === "matriz" ? "Matriz RS" : "Filial SP").join(", ")}.`;
-    }
-  } catch (e) {
-    perguntasState.carregando = false;
-    perguntasState.erro = "Erro de conexão ao buscar perguntas.";
-  }
-}
-
-async function enviarRespostaPergunta(p) {
-  const token = p.conta === "matriz" ? state.ml_token?.access_token : state.ml_token_filial?.access_token;
-  if (!token) return { ok: false, error: "Token da conta não encontrado." };
-  try {
-    const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=responder-pergunta`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question_id: p.question_id, texto: p.suggested_answer, token, pergunta_texto: p.pergunta, produto: p.produto, item_id: p.item_id }),
-    });
-    return await r.json();
-  } catch (e) {
-    return { ok: false, error: e.message };
-  }
-}
-
-// Verifica e envia automaticamente perguntas com conhecimento prévio confiável (modo automático)
-async function checarPerguntasAuto() {
-  // Só roda se modo automático ativo E a aba de perguntas está aberta
-  if (!state.perguntas_auto || window._diogotab !== "perguntas") return;
-  const agora = Date.now();
-  if (!perguntasState.carregando && (!perguntasState.lista || (agora - (perguntasState._fetchedAt || 0)) > 150 * 1000)) {
-    await fetchPerguntas();
-  }
-  if (!perguntasState.lista) return;
-  const elegiveis = perguntasState.lista.filter(p =>
-    !p.requires_attention && p.has_knowledge && p.suggested_answer &&
-    perguntasState.enviando[p.question_id] !== "ok" && perguntasState.enviando[p.question_id] !== "loading"
-  );
-  for (const p of elegiveis) {
-    perguntasState.enviando[p.question_id] = "loading";
-    const data = await enviarRespostaPergunta(p);
-    perguntasState.enviando[p.question_id] = data.ok ? "ok-auto" : "erro";
-    if (data.ok) {
-      push(ref(db, "/perguntas_auto_log"), {
-        produto: p.produto, pergunta: p.pergunta, resposta: p.suggested_answer, ts: Date.now(),
-      });
-    }
-  }
-  if (elegiveis.length) {
-    refreshPerguntasUI();
-  }
-}
-setInterval(checarPerguntasAuto, 3 * 60 * 1000); // checa a cada 3 minutos (só quando aba perguntas está ativa)
-
-function refreshPerguntasUI() {
-  const c = _perguntasContainerEl || document.querySelector(".perguntas-container");
-  if (c) renderPerguntasTab(c);
-}
-
-function renderPerguntasTab(container) {
-  // Salva rascunhos de qualquer textarea existente antes de qualquer coisa
-  container.querySelectorAll("textarea[id^='pergunta-resp-']").forEach(el => {
-    const qid = el.id.replace("pergunta-resp-", "");
-    perguntasState.rascunhos[qid] = el.value;
-  });
-
-  // Se já foi montado antes, só atualiza partes dinâmicas sem recriar o DOM
-  if (container._montado) {
-    _atualizarPerguntasUI(container);
-    return;
-  }
-  container._montado = true;
-  // Montagem inicial do esqueleto — só roda uma vez (container._montado garante isso)
-  container.innerHTML = `
-    <div style="max-width:760px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
-        <div>
-          <div style="font-size:16px;font-weight:700;color:#fff;">Perguntas automáticas</div>
-          <div id="perguntas-subtitulo" style="font-size:11px;color:#666;margin-top:2px;">Respostas sugeridas com IA para perguntas pré-venda</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <button id="perguntas-btn-atualizar" style="background:${T.bg3};border:1px solid ${T.border};border-radius:6px;padding:7px 14px;color:${T.text2};font-size:11px;cursor:pointer;">↻ Atualizar</button>
-        </div>
-      </div>
-      <div id="perguntas-erro" style="display:none;background:${T.errBg};border:1px solid ${T.errBor};border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:11px;color:${T.errText};white-space:pre-wrap;line-height:1.5;"></div>
-      <div id="perguntas-lista"></div>
-    </div>
-  `;
-
-  container.querySelector("#perguntas-btn-atualizar").onclick = async () => {
-    await fetchPerguntas();
-    refreshPerguntasUI();
-  };
-
-  // Popula conteúdo inicial
-  _atualizarPerguntasUI(container);
-
-  if (!perguntasState.lista && !perguntasState.carregando && !perguntasState.erro) {
-    fetchPerguntas().then(() => refreshPerguntasUI());
-  }
-}
-
-// Atualização incremental — chamada pelo refreshPerguntasUI quando o DOM já existe.
-// Só atualiza o texto do botão atualizar, mensagem de erro e cards de perguntas.
-// NUNCA recria textareas que o usuário pode estar editando.
-function _atualizarPerguntasUI(container) {
-  // Atualiza botão atualizar
-  const btnAt = container.querySelector("#perguntas-btn-atualizar");
-  if (btnAt) btnAt.textContent = perguntasState.carregando ? "Buscando..." : "↻ Atualizar";
-
-  // Atualiza contagem no subtítulo
-  const sub = container.querySelector("#perguntas-subtitulo");
-  if (sub) {
-    const total = perguntasState.lista?.length || 0;
-    const atencao = (perguntasState.lista || []).filter(p => p.requires_attention).length;
-    sub.textContent = perguntasState.lista
-      ? `${total} pendentes${atencao ? ` · ${atencao} requer${atencao>1?"em":""} atenção manual` : ""}`
-      : "Respostas sugeridas com IA para perguntas pré-venda";
-  }
-
-  // Atualiza erro
-  const errBox = container.querySelector("#perguntas-erro");
-  if (errBox) {
-    errBox.textContent = perguntasState.erro || "";
-    errBox.style.display = perguntasState.erro ? "block" : "none";
-  }
-
-  // Dispara fetch se não tem dados e não está carregando
-  if (!perguntasState.lista && !perguntasState.carregando && !perguntasState.erro) {
-    fetchPerguntas().then(() => refreshPerguntasUI());
-  }
-
-  // Se não tem lista ainda, mostra loading ou prompt inicial
-  const listaEl = container.querySelector("#perguntas-lista");
-  if (!listaEl) return;
-
-  if (!perguntasState.lista) {
-    // Só mostra loading/vazio se não há cards já renderizados (evita destruir textarea durante digitação)
-    if (!listaEl.querySelector("[data-qid]")) {
-      listaEl.innerHTML = `<div style="padding:40px 0;text-align:center;font-size:12px;color:#555;">${perguntasState.carregando ? "Buscando perguntas pendentes..." : "Buscando..."}</div>`;
-    }
-    return;
-  }
-  if (perguntasState.lista.length === 0) {
-    listaEl.innerHTML = `<div style="padding:40px 0;text-align:center;font-size:12px;color:#555;">Nenhuma pergunta pendente. Tudo em dia ✓</div>`;
-    return;
-  }
-
-  // Sincroniza cards: adiciona novos, remove antigos, atualiza botões — sem tocar textareas
-  const idsAtuais = new Set(perguntasState.lista.map(p => String(p.question_id)));
-
-  // Remove cards que não estão mais na lista
-  listaEl.querySelectorAll("[data-qid]").forEach(card => {
-    if (!idsAtuais.has(card.dataset.qid)) card.remove();
-  });
-
-  perguntasState.lista.forEach((p, idx) => {
-    const qid = String(p.question_id);
-    let card = listaEl.querySelector(`[data-qid="${qid}"]`);
-
-    if (!card) {
-      // Cria o card novo
-      card = _criarCardPergunta(p);
-      // Insere na posição correta
-      const cards = listaEl.querySelectorAll("[data-qid]");
-      if (idx < cards.length) listaEl.insertBefore(card, cards[idx]);
-      else listaEl.appendChild(card);
-    } else {
-      // Card já existe — atualiza apenas status do botão enviar sem tocar na textarea
-      _atualizarBotoesCard(card, p);
-    }
-  });
-}
-
-function _criarCardPergunta(p) {
-  const card = document.createElement("div");
-  card.dataset.qid = String(p.question_id);
-  card.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:16px;margin-bottom:14px;`;
-
-  const enviado = perguntasState.enviando[p.question_id] === "ok";
-  const enviadoAuto = perguntasState.enviando[p.question_id] === "ok-auto";
-  const enviandoAgora = perguntasState.enviando[p.question_id] === "loading";
-  const itemInativo = perguntasState.enviando[p.question_id] === "inativo";
-  const textoInicial = perguntasState.rascunhos[p.question_id] !== undefined
-    ? perguntasState.rascunhos[p.question_id]
-    : (p.suggested_answer || "");
-
-  card.innerHTML = `
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
-      ${p.thumbnail ? `<img src="${p.thumbnail}" style="width:36px;height:36px;border-radius:6px;object-fit:cover;flex-shrink:0;">` : ""}
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:12px;font-weight:600;color:${T.text};line-height:1.3;">${p.produto}</div>
-      </div>
-      <div style="flex-shrink:0;padding:2px 8px;border-radius:10px;background:${p.conta==="matriz"?"#8b5cf622":"#3b82f622"};border:0.5px solid ${p.conta==="matriz"?"#8b5cf644":"#3b82f644"};color:${p.conta==="matriz"?"#8b5cf6":"#3b82f6"};font-size:9px;font-weight:600;">${p.contaLabel||(p.conta==="matriz"?"Matriz RS":"Filial SP")}</div>
-    </div>
-    ${p.requires_attention
-      ? `<div style="display:inline-block;padding:3px 10px;border-radius:12px;background:#f0a06018;border:0.5px solid #f0a06044;color:#f0a060;font-size:10px;font-weight:600;margin-bottom:12px;">⚠ requer atenção manual</div>`
-      : `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
-          <div style="display:inline-block;padding:3px 10px;border-radius:12px;background:${T.okBg};border:1px solid ${T.okBor};color:#10b981;font-size:10px;font-weight:600;">sugestão da IA</div>
-          ${p.has_knowledge ? `<div style="display:inline-block;padding:3px 10px;border-radius:12px;background:${T.infoBg};border:1px solid ${T.infoBor};color:#5eb3f0;font-size:10px;font-weight:600;">baseada em respostas já dadas</div>` : ""}
-          ${enviadoAuto ? `<div style="display:inline-block;padding:3px 10px;border-radius:12px;background:#ffffff22;border:1px solid #ffffff55;color:#fff;font-size:10px;font-weight:600;">✓ enviada automaticamente</div>` : ""}
-        </div>`
-    }
-    <div style="font-size:10px;color:#666;margin-bottom:6px;">Pergunta do comprador</div>
-    <div style="background:${T.bg};border:1px solid ${T.border};border-radius:6px;padding:10px 12px;font-size:12px;color:${T.text2};margin-bottom:14px;">${p.pergunta}</div>
-    ${!p.requires_attention && !itemInativo ? `
-      <div style="font-size:10px;color:#666;margin-bottom:6px;">Resposta ${enviadoAuto||enviado?"enviada":"sugerida (editável)"}</div>
-      <textarea id="pergunta-resp-${p.question_id}" ${enviadoAuto||enviado?"disabled":""} style="width:100%;background:${T.bg};border:1px solid ${enviadoAuto?T.border:T.text};border-radius:6px;padding:10px 12px;color:${enviadoAuto?T.text3:T.text};font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;resize:vertical;min-height:60px;margin-bottom:10px;">${textoInicial}</textarea>
-    ` : ""}
-    ${itemInativo ? `
-      <div style="padding:10px 12px;background:${T.errBg};border:1px solid ${T.errBor};border-radius:8px;margin-bottom:14px;font-size:11px;color:#f0a060;">⚠️ Anúncio pausado ou inativo — responda direto pelo app do ML.</div>
-    ` : ""}
-    <div class="card-acoes" style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:4px;flex-wrap:wrap;">
-      <div class="btn-enviar-wrap">
-        ${!enviadoAuto && !p.requires_attention && !itemInativo
-          ? `<button id="pergunta-enviar-${p.question_id}" ${(enviado||enviandoAgora)?"disabled":""} style="padding:9px 18px;border-radius:6px;background:${enviado?T.okBg:"#3b82f6"};border:1px solid ${enviado?T.okBor:"transparent"};color:${enviado?"#10b981":"#fff"};font-size:12px;font-weight:600;cursor:${(enviado||enviandoAgora)?"default":"pointer"};opacity:${enviandoAgora?"0.6":"1"};">${enviado?"Enviado ✓":(enviandoAgora?"Enviando...":"Enviar resposta")}</button>`
-          : p.requires_attention
-            ? `<a href="https://www.mercadolivre.com.br/anuncio/${p.item_id}" target="_blank" style="display:inline-block;padding:9px 18px;border-radius:6px;background:${T.bg2};border:1px solid ${T.border};color:${T.text2};font-size:12px;font-weight:600;text-decoration:none;">Responder no ML ↗</a>`
-            : `<div></div>`
-        }
-      </div>
-      <div style="display:flex;gap:6px;">
-        <button id="pergunta-dispensar-${p.question_id}" style="padding:7px 12px;border-radius:6px;background:none;border:1px solid ${T.border};color:#666;font-size:11px;font-weight:600;cursor:pointer;">Dispensar</button>
-      </div>
-    </div>
-  `;
-
-  // Event listeners — registrados uma única vez na criação do card
-  const btnEnviar = card.querySelector(`#pergunta-enviar-${p.question_id}`);
-  if (btnEnviar) {
-    btnEnviar.onclick = async () => {
-      if (perguntasState.enviando[p.question_id] === "loading") return;
-      const texto = card.querySelector(`#pergunta-resp-${p.question_id}`)?.value?.trim();
-      if (!texto) return;
-      perguntasState.enviando[p.question_id] = "loading";
-      _atualizarBotoesCard(card, p);
-      try {
-        const data = await enviarRespostaPergunta({ ...p, suggested_answer: texto });
-        if (data.ok) {
-          perguntasState.enviando[p.question_id] = "ok";
-          if (perguntasState.lista) perguntasState.lista = perguntasState.lista.filter(i => i.question_id !== p.question_id);
-          delete perguntasState.rascunhos[p.question_id];
-        } else if (data.raw?.error === "not_active_item") {
-          perguntasState.enviando[p.question_id] = "inativo";
-        } else {
-          perguntasState.enviando[p.question_id] = "erro";
-          perguntasState.erro = (data.error || "Erro ao enviar") + (data.raw ? "\n\n" + JSON.stringify(data.raw, null, 2) : "");
-        }
-      } catch (e) {
-        perguntasState.enviando[p.question_id] = "erro";
-        perguntasState.erro = "Erro inesperado: " + e.message;
-      }
-      refreshPerguntasUI();
-    };
-  }
-
-  const btnDispensar = card.querySelector(`#pergunta-dispensar-${p.question_id}`);
-  if (btnDispensar) {
-    btnDispensar.onclick = () => {
-      set(ref(db, `/perguntas_dispensadas/${p.question_id}`), true);
-      if (perguntasState.lista) perguntasState.lista = perguntasState.lista.filter(i => i.question_id !== p.question_id);
-      refreshPerguntasUI();
-    };
-  }
-
-  return card;
-}
-
-function _atualizarBotoesCard(card, p) {
-  const enviado = perguntasState.enviando[p.question_id] === "ok" || perguntasState.enviando[p.question_id] === "ok-auto";
-  const enviandoAgora = perguntasState.enviando[p.question_id] === "loading";
-  const btn = card.querySelector(`#pergunta-enviar-${p.question_id}`);
-  if (btn) {
-    btn.disabled = enviado || enviandoAgora;
-    btn.textContent = enviado ? "Enviado ✓" : (enviandoAgora ? "Enviando..." : "Enviar resposta");
-    btn.style.opacity = enviandoAgora ? "0.6" : "1";
-    btn.style.background = enviado ? T.okBg : "#3b82f6";
-    btn.style.color = enviado ? "#10b981" : "#fff";
-  }
-}
 
 function renderClonarTab(container) {
   container.innerHTML = "";
@@ -3253,7 +2867,7 @@ function renderDashboard(panel, color) {
   };
   if(!window._sbarState) window._sbarState = {open: null};
   window._sbarApply = function() {
-    ['tasks','stock','perguntas','venc'].forEach(function(id) {
+    ['tasks','stock','venc'].forEach(function(id) {
       const isOpen = window._sbarState.open === id;
       const d = document.getElementById('sbar-drawer-'+id);
       const c = document.getElementById('sbar-card-'+id);
@@ -3268,38 +2882,11 @@ function renderDashboard(panel, color) {
     window._sbarApply();
   };
 
-  window._goPerguntas = function() {
-    window._diogotab = 'perguntas';
-    render();
-  };
   window._goAnuncios = function() {
     window._diogotab = 'anuncios-rascunho';
     render();
   };
-  window._sbarNavPergunta = function(e) {
-    e.stopPropagation();
-    e.preventDefault();
-    setTimeout(function() {
-      window._diogotab = 'perguntas';
-      render();
-    }, 50);
-  };
 
-  const perguntasLista = perguntasState.lista;
-  const perguntasTotal = perguntasLista?.length || 0;
-  const perguntasSugeridas = (perguntasLista || []).filter(p => !p.requires_attention).length;
-  const perguntasAtencao = (perguntasLista || []).filter(p => p.requires_attention).length;
-  const perguntasDrawerRows = (perguntasLista || []).slice(0, 6).map(p => {
-    const cor = p.requires_attention ? "#c0392b" : "#10b981";
-    const nomeShort = (p.produto || "").length > 42 ? p.produto.slice(0,42)+"…" : (p.produto || "");
-    return `<div onclick="window._sbarNavPergunta(event)" style="display:flex;align-items:center;justify-content:space-between;padding:9px 10px 9px 12px;border-radius:7px;margin-bottom:6px;cursor:pointer;background:${T.bg3};border:0.5px solid ${T.border};border-left:2px solid ${cor};transition:opacity .12s;" onmouseover="this.style.opacity='0.75'" onmouseout="this.style.opacity='1'">
-      <div style="flex:1;min-width:0;margin-right:10px;">
-        <div style="font-size:11px;font-weight:500;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nomeShort||"—"}</div>
-        <div style="font-size:10px;color:${T.text2};margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.pergunta}</div>
-      </div>
-      <div style="font-size:10px;color:#333;flex-shrink:0;">→</div>
-    </div>`;
-  }).join("");
 
   const statusBar = document.createElement("div");
   statusBar.id = "dash-sidebar";
@@ -3370,44 +2957,25 @@ function renderDashboard(panel, color) {
     ? `<div style="border-top:0.5px solid ${T.border};padding-top:8px;margin-top:8px;max-height:260px;overflow-y:auto;">${tarefasDrawerRows}<div onclick="window._diogotab='tarefas';render();" style="text-align:center;font-size:10px;color:${T.text2};padding:6px 0;cursor:pointer;">Ver todas →</div></div>`
     : `<div style="border-top:0.5px solid ${T.border};padding-top:8px;margin-top:8px;font-size:11px;color:${T.text2};">Nenhuma tarefa urgente ✓</div>`;
 
-  // Drawer Perguntas
-  const pergListHtml = (perguntasState.lista||[]).slice(0,10).map(p => {
-    const cor = p.requires_attention ? "#e8432d" : "#10b981";
-    const ns = (p.produto||"").length>30 ? p.produto.slice(0,30)+"…" : (p.produto||"");
-    return `<div onclick="window._sbarNavPergunta(event)" style="padding:7px 8px 7px 10px;border-left:3px solid ${cor};border-radius:6px;margin-bottom:4px;cursor:pointer;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
-      <div style="font-size:11px;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ns||"—"}</div>
-      <div style="font-size:10px;color:${T.text2};margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.pergunta||""}</div>
-      <div style="font-size:9px;color:${cor};margin-top:1px;">${p.requires_attention?"⚠ Atenção":"✓ Sugerida"}</div>
-    </div>`;
-  }).join("");
-  const pergDrawerInner = perguntasTotal > 0
-    ? `<div style="border-top:0.5px solid ${T.border};padding-top:8px;margin-top:8px;max-height:280px;overflow-y:auto;">${pergListHtml}<div onclick="window._goPerguntas()" style="text-align:center;font-size:10px;color:${T.text2};padding:6px 0;cursor:pointer;">Ver todas →</div></div>`
-    : `<div style="border-top:0.5px solid ${T.border};padding-top:8px;margin-top:8px;font-size:11px;color:${T.text2};">Nenhuma pergunta pendente ✓</div>`;
 
   // Drawer Estoque
   const estDrawerInner = `<div style="border-top:0.5px solid ${T.border};padding-top:8px;margin-top:8px;max-height:260px;overflow-y:auto;">${estDrawerRows||`<div style="font-size:11px;color:#10b981;">Nenhum produto crítico ✓</div>`}${alertasCount>0?`<div onclick="window._diogotab='estoque';render();" style="text-align:center;font-size:10px;color:${T.text2};padding:6px 0;cursor:pointer;">Ver estoque →</div>`:""}</div>`;
 
   // Montar grid
   const pendGrid = document.createElement("div");
-  pendGrid.style.cssText = "display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;";
+  pendGrid.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:8px;";
 
   const corTarefas = urgentes > 0 ? T.cVermelho : importantes > 0 ? T.cAmarelo : T.cVerde;
   const valTarefas = (urgentes+importantes+normais) > 0 ? (urgentes+importantes+normais) : "✓";
   const subTarefas = (urgentes+importantes+normais) > 0 ? "em aberto" : "Em dia";
-
-  const corPerg = perguntasTotal > 0 ? T.cAzul : T.cVerde;
-  const valPerg = perguntasTotal > 0 ? perguntasTotal : "✓";
-  const subPerg = perguntasTotal > 0 ? (perguntasSugeridas > 0 ? perguntasSugeridas+" sug." : "sem sug.") : "Em dia";
 
   const corEst = alertasCount > 0 ? T.cVermelho : T.cVerde;
   const valEst = alertasCount > 0 ? alertasCount : "✓";
   const subEst = alertasCount > 0 ? "alertas" : "Em dia";
 
   const cTarefas = mkPendExpand("tarefas", corTarefas, "Tarefas", valTarefas, subTarefas, tarefasDrawerInner);
-  const cPerg = mkPendExpand("perguntas", corPerg, "Perguntas", valPerg, subPerg, pergDrawerInner);
   const cEst = mkPendExpand("estoque", corEst, "Full SP", valEst, subEst, estDrawerInner);
   pendGrid.appendChild(cTarefas);
-  pendGrid.appendChild(cPerg);
   pendGrid.appendChild(cEst);
 
   const titulo = document.createElement("div");
@@ -3417,7 +2985,6 @@ function renderDashboard(panel, color) {
   pendCard.appendChild(pendGrid);
   // Drawers fora do grid — ocupam largura total do card
   pendCard.appendChild(cTarefas._drw);
-  pendCard.appendChild(cPerg._drw);
   pendCard.appendChild(cEst._drw);
   // ── Card Meta YTD (primeiro card do sidebar, colapsável) ─────────────────
   {
@@ -6813,7 +6380,7 @@ function render(){
             { label: "Dashboard", tab: "dashboard", subs: [] },
             { label: "Tarefas", tab: "tarefas", subs: [] },
             { label: "Equipe", tab: null, subs: [{label:"Concluídas",tab:"concluidas"},{label:"Conversas",tab:"conversas"}] },
-            { label: "Mercado Livre", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência de Compra",tab:"experiencia"},{label:"Clonar Anúncio",tab:"clonar"},{label:"Perguntas",tab:"perguntas"},{label:"Picking & Packing",tab:"picking"},{label:"Promoções",tab:"promocoes"}] },
+            { label: "Mercado Livre", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência de Compra",tab:"experiencia"},{label:"Clonar Anúncio",tab:"clonar"},{label:"Picking & Packing",tab:"picking"},{label:"Promoções",tab:"promocoes"}] },
             { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"},{label:"NF Transferência Full",tab:"nf-full"},{label:"NF Importação",tab:"nf-importacao"},{label:"Contas a Pagar",tab:"contas-pagar"},{label:"NFs Emitidas",tab:"nfs-emitidas"},{label:"Painel Fiscal",tab:"painel-fiscal"}] },
             { label: "Email", tab: "email", subs: [] },
           ].filter(g => {
@@ -6914,7 +6481,7 @@ function render(){
               dashboard: "Dashboard",
               tarefas: "Tarefas",
               concluidas: "Equipe", conversas: "Equipe",
-              estoque: "ML", cancelamentos: "ML", experiencia: "ML", clonar: "ML", perguntas: "ML", picking: "ML",
+              estoque: "ML", cancelamentos: "ML", experiencia: "ML", clonar: "ML", picking: "ML",
               conferencia: "Gestão", config: "Gestão",
             };
             const activeGroupLabel = tabToGroup[currentTab] || "Tarefas";
@@ -6928,7 +6495,7 @@ function render(){
               { label: "Dashboard", tab: "dashboard", subs: [] },
               { label: "Tarefas", tab: "tarefas", subs: [] },
               { label: "Equipe", tab: null, subs: [{label:"Concluídas",tab:"concluidas"},{label:"Conversas",tab:"conversas"}] },
-              { label: "ML", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência",tab:"experiencia"},{label:"Clonar",tab:"clonar"},{label:"Perguntas",tab:"perguntas"},{label:"Picking",tab:"picking"},{label:"Promoções",tab:"promocoes"}] },
+              { label: "ML", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência",tab:"experiencia"},{label:"Clonar",tab:"clonar"},{label:"Picking",tab:"picking"},{label:"Promoções",tab:"promocoes"}] },
               { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"},{label:"NF Transferência Full",tab:"nf-full"}] },
               { label: "📝", tab: null, subs: [], acao: "ideias" },
               { label: "⚙", tab: "config", subs: [] },
@@ -7473,28 +7040,7 @@ function render(){
             let clonarContainer = panel.querySelector(".clonar-container");
             if(!clonarContainer){ clonarContainer = document.createElement("div"); clonarContainer.className="clonar-container"; clonarContainer.style.cssText=`background:${T.card};border:1px solid ${T.border};border-radius:12px;padding:24px;box-shadow:${T.cardShadow};`; panel.appendChild(clonarContainer); }
             renderClonarTab(clonarContainer);
-          }else if(window._diogotab==="perguntas"){
-            panel.style.maxHeight="none"; panel.style.overflowY="auto";
-            // _perguntasContainerEl é preservado globalmente — panel é recriado a cada render()
-            if(!_perguntasContainerEl){
-              _perguntasContainerEl = document.createElement("div");
-              _perguntasContainerEl.className="perguntas-container";
-            }
-            // Reanexar ao panel novo preservando foco: salva o elemento com foco antes de mover
-            if(_perguntasContainerEl.parentNode !== panel){
-              const focusedEl = document.activeElement;
-              const selStart = focusedEl?.selectionStart;
-              const selEnd = focusedEl?.selectionEnd;
-              panel.appendChild(_perguntasContainerEl);
-              // Restaura foco após mover (mover no DOM perde o foco)
-              if(focusedEl && _perguntasContainerEl.contains(focusedEl)){
-                focusedEl.focus();
-                if(selStart !== undefined) { try { focusedEl.setSelectionRange(selStart, selEnd); } catch(e){} }
-              }
-            }
-            // renderPerguntasTab usa DOM incremental — nunca destrói textareas existentes
-            refreshPerguntasUI();
-          }else if(window._diogotab==="picking"){
+                    }else if(window._diogotab==="picking"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
             if(window._pickingModoDiogo==="operar") panel.style.flex="1";
             let pickingContainer = panel.querySelector(".picking-container");
