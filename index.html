@@ -1169,10 +1169,10 @@ async function pergEnviar(qid, texto) {
   if (btn) { btn.disabled = true; btn.textContent = "Enviando..."; }
 
   try {
-    const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas`, {
+    const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=responder-pergunta`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "responder-pergunta", token: conta.token, question_id: qid, text: texto }),
+      body: JSON.stringify({ token: conta.token, question_id: qid, text: texto }),
     });
     const d = await r.json().catch(() => ({}));
     if (d.ok) {
