@@ -1235,6 +1235,68 @@ async function pergEnviar(qid, texto) {
   }
 }
 
+async function pergExcluir(qid, btn) {
+  const p = (_perg.lista || []).find(x => String(x.question_id) === String(qid));
+  if (!p) return;
+  if (!confirm(`Excluir esta pergunta no Mercado Livre?\n\n"${(p.pergunta||"").slice(0,120)}"`)) return;
+  const conta = [
+    { label: "Matriz RS", token: state.ml_token?.access_token },
+    { label: "Filial SP", token: state.ml_token_filial?.access_token },
+  ].find(c => c.label === p._conta);
+  if (!conta?.token) { alert("Token da conta não encontrado."); return; }
+  if (btn) { btn.disabled = true; btn.textContent = "Excluindo..."; }
+  try {
+    const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=excluir-pergunta`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: conta.token, question_id: qid }),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (d.ok) {
+      _perg.lista = _perg.lista.filter(x => String(x.question_id) !== String(qid));
+      pergRender();
+    } else {
+      if (btn) { btn.disabled = false; btn.textContent = "🗑 Excluir"; }
+      alert("Erro ao excluir: " + (d.error || "desconhecido"));
+    }
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = "🗑 Excluir"; }
+    alert("Erro: " + e.message);
+  }
+}
+
+async function pergBloquear(qid, btn) {
+  const p = (_perg.lista || []).find(x => String(x.question_id) === String(qid));
+  if (!p) return;
+  if (!p.from_user) { alert("ID do comprador não disponível nessa pergunta."); return; }
+  if (!confirm(`Bloquear esse comprador no Mercado Livre?\n\nEle não poderá mais comprar na sua loja.`)) return;
+  const conta = [
+    { label: "Matriz RS", token: state.ml_token?.access_token },
+    { label: "Filial SP", token: state.ml_token_filial?.access_token },
+  ].find(c => c.label === p._conta);
+  if (!conta?.token) { alert("Token da conta não encontrado."); return; }
+  if (btn) { btn.disabled = true; btn.textContent = "Bloqueando..."; }
+  try {
+    const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=bloquear-comprador`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: conta.token, from_user: p.from_user }),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (d.ok) {
+      // Remove todas as perguntas desse comprador da lista
+      _perg.lista = _perg.lista.filter(x => String(x.from_user) !== String(p.from_user));
+      pergRender();
+    } else {
+      if (btn) { btn.disabled = false; btn.textContent = "⛔ Bloquear"; }
+      alert("Erro ao bloquear: " + (d.error || "desconhecido"));
+    }
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = "⛔ Bloquear"; }
+    alert("Erro: " + e.message);
+  }
+}
+
 function pergRender() {
   // Atualiza card do dashboard sempre que o estado muda
   if (window._dashPergRefresh) window._dashPergRefresh();
@@ -1310,7 +1372,8 @@ function pergRender() {
         <div style="font-size:13px;color:${T.text};font-weight:500;line-height:1.45;margin-bottom:10px;">${p.pergunta || ""}</div>
         <textarea id="perg-ta-${qid}" style="width:100%;box-sizing:border-box;background:${T.bg3};border:1px solid ${T.border};border-radius:8px;color:${T.text};font-size:12px;font-family:inherit;padding:10px 12px;resize:vertical;min-height:68px;line-height:1.5;outline:none;" placeholder="Resposta...">${sugestao}</textarea>
         <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:8px;">
-          <button id="perg-btn-disp-${qid}" style="background:transparent;border:1px solid ${T.border};border-radius:6px;padding:5px 14px;color:${T.text2};font-size:11px;cursor:pointer;">Dispensar</button>
+          <button id="perg-btn-del-${qid}" style="background:transparent;border:1px solid #e8432d;border-radius:6px;padding:5px 12px;color:#e8432d;font-size:11px;cursor:pointer;" title="Excluir pergunta no Mercado Livre">🗑 Excluir</button>
+          <button id="perg-btn-blk-${qid}" style="background:transparent;border:1px solid #f59e0b;border-radius:6px;padding:5px 12px;color:#f59e0b;font-size:11px;cursor:pointer;" title="Bloquear comprador no Mercado Livre">⛔ Bloquear</button>
           <button id="perg-btn-${qid}" style="background:#3b82f6;border:none;border-radius:6px;padding:5px 16px;color:#fff;font-size:11px;font-weight:600;cursor:pointer;">Enviar</button>
         </div>
       </div>
@@ -1318,11 +1381,10 @@ function pergRender() {
     el.appendChild(card);
 
     // Bind via addEventListener — evita problemas com aspas/caracteres especiais no qid
-    const btnDisp = card.querySelector(`#perg-btn-disp-${CSS.escape(qid)}`);
-    if (btnDisp) btnDisp.addEventListener("click", () => {
-      _perg.lista = (_perg.lista || []).filter(x => String(x.question_id) !== qid);
-      pergRender();
-    });
+    const btnDel = card.querySelector(`#perg-btn-del-${CSS.escape(qid)}`);
+    if (btnDel) btnDel.addEventListener("click", () => pergExcluir(qid, btnDel));
+    const btnBlk = card.querySelector(`#perg-btn-blk-${CSS.escape(qid)}`);
+    if (btnBlk) btnBlk.addEventListener("click", () => pergBloquear(qid, btnBlk));
     const btnEnv = card.querySelector(`#perg-btn-${CSS.escape(qid)}`);
     if (btnEnv) btnEnv.addEventListener("click", () => {
       const ta = card.querySelector(`#perg-ta-${CSS.escape(qid)}`);
