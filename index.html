@@ -1104,6 +1104,8 @@ async function pergBuscar() {
     { key: "filial", label: "Filial SP", token: state.ml_token_filial?.access_token },
   ].filter(c => c.token);
 
+  console.log("[perguntas] buscando, contas:", contas.map(c => c.label));
+
   if (!contas.length) {
     _perg.carregando = false;
     _perg.erro = "Nenhuma conta ML conectada.";
@@ -1116,9 +1118,15 @@ async function pergBuscar() {
       try {
         let lista = [], offset = 0;
         while (true) {
-          const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=buscar-perguntas&token=${c.token}&offset=${offset}`);
-          if (!r.ok) { if (!offset) return { ok: false, erro: `HTTP ${r.status}` }; break; }
+          const url = `${VERCEL_BACKEND}/api/ml-vendas?action=buscar-perguntas&token=${c.token}&offset=${offset}`;
+          console.log("[perguntas] fetch:", url.replace(c.token, c.token.slice(0,8)+"..."));
+          const r = await fetch(url);
+          if (!r.ok) {
+            console.warn("[perguntas] HTTP erro:", r.status, "conta:", c.label);
+            if (!offset) return { ok: false, erro: `HTTP ${r.status}` }; break;
+          }
           const d = await r.json().catch(() => null);
+          console.log("[perguntas] resposta conta", c.label, "ok:", d?.ok, "qtd:", d?.perguntas?.length);
           if (!d?.ok) { if (!offset) return { ok: false, erro: d?.error || "Erro" }; break; }
           const lote = (d.perguntas || []).map(p => ({ ...p, _conta: c.label }));
           lista = lista.concat(lote);
@@ -1126,7 +1134,10 @@ async function pergBuscar() {
           offset += 10;
         }
         return { ok: true, lista };
-      } catch(e) { return { ok: false, erro: e.message }; }
+      } catch(e) {
+        console.error("[perguntas] erro conta", c.label, e.message);
+        return { ok: false, erro: e.message };
+      }
     }));
 
     const erros = resultados.filter(r => !r.ok);
@@ -7219,8 +7230,12 @@ function render(){
             // Reanexar ao panel novo (mover não perde foco pois o foco está em #perg-root, não no shell)
             if(_pergShell.parentNode !== panel) panel.appendChild(_pergShell);
             // Busca automaticamente na primeira abertura (só quando já tem token)
-            if(!_perg.lista && !_perg.carregando && (state.ml_token?.access_token || state.ml_token_filial?.access_token)){
-              pergBuscar();
+            if(!_perg.lista && !_perg.carregando){
+              if(state.ml_token?.access_token || state.ml_token_filial?.access_token){
+                pergBuscar();
+              } else {
+                console.log("[perguntas] sem token ML ainda, aguardando Firebase...");
+              }
             }
             const btnB = _pergShell.querySelector("#perg-btn-buscar");
             if(btnB) btnB.textContent = _perg.carregando ? "Buscando..." : "↻ Buscar";
