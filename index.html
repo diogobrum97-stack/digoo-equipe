@@ -1091,6 +1091,7 @@ let _perg = {
   carregando: false,
   erro: null,
 };
+let _pergShell = null; // elemento preservado entre renders (panel é recriado a cada render())
 
 async function pergBuscar() {
   if (_perg.carregando) return;
@@ -7200,12 +7201,11 @@ function render(){
             renderClonarTab(clonarContainer);
           }else if(window._diogotab==="perguntas"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
-            // Monta o shell uma vez; pergRender() preenche #perg-root sem tocar no header
-            if(!panel.querySelector("#perg-shell")){
-              const shell = document.createElement("div");
-              shell.id = "perg-shell";
-              shell.style.cssText = "max-width:760px;";
-              shell.innerHTML = `
+            // _pergShell é preservado globalmente — panel é recriado a cada render()
+            if(!_pergShell){
+              _pergShell = document.createElement("div");
+              _pergShell.style.cssText = "max-width:760px;";
+              _pergShell.innerHTML = `
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
                   <div>
                     <div style="font-size:16px;font-weight:700;color:${T.text};">Perguntas pendentes</div>
@@ -7215,11 +7215,14 @@ function render(){
                 </div>
                 <div id="perg-root"></div>
               `;
-              panel.appendChild(shell);
-              // Busca automaticamente na primeira abertura
-              if(!_perg.lista && !_perg.carregando) pergBuscar();
             }
-            const btnB = panel.querySelector("#perg-btn-buscar");
+            // Reanexar ao panel novo (mover não perde foco pois o foco está em #perg-root, não no shell)
+            if(_pergShell.parentNode !== panel) panel.appendChild(_pergShell);
+            // Busca automaticamente na primeira abertura (só quando já tem token)
+            if(!_perg.lista && !_perg.carregando && (state.ml_token?.access_token || state.ml_token_filial?.access_token)){
+              pergBuscar();
+            }
+            const btnB = _pergShell.querySelector("#perg-btn-buscar");
             if(btnB) btnB.textContent = _perg.carregando ? "Buscando..." : "↻ Buscar";
             pergRender();
           }else if(window._diogotab==="picking"){
