@@ -1263,21 +1263,26 @@ function pergRender() {
         <div style="font-size:13px;color:${T.text};font-weight:500;line-height:1.45;margin-bottom:10px;">${p.pergunta || ""}</div>
         <textarea id="perg-ta-${qid}" style="width:100%;box-sizing:border-box;background:${T.bg3};border:1px solid ${T.border};border-radius:8px;color:${T.text};font-size:12px;font-family:inherit;padding:10px 12px;resize:vertical;min-height:68px;line-height:1.5;outline:none;" placeholder="Resposta...">${sugestao}</textarea>
         <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:8px;">
-          <button onclick="
-            const qid='${qid}';
-            _perg.lista=(_perg.lista||[]).filter(x=>String(x.question_id)!==qid);
-            pergRender();
-          " style="background:transparent;border:1px solid ${T.border};border-radius:6px;padding:5px 14px;color:${T.text2};font-size:11px;cursor:pointer;">Dispensar</button>
-          <button id="perg-btn-${qid}" onclick="
-            const ta=document.getElementById('perg-ta-${qid}');
-            const txt=(ta?.value||'').trim();
-            if(!txt){alert('Digite uma resposta.');return;}
-            pergEnviar('${qid}',txt);
-          " style="background:#3b82f6;border:none;border-radius:6px;padding:5px 16px;color:#fff;font-size:11px;font-weight:600;cursor:pointer;">Enviar</button>
+          <button id="perg-btn-disp-${qid}" style="background:transparent;border:1px solid ${T.border};border-radius:6px;padding:5px 14px;color:${T.text2};font-size:11px;cursor:pointer;">Dispensar</button>
+          <button id="perg-btn-${qid}" style="background:#3b82f6;border:none;border-radius:6px;padding:5px 16px;color:#fff;font-size:11px;font-weight:600;cursor:pointer;">Enviar</button>
         </div>
       </div>
     `;
     el.appendChild(card);
+
+    // Bind via addEventListener — evita problemas com aspas/caracteres especiais no qid
+    const btnDisp = card.querySelector(`#perg-btn-disp-${CSS.escape(qid)}`);
+    if (btnDisp) btnDisp.addEventListener("click", () => {
+      _perg.lista = (_perg.lista || []).filter(x => String(x.question_id) !== qid);
+      pergRender();
+    });
+    const btnEnv = card.querySelector(`#perg-btn-${CSS.escape(qid)}`);
+    if (btnEnv) btnEnv.addEventListener("click", () => {
+      const ta = card.querySelector(`#perg-ta-${CSS.escape(qid)}`);
+      const txt = (ta?.value || "").trim();
+      if (!txt) { alert("Digite uma resposta."); return; }
+      pergEnviar(qid, txt);
+    });
   });
 }
 
