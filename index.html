@@ -666,90 +666,143 @@ function setupIdentityScreen() {
 }
 function requestNotif(){if("Notification"in window&&Notification.permission==="default")Notification.requestPermission();}
 
-let state={tasks:{},messages:{},flashes:{}};
+let state={tasks:{},messages:{},flashes:{},notices:{},ordem_tarefas:[],ml_token:null,ml_token_filial:null,bling_token:null,google_token:null,ml_cache:null,price_changes:{},last_known_prices:{},nfes_processadas:{},categoria_saude:{},aliquotas_ipi_extra:{},aliquotas_ipi_sku:{},precos_venda_manual:{},frete_ml_manual:{},fechamentos:{},config_atributos:null,config_kits:null};
 window._state = () => state; // acesso no console: window._state()
 let prevTasks={},flashQueue={},completionAlerts={},openCard=null,diogoPinUnlocked=false,diogoAutoFullscreen=false,diogoCardFullscreen=false,tabFlashInterval=null,faviconInterval=null,cmpSalvando=false;
 const syncDot=document.getElementById("sync-dot");
 function setSyncing(v){syncDot.style.opacity=v?"0.4":"1";}
 
-onValue(ref(db,"/"),snap=>{
-  const raw=snap.val()||{};
-  // Ignora nós grandes que não precisam de reatividade (capturador grava nesses)
-  const d={...raw};
-  delete d.contas_pagar;
-  delete d.cte_tomados;
-  delete d.nfe_tomadas;
-  delete d.nfse_tomadas;
-  d.tasks=d.tasks||{};d.messages=d.messages||{};d.flashes=d.flashes||{};d.notices=d.notices||{};d.ml_token=d.ml_token||null;d.ml_cache=d.ml_cache||null;d.price_changes=d.price_changes||{};d.ml_token_filial=d.ml_token_filial||null;d.last_known_prices=d.last_known_prices||{};d.nfes_processadas=d.nfes_processadas||{};d.categoria_saude=d.categoria_saude||{};d.aliquotas_ipi_extra=d.aliquotas_ipi_extra||{};d.aliquotas_ipi_sku=d.aliquotas_ipi_sku||{};d.precos_venda_manual=d.precos_venda_manual||{};d.frete_ml_manual=d.frete_ml_manual||{};d.ordem_tarefas=d.ordem_tarefas||[];d.google_token=d.google_token||null;d.fechamentos=d.fechamentos||{};d.config_atributos=d.config_atributos||null;d.config_kits=d.config_kits||null;
-  const seenTasks=JSON.parse(localStorage.getItem("digoo_seen_tasks")||"{}");
-  let seenChanged=false;
-  Object.entries(d.tasks).filter(([,t])=>t!=null).forEach(([id,task])=>{
+// ── Listener: /tasks ──────────────────────────────────────────────────────────
+// Reativo: tarefas mudam quando alguém adiciona, conclui ou deleta. Chama render().
+onValue(ref(db,"/tasks"), snap => {
+  const tasks = snap.val() || {};
+  // Notificação de nova tarefa para o usuário atual
+  const seenTasks = JSON.parse(localStorage.getItem("digoo_seen_tasks")||"{}");
+  let seenChanged = false;
+  Object.entries(tasks).filter(([,t])=>t!=null).forEach(([id,task])=>{
     if(!seenTasks[id]&&task.member===currentUser&&currentUser!=="Diogo"&&Object.keys(prevTasks).length>0)
       sendNotif("Digoo · Nova Tarefa",`Nova tarefa de ${task.delegatedBy||"Diogo"}: ${task.text}`,themeColor(currentUser));
-    seenTasks[id]=true;seenChanged=true;
+    seenTasks[id]=true; seenChanged=true;
   });
-  if(seenChanged)localStorage.setItem("digoo_seen_tasks",JSON.stringify(seenTasks));
-  const seenNotices=JSON.parse(localStorage.getItem("digoo_seen_notices")||"{}");
-  let noticesChanged=false;
-  Object.entries(d.notices||{}).filter(([,n])=>n!=null).forEach(([id,notice])=>{
-    if(!seenNotices[id]&&notice.forMember===currentUser&&Object.keys(window._prevNotices||{}).length>0)
-      sendNotif("Digoo · Tarefa Concluída",`${notice.by} concluiu: ${notice.text}`,"#00ff88");
-    seenNotices[id]=true;noticesChanged=true;
-  });
-  if(noticesChanged)localStorage.setItem("digoo_seen_notices",JSON.stringify(seenNotices));
-  window._prevNotices={...(d.notices||{})};
-  const seenMsgs=JSON.parse(localStorage.getItem("digoo_seen_msgs")||"{}");
-  let seenMsgsChanged=false;
-  Object.entries(d.messages||{}).filter(([,m])=>m!=null).forEach(([id,msg])=>{
-    if(!seenMsgs[id]&&msg.recipient===currentUser&&Object.keys(window._prevMsgs||{}).length>0)
-      sendNotif("Digoo · Nova Mensagem",`${msg.from}: ${msg.text}`,themeColor(msg.from));
-    seenMsgs[id]=true;seenMsgsChanged=true;
-  });
-  if(seenMsgsChanged)localStorage.setItem("digoo_seen_msgs",JSON.stringify(seenMsgs));
-  window._prevMsgs={...(d.messages||{})};
-  Object.entries(d.tasks).filter(([,t])=>t!=null).forEach(([id,task])=>{
-    const prev=prevTasks[id];
+  if(seenChanged) localStorage.setItem("digoo_seen_tasks", JSON.stringify(seenTasks));
+  // Detecta tarefas concluídas por Bruno/Larissa — gera flash para Diogo
+  Object.entries(tasks).filter(([,t])=>t!=null).forEach(([id,task])=>{
+    const prev = prevTasks[id];
     if(prev&&!prev.done&&task.done&&task.member!=="Diogo"){
       completionAlerts[id]={member:task.member,text:task.text};
       set(ref(db,`/flashes/Diogo`),{ts:Date.now(),msg:`${task.member} concluiu uma tarefa!`});
-      if(currentUser==="Diogo")sendNotif("Digoo · Tarefa Concluída",`${task.member} concluiu: ${task.text}`,themeColor("Diogo"));
+      if(currentUser==="Diogo") sendNotif("Digoo · Tarefa Concluída",`${task.member} concluiu: ${task.text}`,themeColor("Diogo"));
     }
   });
-  Object.entries(d.flashes).forEach(([member,val])=>{
+  prevTasks = {...tasks};
+  state.tasks = tasks;
+  if(!cmpSalvando) render();
+  if(document.getElementById("ideias-modal-overlay")) renderIdeiasLista();
+}, ()=>{ syncDot.style.background="#e8432d"; });
+
+// ── Listener: /ordem_tarefas ─────────────────────────────────────────────────
+onValue(ref(db,"/ordem_tarefas"), snap => {
+  state.ordem_tarefas = snap.val() || [];
+  if(!cmpSalvando) render();
+});
+
+// ── Listener: /messages ──────────────────────────────────────────────────────
+onValue(ref(db,"/messages"), snap => {
+  const messages = snap.val() || {};
+  const seenMsgs = JSON.parse(localStorage.getItem("digoo_seen_msgs")||"{}");
+  let seenChanged = false;
+  Object.entries(messages).filter(([,m])=>m!=null).forEach(([id,msg])=>{
+    if(!seenMsgs[id]&&msg.recipient===currentUser&&Object.keys(window._prevMsgs||{}).length>0)
+      sendNotif("Digoo · Nova Mensagem",`${msg.from}: ${msg.text}`,themeColor(msg.from));
+    seenMsgs[id]=true; seenChanged=true;
+  });
+  if(seenChanged) localStorage.setItem("digoo_seen_msgs", JSON.stringify(seenMsgs));
+  window._prevMsgs = {...messages};
+  state.messages = messages;
+  if(!cmpSalvando) render();
+});
+
+// ── Listener: /flashes ───────────────────────────────────────────────────────
+onValue(ref(db,"/flashes"), snap => {
+  const flashes = snap.val() || {};
+  Object.entries(flashes).forEach(([member,val])=>{
     if(val!=null){
-      const wasFlashing=flashQueue[member];flashQueue[member]=true;
-      if(!wasFlashing&&val.msg){startTabFlash(val.msg,themeColor(member));if(currentUser===member)sendNotif("Digoo · Nova Tarefa",val.msg,themeColor(member));}
+      const wasFlashing = flashQueue[member]; flashQueue[member]=true;
+      if(!wasFlashing&&val.msg){ startTabFlash(val.msg,themeColor(member)); if(currentUser===member) sendNotif("Digoo · Nova Tarefa",val.msg,themeColor(member)); }
     }
   });
-  Object.keys(flashQueue).forEach(m=>{if(!d.flashes[m])delete flashQueue[m];});
-  const prevBlingToken = state?.bling_token?.access_token;
-  const prevFilialToken = state?.ml_token_filial?.access_token;
-  prevTasks={...d.tasks};state=d;
-  // Se o token Bling mudou e tinha erro, limpar e tentar buscar de novo
-  if(d.bling_token?.access_token && d.bling_token.access_token !== prevBlingToken && estoqueBlingErro) {
+  Object.keys(flashQueue).forEach(m=>{ if(!flashes[m]) delete flashQueue[m]; });
+  state.flashes = flashes;
+  if(!cmpSalvando) render();
+});
+
+// ── Listener: /notices ───────────────────────────────────────────────────────
+onValue(ref(db,"/notices"), snap => {
+  const notices = snap.val() || {};
+  const seenNotices = JSON.parse(localStorage.getItem("digoo_seen_notices")||"{}");
+  let seenChanged = false;
+  Object.entries(notices).filter(([,n])=>n!=null).forEach(([id,notice])=>{
+    if(!seenNotices[id]&&notice.forMember===currentUser&&Object.keys(window._prevNotices||{}).length>0)
+      sendNotif("Digoo · Tarefa Concluída",`${notice.by} concluiu: ${notice.text}`,"#00ff88");
+    seenNotices[id]=true; seenChanged=true;
+  });
+  if(seenChanged) localStorage.setItem("digoo_seen_notices", JSON.stringify(seenNotices));
+  window._prevNotices = {...notices};
+  state.notices = notices;
+  if(!cmpSalvando) render();
+});
+
+// ── Listener: /ml_token (silencioso — sem render) ────────────────────────────
+// Token ML renova automaticamente a cada hora. Não muda nada na UI diretamente.
+onValue(ref(db,"/ml_token"), snap => {
+  state.ml_token = snap.val() || null;
+  // Picking: busca fila na chegada do token ou se dados têm mais de 3 min
+  if(state.ml_token?.access_token && !pickingState.carregando) {
+    const agora = Date.now();
+    const precisaAtualizar = !pickingState.fila || (agora - (pickingState._fetchedAt||0)) > 3*60*1000;
+    if(precisaAtualizar) fetchPickingFila().then(() => render());
+  }
+});
+
+// ── Listener: /ml_token_filial (silencioso — sem render) ─────────────────────
+onValue(ref(db,"/ml_token_filial"), snap => {
+  const prev = state.ml_token_filial?.access_token;
+  state.ml_token_filial = snap.val() || null;
+  if(state.ml_token_filial?.access_token && state.ml_token_filial.access_token !== prev) {
+    estoqueAutoCheckDone = false;
+    estoqueExcelData = null;
+    fetchEstoqueAutomatico();
+    if(!dashData && !dashLoading) window._fetchDashboard();
+  }
+});
+
+// ── Listener: /bling_token (silencioso — sem render) ─────────────────────────
+onValue(ref(db,"/bling_token"), snap => {
+  const prev = state.bling_token?.access_token;
+  state.bling_token = snap.val() || null;
+  if(state.bling_token?.access_token && state.bling_token.access_token !== prev && estoqueBlingErro) {
     estoqueBlingErro = null;
     estoqueBlingData = null;
     estoqueBlingLoading = false;
     fetchBlingProdutos();
   }
-  // Se o token ML Filial mudou, resetar estoque automático pra rebuscar com vendas
-  if(d.ml_token_filial?.access_token && d.ml_token_filial.access_token !== prevFilialToken) {
-    estoqueAutoCheckDone = false;
-    estoqueExcelData = null;
-    fetchEstoqueAutomatico();
-    // Se dashboard ainda não carregou, tenta agora que o token chegou
-    if(!dashData && !dashLoading) window._fetchDashboard();
-  }
-  // Picking — busca na primeira chegada do token, e refresca se os dados têm
-  // mais de 3 min (fila vazia [] não significa "já carregou recentemente").
-  if(d.ml_token?.access_token && !pickingState.carregando) {
-    const agora = Date.now();
-    const precisaAtualizar = !pickingState.fila || (agora - (pickingState._fetchedAt||0)) > 3*60*1000;
-    if(precisaAtualizar) fetchPickingFila().then(() => render());
-  }
-  if(!cmpSalvando)render();
-  if(document.getElementById("ideias-modal-overlay")) renderIdeiasLista();
-},()=>{syncDot.style.background="#e8432d";});
+});
+
+// ── Listeners: configs e caches (silenciosos — sem render) ───────────────────
+// Esses dados são lidos sob demanda — não precisam reativar a UI.
+onValue(ref(db,"/google_token"),        snap => { state.google_token = snap.val() || null; });
+onValue(ref(db,"/ml_cache"),            snap => { state.ml_cache = snap.val() || null; });
+onValue(ref(db,"/price_changes"),       snap => { state.price_changes = snap.val() || {}; });
+onValue(ref(db,"/last_known_prices"),   snap => { state.last_known_prices = snap.val() || {}; });
+onValue(ref(db,"/nfes_processadas"),    snap => { state.nfes_processadas = snap.val() || {}; });
+onValue(ref(db,"/categoria_saude"),     snap => { state.categoria_saude = snap.val() || {}; });
+onValue(ref(db,"/aliquotas_ipi_extra"), snap => { state.aliquotas_ipi_extra = snap.val() || {}; });
+onValue(ref(db,"/aliquotas_ipi_sku"),   snap => { state.aliquotas_ipi_sku = snap.val() || {}; });
+onValue(ref(db,"/precos_venda_manual"), snap => { state.precos_venda_manual = snap.val() || {}; });
+onValue(ref(db,"/frete_ml_manual"),     snap => { state.frete_ml_manual = snap.val() || {}; });
+onValue(ref(db,"/fechamentos"),         snap => { state.fechamentos = snap.val() || {}; });
+onValue(ref(db,"/config_atributos"),    snap => { state.config_atributos = snap.val() || null; });
+onValue(ref(db,"/config_kits"),         snap => { state.config_kits = snap.val() || null; });
 
 function addTask(member,text,prio,sender){
   setSyncing(true);push(ref(db,"/tasks"),{member,text,prio,done:false,delegatedBy:sender||null,createdAt:Date.now()});
@@ -1104,8 +1157,6 @@ async function pergBuscar() {
     { key: "filial", label: "Filial SP", token: state.ml_token_filial?.access_token },
   ].filter(c => c.token);
 
-  console.log("[perguntas] buscando, contas:", contas.map(c => c.label));
-
   if (!contas.length) {
     _perg.carregando = false;
     _perg.erro = "Nenhuma conta ML conectada.";
@@ -1119,14 +1170,11 @@ async function pergBuscar() {
         let lista = [], offset = 0;
         while (true) {
           const url = `${VERCEL_BACKEND}/api/ml-vendas?action=buscar-perguntas&token=${c.token}&offset=${offset}`;
-          console.log("[perguntas] fetch:", url.replace(c.token, c.token.slice(0,8)+"..."));
           const r = await fetch(url);
           if (!r.ok) {
-            console.warn("[perguntas] HTTP erro:", r.status, "conta:", c.label);
             if (!offset) return { ok: false, erro: `HTTP ${r.status}` }; break;
           }
           const d = await r.json().catch(() => null);
-          console.log("[perguntas] resposta conta", c.label, "ok:", d?.ok, "qtd:", d?.perguntas?.length);
           if (!d?.ok) { if (!offset) return { ok: false, erro: d?.error || "Erro" }; break; }
           const lote = (d.perguntas || []).map(p => ({ ...p, _conta: c.label }));
           lista = lista.concat(lote);
@@ -1135,7 +1183,6 @@ async function pergBuscar() {
         }
         return { ok: true, lista };
       } catch(e) {
-        console.error("[perguntas] erro conta", c.label, e.message);
         return { ok: false, erro: e.message };
       }
     }));
@@ -7350,8 +7397,6 @@ function render(){
             if(!_perg.lista && !_perg.carregando){
               if(state.ml_token?.access_token || state.ml_token_filial?.access_token){
                 pergBuscar();
-              } else {
-                console.log("[perguntas] sem token ML ainda, aguardando Firebase...");
               }
             }
             const btnB = _pergShell.querySelector("#perg-btn-buscar");
