@@ -7346,7 +7346,11 @@ function render(){
             }
             const btnB = _pergShell.querySelector("#perg-btn-buscar");
             if(btnB) btnB.textContent = _perg.carregando ? "Buscando..." : "↻ Buscar";
-            pergRender();
+            // Só (re)renderiza os cards se não houver foco ativo dentro do shell
+            // Evita destruir textareas enquanto o usuário digita
+            const focusedEl = document.activeElement;
+            const usuarioDigitando = focusedEl && _pergShell.contains(focusedEl);
+            if (!usuarioDigitando) pergRender();
           }else if(window._diogotab==="picking"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
             if(window._pickingModoDiogo==="operar") panel.style.flex="1";
