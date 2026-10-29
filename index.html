@@ -747,7 +747,20 @@ onValue(ref(db,"/"),snap=>{
     const precisaAtualizar = !pickingState.fila || (agora - (pickingState._fetchedAt||0)) > 3*60*1000;
     if(precisaAtualizar) fetchPickingFila().then(() => render());
   }
-  if(!cmpSalvando)render();
+  if(!cmpSalvando) {
+    // Se o usuário está digitando numa textarea/input do _pergShell, adiamos o render
+    // para não destruir o foco (container.innerHTML="" move o _pergShell e perde o foco)
+    const fa = document.activeElement;
+    const pergDigitando = _pergShell && fa && _pergShell.contains(fa) && (fa.tagName === "TEXTAREA" || fa.tagName === "INPUT");
+    if (pergDigitando) {
+      // Só atualiza o botão buscar e o card do dashboard, sem recriar os cards
+      const btnB = _pergShell && _pergShell.querySelector("#perg-btn-buscar");
+      if (btnB) btnB.textContent = _perg.carregando ? "Buscando..." : "↻ Buscar";
+      if (window._dashPergRefresh) window._dashPergRefresh();
+    } else {
+      render();
+    }
+  }
   if(document.getElementById("ideias-modal-overlay")) renderIdeiasLista();
 },()=>{syncDot.style.background="#e8432d";});
 
@@ -7346,11 +7359,7 @@ function render(){
             }
             const btnB = _pergShell.querySelector("#perg-btn-buscar");
             if(btnB) btnB.textContent = _perg.carregando ? "Buscando..." : "↻ Buscar";
-            // Só (re)renderiza os cards se não houver foco ativo dentro do shell
-            // Evita destruir textareas enquanto o usuário digita
-            const focusedEl = document.activeElement;
-            const usuarioDigitando = focusedEl && _pergShell.contains(focusedEl);
-            if (!usuarioDigitando) pergRender();
+            pergRender();
           }else if(window._diogotab==="picking"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
             if(window._pickingModoDiogo==="operar") panel.style.flex="1";
