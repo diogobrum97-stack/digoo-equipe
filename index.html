@@ -747,20 +747,7 @@ onValue(ref(db,"/"),snap=>{
     const precisaAtualizar = !pickingState.fila || (agora - (pickingState._fetchedAt||0)) > 3*60*1000;
     if(precisaAtualizar) fetchPickingFila().then(() => render());
   }
-  if(!cmpSalvando) {
-    // Se o usuário está digitando numa textarea/input do _pergShell, adiamos o render
-    // para não destruir o foco (container.innerHTML="" move o _pergShell e perde o foco)
-    const fa = document.activeElement;
-    const pergDigitando = _pergShell && fa && _pergShell.contains(fa) && (fa.tagName === "TEXTAREA" || fa.tagName === "INPUT");
-    if (pergDigitando) {
-      // Só atualiza o botão buscar e o card do dashboard, sem recriar os cards
-      const btnB = _pergShell && _pergShell.querySelector("#perg-btn-buscar");
-      if (btnB) btnB.textContent = _perg.carregando ? "Buscando..." : "↻ Buscar";
-      if (window._dashPergRefresh) window._dashPergRefresh();
-    } else {
-      render();
-    }
-  }
+  if(!cmpSalvando)render();
   if(document.getElementById("ideias-modal-overlay")) renderIdeiasLista();
 },()=>{syncDot.style.background="#e8432d";});
 
@@ -7347,8 +7334,18 @@ function render(){
                 <div id="perg-root"></div>
               `;
             }
-            // Reanexar ao panel novo (mover não perde foco pois o foco está em #perg-root, não no shell)
-            if(_pergShell.parentNode !== panel) panel.appendChild(_pergShell);
+            // Reanexar ao panel novo — restaura foco se estava numa textarea
+            if(_pergShell.parentNode !== panel) {
+              const _fa = document.activeElement;
+              const _faId = _fa && _pergShell.contains(_fa) ? _fa.id : null;
+              const _faVal = _fa && _faId ? _fa.value : null;
+              const _faPos = _fa && _faId ? _fa.selectionStart : null;
+              panel.appendChild(_pergShell);
+              if(_faId) {
+                const el2 = _pergShell.querySelector("#"+CSS.escape(_faId));
+                if(el2) { el2.focus(); if(_faPos!=null) try{el2.setSelectionRange(_faPos,_faPos);}catch(e){} }
+              }
+            }
             // Busca automaticamente na primeira abertura (só quando já tem token)
             if(!_perg.lista && !_perg.carregando){
               if(state.ml_token?.access_token || state.ml_token_filial?.access_token){
