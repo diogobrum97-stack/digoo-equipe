@@ -2140,269 +2140,220 @@ function refreshPerguntasUI() {
 }
 
 function renderPerguntasTab(container) {
-  // Salva rascunhos editados antes de limpar o DOM
+  // Salva rascunhos de qualquer textarea existente antes de qualquer coisa
   container.querySelectorAll("textarea[id^='pergunta-resp-']").forEach(el => {
     const qid = el.id.replace("pergunta-resp-", "");
     perguntasState.rascunhos[qid] = el.value;
   });
-  container.innerHTML = "";
 
-  const wrap = document.createElement("div");
-  wrap.style.cssText = "max-width:760px;";
-
-  const total = perguntasState.lista?.length || 0;
-  const atencao = (perguntasState.lista || []).filter(p => p.requires_attention).length;
-  const modoAuto = !!state.perguntas_auto;
-
-  const header = document.createElement("div");
-  header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;";
-  header.innerHTML = `
-    <div>
-      <div style="font-size:16px;font-weight:700;color:#fff;">Perguntas automáticas</div>
-      <div style="font-size:11px;color:#666;margin-top:2px;">${perguntasState.lista ? `${total} pendentes${atencao ? ` · ${atencao} requer${atencao>1?"em":""} atenção manual` : ""}` : "Respostas sugeridas com IA para perguntas pré-venda"}</div>
-    </div>
-    <div style="display:flex;align-items:center;gap:8px;">
-      <button id="perguntas-btn-catalogo" style="background:${T.bg3};border:1px solid ${T.border};border-radius:6px;padding:7px 14px;color:${T.text2};font-size:11px;cursor:pointer;">🔍 Testar catálogo</button>
-      <button id="perguntas-btn-atualizar" style="background:${T.bg3};border:1px solid ${T.border};border-radius:6px;padding:7px 14px;color:${T.text2};font-size:11px;cursor:pointer;">${perguntasState.carregando ? "Buscando..." : "↻ Atualizar"}</button>
-    </div>
-  `;
-  wrap.appendChild(header);
-
-  const autoBar = document.createElement("div");
-  autoBar.style.cssText = `display:flex;align-items:center;justify-content:space-between;background:${modoAuto ? (T.isLight?"#f0fdf4":"linear-gradient(to top,#1a2a1a 0%,#000 100%)") : (T.isLight?"#ffffff":"linear-gradient(to top,#252525 0%,#000 100%)")};border:1px solid ${modoAuto ? T.okBor : T.border};border-radius:10px;padding:12px 16px;margin-bottom:20px;`;
-  autoBar.innerHTML = `
-    <div>
-      <div style="font-size:12px;font-weight:600;color:${modoAuto ? "#10b981" : T.text};">Modo automático ${modoAuto ? "ativado" : "desativado"}</div>
-      <div style="font-size:10px;color:#666;margin-top:2px;">Envia sozinho apenas perguntas com conhecimento já confirmado sobre o mesmo produto. O resto continua na fila manual.</div>
-    </div>
-    <button id="perguntas-btn-toggle-auto" style="background:${modoAuto ? "#c0392b" : "#ffffff"};border:none;border-radius:6px;padding:8px 16px;color:${modoAuto ? "#fff" : "#000"};font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;">${modoAuto ? "Desativar" : "Ativar"}</button>
-  `;
-  wrap.appendChild(autoBar);
-
-  if (perguntasState.erro) {
-    const errBox = document.createElement("div");
-    errBox.style.cssText = `background:${T.errBg};border:1px solid ${T.errBor};border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:11px;color:${T.errText};white-space:pre-wrap;line-height:1.5;`;
-    errBox.textContent = perguntasState.erro;
-    wrap.appendChild(errBox);
+  // Se já foi montado antes, só atualiza partes dinâmicas sem recriar o DOM
+  if (container._montado) {
+    _atualizarPerguntasUI(container);
+    return;
   }
-
-  if (perguntasState.carregando && !perguntasState.lista) {
-    const loading = document.createElement("div");
-    loading.style.cssText = "padding:40px 0;text-align:center;font-size:12px;color:#555;";
-    loading.textContent = "Buscando perguntas pendentes...";
-    wrap.appendChild(loading);
-  } else if (perguntasState.lista && perguntasState.lista.length === 0) {
-    const empty = document.createElement("div");
-    empty.style.cssText = "padding:40px 0;text-align:center;font-size:12px;color:#555;";
-    empty.textContent = "Nenhuma pergunta pendente. Tudo em dia ✓";
-    wrap.appendChild(empty);
-  } else if (perguntasState.lista) {
-    perguntasState.lista.forEach((p) => {
-      const card = document.createElement("div");
-      card.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:16px;margin-bottom:14px;`;
-
-      const enviado = perguntasState.enviando[p.question_id] === "ok";
-      const enviadoAuto = perguntasState.enviando[p.question_id] === "ok-auto";
-      const enviandoAgora = perguntasState.enviando[p.question_id] === "loading";
-      const itemInativo = perguntasState.enviando[p.question_id] === "inativo";
-
-      card.innerHTML = `
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
-          ${p.thumbnail ? `<img src="${p.thumbnail}" style="width:36px;height:36px;border-radius:6px;object-fit:cover;background:${T.bg};flex-shrink:0;">` : ""}
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:12px;font-weight:600;color:${T.text};line-height:1.3;">${p.produto}</div>
-          </div>
-          <div style="flex-shrink:0;padding:2px 8px;border-radius:10px;background:${p.conta === "matriz" ? "#8b5cf622" : "#3b82f622"};border:0.5px solid ${p.conta === "matriz" ? "#8b5cf644" : "#3b82f644"};color:${p.conta === "matriz" ? "#8b5cf6" : "#3b82f6"};font-size:9px;font-weight:600;white-space:nowrap;">${p.contaLabel || (p.conta === "matriz" ? "Matriz RS" : "Filial SP")}</div>
+  container._montado = true;
+  // Montagem inicial do esqueleto — só roda uma vez (container._montado garante isso)
+  container.innerHTML = `
+    <div style="max-width:760px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+        <div>
+          <div style="font-size:16px;font-weight:700;color:#fff;">Perguntas automáticas</div>
+          <div id="perguntas-subtitulo" style="font-size:11px;color:#666;margin-top:2px;">Respostas sugeridas com IA para perguntas pré-venda</div>
         </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button id="perguntas-btn-atualizar" style="background:${T.bg3};border:1px solid ${T.border};border-radius:6px;padding:7px 14px;color:${T.text2};font-size:11px;cursor:pointer;">↻ Atualizar</button>
+        </div>
+      </div>
+      <div id="perguntas-erro" style="display:none;background:${T.errBg};border:1px solid ${T.errBor};border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:11px;color:${T.errText};white-space:pre-wrap;line-height:1.5;"></div>
+      <div id="perguntas-lista"></div>
+    </div>
+  `;
 
-        ${p.requires_attention
-          ? `<div style="display:inline-block;padding:3px 10px;border-radius:12px;background:#f0a06018;border:0.5px solid #f0a06044;color:#f0a060;font-size:10px;font-weight:600;margin-bottom:12px;">⚠ requer atenção manual</div>`
-          : `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
-              <div style="display:inline-block;padding:3px 10px;border-radius:12px;background:${T.okBg};border:1px solid ${T.okBor};color:#10b981;font-size:10px;font-weight:600;">sugestão da IA</div>
-              ${p.has_knowledge ? `<div style="display:inline-block;padding:3px 10px;border-radius:12px;background:${T.infoBg};border:1px solid ${T.infoBor};color:#5eb3f0;font-size:10px;font-weight:600;">baseada em respostas já dadas</div>` : ""}
-              ${enviadoAuto ? `<div style="display:inline-block;padding:3px 10px;border-radius:12px;background:#ffffff22;border:1px solid #ffffff55;color:#ffffff;font-size:10px;font-weight:600;">✓ enviada automaticamente</div>` : ""}
-            </div>`
-        }
-
-        <div style="font-size:10px;color:#666;margin-bottom:6px;">Pergunta do comprador</div>
-        <div style="background:${T.bg};border:1px solid ${T.border};border-radius:6px;padding:10px 12px;font-size:12px;color:${T.text2};margin-bottom:14px;">${p.pergunta}</div>
-
-        ${itemInativo ? `
-          <div style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;background:${T.errBg};border:1px solid ${T.errBor};border-radius:8px;margin-bottom:14px;">
-            <div style="font-size:13px;flex-shrink:0;">⚠️</div>
-            <div style="font-size:11px;color:#f0a060;line-height:1.4;">Esse anúncio está pausado ou inativo — o Mercado Livre não permite responder perguntas de anúncios inativos por aqui. Reative o anúncio ou responda direto pelo app do ML.</div>
-          </div>
-          <div style="display:flex;gap:8px;">
-            <a href="https://www.mercadolivre.com.br/anuncio/${p.item_id}" target="_blank" style="display:inline-block;padding:9px 18px;border-radius:6px;background:${T.bg2};border:1px solid ${T.border};color:${T.text2};font-size:12px;font-weight:600;text-decoration:none;">Abrir anúncio no ML ↗</a>
-            <button id="pergunta-dispensar-${p.question_id}" style="padding:9px 18px;border-radius:6px;background:none;border:1px solid ${T.border};color:#666;font-size:12px;font-weight:600;cursor:pointer;">Dispensar</button>
-          </div>
-        ` : !p.requires_attention ? `
-          <div style="font-size:10px;color:#666;margin-bottom:6px;">Resposta ${enviadoAuto || enviado ? "enviada" : "sugerida (editável)"}</div>
-          <textarea id="pergunta-resp-${p.question_id}" ${enviadoAuto || enviado ? "disabled" : ""} style="width:100%;background:${T.bg};border:1px solid ${enviadoAuto ? T.border : T.text};border-radius:6px;padding:10px 12px;color:${enviadoAuto ? T.text3 : T.text};font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;resize:vertical;min-height:60px;margin-bottom:10px;">${(perguntasState.rascunhos[p.question_id] !== undefined ? perguntasState.rascunhos[p.question_id] : p.suggested_answer)}</textarea>
-          ${p.criar_rascunho && p.criar_rascunho.length ? `
-          <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#f59e0b18;border:0.5px solid #f59e0b44;border-radius:8px;margin-bottom:10px;">
-            <span style="font-size:16px;">📋</span>
-            <div>
-              <div style="font-size:11px;font-weight:600;color:#f59e0b;">Rascunho criado — aguardando aprovação</div>
-              <div style="font-size:10px;color:${T.text2};margin-top:1px;">${(Array.isArray(p.criar_rascunho) ? p.criar_rascunho[0] : p.criar_rascunho)?.titulo_sugerido||""}</div>
-              ${Array.isArray(p.criar_rascunho) && p.criar_rascunho.length > 1 ? `<div style="font-size:10px;color:${T.text2};">+${p.criar_rascunho.length-1} sugestão(ões)</div>` : ""}
-            </div>
-          </div>` : ""}
-          ${p.produto_identificado ? `
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;background:${T.bg3};border:0.5px solid ${T.border};border-radius:8px;margin-bottom:10px;">
-            <div style="min-width:0;flex:1;">
-              <div style="font-size:10px;color:${T.text2};margin-bottom:2px;">Anúncio identificado</div>
-              <div style="font-size:11px;font-weight:600;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.produto_identificado.titulo}</div>
-              ${p.produto_identificado.sku ? `<div style="font-size:10px;color:${T.text2};">${p.produto_identificado.sku}</div>` : ""}
-            </div>
-            <a href="${p.produto_identificado.link}" target="_blank" style="flex-shrink:0;display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:6px;background:none;border:0.5px solid #3b82f6;color:#3b82f6;font-size:11px;font-weight:600;text-decoration:none;white-space:nowrap;">Ver anúncio ↗</a>
-          </div>` : ""}
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:4px;">
-            ${!enviadoAuto ? `<button id="pergunta-enviar-${p.question_id}" ${(enviado || enviandoAgora) ? "disabled" : ""} style="padding:9px 18px;border-radius:6px;background:${enviado ? T.okBg : "#3b82f6"};border:1px solid ${enviado ? T.okBor : "transparent"};color:${enviado ? "#10b981" : "#fff"};font-size:12px;font-weight:600;cursor:${(enviado || enviandoAgora) ? "default" : "pointer"};opacity:${enviandoAgora ? "0.6" : "1"};">${enviado ? "Enviado ✓" : (enviandoAgora ? "Enviando..." : "Enviar resposta")}</button>` : `<div></div>`}
-            <div style="display:flex;gap:6px;">
-              <button id="pergunta-excluir-${p.question_id}" style="display:flex;align-items:center;gap:5px;padding:7px 12px;border-radius:6px;background:none;border:1px solid #ef444444;color:#ef4444;font-size:11px;font-weight:600;cursor:pointer;">🗑 Excluir pergunta</button>
-              <button id="pergunta-bloquear-${p.question_id}" style="display:flex;align-items:center;gap:5px;padding:7px 12px;border-radius:6px;background:none;border:1px solid #f0a06044;color:#f0a060;font-size:11px;font-weight:600;cursor:pointer;">🚫 Bloquear comprador</button>
-            </div>
-          </div>
-        ` : `
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-            <div style="display:flex;gap:8px;">
-              <a href="https://www.mercadolivre.com.br/anuncio/${p.item_id}" target="_blank" style="display:inline-block;padding:9px 18px;border-radius:6px;background:${T.bg2};border:1px solid ${T.border};color:${T.text2};font-size:12px;font-weight:600;text-decoration:none;">Responder no ML ↗</a>
-              <button id="pergunta-dispensar-${p.question_id}" style="padding:9px 18px;border-radius:6px;background:none;border:1px solid ${T.border};color:#666;font-size:12px;font-weight:600;cursor:pointer;">Dispensar</button>
-            </div>
-            <div style="display:flex;gap:6px;">
-              <button id="pergunta-excluir-${p.question_id}" style="display:flex;align-items:center;gap:5px;padding:7px 12px;border-radius:6px;background:none;border:1px solid #ef444444;color:#ef4444;font-size:11px;font-weight:600;cursor:pointer;">🗑 Excluir pergunta</button>
-              <button id="pergunta-bloquear-${p.question_id}" style="display:flex;align-items:center;gap:5px;padding:7px 12px;border-radius:6px;background:none;border:1px solid #f0a06044;color:#f0a060;font-size:11px;font-weight:600;cursor:pointer;">🚫 Bloquear comprador</button>
-            </div>
-          </div>
-        `}
-      `;
-      wrap.appendChild(card);
-
-      const btnEnviar = card.querySelector(`#pergunta-enviar-${p.question_id}`);
-      if (btnEnviar) {
-        btnEnviar.onclick = async () => {
-          if (perguntasState.enviando[p.question_id] === "loading") return; // trava contra clique duplo
-          const texto = card.querySelector(`#pergunta-resp-${p.question_id}`)?.value?.trim();
-          if (!texto) return;
-          perguntasState.enviando[p.question_id] = "loading";
-          refreshPerguntasUI();
-          try {
-            const data = await enviarRespostaPergunta({ ...p, suggested_answer: texto });
-            if (data.ok) {
-              perguntasState.enviando[p.question_id] = "ok";
-              // Remove da lista pendente — já foi respondida, não fica mais UNANSWERED no ML
-              if (perguntasState.lista) {
-                perguntasState.lista = perguntasState.lista.filter(item => item.question_id !== p.question_id);
-              }
-              delete perguntasState.rascunhos[p.question_id];
-            } else if (data.raw?.error === "not_active_item") {
-              perguntasState.enviando[p.question_id] = "inativo";
-            } else {
-              perguntasState.enviando[p.question_id] = "erro";
-              perguntasState.erro = (data.error || "Erro ao enviar resposta") + (data.raw ? "\n\n" + JSON.stringify(data.raw, null, 2) : "");
-            }
-          } catch (e) {
-            perguntasState.enviando[p.question_id] = "erro";
-            perguntasState.erro = "Erro inesperado ao enviar: " + e.message;
-          } finally {
-            refreshPerguntasUI();
-          }
-        };
-      }
-
-      const btnDispensar = card.querySelector(`#pergunta-dispensar-${p.question_id}`);
-      if (btnDispensar) {
-        btnDispensar.onclick = () => {
-          set(ref(db, `/perguntas_dispensadas/${p.question_id}`), true);
-          if (perguntasState.lista) {
-            perguntasState.lista = perguntasState.lista.filter(item => item.question_id !== p.question_id);
-          }
-          refreshPerguntasUI();
-        };
-      }
-
-      // ── Excluir pergunta ──
-      const btnExcluir = card.querySelector(`#pergunta-excluir-${p.question_id}`);
-      if (btnExcluir) {
-        btnExcluir.onclick = async () => {
-          if (!confirm(`Excluir esta pergunta do Mercado Livre?\n\n"${p.pergunta.substring(0, 80)}..."\n\nEssa ação é permanente.`)) return;
-          btnExcluir.disabled = true;
-          btnExcluir.textContent = "Excluindo...";
-          const token = p.conta === "matriz" ? state.ml_token?.access_token : state.ml_token_filial?.access_token;
-          if (!token) { alert("Token ML não conectado para esta conta."); btnExcluir.disabled = false; btnExcluir.innerHTML = "🗑 Excluir pergunta"; return; }
-          try {
-            const data = await fetch(`https://digoo-backend.vercel.app/api/ml-vendas?action=excluir-pergunta&token=${encodeURIComponent(token)}&question_id=${p.question_id}`, { method: "POST" }).then(r => r.json());
-            if (data.ok) {
-              if (perguntasState.lista) perguntasState.lista = perguntasState.lista.filter(item => item.question_id !== p.question_id);
-              set(ref(db, `/perguntas_dispensadas/${p.question_id}`), true);
-              refreshPerguntasUI();
-            } else {
-              btnExcluir.disabled = false;
-              btnExcluir.innerHTML = "🗑 Excluir pergunta";
-              alert("Erro ao excluir: " + (data.error || JSON.stringify(data)));
-            }
-          } catch (e) {
-            btnExcluir.disabled = false;
-            btnExcluir.innerHTML = "🗑 Excluir pergunta";
-            alert("Erro: " + e.message);
-          }
-        };
-      }
-
-      // ── Bloquear comprador ──
-      const btnBloquear = card.querySelector(`#pergunta-bloquear-${p.question_id}`);
-      if (btnBloquear) {
-        btnBloquear.onclick = async () => {
-          if (!p.from_user) { alert("ID do comprador não disponível para esta pergunta."); return; }
-          const nomeComprador = p.nome_comprador || `usuário ${p.from_user}`;
-          if (!confirm(`Bloquear ${nomeComprador} no Mercado Livre?\n\nEle não poderá mais comprar seus anúncios.`)) return;
-          btnBloquear.disabled = true;
-          btnBloquear.textContent = "Bloqueando...";
-          const token = p.conta === "matriz" ? state.ml_token?.access_token : state.ml_token_filial?.access_token;
-          if (!token) { alert("Token ML não conectado para esta conta."); btnBloquear.disabled = false; btnBloquear.innerHTML = "🚫 Bloquear comprador"; return; }
-          try {
-            const data = await fetch(`https://digoo-backend.vercel.app/api/ml-vendas?action=bloquear-comprador&token=${encodeURIComponent(token)}&from_user=${p.from_user}`, { method: "POST" }).then(r => r.json());
-            if (data.ok) {
-              btnBloquear.innerHTML = "🚫 Bloqueado ✓";
-              btnBloquear.style.color = "#10b981";
-              btnBloquear.style.borderColor = "#10b98144";
-              btnBloquear.disabled = false;
-            } else {
-              btnBloquear.disabled = false;
-              btnBloquear.innerHTML = "🚫 Bloquear comprador";
-              alert("Erro ao bloquear: " + (data.error || JSON.stringify(data)));
-            }
-          } catch (e) {
-            btnBloquear.disabled = false;
-            btnBloquear.innerHTML = "🚫 Bloquear comprador";
-            alert("Erro: " + e.message);
-          }
-        };
-      }
-    });
-  } else {
-    const inicio = document.createElement("div");
-    inicio.style.cssText = "padding:40px 0;text-align:center;";
-    inicio.innerHTML = `<div style="font-size:12px;color:#555;margin-bottom:16px;">Clique em atualizar para buscar as perguntas pendentes.</div>`;
-    wrap.appendChild(inicio);
-  }
-
-  container.appendChild(wrap);
-
-  const btnAtualizar = container.querySelector("#perguntas-btn-atualizar");
-  if (btnAtualizar) btnAtualizar.onclick = async () => {
+  container.querySelector("#perguntas-btn-atualizar").onclick = async () => {
     await fetchPerguntas();
     refreshPerguntasUI();
   };
 
-  const btnToggleAuto = container.querySelector("#perguntas-btn-toggle-auto");
-  if (btnToggleAuto) btnToggleAuto.onclick = () => {
-    set(ref(db, "/perguntas_auto"), !state.perguntas_auto);
-  };
+  // Popula conteúdo inicial
+  _atualizarPerguntasUI(container);
 
   if (!perguntasState.lista && !perguntasState.carregando && !perguntasState.erro) {
     fetchPerguntas().then(() => refreshPerguntasUI());
+  }
+}
+
+// Atualização incremental — chamada pelo refreshPerguntasUI quando o DOM já existe.
+// Só atualiza o texto do botão atualizar, mensagem de erro e cards de perguntas.
+// NUNCA recria textareas que o usuário pode estar editando.
+function _atualizarPerguntasUI(container) {
+  // Atualiza botão atualizar
+  const btnAt = container.querySelector("#perguntas-btn-atualizar");
+  if (btnAt) btnAt.textContent = perguntasState.carregando ? "Buscando..." : "↻ Atualizar";
+
+  // Atualiza contagem no subtítulo
+  const sub = container.querySelector("#perguntas-subtitulo");
+  if (sub) {
+    const total = perguntasState.lista?.length || 0;
+    const atencao = (perguntasState.lista || []).filter(p => p.requires_attention).length;
+    sub.textContent = perguntasState.lista
+      ? `${total} pendentes${atencao ? ` · ${atencao} requer${atencao>1?"em":""} atenção manual` : ""}`
+      : "Respostas sugeridas com IA para perguntas pré-venda";
+  }
+
+  // Atualiza erro
+  const errBox = container.querySelector("#perguntas-erro");
+  if (errBox) {
+    errBox.textContent = perguntasState.erro || "";
+    errBox.style.display = perguntasState.erro ? "block" : "none";
+  }
+
+  // Se não tem lista ainda, mostra loading ou prompt inicial
+  const listaEl = container.querySelector("#perguntas-lista");
+  if (!listaEl) return;
+
+  if (perguntasState.carregando && !perguntasState.lista) {
+    listaEl.innerHTML = `<div style="padding:40px 0;text-align:center;font-size:12px;color:#555;">Buscando perguntas pendentes...</div>`;
+    return;
+  }
+  if (!perguntasState.lista) {
+    listaEl.innerHTML = `<div style="padding:40px 0;text-align:center;font-size:12px;color:#555;">Clique em atualizar para buscar as perguntas pendentes.</div>`;
+    return;
+  }
+  if (perguntasState.lista.length === 0) {
+    listaEl.innerHTML = `<div style="padding:40px 0;text-align:center;font-size:12px;color:#555;">Nenhuma pergunta pendente. Tudo em dia ✓</div>`;
+    return;
+  }
+
+  // Sincroniza cards: adiciona novos, remove antigos, atualiza botões — sem tocar textareas
+  const idsAtuais = new Set(perguntasState.lista.map(p => String(p.question_id)));
+
+  // Remove cards que não estão mais na lista
+  listaEl.querySelectorAll("[data-qid]").forEach(card => {
+    if (!idsAtuais.has(card.dataset.qid)) card.remove();
+  });
+
+  perguntasState.lista.forEach((p, idx) => {
+    const qid = String(p.question_id);
+    let card = listaEl.querySelector(`[data-qid="${qid}"]`);
+
+    if (!card) {
+      // Cria o card novo
+      card = _criarCardPergunta(p);
+      // Insere na posição correta
+      const cards = listaEl.querySelectorAll("[data-qid]");
+      if (idx < cards.length) listaEl.insertBefore(card, cards[idx]);
+      else listaEl.appendChild(card);
+    } else {
+      // Card já existe — atualiza apenas status do botão enviar sem tocar na textarea
+      _atualizarBotoesCard(card, p);
+    }
+  });
+}
+
+function _criarCardPergunta(p) {
+  const card = document.createElement("div");
+  card.dataset.qid = String(p.question_id);
+  card.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:16px;margin-bottom:14px;`;
+
+  const enviado = perguntasState.enviando[p.question_id] === "ok";
+  const enviadoAuto = perguntasState.enviando[p.question_id] === "ok-auto";
+  const enviandoAgora = perguntasState.enviando[p.question_id] === "loading";
+  const itemInativo = perguntasState.enviando[p.question_id] === "inativo";
+  const textoInicial = perguntasState.rascunhos[p.question_id] !== undefined
+    ? perguntasState.rascunhos[p.question_id]
+    : (p.suggested_answer || "");
+
+  card.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+      ${p.thumbnail ? `<img src="${p.thumbnail}" style="width:36px;height:36px;border-radius:6px;object-fit:cover;flex-shrink:0;">` : ""}
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;font-weight:600;color:${T.text};line-height:1.3;">${p.produto}</div>
+      </div>
+      <div style="flex-shrink:0;padding:2px 8px;border-radius:10px;background:${p.conta==="matriz"?"#8b5cf622":"#3b82f622"};border:0.5px solid ${p.conta==="matriz"?"#8b5cf644":"#3b82f644"};color:${p.conta==="matriz"?"#8b5cf6":"#3b82f6"};font-size:9px;font-weight:600;">${p.contaLabel||(p.conta==="matriz"?"Matriz RS":"Filial SP")}</div>
+    </div>
+    ${p.requires_attention
+      ? `<div style="display:inline-block;padding:3px 10px;border-radius:12px;background:#f0a06018;border:0.5px solid #f0a06044;color:#f0a060;font-size:10px;font-weight:600;margin-bottom:12px;">⚠ requer atenção manual</div>`
+      : `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
+          <div style="display:inline-block;padding:3px 10px;border-radius:12px;background:${T.okBg};border:1px solid ${T.okBor};color:#10b981;font-size:10px;font-weight:600;">sugestão da IA</div>
+          ${p.has_knowledge ? `<div style="display:inline-block;padding:3px 10px;border-radius:12px;background:${T.infoBg};border:1px solid ${T.infoBor};color:#5eb3f0;font-size:10px;font-weight:600;">baseada em respostas já dadas</div>` : ""}
+          ${enviadoAuto ? `<div style="display:inline-block;padding:3px 10px;border-radius:12px;background:#ffffff22;border:1px solid #ffffff55;color:#fff;font-size:10px;font-weight:600;">✓ enviada automaticamente</div>` : ""}
+        </div>`
+    }
+    <div style="font-size:10px;color:#666;margin-bottom:6px;">Pergunta do comprador</div>
+    <div style="background:${T.bg};border:1px solid ${T.border};border-radius:6px;padding:10px 12px;font-size:12px;color:${T.text2};margin-bottom:14px;">${p.pergunta}</div>
+    ${!p.requires_attention && !itemInativo ? `
+      <div style="font-size:10px;color:#666;margin-bottom:6px;">Resposta ${enviadoAuto||enviado?"enviada":"sugerida (editável)"}</div>
+      <textarea id="pergunta-resp-${p.question_id}" ${enviadoAuto||enviado?"disabled":""} style="width:100%;background:${T.bg};border:1px solid ${enviadoAuto?T.border:T.text};border-radius:6px;padding:10px 12px;color:${enviadoAuto?T.text3:T.text};font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;resize:vertical;min-height:60px;margin-bottom:10px;">${textoInicial}</textarea>
+    ` : ""}
+    ${itemInativo ? `
+      <div style="padding:10px 12px;background:${T.errBg};border:1px solid ${T.errBor};border-radius:8px;margin-bottom:14px;font-size:11px;color:#f0a060;">⚠️ Anúncio pausado ou inativo — responda direto pelo app do ML.</div>
+    ` : ""}
+    <div class="card-acoes" style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:4px;flex-wrap:wrap;">
+      <div class="btn-enviar-wrap">
+        ${!enviadoAuto && !p.requires_attention && !itemInativo
+          ? `<button id="pergunta-enviar-${p.question_id}" ${(enviado||enviandoAgora)?"disabled":""} style="padding:9px 18px;border-radius:6px;background:${enviado?T.okBg:"#3b82f6"};border:1px solid ${enviado?T.okBor:"transparent"};color:${enviado?"#10b981":"#fff"};font-size:12px;font-weight:600;cursor:${(enviado||enviandoAgora)?"default":"pointer"};opacity:${enviandoAgora?"0.6":"1"};">${enviado?"Enviado ✓":(enviandoAgora?"Enviando...":"Enviar resposta")}</button>`
+          : p.requires_attention
+            ? `<a href="https://www.mercadolivre.com.br/anuncio/${p.item_id}" target="_blank" style="display:inline-block;padding:9px 18px;border-radius:6px;background:${T.bg2};border:1px solid ${T.border};color:${T.text2};font-size:12px;font-weight:600;text-decoration:none;">Responder no ML ↗</a>`
+            : `<div></div>`
+        }
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button id="pergunta-dispensar-${p.question_id}" style="padding:7px 12px;border-radius:6px;background:none;border:1px solid ${T.border};color:#666;font-size:11px;font-weight:600;cursor:pointer;">Dispensar</button>
+      </div>
+    </div>
+  `;
+
+  // Event listeners — registrados uma única vez na criação do card
+  const btnEnviar = card.querySelector(`#pergunta-enviar-${p.question_id}`);
+  if (btnEnviar) {
+    btnEnviar.onclick = async () => {
+      if (perguntasState.enviando[p.question_id] === "loading") return;
+      const texto = card.querySelector(`#pergunta-resp-${p.question_id}`)?.value?.trim();
+      if (!texto) return;
+      perguntasState.enviando[p.question_id] = "loading";
+      _atualizarBotoesCard(card, p);
+      try {
+        const data = await enviarRespostaPergunta({ ...p, suggested_answer: texto });
+        if (data.ok) {
+          perguntasState.enviando[p.question_id] = "ok";
+          if (perguntasState.lista) perguntasState.lista = perguntasState.lista.filter(i => i.question_id !== p.question_id);
+          delete perguntasState.rascunhos[p.question_id];
+        } else if (data.raw?.error === "not_active_item") {
+          perguntasState.enviando[p.question_id] = "inativo";
+        } else {
+          perguntasState.enviando[p.question_id] = "erro";
+          perguntasState.erro = (data.error || "Erro ao enviar") + (data.raw ? "\n\n" + JSON.stringify(data.raw, null, 2) : "");
+        }
+      } catch (e) {
+        perguntasState.enviando[p.question_id] = "erro";
+        perguntasState.erro = "Erro inesperado: " + e.message;
+      }
+      refreshPerguntasUI();
+    };
+  }
+
+  const btnDispensar = card.querySelector(`#pergunta-dispensar-${p.question_id}`);
+  if (btnDispensar) {
+    btnDispensar.onclick = () => {
+      set(ref(db, `/perguntas_dispensadas/${p.question_id}`), true);
+      if (perguntasState.lista) perguntasState.lista = perguntasState.lista.filter(i => i.question_id !== p.question_id);
+      refreshPerguntasUI();
+    };
+  }
+
+  return card;
+}
+
+function _atualizarBotoesCard(card, p) {
+  const enviado = perguntasState.enviando[p.question_id] === "ok" || perguntasState.enviando[p.question_id] === "ok-auto";
+  const enviandoAgora = perguntasState.enviando[p.question_id] === "loading";
+  const btn = card.querySelector(`#pergunta-enviar-${p.question_id}`);
+  if (btn) {
+    btn.disabled = enviado || enviandoAgora;
+    btn.textContent = enviado ? "Enviado ✓" : (enviandoAgora ? "Enviando..." : "Enviar resposta");
+    btn.style.opacity = enviandoAgora ? "0.6" : "1";
+    btn.style.background = enviado ? T.okBg : "#3b82f6";
+    btn.style.color = enviado ? "#10b981" : "#fff";
   }
 }
 
