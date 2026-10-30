@@ -7577,6 +7577,8 @@ function render(){
             const btnB = _pergShell.querySelector("#perg-btn-buscar");
             if(btnB) btnB.textContent = _perg.carregando ? "Buscando..." : "↻ Buscar";
             pergRender();
+            // Garante render após o DOM ser atualizado (caso venha do dashboard com lista já carregada)
+            if (_perg.lista && _perg.lista.length > 0) setTimeout(pergRender, 50);
           }else if(window._diogotab==="picking"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
             if(window._pickingModoDiogo==="operar") panel.style.flex="1";
