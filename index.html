@@ -9793,9 +9793,17 @@ function renderConfig(panel, color) {
       });
       const data = await r.json();
       if (!data.ok) throw new Error(data.erro || "Erro desconhecido");
-      // Salva no Firebase no mesmo formato do CSV
-      await set(ref(db, "/config_kits"), { composicoes: data.composicoes, total: data.total, atualizadoEm: Date.now() });
-      kitsStatus.innerHTML = `<span style="color:#10b981;">✓ ${data.total} kits sincronizados via API</span> <span style="color:var(--text3);">· agora</span>`;
+      // Abre modal de comparação antes de salvar
+      abrirModalComparacaoKits({
+        apiComposicoes: data.composicoes,
+        apiTotal: data.total,
+        planilhaComposicoes: state.config_kits?.composicoes || {},
+        onAplicar: async () => {
+          await set(ref(db, "/config_kits"), { composicoes: data.composicoes, total: data.total, atualizadoEm: Date.now() });
+          kitsStatus.innerHTML = `<span style="color:#10b981;">✓ ${data.total} kits sincronizados via API</span> <span style="color:var(--text3);">· agora</span>`;
+        }
+      });
+      kitsStatus.innerHTML = `<span style="color:var(--text3);">Comparação pronta — revise e clique em Aplicar.</span>`;
     } catch(e) {
       kitsStatus.innerHTML = `<span style="color:#ef4444;">Erro: ${e.message}</span>`;
     }
@@ -9887,6 +9895,269 @@ async function processarPlanilhaAtributos(file, statusEl, color) {
   } catch(e) {
     statusEl.innerHTML = `<span style="color:#e8432d;">Erro: ${e.message}</span>`;
   }
+}
+
+function abrirModalComparacaoKits({ apiComposicoes, apiTotal, planilhaComposicoes, onAplicar }) {
+  // Remove modal anterior se existir
+  document.getElementById("modal-kits-compare")?.remove();
+
+  const overlay = document.createElement("div");
+  overlay.id = "modal-kits-compare";
+  overlay.style.cssText = `position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:16px;`;
+
+  const modal = document.createElement("div");
+  modal.style.cssText = `background:var(--bg2);border:1px solid var(--border2);border-radius:12px;width:100%;max-width:820px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;`;
+
+  // ── Header do modal ──
+  const mHead = document.createElement("div");
+  mHead.style.cssText = `padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;`;
+  mHead.innerHTML = `<div style="font-size:13px;font-weight:600;color:var(--text1);">Comparação de Kits — API vs Planilha</div>`;
+  const btnFechar = document.createElement("button");
+  btnFechar.textContent = "✕";
+  btnFechar.style.cssText = "background:none;border:none;color:var(--text3);font-size:14px;cursor:pointer;padding:2px 6px;";
+  btnFechar.onclick = () => overlay.remove();
+  mHead.appendChild(btnFechar);
+  modal.appendChild(mHead);
+
+  // ── Pills de contagem ──
+  const pillsWrap = document.createElement("div");
+  pillsWrap.style.cssText = "display:flex;gap:6px;flex-wrap:wrap;padding:12px 20px 10px;border-bottom:1px solid var(--border);flex-shrink:0;";
+
+  const pillDefs = [
+    { key:"ok",   label:"iguais",          cor:"#10b981", bg:"rgba(16,185,129,.12)", border:"rgba(16,185,129,.25)" },
+    { key:"diff", label:"diferentes",      cor:"#ef4444", bg:"rgba(239,68,68,.12)",  border:"rgba(239,68,68,.25)"  },
+    { key:"new",  label:"novos da API",    cor:"#3b82f6", bg:"rgba(59,130,246,.12)", border:"rgba(59,130,246,.25)" },
+    { key:"only", label:"só na planilha",  cor:"#f59e0b", bg:"rgba(245,158,11,.12)", border:"rgba(245,158,11,.25)" },
+  ];
+  const filtroAtivo = new Set(["ok","diff","new","only"]);
+  const pillEls = {};
+
+  // ── Cabeçalho das colunas ──
+  const colHead = document.createElement("div");
+  colHead.style.cssText = "display:grid;grid-template-columns:220px 1fr 1fr;gap:8px;padding:6px 20px;border-bottom:1px solid var(--border);flex-shrink:0;";
+  colHead.innerHTML = `
+    <span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);">Kit (SKU)</span>
+    <span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);">Planilha atual</span>
+    <span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);">API Bling</span>
+  `;
+
+  // ── Lista scrollável ──
+  const mBody = document.createElement("div");
+  mBody.style.cssText = "overflow-y:auto;flex:1;padding:10px 20px;display:flex;flex-direction:column;gap:5px;";
+
+  // ── Footer com botão Aplicar ──
+  const mFoot = document.createElement("div");
+  mFoot.style.cssText = "padding:12px 20px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0;";
+
+  // --- helpers de comparação ---
+  function compKit(planArr, apiArr) {
+    const mp = Object.fromEntries((planArr||[]).map(c=>[c.sku,c.qtd]));
+    const ma = Object.fromEntries((apiArr||[]).map(c=>[c.sku,c.qtd]));
+    const all = new Set([...Object.keys(mp),...Object.keys(ma)]);
+    const diffs = [];
+    for (const sku of all) {
+      if (!(sku in mp))          diffs.push({sku, tipo:"added",   qtdA:ma[sku]});
+      else if (!(sku in ma))     diffs.push({sku, tipo:"removed", qtdP:mp[sku]});
+      else if (mp[sku]!==ma[sku]) diffs.push({sku, tipo:"qtd",    qtdP:mp[sku], qtdA:ma[sku]});
+    }
+    return { igual: diffs.length===0, diffs, mp, ma };
+  }
+
+  function tagComp(txt, cls) {
+    // cls: ok | diff | new | neutral
+    const cores = {
+      ok:      ["#10b981","rgba(16,185,129,.12)","rgba(16,185,129,.25)"],
+      diff:    ["#ef4444","rgba(239,68,68,.12)","rgba(239,68,68,.25)"],
+      new:     ["#3b82f6","rgba(59,130,246,.12)","rgba(59,130,246,.25)"],
+      neutral: ["var(--text2)","var(--bg3)","var(--border)"],
+    };
+    const [c,bg,bd] = cores[cls]||cores.neutral;
+    const s = document.createElement("span");
+    s.style.cssText = `font-family:monospace;font-size:10.5px;padding:2px 8px;border-radius:5px;background:${bg};border:1px solid ${bd};color:${c};white-space:nowrap;`;
+    s.textContent = txt;
+    return s;
+  }
+
+  // Monta linhas
+  const todosKits = new Set([...Object.keys(planilhaComposicoes), ...Object.keys(apiComposicoes)]);
+  const rows = [];
+  for (const sku of todosKits) {
+    const temP = sku in planilhaComposicoes;
+    const temA = sku in apiComposicoes;
+    let status, cmp=null;
+    if (temP && temA) { cmp = compKit(planilhaComposicoes[sku], apiComposicoes[sku]); status = cmp.igual ? "ok" : "diff"; }
+    else if (!temP)   status = "new";
+    else              status = "only";
+    rows.push({ sku, status, cmp, planArr: planilhaComposicoes[sku]||null, apiArr: apiComposicoes[sku]||null });
+  }
+
+  // Contagens
+  const ct = {ok:0,diff:0,new:0,only:0};
+  rows.forEach(r => { if (r.status in ct) ct[r.status]++; });
+
+  // Pills
+  pillDefs.forEach(pd => {
+    const pill = document.createElement("div");
+    pill.style.cssText = `display:flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500;border:1px solid ${pd.border};background:${pd.bg};color:${pd.cor};cursor:pointer;transition:.15s;`;
+    pill.innerHTML = `<span style="width:6px;height:6px;border-radius:50%;background:${pd.cor};display:inline-block;flex-shrink:0;"></span><span id="pill-ct-${pd.key}">${ct[pd.key]}</span>&nbsp;${pd.label}`;
+    pill.onclick = () => {
+      if (filtroAtivo.has(pd.key)) filtroAtivo.delete(pd.key);
+      else filtroAtivo.add(pd.key);
+      pill.style.opacity = filtroAtivo.has(pd.key) ? "1" : ".4";
+      renderRows();
+    };
+    pillEls[pd.key] = pill;
+    pillsWrap.appendChild(pill);
+  });
+
+  function renderRows() {
+    mBody.innerHTML = "";
+    const ordem = {diff:0,new:1,ok:2,only:3};
+    const sorted = [...rows].sort((a,b)=>(ordem[a.status]||9)-(ordem[b.status]||9));
+    let algum = false;
+
+    for (const r of sorted) {
+      if (!filtroAtivo.has(r.status)) continue;
+      algum = true;
+
+      const corStatus = {ok:"#10b981",diff:"#ef4444",new:"#3b82f6",only:"#f59e0b"}[r.status];
+      const badgeLabel = {ok:"✓ Igual",diff:"✕ Diferente",new:"★ Novo",only:"⚠ Só planilha"}[r.status];
+
+      const wrap = document.createElement("div");
+      wrap.style.cssText = `background:var(--bg);border:1px solid var(--border);border-radius:7px;overflow:hidden;`;
+
+      // Header da linha
+      const hdr = document.createElement("div");
+      hdr.style.cssText = `display:grid;grid-template-columns:220px 1fr 1fr;gap:8px;align-items:start;padding:9px 12px;`;
+
+      // col SKU
+      const skuCol = document.createElement("div");
+      skuCol.style.cssText = "display:flex;flex-direction:column;gap:4px;";
+      const skuTxt = document.createElement("div");
+      skuTxt.style.cssText = `font-family:monospace;font-size:11px;font-weight:500;color:var(--text1);word-break:break-all;`;
+      skuTxt.textContent = r.sku;
+      const badge = document.createElement("span");
+      badge.style.cssText = `font-size:10px;font-weight:600;padding:1px 7px;border-radius:10px;width:fit-content;color:${corStatus};background:${corStatus}18;border:1px solid ${corStatus}40;`;
+      badge.textContent = badgeLabel;
+      skuCol.appendChild(skuTxt);
+      skuCol.appendChild(badge);
+      hdr.appendChild(skuCol);
+
+      // col Planilha
+      const colP = document.createElement("div");
+      colP.style.cssText = "display:flex;flex-wrap:wrap;gap:4px;align-content:flex-start;";
+      if (r.planArr) {
+        r.planArr.forEach(c => {
+          let cls = "neutral";
+          if (r.cmp) {
+            if (!(c.sku in r.cmp.ma))        cls = "diff";
+            else if (r.cmp.ma[c.sku]!==c.qtd) cls = "diff";
+            else                               cls = "ok";
+          }
+          colP.appendChild(tagComp(`${c.sku} ×${c.qtd}`, cls));
+        });
+      } else {
+        const em = document.createElement("span");
+        em.style.cssText = "font-size:11px;color:var(--text3);font-style:italic;";
+        em.textContent = "não estava na planilha";
+        colP.appendChild(em);
+      }
+      hdr.appendChild(colP);
+
+      // col API
+      const colA = document.createElement("div");
+      colA.style.cssText = "display:flex;flex-wrap:wrap;gap:4px;align-content:flex-start;";
+      if (r.apiArr) {
+        r.apiArr.forEach(c => {
+          let cls = "neutral";
+          if (r.cmp) {
+            if (!(c.sku in r.cmp.mp))        cls = "new";
+            else if (r.cmp.mp[c.sku]!==c.qtd) cls = "diff";
+            else                               cls = "ok";
+          } else if (r.status==="new") {
+            cls = "new";
+          }
+          colA.appendChild(tagComp(`${c.sku} ×${c.qtd}`, cls));
+        });
+      } else {
+        const em = document.createElement("span");
+        em.style.cssText = "font-size:11px;color:#f59e0b;font-style:italic;";
+        em.textContent = "não encontrado na API";
+        colA.appendChild(em);
+      }
+      hdr.appendChild(colA);
+
+      wrap.appendChild(hdr);
+
+      // Detalhe expandível para diffs
+      if (r.cmp && !r.cmp.igual) {
+        const det = document.createElement("div");
+        det.style.cssText = "border-top:1px solid var(--border);padding:8px 12px;display:none;";
+        const tbl = document.createElement("table");
+        tbl.style.cssText = "width:100%;border-collapse:collapse;font-size:11px;";
+        tbl.innerHTML = `<tr><th style="text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);padding-bottom:5px;">Componente</th><th style="text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);padding-bottom:5px;">Planilha</th><th style="text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);padding-bottom:5px;">API Bling</th><th style="text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);padding-bottom:5px;">Situação</th></tr>`;
+        r.cmp.diffs.forEach(d => {
+          const tr = document.createElement("tr");
+          tr.style.borderTop = "1px solid var(--border)";
+          const sitLabels = {added:"<span style='font-size:10px;font-weight:600;padding:1px 6px;border-radius:4px;background:rgba(59,130,246,.15);color:#3b82f6;border:1px solid rgba(59,130,246,.3);'>componente novo</span>", removed:"<span style='font-size:10px;font-weight:600;padding:1px 6px;border-radius:4px;background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3);'>removido</span>", qtd:"<span style='font-size:10px;font-weight:600;padding:1px 6px;border-radius:4px;background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3);'>qtd diferente</span>"};
+          tr.innerHTML = `<td style="padding:4px 8px 4px 0;font-family:monospace;color:var(--text2);">${d.sku}</td><td style="padding:4px 8px 4px 0;font-family:monospace;color:var(--text2);">${d.qtdP!=null?"×"+d.qtdP:"—"}</td><td style="padding:4px 8px 4px 0;font-family:monospace;color:#f59e0b;">${d.qtdA!=null?"×"+d.qtdA:"—"}</td><td style="padding:4px 0;">${sitLabels[d.tipo]||""}</td>`;
+          tbl.appendChild(tr);
+        });
+        det.appendChild(tbl);
+        wrap.appendChild(det);
+        hdr.style.cursor = "pointer";
+        hdr.onclick = () => { det.style.display = det.style.display==="none" ? "block" : "none"; };
+      }
+
+      mBody.appendChild(wrap);
+    }
+
+    if (!algum) {
+      mBody.innerHTML = `<div style="text-align:center;color:var(--text3);font-size:12px;padding:40px 0;">Nenhum kit neste filtro.</div>`;
+    }
+  }
+
+  // Footer
+  const resumo = document.createElement("div");
+  resumo.style.cssText = "font-size:11px;color:var(--text3);";
+  resumo.innerHTML = `API: <strong style="color:var(--text1);">${apiTotal}</strong> kits &nbsp;·&nbsp; ${ct.diff>0?`<span style="color:#ef4444;">${ct.diff} divergências</span>`:""} ${ct.new>0?`<span style="color:#3b82f6;">&nbsp;${ct.new} novos</span>`:""} ${ct.only>0?`<span style="color:#f59e0b;">&nbsp;${ct.only} só na planilha</span>`:""}`;
+  mFoot.appendChild(resumo);
+
+  const btns = document.createElement("div");
+  btns.style.cssText = "display:flex;gap:8px;";
+
+  const btnCancelar = document.createElement("button");
+  btnCancelar.textContent = "Cancelar";
+  btnCancelar.style.cssText = "padding:7px 16px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;";
+  btnCancelar.onclick = () => overlay.remove();
+  btns.appendChild(btnCancelar);
+
+  const btnAplicar = document.createElement("button");
+  btnAplicar.textContent = `Aplicar (${apiTotal} kits)`;
+  btnAplicar.style.cssText = "padding:7px 18px;border-radius:6px;border:none;background:#10b981;color:#fff;font-size:12px;font-weight:600;cursor:pointer;";
+  btnAplicar.onclick = async () => {
+    btnAplicar.disabled = true;
+    btnAplicar.textContent = "Salvando...";
+    try {
+      await onAplicar();
+      overlay.remove();
+    } catch(e) {
+      btnAplicar.textContent = "Erro — tentar de novo";
+      btnAplicar.disabled = false;
+    }
+  };
+  btns.appendChild(btnAplicar);
+  mFoot.appendChild(btns);
+
+  // Monta
+  modal.appendChild(pillsWrap);
+  modal.appendChild(colHead);
+  modal.appendChild(mBody);
+  modal.appendChild(mFoot);
+  overlay.appendChild(modal);
+  overlay.onclick = (e) => { if (e.target===overlay) overlay.remove(); };
+  document.body.appendChild(overlay);
+  renderRows();
 }
 
 async function processarPlanilhaKits(file, statusEl, color) {
