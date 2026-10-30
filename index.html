@@ -5353,7 +5353,19 @@ function renderCalcIpiPanel(container, task){
           tdSku.innerHTML = `<div style="color:#10b981;font-weight:600;">${l.sku||"—"}</div>`;
           const tdQtd = document.createElement("td"); tdQtd.style.cssText="padding:6px 8px;text-align:right;color:var(--text2);"; tdQtd.textContent=l.qtd;
           const tdCmv = document.createElement("td"); tdCmv.style.cssText="padding:6px 8px;text-align:right;color:#7F77DD;"; tdCmv.textContent=fmt(l.cmvUnit);
-          const tdEst = document.createElement("td"); tdEst.style.cssText="padding:6px 8px;text-align:right;color:var(--text2);"; tdEst.textContent=l.estoqueAtual;
+          // Estoque filial — editável para correção manual
+          const tdEst = document.createElement("td"); tdEst.style.cssText="padding:6px 8px;text-align:right;";
+          const iEst = document.createElement("input");
+          iEst.type = "number"; iEst.step = "1"; iEst.min = "0";
+          iEst.value = l.estoqueAtual;
+          iEst.style.cssText = "width:60px;background:none;border:none;border-bottom:1px solid var(--border2);color:var(--text2);font-family:inherit;font-size:11px;text-align:right;outline:none;padding:2px 4px;";
+          iEst.addEventListener("input", () => {
+            l.estoqueAtual = parseFloat(iEst.value) || 0;
+            l.novoCmp = calcNovoCmp(l);
+            tdNovoCmp.textContent = fmt(l.novoCmp);
+            tdNovoCmp.style.color = l.novoCmp ? "#4ade80" : "var(--text3)";
+          });
+          tdEst.appendChild(iEst);
 
           // Custo atual — editável
           const tdCusto = document.createElement("td"); tdCusto.style.cssText="padding:6px 8px;text-align:right;";
