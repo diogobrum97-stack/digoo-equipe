@@ -9776,6 +9776,34 @@ function renderConfig(panel, color) {
   });
   secKits.body.appendChild(kitsUpload);
 
+  const btnSincAPI = document.createElement("button");
+  btnSincAPI.textContent = "↻ Sincronizar via API Bling";
+  btnSincAPI.style.cssText = `margin-top:8px;width:100%;padding:9px;background:transparent;border:1px solid ${color};color:${color};border-radius:6px;font-size:12px;cursor:pointer;transition:.15s;`;
+  btnSincAPI.onmouseenter = () => { btnSincAPI.style.background = color + "22"; };
+  btnSincAPI.onmouseleave = () => { btnSincAPI.style.background = "transparent"; };
+  btnSincAPI.onclick = async () => {
+    btnSincAPI.disabled = true;
+    btnSincAPI.textContent = "⏳ Buscando kits no Bling...";
+    kitsStatus.innerHTML = `<span style="color:var(--text3);">Consultando API do Bling (pode demorar 1-2 min)...</span>`;
+    try {
+      const token = state.bling_token;
+      if (!token) throw new Error("Token Bling não encontrado. Conecte o Bling na aba Configurações.");
+      const r = await fetch(`${BLING_PROXY}/api/bling-produtos?action=kits-composicoes`, {
+        headers: { "x-bling-token": token }
+      });
+      const data = await r.json();
+      if (!data.ok) throw new Error(data.erro || "Erro desconhecido");
+      // Salva no Firebase no mesmo formato do CSV
+      await set(ref(db, "/config_kits"), { composicoes: data.composicoes, total: data.total, atualizadoEm: Date.now() });
+      kitsStatus.innerHTML = `<span style="color:#10b981;">✓ ${data.total} kits sincronizados via API</span> <span style="color:var(--text3);">· agora</span>`;
+    } catch(e) {
+      kitsStatus.innerHTML = `<span style="color:#ef4444;">Erro: ${e.message}</span>`;
+    }
+    btnSincAPI.disabled = false;
+    btnSincAPI.textContent = "↻ Sincronizar via API Bling";
+  };
+  secKits.body.appendChild(btnSincAPI);
+
   // Mostra kits salvos
   if(kitsSalvos?.composicoes) {
     const listaKits = document.createElement("div");
