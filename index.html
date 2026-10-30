@@ -1260,13 +1260,14 @@ async function pergBuscar() {
       _perg.erro = "Erro: " + erros.map(e => e.erro).join(" · ");
     } else {
       const novaLista = bons.flatMap(r => r.lista);
-      // Só substitui a lista se retornou algo, ou se a lista atual está vazia/nula.
-      // Evita apagar perguntas existentes quando a API retorna vazio por timing
-      // (ex: webhook chegou antes da pergunta estar indexada na API do ML).
+      // Só substitui se a nova lista tiver itens, OU se a lista atual estiver vazia/nula.
+      // Nunca apaga perguntas existentes por uma busca que retornou vazio (timing do ML).
       if (novaLista.length > 0 || !_perg.lista || _perg.lista.length === 0) {
         _perg.lista = novaLista;
       }
       if (erros.length) _perg.erro = "Aviso: falha em algumas contas.";
+      // Para o auto-busca interval — busca bem-sucedida, não precisa mais disparar
+      if (window._pergStopAutoBusca) window._pergStopAutoBusca();
     }
   } catch(e) {
     _perg.erro = "Erro de conexão: " + e.message;
@@ -1480,24 +1481,25 @@ window.pergBloquear = pergBloquear;
 window.state = state;
 
 // Busca automática: quando os tokens do ML ficarem disponíveis, dispara sem precisar clicar
+// _pergAutoBuscou fica global para que pergBuscar() possa pará-lo após sucesso
+window._pergStopAutoBusca = null;
 {
-  let _pergAutoBuscou = false;
+  let _disparado = false;
   function _pergAutoBusca() {
-    if (_pergAutoBuscou || _perg.lista !== null || _perg.carregando) return;
+    if (_disparado || _perg.lista !== null || _perg.carregando) return;
     if (state.ml_token?.access_token || state.ml_token_filial?.access_token) {
-      _pergAutoBuscou = true;
+      _disparado = true;
       pergBuscar();
     }
   }
-  // Tenta agora (tokens podem já estar presentes)
   _pergAutoBusca();
-  // E fica observando até conseguir (tokens chegam via Firebase async)
-  const _pergAutoInterval = setInterval(() => {
-    if (_pergAutoBuscou) { clearInterval(_pergAutoInterval); return; }
+  const iv = setInterval(() => {
+    if (_disparado) { clearInterval(iv); return; }
     _pergAutoBusca();
   }, 2000);
-  // Para de tentar após 30s
-  setTimeout(() => clearInterval(_pergAutoInterval), 30000);
+  setTimeout(() => clearInterval(iv), 30000);
+  // Permite que pergBuscar() pare o interval após sucesso
+  window._pergStopAutoBusca = () => { _disparado = true; clearInterval(iv); };
 }
 
 // ═══════════════ Picking & Packing ═══════════════
