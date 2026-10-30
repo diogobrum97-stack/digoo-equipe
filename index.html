@@ -1197,7 +1197,21 @@ let _perg = {
   carregando: false,
   erro: null,
 };
-let _pergShell = null; // elemento preservado entre renders (panel é recriado a cada render())
+// _pergShell é criado imediatamente e mantido fora do DOM quando a aba não está aberta.
+// Isso garante que perg-root sempre existe e pergRender() sempre consegue atualizar,
+// mesmo quando o usuário está no dashboard ou em outra aba.
+const _pergShell = document.createElement("div");
+_pergShell.style.cssText = "max-width:760px;";
+_pergShell.innerHTML = `
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+    <div>
+      <div id="perg-titulo" style="font-size:16px;font-weight:700;">Perguntas pendentes</div>
+      <div style="font-size:11px;color:#888;margin-top:2px;">Perguntas pré-venda no Mercado Livre · sugestão de resposta por IA</div>
+    </div>
+    <button id="perg-btn-buscar" onclick="pergBuscar()" style="background:#3b82f6;border:none;border-radius:8px;padding:8px 18px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;">↻ Buscar</button>
+  </div>
+  <div id="perg-root"></div>
+`;
 
 async function pergBuscar() {
   if (_perg.carregando) return;
@@ -7534,26 +7548,10 @@ function render(){
             renderClonarTab(clonarContainer);
           }else if(window._diogotab==="perguntas"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
-            // _pergShell é preservado globalmente — panel é recriado a cada render()
-            if(!_pergShell){
-              _pergShell = document.createElement("div");
-              _pergShell.style.cssText = "max-width:760px;";
-              _pergShell.innerHTML = `
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
-                  <div>
-                    <div style="font-size:16px;font-weight:700;color:${T.text};">Perguntas pendentes</div>
-                    <div style="font-size:11px;color:${T.text2};margin-top:2px;">Perguntas pré-venda no Mercado Livre · sugestão de resposta por IA</div>
-                  </div>
-                  <button id="perg-btn-buscar" onclick="pergBuscar()" style="background:#3b82f6;border:none;border-radius:8px;padding:8px 18px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;">↻ Buscar</button>
-                </div>
-                <div id="perg-root"></div>
-              `;
-            }
-            // Reanexar ao panel novo — restaura foco se estava numa textarea
+            // _pergShell é criado no init e sempre existe — só reanexar ao panel
             if(_pergShell.parentNode !== panel) {
               const _fa = document.activeElement;
               const _faId = _fa && _pergShell.contains(_fa) ? _fa.id : null;
-              const _faVal = _fa && _faId ? _fa.value : null;
               const _faPos = _fa && _faId ? _fa.selectionStart : null;
               panel.appendChild(_pergShell);
               if(_faId) {
@@ -7561,6 +7559,9 @@ function render(){
                 if(el2) { el2.focus(); if(_faPos!=null) try{el2.setSelectionRange(_faPos,_faPos);}catch(e){} }
               }
             }
+            // Atualiza cores do tema (o shell foi criado antes do tema estar disponível)
+            const _pt = _pergShell.querySelector("#perg-titulo");
+            if(_pt) _pt.style.color = T.text;
             // Busca automaticamente na primeira abertura (só quando já tem token)
             if(!_perg.lista && !_perg.carregando){
               if(state.ml_token?.access_token || state.ml_token_filial?.access_token){
