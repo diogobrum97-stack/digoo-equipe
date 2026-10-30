@@ -817,9 +817,13 @@ onChildAdded(ref(db, "/webhooks/messages"), (snap) => {
   if (!_whMessagesIniciou) return; // ignora itens antigos no carregamento inicial
   // Nova pergunta chegou via webhook — atualiza a lista sem esperar o polling
   console.log("[webhook] Nova mensagem ML:", snap.val()?.resource);
-  if (typeof pergBuscar === "function" && !_perg.carregando) {
-    pergBuscar();
-  }
+  // Aguarda 4s antes de buscar: o ML pode demorar alguns segundos para indexar
+  // a pergunta na API após disparar o webhook
+  setTimeout(() => {
+    if (typeof pergBuscar === "function" && !_perg.carregando) {
+      pergBuscar();
+    }
+  }, 4000);
 });
 
 onChildAdded(ref(db, "/webhooks/orders"), (snap) => {
@@ -1241,7 +1245,13 @@ async function pergBuscar() {
     if (!bons.length) {
       _perg.erro = "Erro: " + erros.map(e => e.erro).join(" · ");
     } else {
-      _perg.lista = bons.flatMap(r => r.lista);
+      const novaLista = bons.flatMap(r => r.lista);
+      // Só substitui a lista se retornou algo, ou se a lista atual está vazia/nula.
+      // Evita apagar perguntas existentes quando a API retorna vazio por timing
+      // (ex: webhook chegou antes da pergunta estar indexada na API do ML).
+      if (novaLista.length > 0 || !_perg.lista || _perg.lista.length === 0) {
+        _perg.lista = novaLista;
+      }
       if (erros.length) _perg.erro = "Aviso: falha em algumas contas.";
     }
   } catch(e) {
