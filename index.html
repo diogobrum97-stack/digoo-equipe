@@ -98,7 +98,7 @@
 </script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, onValue, push, remove, update, set, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, onValue, onChildAdded, push, remove, update, set, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBbaxrk7TXl9BiAZJzHwnJ6vI_LA5g-zzk",
@@ -805,6 +805,32 @@ onValue(ref(db,"/config_atributos"),    snap => { state.config_atributos = snap.
 onValue(ref(db,"/config_kits"),         snap => { state.config_kits = snap.val() || null; });
 onValue(ref(db,"/picking_concluidos"),  snap => { state.picking_concluidos = snap.val() || {}; });
 onValue(ref(db,"/picking_locks"),       snap => { state.picking_locks = snap.val() || {}; });
+
+// ── Webhooks do Mercado Livre (tempo real) ─────────────────────────────────
+// Quando o ML notifica, o backend salva em /webhooks/messages e /webhooks/orders.
+// onChildAdded dispara para cada item existente ao iniciar E para novos que chegam.
+// Usamos _wh*Iniciou para ignorar os itens já existentes no boot e só reagir aos novos.
+let _whMessagesIniciou = false;
+let _whOrdersIniciou   = false;
+
+onChildAdded(ref(db, "/webhooks/messages"), (snap) => {
+  if (!_whMessagesIniciou) return; // ignora itens antigos no carregamento inicial
+  // Nova pergunta chegou via webhook — atualiza a lista sem esperar o polling
+  console.log("[webhook] Nova mensagem ML:", snap.val()?.resource);
+  if (typeof pergBuscar === "function" && !_perg.carregando) {
+    pergBuscar();
+  }
+});
+
+onChildAdded(ref(db, "/webhooks/orders"), (snap) => {
+  if (!_whOrdersIniciou) return; // ignora itens antigos no carregamento inicial
+  // Novo pedido chegou via webhook — dispara atualização do picking
+  console.log("[webhook] Novo pedido ML:", snap.val()?.resource);
+  render();
+});
+
+// Marca como inicializado após o primeiro frame (dá tempo de carregar itens existentes)
+setTimeout(() => { _whMessagesIniciou = true; _whOrdersIniciou = true; }, 3000);
 
 function addTask(member,text,prio,sender){
   setSyncing(true);push(ref(db,"/tasks"),{member,text,prio,done:false,delegatedBy:sender||null,createdAt:Date.now()});
