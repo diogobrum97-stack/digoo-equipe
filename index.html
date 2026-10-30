@@ -1420,6 +1420,36 @@ function pergRender() {
   });
 }
 
+// Expõe funções de perguntas no window para onclick inline (script type="module" não acessa window por padrão)
+window.pergBuscar   = pergBuscar;
+window.pergEnviar   = pergEnviar;
+window.pergExcluir  = pergExcluir;
+window.pergBloquear = pergBloquear;
+// state e render precisam estar no window também (usados em onclicks inline em todo o app)
+// render() é declarada na linha ~6660 mas function declarations são hoisted no módulo
+window.state = state;
+
+// Busca automática: quando os tokens do ML ficarem disponíveis, dispara sem precisar clicar
+{
+  let _pergAutoBuscou = false;
+  function _pergAutoBusca() {
+    if (_pergAutoBuscou || _perg.lista !== null || _perg.carregando) return;
+    if (state.ml_token?.access_token || state.ml_token_filial?.access_token) {
+      _pergAutoBuscou = true;
+      pergBuscar();
+    }
+  }
+  // Tenta agora (tokens podem já estar presentes)
+  _pergAutoBusca();
+  // E fica observando até conseguir (tokens chegam via Firebase async)
+  const _pergAutoInterval = setInterval(() => {
+    if (_pergAutoBuscou) { clearInterval(_pergAutoInterval); return; }
+    _pergAutoBusca();
+  }, 2000);
+  // Para de tentar após 30s
+  setTimeout(() => clearInterval(_pergAutoInterval), 30000);
+}
+
 // ═══════════════ Picking & Packing ═══════════════
 let pickingState = {
   fila: null,          // lista de pedidos pendentes de envio
@@ -7735,6 +7765,8 @@ function render(){
 
   }catch(e){console.error("Render error:",e);}
 }
+// Expõe render no window para onclicks inline (script type="module" não acessa window por padrão)
+window.render = render;
 
 function makeAddBtn(color,label){const btn=document.createElement("button");btn.className="add-dashed";btn.textContent=label;btn.style.cssText=`border-color:${color};color:${color};opacity:0.85;text-shadow:0 0 8px ${color}88;box-shadow:inset 0 0 12px ${color}11;`;btn.addEventListener("mouseenter",()=>{btn.style.opacity="1";btn.style.boxShadow=`inset 0 0 20px ${color}22`;});btn.addEventListener("mouseleave",()=>{btn.style.opacity="0.85";btn.style.boxShadow=`inset 0 0 12px ${color}11`;});return btn;}
 
