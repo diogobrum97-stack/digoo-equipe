@@ -9786,13 +9786,11 @@ function renderConfig(panel, color) {
     btnSincAPI.textContent = "⏳ Buscando kits no Bling...";
     kitsStatus.innerHTML = `<span style="color:var(--text3);">Consultando API do Bling (pode demorar 1-2 min)...</span>`;
     try {
-      const token = state.bling_token;
-      if (!token) throw new Error("Token Bling não encontrado. Conecte o Bling na aba Configurações.");
-      const r = await fetch(`${BLING_PROXY}/api/bling-produtos?action=kits-composicoes`, {
-        headers: { "x-bling-token": token }
-      });
-      const data = await r.json();
-      if (!data.ok) throw new Error(data.erro || "Erro desconhecido");
+      const r = await fetch(`${BLING_PROXY}/api/bling-produtos?action=kits-composicoes`);
+      const text = await r.text();
+      let data;
+      try { data = JSON.parse(text); } catch(e) { throw new Error(`Backend retornou erro inesperado (status ${r.status})`); }
+      if (!data.ok) throw new Error(data.erro || data.error || "Erro desconhecido");
       // Abre modal de comparação antes de salvar
       abrirModalComparacaoKits({
         apiComposicoes: data.composicoes,
