@@ -958,33 +958,54 @@ window._fetchDashboard = async function fetchDashboard() {
           };
         }
 
-        // 5 meses anteriores via from/to (valores exatos por mês calendário)
+        // 5 meses anteriores via from/to (SP + RS somados)
         const mesPromises = [-5,-4,-3,-2,-1].map(offset => {
           const { key, from, to } = mesFromTo(offset);
-          return fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${tokenFilial}&from=${from}&to=${to}`)
-            .then(r=>r.json()).catch(()=>null)
-            .then(data => ({ key, total: data?.summary?.totalRevenue || 0 }));
+          const pFilial = fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${tokenFilial}&from=${from}&to=${to}`)
+            .then(r=>r.json()).catch(()=>null);
+          const pMatriz = tokenMatriz
+            ? fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${tokenMatriz}&from=${from}&to=${to}`)
+                .then(r=>r.json()).catch(()=>null)
+            : Promise.resolve(null);
+          return Promise.all([pFilial, pMatriz]).then(([dF, dM]) => ({
+            key,
+            total: (dF?.summary?.totalRevenue || 0) + (dM?.summary?.totalRevenue || 0),
+          }));
         });
 
-        // Daily do mês atual e mês anterior via days= (retorna dailyEvolution)
+        // Daily do mês atual e mês anterior (SP + RS somados por dia)
         const diaAtualMes2 = agora.getDate();
-        const mesAtualDias = new Date(agora.getFullYear(), agora.getMonth()+1, 0).getDate(); // dias no mês atual
-        const mesAntDias   = new Date(agora.getFullYear(), agora.getMonth(), 0).getDate();   // dias no mês anterior
+        const mesAtualDias = new Date(agora.getFullYear(), agora.getMonth()+1, 0).getDate();
+        const mesAntDias   = new Date(agora.getFullYear(), agora.getMonth(), 0).getDate();
         const totalDias    = diaAtualMes2 + mesAntDias;
 
-        const [historico5m, rDaily] = await Promise.all([
-          Promise.all(mesPromises),
+        const dailyFetches = [
           fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${tokenFilial}&days=${totalDias}`).then(r=>r.json()).catch(()=>null),
+          tokenMatriz
+            ? fetch(`${VERCEL_BACKEND}/api/ml-vendas?token=${tokenMatriz}&days=${totalDias}`).then(r=>r.json()).catch(()=>null)
+            : Promise.resolve(null),
+        ];
+
+        const [historico5m, [rDailyFilial, rDailyMatriz]] = await Promise.all([
+          Promise.all(mesPromises),
+          Promise.all(dailyFetches),
         ]);
 
-        // Separar dailyEvolution: últimos totalDias dias
-        // Os primeiros mesAntDias entradas = mês anterior, o resto = mês atual
-        const daily = rDaily?.dailyEvolution || [];
-        const dailyMesAnt    = daily.slice(0, mesAntDias);
-        const dailyMesAtual  = daily.slice(mesAntDias);
+        // Somar daily SP + RS por índice de dia
+        const dailyF = rDailyFilial?.dailyEvolution || [];
+        const dailyM = rDailyMatriz?.dailyEvolution || [];
+        const maxLen = Math.max(dailyF.length, dailyM.length);
+        const daily = Array.from({ length: maxLen }, (_, i) => ({
+          date:    (dailyF[i] || dailyM[i])?.date || "",
+          revenue: (dailyF[i]?.revenue || 0) + (dailyM[i]?.revenue || 0),
+          orders:  (dailyF[i]?.orders  || 0) + (dailyM[i]?.orders  || 0),
+        }));
+
+        const dailyMesAnt   = daily.slice(0, mesAntDias);
+        const dailyMesAtual = daily.slice(mesAntDias);
 
         if(dashData && !dashData.erro) {
-          dashData.historico5m   = historico5m; // já em ordem cronológica [-5..-1]
+          dashData.historico5m   = historico5m;
           dashData.dailyMesAtual = dailyMesAtual;
           dashData.dailyMesAnt   = dailyMesAnt;
           dashData.mesAntDias    = mesAntDias;
@@ -3058,7 +3079,9 @@ function renderDashboard(panel, color) {
         }
       }
       mesLabels.push(mesesNomesArr[hoje3.getMonth()]);
-      mesValues.push(dashData.fatMes || 0);
+      // Mês atual = SP + RS somados
+      const fatMesTotal = (dashData.fatMes || 0) + (dashData.matriz?.fatMes || 0);
+      mesValues.push(fatMesTotal);
 
       const bgColors = mesValues.map((_, i) =>
         i === mesValues.length - 1 ? T.cAzul : (isDark ? "#ffffff14" : "#00000010")
