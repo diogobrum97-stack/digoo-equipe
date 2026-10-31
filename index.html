@@ -1410,6 +1410,11 @@ function pergRender() {
 
   _perg.lista.forEach(p => {
     const qid = String(p.question_id);
+
+    // Preserva o que o usuário já digitou na textarea antes de re-renderizar
+    const taExistente = document.getElementById(`perg-ta-${qid}`);
+    const valorUsuario = taExistente ? taExistente.value : null;
+
     const card = document.createElement("div");
     card.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:12px;margin-bottom:12px;overflow:hidden;`;
 
@@ -1457,6 +1462,12 @@ function pergRender() {
       </div>
     `;
     el.appendChild(card);
+
+    // Restaura o que o usuário estava digitando (antes do re-render apagar)
+    if (valorUsuario !== null && valorUsuario !== sugestao) {
+      const taNova = card.querySelector(`#perg-ta-${CSS.escape(qid)}`);
+      if (taNova) taNova.value = valorUsuario;
+    }
 
     // Bind via addEventListener — evita problemas com aspas/caracteres especiais no qid
     const btnDel = card.querySelector(`#perg-btn-del-${CSS.escape(qid)}`);
