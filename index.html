@@ -1684,6 +1684,316 @@ window._pergStopAutoBusca = null;
   window._pergStopAutoBusca = () => { _disparado = true; clearInterval(iv); };
 }
 
+// ═══════════════ Reclamações ML ═══════════════
+let _recl = {
+  lista: null,       // array de reclamações ou null
+  carregando: false,
+  erro: null,
+};
+let _reclTabAtual = "pendentes";
+
+const _reclShell = document.createElement("div");
+_reclShell.style.cssText = "max-width:760px;";
+_reclShell.innerHTML = `
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+    <div>
+      <div id="recl-titulo" style="font-size:16px;font-weight:700;">Reclamações ML</div>
+      <div style="font-size:11px;color:#888;margin-top:2px;">Pós-venda no Mercado Livre · sugestão de resposta por IA</div>
+    </div>
+    <button id="recl-btn-buscar" onclick="reclBuscar()" style="background:#3b82f6;border:none;border-radius:8px;padding:8px 18px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;">↻ Atualizar</button>
+  </div>
+  <!-- Auto-resposta toggle -->
+  <div id="recl-auto-box" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:14px;">
+    <div style="font-size:12px;font-weight:600;color:var(--text);flex:1;min-width:140px;">Auto-resposta Reclamações</div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text2);">
+      <span>Ativo</span>
+      <label style="position:relative;display:inline-block;width:36px;height:20px;cursor:pointer;">
+        <input type="checkbox" id="recl-auto-ativo" style="opacity:0;width:0;height:0;" onchange="reclAutoToggle()">
+        <span id="recl-auto-sl" style="position:absolute;inset:0;background:#444;border-radius:20px;transition:.2s;"></span>
+        <span id="recl-auto-dot" style="position:absolute;left:3px;top:3px;width:14px;height:14px;background:#fff;border-radius:50%;transition:.2s;"></span>
+      </label>
+    </div>
+    <div id="recl-auto-status" style="font-size:10px;color:#888;margin-left:4px;">carregando...</div>
+  </div>
+  <!-- Tabs -->
+  <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:16px;">
+    <button id="recl-tab-pend" onclick="reclSetTab('pendentes')" style="background:none;border:none;border-bottom:2px solid #3b82f6;padding:8px 16px;font-size:12px;font-weight:600;color:#3b82f6;cursor:pointer;">Pendentes</button>
+    <button id="recl-tab-hist" onclick="reclSetTab('historico')" style="background:none;border:none;border-bottom:2px solid transparent;padding:8px 16px;font-size:12px;font-weight:600;color:#888;cursor:pointer;">Histórico automático</button>
+  </div>
+  <div id="recl-root"></div>
+  <div id="recl-hist-root" style="display:none;"></div>
+`;
+
+async function reclBuscar() {
+  if (_recl.carregando) return;
+  _recl.carregando = true;
+  _recl.erro = null;
+  reclRender();
+  try {
+    const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=buscar-reclamacoes`);
+    const d = await r.json();
+    if (!d.ok) { _recl.erro = d.error || "Erro ao buscar"; _recl.lista = []; }
+    else _recl.lista = d.lista || [];
+  } catch(e) {
+    _recl.erro = e.message;
+    _recl.lista = [];
+  }
+  _recl.carregando = false;
+  reclRender();
+}
+
+function reclRender() {
+  const el = document.getElementById("recl-root");
+  if (!el) return;
+  const btn = document.getElementById("recl-btn-buscar");
+  if (btn) btn.textContent = _recl.carregando ? "Buscando..." : "↻ Atualizar";
+
+  if (_recl.carregando) {
+    el.innerHTML = `<div style="padding:40px 0;text-align:center;font-size:13px;color:#888;">Buscando reclamações...</div>`;
+    return;
+  }
+  if (_recl.erro) {
+    el.innerHTML = `<div style="padding:30px 0;text-align:center;font-size:13px;color:#e8432d;">${_recl.erro}</div>`;
+    return;
+  }
+  if (!_recl.lista) {
+    el.innerHTML = `<div style="padding:40px 0;text-align:center;font-size:13px;color:#888;">Clique em Atualizar para buscar reclamações.</div>`;
+    return;
+  }
+  if (!_recl.lista.length) {
+    el.innerHTML = `<div style="padding:60px 0;text-align:center;font-size:13px;color:#666;">Nenhuma reclamação pendente.</div>`;
+    return;
+  }
+
+  el.innerHTML = "";
+  _recl.lista.forEach(rec => {
+    const TIPO_LABEL = {
+      item_nao_recebido: "Não Recebido",
+      item_diferente: "Item Diferente",
+      item_defeituoso: "Defeituoso",
+      item_incompleto: "Item Incompleto",
+      arrependimento: "Arrependimento",
+      outro: "Outro",
+    };
+    const TIPO_COR = {
+      item_nao_recebido: "#f59e0b",
+      item_diferente: "#3b82f6",
+      item_defeituoso: "#e8432d",
+      item_incompleto: "#8b5cf6",
+      arrependimento: "#10b981",
+      outro: "#888",
+    };
+    const tipo = rec.tipo_reclamacao || "outro";
+    const tipoCor = TIPO_COR[tipo] || "#888";
+    const tipoLabel = TIPO_LABEL[tipo] || tipo;
+    const contaBadgeBg = (rec.conta||"").includes("Filial") ? "#064e3b" : "#1e3a5f";
+    const contaBadgeBorder = (rec.conta||"").includes("Filial") ? "#10b981" : "#3b82f6";
+    const contaBadgeColor = (rec.conta||"").includes("Filial") ? "#10b981" : "#60a5fa";
+    const dt = rec.data ? new Date(rec.data).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day:"2-digit", month:"2-digit", year:"2-digit", hour:"2-digit", minute:"2-digit" }) : "";
+    const claimId = rec.claim_id;
+    const textareaId = `recl-ta-${claimId}`;
+    const sugestao = rec.suggested_answer || "";
+
+    const card = document.createElement("div");
+    card.style.cssText = `background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:12px;padding:16px;`;
+    card.innerHTML = `
+      <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;">
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
+            <span style="font-size:10px;font-weight:600;color:${tipoCor};background:${tipoCor}22;border:1px solid ${tipoCor}44;border-radius:99px;padding:1px 8px;">${tipoLabel}</span>
+            ${rec.conta ? `<span style="font-size:10px;font-weight:600;color:${contaBadgeColor};background:${contaBadgeBg};border:1px solid ${contaBadgeBorder};border-radius:99px;padding:1px 7px;">${rec.conta}</span>` : ""}
+            ${rec.requires_attention ? `<span style="font-size:10px;font-weight:600;color:#f59e0b;background:#451a0322;border:1px solid #f59e0b44;border-radius:99px;padding:1px 8px;">Atenção</span>` : ""}
+            <span style="font-size:10px;color:#888;">${dt}</span>
+          </div>
+          <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${(rec.produto?.titulo||"").replace(/"/g,"&quot;")}">
+            ${rec.produto?.titulo || `Pedido #${rec.order_id||""}`}
+          </div>
+          ${rec.produto?.sku ? `<div style="font-size:10px;color:#888;">SKU: ${rec.produto.sku}</div>` : ""}
+        </div>
+        <div style="font-size:10px;color:#888;white-space:nowrap;">Claim #${claimId}</div>
+      </div>
+      ${rec.resumo ? `<div style="font-size:12px;color:var(--text2);background:var(--bg3);border-radius:6px;padding:8px 10px;margin-bottom:10px;border-left:3px solid ${tipoCor};">${rec.resumo}</div>` : ""}
+      <div style="margin-bottom:10px;">
+        <div style="font-size:10px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Resposta${sugestao ? " (sugestao da IA)" : ""}</div>
+        <textarea id="${textareaId}" style="width:100%;min-height:70px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:12px;color:var(--text);font-family:inherit;resize:vertical;box-sizing:border-box;">${sugestao}</textarea>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button onclick="reclEnviar('${claimId}','${textareaId}')" style="background:#10b981;border:none;border-radius:8px;padding:7px 16px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;">Enviar Resposta</button>
+        <button onclick="reclTreinar('${claimId}','${textareaId}','${tipo}','${(rec.resumo||"").replace(/'/g,"\\'")}','${(rec.produto?.titulo||"").replace(/'/g,"\\'")}',this)" style="background:#8b5cf6;border:none;border-radius:8px;padding:7px 14px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;">Treinar IA</button>
+        <a href="https://www.mercadolivre.com.br/ajuda/reclamacoes" target="_blank" style="background:none;border:1px solid var(--border);border-radius:8px;padding:7px 14px;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;">Ver no ML</a>
+      </div>
+    `;
+    el.appendChild(card);
+
+    // Restaurar valor se usuário já editou
+    const ta = card.querySelector(`#${CSS.escape(textareaId)}`);
+    if (ta && window[`_reclTaCache_${claimId}`] !== undefined) {
+      ta.value = window[`_reclTaCache_${claimId}`];
+    }
+    if (ta) ta.addEventListener("input", () => { window[`_reclTaCache_${claimId}`] = ta.value; });
+  });
+}
+
+async function reclEnviar(claimId, textareaId) {
+  const token = state.ml_token?.access_token || state.ml_token_filial?.access_token;
+  if (!token) { alert("Nenhuma conta ML conectada."); return; }
+  const ta = document.getElementById(textareaId);
+  const texto = ta?.value?.trim();
+  if (!texto) { alert("Digite uma resposta antes de enviar."); return; }
+
+  // Encontrar info da reclamação
+  const rec = (_recl.lista || []).find(r => r.claim_id == claimId);
+  const tokenCerto = (rec?.conta || "").includes("Filial") ? state.ml_token_filial?.access_token : state.ml_token?.access_token;
+
+  try {
+    const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=responder-reclamacao`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        claim_id: claimId,
+        texto,
+        token: tokenCerto || token,
+        resumo: rec?.resumo || "",
+        tipo_reclamacao: rec?.tipo_reclamacao || "outro",
+        produto: rec?.produto?.titulo || "",
+        salvar_treinamento: true,
+      }),
+    });
+    const d = await r.json();
+    if (!d.ok) { alert(`Erro: ${d.error}`); return; }
+    // Remover da lista local
+    _recl.lista = (_recl.lista || []).filter(r => r.claim_id != claimId);
+    delete window[`_reclTaCache_${claimId}`];
+    reclRender();
+  } catch(e) {
+    alert(`Erro: ${e.message}`);
+  }
+}
+
+async function reclTreinar(claimId, textareaId, tipo, situacao, produto, btn) {
+  const ta = document.getElementById(textareaId);
+  const resposta = ta?.value?.trim();
+  if (!resposta) { alert("Digite uma resposta para treinar."); return; }
+  btn.textContent = "Salvando...";
+  btn.disabled = true;
+  try {
+    const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=salvar-treinamento-reclamacao`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ claim_id: claimId, tipo: tipo || "outro", situacao: situacao || "", resposta, produto }),
+    });
+    const d = await r.json();
+    btn.textContent = d.ok ? "Salvo!" : "Erro";
+    btn.style.background = d.ok ? "#10b981" : "#e8432d";
+    setTimeout(() => { btn.textContent = "Treinar IA"; btn.style.background = "#8b5cf6"; btn.disabled = false; }, 2000);
+  } catch(e) {
+    btn.textContent = "Erro"; btn.style.background = "#e8432d";
+    setTimeout(() => { btn.textContent = "Treinar IA"; btn.style.background = "#8b5cf6"; btn.disabled = false; }, 2000);
+  }
+}
+
+async function reclAutoToggle() {
+  const ativo = document.getElementById("recl-auto-ativo")?.checked;
+  try {
+    await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=config-auto-reclamacao`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ativo: !!ativo }),
+    });
+    reclAutoAtualizarUI({ ativo: !!ativo });
+  } catch(e) {}
+}
+
+function reclAutoAtualizarUI(cfg) {
+  if (!cfg) return;
+  const sl = document.getElementById("recl-auto-sl");
+  const dot = document.getElementById("recl-auto-dot");
+  const status = document.getElementById("recl-auto-status");
+  const checkbox = document.getElementById("recl-auto-ativo");
+  const ativo = !!cfg.ativo;
+  if (checkbox) checkbox.checked = ativo;
+  if (sl) sl.style.background = ativo ? "#10b981" : "#444";
+  if (dot) dot.style.left = ativo ? "19px" : "3px";
+  if (status) status.textContent = ativo ? "Ativo" : "Desligado";
+}
+
+async function _reclAutoCarregar() {
+  try {
+    const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=config-auto-reclamacao`);
+    const d = await r.json();
+    if (d.ok) reclAutoAtualizarUI(d.config || {});
+    else document.getElementById("recl-auto-status").textContent = "Erro";
+  } catch(e) {
+    const s = document.getElementById("recl-auto-status");
+    if (s) s.textContent = "Erro";
+  }
+}
+
+function reclSetTab(tab) {
+  _reclTabAtual = tab;
+  const pend = document.getElementById("recl-root");
+  const hist = document.getElementById("recl-hist-root");
+  const tabPend = document.getElementById("recl-tab-pend");
+  const tabHist = document.getElementById("recl-tab-hist");
+  if (!pend || !hist) return;
+
+  if (tab === "pendentes") {
+    pend.style.display = "";
+    hist.style.display = "none";
+    tabPend.style.color = "#3b82f6"; tabPend.style.borderBottomColor = "#3b82f6";
+    tabHist.style.color = "#888"; tabHist.style.borderBottomColor = "transparent";
+  } else {
+    pend.style.display = "none";
+    hist.style.display = "";
+    tabPend.style.color = "#888"; tabPend.style.borderBottomColor = "transparent";
+    tabHist.style.color = "#3b82f6"; tabHist.style.borderBottomColor = "#3b82f6";
+    reclRenderHistorico();
+  }
+}
+
+async function reclRenderHistorico() {
+  const el = document.getElementById("recl-hist-root");
+  if (!el) return;
+  el.innerHTML = `<div style="padding:40px 0;text-align:center;font-size:12px;color:#888;">Carregando histórico...</div>`;
+  try {
+    const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=historico-auto-reclamacao`);
+    const d = await r.json();
+    if (!d.ok || !d.lista?.length) {
+      el.innerHTML = `<div style="padding:60px 0;text-align:center;font-size:13px;color:#666;">Nenhuma resposta automática registrada ainda.</div>`;
+      return;
+    }
+    const TIPO_LABEL = { item_nao_recebido:"Não Recebido",item_diferente:"Item Diferente",item_defeituoso:"Defeituoso",item_incompleto:"Incompleto",arrependimento:"Arrependimento",outro:"Outro" };
+    el.innerHTML = "";
+    d.lista.forEach(item => {
+      const dt = item.data ? new Date(item.data).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day:"2-digit", month:"2-digit", year:"2-digit", hour:"2-digit", minute:"2-digit" }) : "";
+      const contaBadgeBg = (item.conta||"").includes("Filial") ? "#064e3b" : "#1e3a5f";
+      const contaBadgeBorder = (item.conta||"").includes("Filial") ? "#10b981" : "#3b82f6";
+      const contaBadgeColor = (item.conta||"").includes("Filial") ? "#10b981" : "#60a5fa";
+      const card = document.createElement("div");
+      card.style.cssText = `background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;padding:12px 14px;`;
+      card.innerHTML = `
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+          <span style="font-size:10px;font-weight:600;color:${contaBadgeColor};background:${contaBadgeBg};border:1px solid ${contaBadgeBorder};border-radius:99px;padding:1px 7px;">${item.conta||""}</span>
+          ${item.tipo ? `<span style="font-size:10px;color:#888;">${TIPO_LABEL[item.tipo]||item.tipo}</span>` : ""}
+          <span style="font-size:10px;color:#888;">${dt}</span>
+          <span style="font-size:10px;color:#888;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${(item.produto||"").replace(/"/g,"&quot;")}">${item.produto||""}</span>
+          <span style="font-size:10px;color:#10b981;background:#052e1622;border:1px solid #10b98133;border-radius:99px;padding:1px 7px;">Auto</span>
+        </div>
+        <div style="font-size:11px;color:var(--text2);background:var(--bg3);border-radius:6px;padding:8px 10px;">${item.resposta||""}</div>
+      `;
+      el.appendChild(card);
+    });
+  } catch(e) {
+    el.innerHTML = `<div style="padding:40px 0;text-align:center;font-size:12px;color:#e8432d;">Erro ao carregar histórico: ${e.message}</div>`;
+  }
+}
+
+window.reclBuscar   = reclBuscar;
+window.reclEnviar   = reclEnviar;
+window.reclTreinar  = reclTreinar;
+window.reclAutoToggle = reclAutoToggle;
+window.reclSetTab   = reclSetTab;
+
 // ═══════════════ Picking & Packing ═══════════════
 let pickingState = {
   fila: null,          // lista de pedidos pendentes de envio
@@ -7037,7 +7347,7 @@ function render(){
             { label: "Dashboard", tab: "dashboard", subs: [] },
             { label: "Tarefas", tab: "tarefas", subs: [] },
             { label: "Equipe", tab: null, subs: [{label:"Concluídas",tab:"concluidas"},{label:"Conversas",tab:"conversas"}] },
-            { label: "Mercado Livre", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência de Compra",tab:"experiencia"},{label:"Clonar Anúncio",tab:"clonar"},{label:"Perguntas",tab:"perguntas"},{label:"Picking & Packing",tab:"picking"},{label:"Promoções",tab:"promocoes"}] },
+            { label: "Mercado Livre", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência de Compra",tab:"experiencia"},{label:"Clonar Anúncio",tab:"clonar"},{label:"Perguntas",tab:"perguntas"},{label:"Reclamações",tab:"reclamacoes-ml"},{label:"Picking & Packing",tab:"picking"},{label:"Promoções",tab:"promocoes"}] },
             { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"},{label:"NF Transferência Full",tab:"nf-full"},{label:"NF Importação",tab:"nf-importacao"},{label:"Contas a Pagar",tab:"contas-pagar"},{label:"NFs Emitidas",tab:"nfs-emitidas"},{label:"Painel Fiscal",tab:"painel-fiscal"}] },
             { label: "Email", tab: "email", subs: [] },
           ].filter(g => {
@@ -7152,7 +7462,7 @@ function render(){
               { label: "Dashboard", tab: "dashboard", subs: [] },
               { label: "Tarefas", tab: "tarefas", subs: [] },
               { label: "Equipe", tab: null, subs: [{label:"Concluídas",tab:"concluidas"},{label:"Conversas",tab:"conversas"}] },
-              { label: "ML", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência",tab:"experiencia"},{label:"Clonar",tab:"clonar"},{label:"Perguntas",tab:"perguntas"},{label:"Picking",tab:"picking"},{label:"Promoções",tab:"promocoes"}] },
+              { label: "ML", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência",tab:"experiencia"},{label:"Clonar",tab:"clonar"},{label:"Perguntas",tab:"perguntas"},{label:"Reclamações",tab:"reclamacoes-ml"},{label:"Picking",tab:"picking"},{label:"Promoções",tab:"promocoes"}] },
               { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"},{label:"NF Transferência Full",tab:"nf-full"}] },
               { label: "📝", tab: null, subs: [], acao: "ideias" },
               { label: "⚙", tab: "config", subs: [] },
@@ -7727,6 +8037,19 @@ function render(){
             pergRender();
             // Garante render após o DOM ser atualizado (caso venha do dashboard com lista já carregada)
             if (_perg.lista && _perg.lista.length > 0) setTimeout(pergRender, 50);
+          }else if(window._diogotab==="reclamacoes-ml"){
+            panel.style.maxHeight="none"; panel.style.overflowY="auto";
+            if(_reclShell.parentNode !== panel) {
+              panel.appendChild(_reclShell);
+            }
+            // Atualiza cores do tema
+            const _rt = _reclShell.querySelector("#recl-titulo");
+            if(_rt) _rt.style.color = T.text;
+            // Carrega config de auto-resposta (uma vez por sessão)
+            if (!window._reclAutoCarregou) { window._reclAutoCarregou = true; _reclAutoCarregar(); }
+            // Busca automática na primeira abertura
+            if (!_recl.lista && !_recl.carregando) reclBuscar();
+            reclRender();
           }else if(window._diogotab==="picking"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
             if(window._pickingModoDiogo==="operar") panel.style.flex="1";
