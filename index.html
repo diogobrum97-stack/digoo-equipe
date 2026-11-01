@@ -1700,7 +1700,10 @@ _reclShell.innerHTML = `
       <div id="recl-titulo" style="font-size:16px;font-weight:700;">Reclamações ML</div>
       <div style="font-size:11px;color:#888;margin-top:2px;">Pós-venda no Mercado Livre · sugestão de resposta por IA</div>
     </div>
-    <button id="recl-btn-buscar" onclick="reclBuscar()" style="background:#3b82f6;border:none;border-radius:8px;padding:8px 18px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;">↻ Atualizar</button>
+    <div style="display:flex;gap:8px;">
+      <button id="recl-btn-buscar" onclick="reclBuscar()" style="background:#3b82f6;border:none;border-radius:8px;padding:8px 18px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;">↻ Atualizar</button>
+      <button id="recl-btn-sync" onclick="reclSincronizar()" style="background:#10b981;border:none;border-radius:8px;padding:8px 18px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;" title="Busca claims abertas diretamente do ML e salva no Firebase">⬇ Importar do ML</button>
+    </div>
   </div>
   <!-- Auto-resposta toggle -->
   <div id="recl-auto-box" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:14px;">
@@ -1988,11 +1991,34 @@ async function reclRenderHistorico() {
   }
 }
 
-window.reclBuscar   = reclBuscar;
-window.reclEnviar   = reclEnviar;
-window.reclTreinar  = reclTreinar;
-window.reclAutoToggle = reclAutoToggle;
-window.reclSetTab   = reclSetTab;
+async function reclSincronizar() {
+  const btn = document.getElementById("recl-btn-sync");
+  if (btn) { btn.disabled = true; btn.textContent = "⏳ Importando..."; }
+  try {
+    const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=sincronizar-reclamacoes`, { method: "POST" });
+    const d = await r.json();
+    if (d.ok) {
+      const msg = d.sincronizadas > 0
+        ? `✅ ${d.sincronizadas} reclamação(ões) importada(s)!${d.erros?.length ? " Erros: " + d.erros.join(", ") : ""}`
+        : `ℹ️ Nenhuma reclamação nova encontrada.${d.erros?.length ? " Erros: " + d.erros.join(", ") : ""}`;
+      alert(msg);
+      if (d.sincronizadas > 0) reclBuscar();
+    } else {
+      alert("Erro ao importar: " + (d.error || "desconhecido"));
+    }
+  } catch(e) {
+    alert("Erro: " + e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = "⬇ Importar do ML"; }
+  }
+}
+
+window.reclBuscar       = reclBuscar;
+window.reclEnviar       = reclEnviar;
+window.reclTreinar      = reclTreinar;
+window.reclAutoToggle   = reclAutoToggle;
+window.reclSetTab       = reclSetTab;
+window.reclSincronizar  = reclSincronizar;
 
 // ═══════════════ Picking & Packing ═══════════════
 let pickingState = {
