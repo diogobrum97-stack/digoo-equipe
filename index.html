@@ -1518,7 +1518,7 @@ function pergRender() {
       btnTreino.textContent = "Salvando...";
       btnTreino.disabled = true;
       try {
-        const r = await fetch(`/api/ml-vendas?action=salvar-treinamento`, {
+        const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=salvar-treinamento`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -1573,7 +1573,7 @@ function _pergAutoAtualizarUI() {
 
 async function _pergAutoCarregar() {
   try {
-    const r = await fetch("/api/ml-vendas?action=config-auto-resposta");
+    const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=config-auto-resposta`);
     const d = await r.json();
     if (d.ok) { _pergAutoConfig = d.config; _pergAutoAtualizarUI(); }
   } catch(e) {}
@@ -1586,7 +1586,7 @@ async function pergAutoToggle() {
   _pergAutoConfig = { matriz: chkM.checked, filial: chkF.checked };
   _pergAutoAtualizarUI();
   try {
-    await fetch("/api/ml-vendas?action=config-auto-resposta", {
+    await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=config-auto-resposta`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(_pergAutoConfig),
@@ -1624,7 +1624,7 @@ async function pergRenderHistorico() {
   if (!el) return;
   el.innerHTML = `<div style="padding:40px 0;text-align:center;font-size:12px;color:#888;">Carregando histórico...</div>`;
   try {
-    const r = await fetch("/api/ml-vendas?action=historico-auto");
+    const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=historico-auto`);
     const d = await r.json();
     if (!d.ok || !d.lista?.length) {
       el.innerHTML = `<div style="padding:60px 0;text-align:center;font-size:13px;color:#666;">Nenhuma resposta automática registrada ainda.</div>`;
