@@ -1212,7 +1212,7 @@ _pergShell.innerHTML = `
   </div>
   <!-- Auto-resposta toggle -->
   <div id="perg-auto-box" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:14px;">
-    <div style="font-size:12px;font-weight:600;color:var(--text);flex:1;min-width:120px;">🤖 Auto-resposta</div>
+    <div style="font-size:12px;font-weight:600;color:var(--text);flex:1;min-width:120px;">Auto-resposta</div>
     <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text2);">
       <span>Matriz RS</span>
       <label style="position:relative;display:inline-block;width:36px;height:20px;cursor:pointer;">
@@ -1458,10 +1458,10 @@ function pergRender() {
 
     // Badge status sugestão
     const statusBadge = requerAtencao
-      ? `<span style="font-size:10px;color:#e8432d;border:1px solid #e8432d;border-radius:99px;padding:2px 8px;white-space:nowrap;">⚠ Atenção</span>`
+      ? `<span style="font-size:10px;color:#e8432d;border:1px solid #e8432d;border-radius:99px;padding:2px 8px;white-space:nowrap;">Atenção</span>`
       : semSugestao
-        ? `<span style="font-size:10px;color:#f59e0b;border:1px solid #f59e0b;border-radius:99px;padding:2px 8px;white-space:nowrap;">— Sem sugestão</span>`
-        : `<span style="font-size:10px;color:#10b981;border:1px solid #10b981;border-radius:99px;padding:2px 8px;white-space:nowrap;">✓ IA sugeriu</span>`;
+        ? `<span style="font-size:10px;color:#f59e0b;border:1px solid #f59e0b;border-radius:99px;padding:2px 8px;white-space:nowrap;">Sem sugestão</span>`
+        : `<span style="font-size:10px;color:#10b981;border:1px solid #10b981;border-radius:99px;padding:2px 8px;white-space:nowrap;">IA sugeriu</span>`;
 
     card.innerHTML = `
       <!-- Cabeçalho do anúncio -->
@@ -1483,7 +1483,7 @@ function pergRender() {
           <div style="display:flex;gap:8px;">
             <button id="perg-btn-del-${qid}" style="background:transparent;border:1px solid #e8432d;border-radius:6px;padding:5px 0;color:#e8432d;font-size:11px;cursor:pointer;width:80px;" title="Excluir pergunta no Mercado Livre">Excluir</button>
             <button id="perg-btn-blk-${qid}" style="background:transparent;border:1px solid #f59e0b;border-radius:6px;padding:5px 0;color:#f59e0b;font-size:11px;cursor:pointer;width:80px;" title="Bloquear comprador no Mercado Livre">Bloquear</button>
-            <button id="perg-btn-treino-${qid}" style="background:transparent;border:1px solid #8b5cf6;border-radius:6px;padding:5px 0;color:#8b5cf6;font-size:11px;cursor:pointer;width:90px;" title="Salvar essa resposta como exemplo para o Claude aprender">💾 Treinar IA</button>
+            <button id="perg-btn-treino-${qid}" style="background:transparent;border:1px solid #8b5cf6;border-radius:6px;padding:5px 0;color:#8b5cf6;font-size:11px;cursor:pointer;width:90px;" title="Salvar essa resposta como exemplo para o Claude aprender">Treinar IA</button>
           </div>
           <button id="perg-btn-${qid}" style="background:#3b82f6;border:none;border-radius:6px;padding:5px 0;color:#fff;font-size:11px;font-weight:600;cursor:pointer;width:80px;">Enviar</button>
         </div>
@@ -1531,7 +1531,7 @@ function pergRender() {
         });
         const d = await r.json();
         if (d.ok) {
-          btnTreino.textContent = "✓ Salvo!";
+          btnTreino.textContent = "Salvo!";
           btnTreino.style.color = "#10b981";
           btnTreino.style.borderColor = "#10b981";
         } else {
@@ -1643,7 +1643,7 @@ async function pergRenderHistorico() {
           <span style="font-size:10px;font-weight:600;color:${contaBadgeColor};background:${contaBadgeBg};border:1px solid ${contaBadgeBorder};border-radius:99px;padding:1px 7px;">${item.conta||""}</span>
           <span style="font-size:10px;color:#888;">${dt}</span>
           <span style="font-size:10px;color:#888;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${(item.produto||"").replace(/"/g,"&quot;")}">${item.produto||""}</span>
-          <span style="font-size:10px;color:#10b981;background:#052e1622;border:1px solid #10b98133;border-radius:99px;padding:1px 7px;">🤖 Auto</span>
+          <span style="font-size:10px;color:#10b981;background:#052e1622;border:1px solid #10b98133;border-radius:99px;padding:1px 7px;">Auto</span>
         </div>
         <div style="font-size:12px;color:${T.text};font-weight:500;margin-bottom:6px;">${item.pergunta||""}</div>
         <div style="font-size:11px;color:#888;background:${T.bg3};border-radius:6px;padding:8px 10px;">${item.resposta||""}</div>
