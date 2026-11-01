@@ -1203,14 +1203,41 @@ let _perg = {
 const _pergShell = document.createElement("div");
 _pergShell.style.cssText = "max-width:760px;";
 _pergShell.innerHTML = `
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
     <div>
-      <div id="perg-titulo" style="font-size:16px;font-weight:700;">Perguntas pendentes</div>
+      <div id="perg-titulo" style="font-size:16px;font-weight:700;">Perguntas ML</div>
       <div style="font-size:11px;color:#888;margin-top:2px;">Perguntas pré-venda no Mercado Livre · sugestão de resposta por IA</div>
     </div>
     <button id="perg-btn-buscar" onclick="pergBuscar()" style="background:#3b82f6;border:none;border-radius:8px;padding:8px 18px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;">↻ Buscar</button>
   </div>
+  <!-- Auto-resposta toggle -->
+  <div id="perg-auto-box" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:14px;">
+    <div style="font-size:12px;font-weight:600;color:var(--text);flex:1;min-width:120px;">🤖 Auto-resposta</div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text2);">
+      <span>Matriz RS</span>
+      <label style="position:relative;display:inline-block;width:36px;height:20px;cursor:pointer;">
+        <input type="checkbox" id="perg-auto-matriz" style="opacity:0;width:0;height:0;" onchange="pergAutoToggle()">
+        <span id="perg-auto-matriz-sl" style="position:absolute;inset:0;background:#444;border-radius:20px;transition:.2s;"></span>
+        <span id="perg-auto-matriz-dot" style="position:absolute;left:3px;top:3px;width:14px;height:14px;background:#fff;border-radius:50%;transition:.2s;"></span>
+      </label>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text2);">
+      <span>Filial SP</span>
+      <label style="position:relative;display:inline-block;width:36px;height:20px;cursor:pointer;">
+        <input type="checkbox" id="perg-auto-filial" style="opacity:0;width:0;height:0;" onchange="pergAutoToggle()">
+        <span id="perg-auto-filial-sl" style="position:absolute;inset:0;background:#444;border-radius:20px;transition:.2s;"></span>
+        <span id="perg-auto-filial-dot" style="position:absolute;left:3px;top:3px;width:14px;height:14px;background:#fff;border-radius:50%;transition:.2s;"></span>
+      </label>
+    </div>
+    <div id="perg-auto-status" style="font-size:10px;color:#888;margin-left:4px;">carregando...</div>
+  </div>
+  <!-- Tabs -->
+  <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:16px;">
+    <button id="perg-tab-pend" onclick="pergSetTab('pendentes')" style="background:none;border:none;border-bottom:2px solid #3b82f6;padding:8px 16px;font-size:12px;font-weight:600;color:#3b82f6;cursor:pointer;">Pendentes</button>
+    <button id="perg-tab-hist" onclick="pergSetTab('historico')" style="background:none;border:none;border-bottom:2px solid transparent;padding:8px 16px;font-size:12px;font-weight:600;color:#888;cursor:pointer;">Histórico automático</button>
+  </div>
   <div id="perg-root"></div>
+  <div id="perg-hist-root" style="display:none;"></div>
 `;
 
 async function pergBuscar() {
@@ -1519,11 +1546,122 @@ function pergRender() {
   });
 }
 
+// ── Auto-resposta: toggle e estado ──────────────────────────────────────────
+let _pergAutoConfig = { matriz: false, filial: false };
+
+function _pergAutoAtualizarUI() {
+  const chkM = document.getElementById("perg-auto-matriz");
+  const chkF = document.getElementById("perg-auto-filial");
+  if (!chkM) return;
+  chkM.checked = _pergAutoConfig.matriz;
+  chkF.checked = _pergAutoConfig.filial;
+  // Atualizar visual dos toggles
+  ["matriz", "filial"].forEach(k => {
+    const on = _pergAutoConfig[k];
+    const sl = document.getElementById(`perg-auto-${k}-sl`);
+    const dot = document.getElementById(`perg-auto-${k}-dot`);
+    if (sl) sl.style.background = on ? "#10b981" : "#444";
+    if (dot) dot.style.transform = on ? "translateX(16px)" : "translateX(0)";
+  });
+  const algumAtivo = _pergAutoConfig.matriz || _pergAutoConfig.filial;
+  const statusEl = document.getElementById("perg-auto-status");
+  if (statusEl) {
+    statusEl.textContent = algumAtivo ? "✓ Respondendo automaticamente quando tem treinamento" : "Desligada — respostas manuais";
+    statusEl.style.color = algumAtivo ? "#10b981" : "#888";
+  }
+}
+
+async function _pergAutoCarregar() {
+  try {
+    const r = await fetch("/api/ml-vendas?action=config-auto-resposta");
+    const d = await r.json();
+    if (d.ok) { _pergAutoConfig = d.config; _pergAutoAtualizarUI(); }
+  } catch(e) {}
+}
+
+async function pergAutoToggle() {
+  const chkM = document.getElementById("perg-auto-matriz");
+  const chkF = document.getElementById("perg-auto-filial");
+  if (!chkM) return;
+  _pergAutoConfig = { matriz: chkM.checked, filial: chkF.checked };
+  _pergAutoAtualizarUI();
+  try {
+    await fetch("/api/ml-vendas?action=config-auto-resposta", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(_pergAutoConfig),
+    });
+  } catch(e) {}
+}
+
+// ── Tabs: Pendentes / Histórico ──────────────────────────────────────────────
+let _pergTabAtual = "pendentes";
+
+function pergSetTab(tab) {
+  _pergTabAtual = tab;
+  const pend = document.getElementById("perg-root");
+  const hist = document.getElementById("perg-hist-root");
+  const tabPend = document.getElementById("perg-tab-pend");
+  const tabHist = document.getElementById("perg-tab-hist");
+  if (!pend || !hist) return;
+
+  if (tab === "pendentes") {
+    pend.style.display = "";
+    hist.style.display = "none";
+    tabPend.style.color = "#3b82f6"; tabPend.style.borderBottomColor = "#3b82f6";
+    tabHist.style.color = "#888"; tabHist.style.borderBottomColor = "transparent";
+  } else {
+    pend.style.display = "none";
+    hist.style.display = "";
+    tabPend.style.color = "#888"; tabPend.style.borderBottomColor = "transparent";
+    tabHist.style.color = "#3b82f6"; tabHist.style.borderBottomColor = "#3b82f6";
+    pergRenderHistorico();
+  }
+}
+
+async function pergRenderHistorico() {
+  const el = document.getElementById("perg-hist-root");
+  if (!el) return;
+  el.innerHTML = `<div style="padding:40px 0;text-align:center;font-size:12px;color:#888;">Carregando histórico...</div>`;
+  try {
+    const r = await fetch("/api/ml-vendas?action=historico-auto");
+    const d = await r.json();
+    if (!d.ok || !d.lista?.length) {
+      el.innerHTML = `<div style="padding:60px 0;text-align:center;font-size:13px;color:#666;">Nenhuma resposta automática registrada ainda.</div>`;
+      return;
+    }
+    el.innerHTML = "";
+    d.lista.forEach(item => {
+      const dt = item.data ? new Date(item.data).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day:"2-digit", month:"2-digit", year:"2-digit", hour:"2-digit", minute:"2-digit" }) : "";
+      const contaBadgeBg = (item.conta||"").includes("Filial") ? "#064e3b" : "#1e3a5f";
+      const contaBadgeBorder = (item.conta||"").includes("Filial") ? "#10b981" : "#3b82f6";
+      const contaBadgeColor = (item.conta||"").includes("Filial") ? "#10b981" : "#60a5fa";
+      const card = document.createElement("div");
+      card.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:10px;margin-bottom:10px;padding:12px 14px;`;
+      card.innerHTML = `
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <span style="font-size:10px;font-weight:600;color:${contaBadgeColor};background:${contaBadgeBg};border:1px solid ${contaBadgeBorder};border-radius:99px;padding:1px 7px;">${item.conta||""}</span>
+          <span style="font-size:10px;color:#888;">${dt}</span>
+          <span style="font-size:10px;color:#888;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${(item.produto||"").replace(/"/g,"&quot;")}">${item.produto||""}</span>
+          <span style="font-size:10px;color:#10b981;background:#052e1622;border:1px solid #10b98133;border-radius:99px;padding:1px 7px;">🤖 Auto</span>
+        </div>
+        <div style="font-size:12px;color:${T.text};font-weight:500;margin-bottom:6px;">${item.pergunta||""}</div>
+        <div style="font-size:11px;color:#888;background:${T.bg3};border-radius:6px;padding:8px 10px;">${item.resposta||""}</div>
+      `;
+      el.appendChild(card);
+    });
+  } catch(e) {
+    el.innerHTML = `<div style="padding:40px 0;text-align:center;font-size:12px;color:#e8432d;">Erro ao carregar histórico: ${e.message}</div>`;
+  }
+}
+
 // Expõe funções de perguntas no window para onclick inline (script type="module" não acessa window por padrão)
 window.pergBuscar   = pergBuscar;
 window.pergEnviar   = pergEnviar;
 window.pergExcluir  = pergExcluir;
 window.pergBloquear = pergBloquear;
+window.pergAutoToggle  = pergAutoToggle;
+window.pergSetTab      = pergSetTab;
 // state e render precisam estar no window também (usados em onclicks inline em todo o app)
 // render() é declarada na linha ~6660 mas function declarations são hoisted no módulo
 window.state = state;
@@ -7579,6 +7717,9 @@ function render(){
             // Atualiza cores do tema (o shell foi criado antes do tema estar disponível)
             const _pt = _pergShell.querySelector("#perg-titulo");
             if(_pt) _pt.style.color = T.text;
+            // Carrega config de auto-resposta (uma vez por sessão)
+            if (!window._pergAutoCarregou) { window._pergAutoCarregou = true; _pergAutoCarregar(); }
+            else _pergAutoAtualizarUI();
             // Busca automaticamente na primeira abertura (só quando já tem token)
             if(!_perg.lista && !_perg.carregando){
               if(state.ml_token?.access_token || state.ml_token_filial?.access_token){
