@@ -20,12 +20,8 @@
 <body>
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(function(regs) {
-        regs.forEach(function(reg) { reg.unregister(); });
-      });
-      caches.keys().then(function(keys) {
-        keys.forEach(function(key) { caches.delete(key); });
-      });
+      navigator.serviceWorker.register('/digoo-equipe/sw.js', { scope: '/digoo-equipe/' })
+        .catch(function(e) { console.warn('SW registration failed:', e); });
     }
   </script>
 
