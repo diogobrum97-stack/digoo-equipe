@@ -3544,7 +3544,7 @@ function renderDashboard(panel, color) {
         ${_nomeMesAtual}
       </span>
       <span style="display:flex;align-items:center;gap:5px;font-size:10px;color:${T.text3};">
-        <span style="display:inline-block;width:18px;height:0;border-top:2px dashed ${T.border2||T.border};"></span>
+        <span style="display:inline-block;width:18px;height:0;border-top:2px dashed #8b5cf6;"></span>
         ${_nomeMesAnt}
       </span>`;
     card1.appendChild(legendDiv1);
@@ -3612,7 +3612,7 @@ function renderDashboard(panel, color) {
             {
               label: _nomeMesAntChart,
               data: dataAnterior,
-              borderColor: T.border2 || borderClr,
+              borderColor: "#8b5cf6",
               backgroundColor: "transparent",
               borderWidth: 1.5,
               borderDash: [4, 3],
