@@ -1303,17 +1303,16 @@ async function pergBuscar(silencioso = false) {
   }
 
   _perg.carregando = false;
-  // Em modo silencioso: só re-renderiza se usuário não estiver com foco em textarea/input
-  const userEstaInteragindo = silencioso && _pergShell && _pergShell.contains(document.activeElement)
-    && document.activeElement !== document.body
-    && (document.activeElement.tagName === "TEXTAREA" || document.activeElement.tagName === "INPUT");
-  if (!userEstaInteragindo) {
+  // Em modo silencioso: se o painel de perguntas estiver visível (usuário está lendo),
+  // NÃO re-renderiza — só atualiza a lista em memória.
+  // O usuário verá as novidades ao clicar ↻ Buscar ou trocar de aba e voltar.
+  const painelVisivel = silencioso && window._diogotab === "perguntas";
+  if (!painelVisivel) {
     pergRender();
-  } else {
-    // Restaura texto do botão sem re-renderizar
-    const btn = document.getElementById("perg-btn-buscar");
-    if (btn) btn.textContent = "↻ Buscar";
   }
+  // Restaura botão discretamente
+  const btn = document.getElementById("perg-btn-buscar");
+  if (btn) btn.textContent = "↻ Buscar";
   // Atualiza dashboard se estiver aberto
   if (typeof window._dashPergRefresh === "function") window._dashPergRefresh();
 }
