@@ -817,7 +817,7 @@ onChildAdded(ref(db, "/webhooks/messages"), (snap) => {
   // a pergunta na API após disparar o webhook
   setTimeout(() => {
     if (typeof pergBuscar === "function" && !_perg.carregando) {
-      pergBuscar();
+      pergBuscar(true); // silencioso: não apaga lista enquanto usuário lê
     }
   }, 4000);
 });
@@ -1236,11 +1236,17 @@ _pergShell.innerHTML = `
   <div id="perg-hist-root" style="display:none;"></div>
 `;
 
-async function pergBuscar() {
+async function pergBuscar(silencioso = false) {
   if (_perg.carregando) return;
   _perg.carregando = true;
   _perg.erro = null;
-  pergRender();
+  // Modo silencioso (webhook/auto): não apaga a lista, só atualiza botão
+  if (silencioso) {
+    const btn = document.getElementById("perg-btn-buscar");
+    if (btn) btn.textContent = "↻ Atualizando...";
+  } else {
+    pergRender();
+  }
 
   const contas = [
     { key: "matriz", label: "Matriz RS", token: state.ml_token?.access_token },
@@ -1297,7 +1303,17 @@ async function pergBuscar() {
   }
 
   _perg.carregando = false;
-  pergRender();
+  // Em modo silencioso: só re-renderiza se usuário não estiver com foco em textarea/input
+  const userEstaInteragindo = silencioso && _pergShell && _pergShell.contains(document.activeElement)
+    && document.activeElement !== document.body
+    && (document.activeElement.tagName === "TEXTAREA" || document.activeElement.tagName === "INPUT");
+  if (!userEstaInteragindo) {
+    pergRender();
+  } else {
+    // Restaura texto do botão sem re-renderizar
+    const btn = document.getElementById("perg-btn-buscar");
+    if (btn) btn.textContent = "↻ Buscar";
+  }
   // Atualiza dashboard se estiver aberto
   if (typeof window._dashPergRefresh === "function") window._dashPergRefresh();
 }
