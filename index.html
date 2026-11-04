@@ -811,15 +811,16 @@ let _whOrdersIniciou   = false;
 
 onChildAdded(ref(db, "/webhooks/messages"), (snap) => {
   if (!_whMessagesIniciou) return; // ignora itens antigos no carregamento inicial
-  // Nova pergunta chegou via webhook — atualiza a lista sem esperar o polling
+  // Nova pergunta chegou via webhook — busca só se o painel NÃO estiver aberto.
+  // Se estiver aberto, o usuário clica ↻ Buscar quando quiser.
   console.log("[webhook] Nova mensagem ML:", snap.val()?.resource);
-  // Aguarda 4s antes de buscar: o ML pode demorar alguns segundos para indexar
-  // a pergunta na API após disparar o webhook
-  setTimeout(() => {
-    if (typeof pergBuscar === "function" && !_perg.carregando) {
-      pergBuscar(true); // silencioso: não apaga lista enquanto usuário lê
-    }
-  }, 4000);
+  if (window._diogotab !== "perguntas") {
+    setTimeout(() => {
+      if (typeof pergBuscar === "function" && !_perg.carregando) {
+        pergBuscar(true);
+      }
+    }, 4000);
+  }
 });
 
 onChildAdded(ref(db, "/webhooks/orders"), (snap) => {
@@ -1240,13 +1241,7 @@ async function pergBuscar(silencioso = false) {
   if (_perg.carregando) return;
   _perg.carregando = true;
   _perg.erro = null;
-  // Modo silencioso (webhook/auto): não apaga a lista, só atualiza botão
-  if (silencioso) {
-    const btn = document.getElementById("perg-btn-buscar");
-    if (btn) btn.textContent = "↻ Atualizando...";
-  } else {
-    pergRender();
-  }
+  pergRender();
 
   const contas = [
     { key: "matriz", label: "Matriz RS", token: state.ml_token?.access_token },
@@ -1303,17 +1298,9 @@ async function pergBuscar(silencioso = false) {
   }
 
   _perg.carregando = false;
-  // Em modo silencioso: se o painel de perguntas estiver visível (usuário está lendo),
-  // NÃO re-renderiza — só atualiza a lista em memória.
-  // O usuário verá as novidades ao clicar ↻ Buscar ou trocar de aba e voltar.
-  const painelVisivel = silencioso && window._diogotab === "perguntas";
-  if (!painelVisivel) {
-    pergRender();
-  }
-  // Restaura botão discretamente
+  pergRender();
   const btn = document.getElementById("perg-btn-buscar");
   if (btn) btn.textContent = "↻ Buscar";
-  // Atualiza dashboard se estiver aberto
   if (typeof window._dashPergRefresh === "function") window._dashPergRefresh();
 }
 
