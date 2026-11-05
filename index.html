@@ -1302,6 +1302,28 @@ async function pergBuscar(silencioso = false) {
   const btn = document.getElementById("perg-btn-buscar");
   if (btn) btn.textContent = "↻ Buscar";
   if (typeof window._dashPergRefresh === "function") window._dashPergRefresh();
+
+  // Dispara auto-responder em background se ativo — não bloqueia a UI
+  _pergTentarAutoResponder();
+}
+
+async function _pergTentarAutoResponder() {
+  try {
+    const cfgR = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=config-auto-resposta`);
+    if (!cfgR.ok) return;
+    const cfgD = await cfgR.json();
+    if (!cfgD?.config?.matriz && !cfgD?.config?.filial) return; // desligado
+    const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=auto-responder`, { method: "POST" });
+    if (!r.ok) return;
+    const d = await r.json();
+    if (d.respondidas > 0) {
+      console.log(`[auto-responder] ${d.respondidas} pergunta(s) respondida(s) automaticamente`);
+      // Rebusca para remover as respondidas do painel
+      setTimeout(() => pergBuscar(true), 1500);
+    }
+  } catch(e) {
+    // silencioso — não atrapalha o usuário
+  }
 }
 
 async function pergEnviar(qid, texto) {
@@ -1398,15 +1420,86 @@ async function pergBloquear(qid, btn) {
   }
 }
 
+function _pergCriarCard(p) {
+  const qid = String(p.question_id);
+  const sugestao = p.suggested_answer || "";
+  const requerAtencao = p.requires_attention;
+  const semSugestao = !sugestao && !requerAtencao;
+  const thumb = p.thumbnail || "";
+  const contaLabel = p._conta || "";
+  const contaBadgeBg = contaLabel.includes("Filial") ? "#064e3b" : "#1e3a5f";
+  const contaBadgeBorder = contaLabel.includes("Filial") ? "#10b981" : "#3b82f6";
+  const contaBadgeColor = contaLabel.includes("Filial") ? "#10b981" : "#60a5fa";
+  const statusBadge = requerAtencao
+    ? `<span style="font-size:10px;color:#e8432d;border:1px solid #e8432d;border-radius:99px;padding:2px 8px;white-space:nowrap;">Atenção</span>`
+    : semSugestao
+      ? `<span style="font-size:10px;color:#f59e0b;border:1px solid #f59e0b;border-radius:99px;padding:2px 8px;white-space:nowrap;">Sem sugestão</span>`
+      : `<span style="font-size:10px;color:#10b981;border:1px solid #10b981;border-radius:99px;padding:2px 8px;white-space:nowrap;">IA sugeriu</span>`;
+
+  const card = document.createElement("div");
+  card.dataset.qid = qid;
+  card.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:12px;margin-bottom:12px;overflow:hidden;`;
+  card.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:${T.bg3};border-bottom:1px solid ${T.border};">
+      ${thumb ? `<img src="${thumb}" style="width:36px;height:36px;object-fit:contain;border-radius:6px;flex-shrink:0;background:#fff;" onerror="this.style.display='none'">` : ""}
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:11px;color:${T.text};font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${(p.produto||"").replace(/"/g,"&quot;")}">${p.produto || "Anúncio"}</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:3px;">
+          <span style="font-size:10px;font-weight:600;color:${contaBadgeColor};background:${contaBadgeBg};border:1px solid ${contaBadgeBorder};border-radius:99px;padding:1px 7px;">${contaLabel}</span>
+        </div>
+      </div>
+      ${statusBadge}
+    </div>
+    <div style="padding:12px 16px 10px;">
+      <div style="font-size:13px;color:${T.text};font-weight:500;line-height:1.45;margin-bottom:10px;">${p.pergunta || ""}</div>
+      <textarea id="perg-ta-${qid}" style="width:100%;box-sizing:border-box;background:${T.bg3};border:1px solid ${T.border};border-radius:8px;color:${T.text};font-size:12px;font-family:inherit;padding:10px 12px;resize:vertical;min-height:68px;line-height:1.5;outline:none;" placeholder="Resposta...">${sugestao}</textarea>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;">
+        <div style="display:flex;gap:8px;">
+          <button id="perg-btn-del-${qid}" style="background:transparent;border:1px solid #e8432d;border-radius:6px;padding:5px 0;color:#e8432d;font-size:11px;cursor:pointer;width:80px;" title="Excluir pergunta no Mercado Livre">Excluir</button>
+          <button id="perg-btn-blk-${qid}" style="background:transparent;border:1px solid #f59e0b;border-radius:6px;padding:5px 0;color:#f59e0b;font-size:11px;cursor:pointer;width:80px;" title="Bloquear comprador no Mercado Livre">Bloquear</button>
+          <button id="perg-btn-treino-${qid}" style="background:transparent;border:1px solid #8b5cf6;border-radius:6px;padding:5px 0;color:#8b5cf6;font-size:11px;cursor:pointer;width:90px;" title="Salvar essa resposta como exemplo para o Claude aprender">Treinar IA</button>
+        </div>
+        <button id="perg-btn-${qid}" style="background:#3b82f6;border:none;border-radius:6px;padding:5px 0;color:#fff;font-size:11px;font-weight:600;cursor:pointer;width:80px;">Enviar</button>
+      </div>
+    </div>
+  `;
+
+  card.querySelector(`#perg-btn-del-${qid}`).addEventListener("click", () => pergExcluir(qid, card.querySelector(`#perg-btn-del-${qid}`)));
+  card.querySelector(`#perg-btn-blk-${qid}`).addEventListener("click", () => pergBloquear(qid, card.querySelector(`#perg-btn-blk-${qid}`)));
+  card.querySelector(`#perg-btn-${qid}`).addEventListener("click", () => {
+    const txt = (card.querySelector(`#perg-ta-${qid}`)?.value || "").trim();
+    if (!txt) { alert("Digite uma resposta."); return; }
+    pergEnviar(qid, txt);
+  });
+  card.querySelector(`#perg-btn-treino-${qid}`).addEventListener("click", async () => {
+    const btnTreino = card.querySelector(`#perg-btn-treino-${qid}`);
+    const txt = (card.querySelector(`#perg-ta-${qid}`)?.value || "").trim();
+    if (!txt) { alert("Digite uma resposta antes de treinar."); return; }
+    btnTreino.textContent = "Salvando..."; btnTreino.disabled = true;
+    try {
+      const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=salvar-treinamento`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ item_id: p.item_id, question_id: qid, pergunta: p.pergunta || p.text || "", resposta: txt, produto: p.produto || "" }),
+      });
+      const d = await r.json();
+      if (d.ok) { btnTreino.textContent = "Salvo!"; btnTreino.style.color = "#10b981"; btnTreino.style.borderColor = "#10b981"; }
+      else { btnTreino.textContent = "Erro"; btnTreino.disabled = false; }
+    } catch(e) { btnTreino.textContent = "Erro"; btnTreino.disabled = false; }
+  });
+  return card;
+}
+
 function pergRender() {
-  // Atualiza card do dashboard sempre que o estado muda
   if (window._dashPergRefresh) window._dashPergRefresh();
 
   const el = document.getElementById("perg-root");
   if (!el) return;
 
   if (_perg.carregando) {
-    el.innerHTML = `<div style="padding:60px 0;text-align:center;font-size:13px;color:#666;">Buscando perguntas...</div>`;
+    // Só mostra spinner se não houver nada na tela ainda
+    if (!el.querySelector("[data-qid]")) {
+      el.innerHTML = `<div style="padding:60px 0;text-align:center;font-size:13px;color:#666;">Buscando perguntas...</div>`;
+    }
     return;
   }
 
@@ -1425,122 +1518,38 @@ function pergRender() {
     return;
   }
 
-  el.innerHTML = "";
+  // ── Diff de DOM: mantém cards existentes, só adiciona/remove ──
+  const listaIds = _perg.lista.map(p => String(p.question_id));
+
+  // Remove cards que não estão mais na lista
+  el.querySelectorAll("[data-qid]").forEach(card => {
+    if (!listaIds.includes(card.dataset.qid)) card.remove();
+  });
+
+  // Remove aviso de erro anterior se existir
+  el.querySelectorAll(".perg-aviso-erro").forEach(e => e.remove());
+
+  // Adiciona aviso de erro parcial se necessário
   if (_perg.erro) {
     const av = document.createElement("div");
+    av.className = "perg-aviso-erro";
     av.style.cssText = `margin-bottom:14px;padding:10px 14px;background:#2a1a00;border:1px solid #7a4a00;border-radius:8px;font-size:11px;color:#f59e0b;`;
     av.textContent = _perg.erro;
-    el.appendChild(av);
+    el.prepend(av);
   }
 
-  _perg.lista.forEach(p => {
+  // Adiciona/reordena cards preservando os que já existem
+  _perg.lista.forEach((p, idx) => {
     const qid = String(p.question_id);
-
-    // Preserva o que o usuário já digitou na textarea antes de re-renderizar
-    const taExistente = document.getElementById(`perg-ta-${qid}`);
-    const valorUsuario = taExistente ? taExistente.value : null;
-
-    const card = document.createElement("div");
-    card.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:12px;margin-bottom:12px;overflow:hidden;`;
-
-    const sugestao = p.suggested_answer || "";
-    const requerAtencao = p.requires_attention;
-    const semSugestao = !sugestao && !requerAtencao;
-    const thumb = p.thumbnail || "";
-
-    // Badge da conta: verde para Filial SP, azul para Matriz RS
-    const contaLabel = p._conta || "";
-    const contaBadgeBg = contaLabel.includes("Filial") ? "#064e3b" : "#1e3a5f";
-    const contaBadgeBorder = contaLabel.includes("Filial") ? "#10b981" : "#3b82f6";
-    const contaBadgeColor = contaLabel.includes("Filial") ? "#10b981" : "#60a5fa";
-
-    // Badge status sugestão
-    const statusBadge = requerAtencao
-      ? `<span style="font-size:10px;color:#e8432d;border:1px solid #e8432d;border-radius:99px;padding:2px 8px;white-space:nowrap;">Atenção</span>`
-      : semSugestao
-        ? `<span style="font-size:10px;color:#f59e0b;border:1px solid #f59e0b;border-radius:99px;padding:2px 8px;white-space:nowrap;">Sem sugestão</span>`
-        : `<span style="font-size:10px;color:#10b981;border:1px solid #10b981;border-radius:99px;padding:2px 8px;white-space:nowrap;">IA sugeriu</span>`;
-
-    card.innerHTML = `
-      <!-- Cabeçalho do anúncio -->
-      <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:${T.bg3};border-bottom:1px solid ${T.border};">
-        ${thumb ? `<img src="${thumb}" style="width:36px;height:36px;object-fit:contain;border-radius:6px;flex-shrink:0;background:#fff;" onerror="this.style.display='none'">` : ""}
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:11px;color:${T.text};font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${(p.produto||"").replace(/"/g,"&quot;")}">${p.produto || "Anúncio"}</div>
-          <div style="display:flex;align-items:center;gap:6px;margin-top:3px;">
-            <span style="font-size:10px;font-weight:600;color:${contaBadgeColor};background:${contaBadgeBg};border:1px solid ${contaBadgeBorder};border-radius:99px;padding:1px 7px;">${contaLabel}</span>
-          </div>
-        </div>
-        ${statusBadge}
-      </div>
-      <!-- Pergunta -->
-      <div style="padding:12px 16px 10px;">
-        <div style="font-size:13px;color:${T.text};font-weight:500;line-height:1.45;margin-bottom:10px;">${p.pergunta || ""}</div>
-        <textarea id="perg-ta-${qid}" style="width:100%;box-sizing:border-box;background:${T.bg3};border:1px solid ${T.border};border-radius:8px;color:${T.text};font-size:12px;font-family:inherit;padding:10px 12px;resize:vertical;min-height:68px;line-height:1.5;outline:none;" placeholder="Resposta...">${sugestao}</textarea>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;">
-          <div style="display:flex;gap:8px;">
-            <button id="perg-btn-del-${qid}" style="background:transparent;border:1px solid #e8432d;border-radius:6px;padding:5px 0;color:#e8432d;font-size:11px;cursor:pointer;width:80px;" title="Excluir pergunta no Mercado Livre">Excluir</button>
-            <button id="perg-btn-blk-${qid}" style="background:transparent;border:1px solid #f59e0b;border-radius:6px;padding:5px 0;color:#f59e0b;font-size:11px;cursor:pointer;width:80px;" title="Bloquear comprador no Mercado Livre">Bloquear</button>
-            <button id="perg-btn-treino-${qid}" style="background:transparent;border:1px solid #8b5cf6;border-radius:6px;padding:5px 0;color:#8b5cf6;font-size:11px;cursor:pointer;width:90px;" title="Salvar essa resposta como exemplo para o Claude aprender">Treinar IA</button>
-          </div>
-          <button id="perg-btn-${qid}" style="background:#3b82f6;border:none;border-radius:6px;padding:5px 0;color:#fff;font-size:11px;font-weight:600;cursor:pointer;width:80px;">Enviar</button>
-        </div>
-      </div>
-    `;
-    el.appendChild(card);
-
-    // Restaura o que o usuário estava digitando (antes do re-render apagar)
-    if (valorUsuario !== null && valorUsuario !== sugestao) {
-      const taNova = card.querySelector(`#perg-ta-${CSS.escape(qid)}`);
-      if (taNova) taNova.value = valorUsuario;
+    let card = el.querySelector(`[data-qid="${qid}"]`);
+    if (!card) {
+      // Card novo: cria e insere na posição correta
+      card = _pergCriarCard(p);
+      const refNode = el.querySelectorAll("[data-qid]")[idx];
+      if (refNode) el.insertBefore(card, refNode);
+      else el.appendChild(card);
     }
-
-    // Bind via addEventListener — evita problemas com aspas/caracteres especiais no qid
-    const btnDel = card.querySelector(`#perg-btn-del-${CSS.escape(qid)}`);
-    if (btnDel) btnDel.addEventListener("click", () => pergExcluir(qid, btnDel));
-    const btnBlk = card.querySelector(`#perg-btn-blk-${CSS.escape(qid)}`);
-    if (btnBlk) btnBlk.addEventListener("click", () => pergBloquear(qid, btnBlk));
-    const btnEnv = card.querySelector(`#perg-btn-${CSS.escape(qid)}`);
-    if (btnEnv) btnEnv.addEventListener("click", () => {
-      const ta = card.querySelector(`#perg-ta-${CSS.escape(qid)}`);
-      const txt = (ta?.value || "").trim();
-      if (!txt) { alert("Digite uma resposta."); return; }
-      pergEnviar(qid, txt);
-    });
-
-    const btnTreino = card.querySelector(`#perg-btn-treino-${CSS.escape(qid)}`);
-    if (btnTreino) btnTreino.addEventListener("click", async () => {
-      const ta = card.querySelector(`#perg-ta-${CSS.escape(qid)}`);
-      const txt = (ta?.value || "").trim();
-      if (!txt) { alert("Digite uma resposta antes de treinar."); return; }
-      btnTreino.textContent = "Salvando...";
-      btnTreino.disabled = true;
-      try {
-        const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=salvar-treinamento`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            item_id: p.item_id,
-            question_id: qid,
-            pergunta: p.pergunta || p.text || "",
-            resposta: txt,
-            produto: p.produto || "",
-          }),
-        });
-        const d = await r.json();
-        if (d.ok) {
-          btnTreino.textContent = "Salvo!";
-          btnTreino.style.color = "#10b981";
-          btnTreino.style.borderColor = "#10b981";
-        } else {
-          btnTreino.textContent = "Erro";
-          btnTreino.disabled = false;
-        }
-      } catch(e) {
-        btnTreino.textContent = "Erro";
-        btnTreino.disabled = false;
-      }
-    });
+    // Card existente: não toca — preserva textarea e foco
   });
 }
 
@@ -1564,7 +1573,7 @@ function _pergAutoAtualizarUI() {
   const algumAtivo = _pergAutoConfig.matriz || _pergAutoConfig.filial;
   const statusEl = document.getElementById("perg-auto-status");
   if (statusEl) {
-    statusEl.textContent = algumAtivo ? "✓ Respondendo automaticamente quando tem treinamento" : "Desligada — respostas manuais";
+    statusEl.textContent = algumAtivo ? "✓ Respondendo automaticamente com sugestão da IA" : "Desligada — respostas manuais";
     statusEl.style.color = algumAtivo ? "#10b981" : "#888";
   }
 }
