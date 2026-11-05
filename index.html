@@ -1640,39 +1640,96 @@ function pergSetTab(tab) {
   }
 }
 
+let _pergHistDiaOffset = 0; // 0 = hoje, 1 = ontem, etc.
+
+function _pergHistDiaLabel(offset) {
+  if (offset === 0) return "Hoje";
+  if (offset === 1) return "Ontem";
+  const d = new Date();
+  d.setDate(d.getDate() - offset);
+  return d.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
+function _pergHistDiaKey(offset) {
+  const d = new Date();
+  d.setDate(d.getDate() - offset);
+  return d.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
 async function pergRenderHistorico() {
   const el = document.getElementById("perg-hist-root");
   if (!el) return;
-  el.innerHTML = `<div style="padding:40px 0;text-align:center;font-size:12px;color:#888;">Carregando histórico...</div>`;
+  el.innerHTML = '<div style="padding:40px 0;text-align:center;font-size:12px;color:#888;">Carregando histórico...</div>';
   try {
     const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=historico-auto`);
     const d = await r.json();
-    if (!d.ok || !d.lista?.length) {
-      el.innerHTML = `<div style="padding:60px 0;text-align:center;font-size:13px;color:#666;">Nenhuma resposta automática registrada ainda.</div>`;
-      return;
-    }
+
     el.innerHTML = "";
-    d.lista.forEach(item => {
-      const dt = item.data ? new Date(item.data).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day:"2-digit", month:"2-digit", year:"2-digit", hour:"2-digit", minute:"2-digit" }) : "";
-      const contaBadgeBg = (item.conta||"").includes("Filial") ? "#064e3b" : "#1e3a5f";
-      const contaBadgeBorder = (item.conta||"").includes("Filial") ? "#10b981" : "#3b82f6";
-      const contaBadgeColor = (item.conta||"").includes("Filial") ? "#10b981" : "#60a5fa";
-      const card = document.createElement("div");
-      card.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:10px;margin-bottom:10px;padding:12px 14px;`;
-      card.innerHTML = `
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-          <span style="font-size:10px;font-weight:600;color:${contaBadgeColor};background:${contaBadgeBg};border:1px solid ${contaBadgeBorder};border-radius:99px;padding:1px 7px;">${item.conta||""}</span>
-          <span style="font-size:10px;color:#888;">${dt}</span>
-          <span style="font-size:10px;color:#888;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${(item.produto||"").replace(/"/g,"&quot;")}">${item.produto||""}</span>
-          <span style="font-size:10px;color:#10b981;background:#052e1622;border:1px solid #10b98133;border-radius:99px;padding:1px 7px;">Auto</span>
-        </div>
-        <div style="font-size:12px;color:${T.text};font-weight:500;margin-bottom:6px;">${item.pergunta||""}</div>
-        <div style="font-size:11px;color:#888;background:${T.bg3};border-radius:6px;padding:8px 10px;">${item.resposta||""}</div>
-      `;
-      el.appendChild(card);
+
+    // Navegação de dias
+    const nav = document.createElement("div");
+    nav.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;";
+    nav.innerHTML =
+      '<button id="perg-hist-prev" style="background:' + T.bg3 + ';border:1px solid ' + T.border + ';border-radius:8px;padding:6px 14px;color:' + T.text + ';font-size:12px;cursor:pointer;">← Dia anterior</button>' +
+      '<span id="perg-hist-dia-label" style="font-size:13px;font-weight:600;color:' + T.text + ';">' + _pergHistDiaLabel(_pergHistDiaOffset) + '</span>' +
+      '<button id="perg-hist-next" style="background:' + T.bg3 + ';border:1px solid ' + T.border + ';border-radius:8px;padding:6px 14px;color:' + T.text + ';font-size:12px;cursor:pointer;">Dia seguinte →</button>';
+    el.appendChild(nav);
+
+    const listEl = document.createElement("div");
+    listEl.id = "perg-hist-list";
+    el.appendChild(listEl);
+
+    function renderDia() {
+      const diaKey = _pergHistDiaKey(_pergHistDiaOffset);
+      document.getElementById("perg-hist-dia-label").textContent = _pergHistDiaLabel(_pergHistDiaOffset);
+      const nextBtn = document.getElementById("perg-hist-next");
+      if (nextBtn) nextBtn.style.opacity = _pergHistDiaOffset === 0 ? "0.3" : "1";
+      if (nextBtn) nextBtn.style.pointerEvents = _pergHistDiaOffset === 0 ? "none" : "";
+
+      const lista = d.ok && d.lista ? d.lista.filter(item => {
+        if (!item.data) return false;
+        const itemDia = new Date(item.data).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "numeric" });
+        return itemDia === diaKey;
+      }) : [];
+
+      listEl.innerHTML = "";
+      if (!lista.length) {
+        listEl.innerHTML = '<div style="padding:40px 0;text-align:center;font-size:13px;color:#666;">Nenhuma resposta automática neste dia.</div>';
+        return;
+      }
+
+      lista.forEach(item => {
+        const hora = item.data ? new Date(item.data).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" }) : "";
+        const contaBadgeBg = (item.conta||"").includes("Filial") ? "#064e3b" : "#1e3a5f";
+        const contaBadgeBorder = (item.conta||"").includes("Filial") ? "#10b981" : "#3b82f6";
+        const contaBadgeColor = (item.conta||"").includes("Filial") ? "#10b981" : "#60a5fa";
+        const card = document.createElement("div");
+        card.style.cssText = "background:" + T.card + ";border:1px solid " + T.border + ";border-radius:10px;margin-bottom:10px;padding:12px 14px;";
+        card.innerHTML =
+          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">' +
+            '<span style="font-size:10px;font-weight:600;color:' + contaBadgeColor + ';background:' + contaBadgeBg + ';border:1px solid ' + contaBadgeBorder + ';border-radius:99px;padding:1px 7px;">' + (item.conta||"") + '</span>' +
+            '<span style="font-size:10px;color:#888;">' + hora + '</span>' +
+            '<span style="font-size:10px;color:#888;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (item.produto||"") + '</span>' +
+            '<span style="font-size:10px;color:#10b981;background:#052e1622;border:1px solid #10b98133;border-radius:99px;padding:1px 7px;">Auto</span>' +
+          '</div>' +
+          '<div style="font-size:12px;color:' + T.text + ';font-weight:500;margin-bottom:6px;">' + (item.pergunta||"") + '</div>' +
+          '<div style="font-size:11px;color:#888;background:' + T.bg3 + ';border-radius:6px;padding:8px 10px;">' + (item.resposta||"") + '</div>';
+        listEl.appendChild(card);
+      });
+    }
+
+    renderDia();
+
+    document.getElementById("perg-hist-prev").addEventListener("click", () => {
+      _pergHistDiaOffset++;
+      renderDia();
     });
+    document.getElementById("perg-hist-next").addEventListener("click", () => {
+      if (_pergHistDiaOffset > 0) { _pergHistDiaOffset--; renderDia(); }
+    });
+
   } catch(e) {
-    el.innerHTML = `<div style="padding:40px 0;text-align:center;font-size:12px;color:#e8432d;">Erro ao carregar histórico: ${e.message}</div>`;
+    el.innerHTML = '<div style="padding:40px 0;text-align:center;font-size:12px;color:#e8432d;">Erro ao carregar histórico: ' + e.message + '</div>';
   }
 }
 
