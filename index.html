@@ -834,6 +834,19 @@ onChildAdded(ref(db, "/webhooks/orders"), (snap) => {
 // Marca como inicializado após o primeiro frame (dá tempo de carregar itens existentes)
 setTimeout(() => { _whMessagesIniciou = true; _whOrdersIniciou = true; }, 3000);
 
+// Listener: quando o cron responde uma pergunta automaticamente, rebusca para remover do painel
+let _autoRespostaIniciou = false;
+onChildAdded(ref(db, "/historico_auto_resposta"), () => {
+  if (!_autoRespostaIniciou) return; // ignora itens existentes no boot
+  // Pergunta foi respondida pelo cron — atualiza o painel
+  setTimeout(() => {
+    if (typeof pergBuscar === "function" && !_perg.carregando) {
+      pergBuscar(true);
+    }
+  }, 1500);
+});
+setTimeout(() => { _autoRespostaIniciou = true; }, 5000);
+
 function addTask(member,text,prio,sender){
   setSyncing(true);push(ref(db,"/tasks"),{member,text,prio,done:false,delegatedBy:sender||null,createdAt:Date.now()});
   if(member!=="Diogo"){const from=sender||"Diogo";set(ref(db,`/flashes/${member}`),{ts:Date.now(),msg:`Nova tarefa de ${from}!`});startTabFlash(`Tarefa delegada para ${member}!`,themeColor(member));}
