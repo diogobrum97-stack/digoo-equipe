@@ -811,15 +811,16 @@ let _whOrdersIniciou   = false;
 
 onChildAdded(ref(db, "/webhooks/messages"), (snap) => {
   if (!_whMessagesIniciou) return; // ignora itens antigos no carregamento inicial
-  // Nova pergunta chegou via webhook — busca só se o painel NÃO estiver aberto.
-  // Se estiver aberto, o usuário clica ↻ Buscar quando quiser.
   console.log("[webhook] Nova mensagem ML:", snap.val()?.resource);
+  // Dispara auto-responder sempre que chega pergunta nova — independente da aba aberta
+  setTimeout(() => _pergTentarAutoResponder(), 5000);
+  // Atualiza painel de perguntas só se o usuário não estiver nele (pra não interromper)
   if (window._diogotab !== "perguntas") {
     setTimeout(() => {
       if (typeof pergBuscar === "function" && !_perg.carregando) {
         pergBuscar(true);
       }
-    }, 4000);
+    }, 7000);
   }
 });
 
