@@ -1298,11 +1298,7 @@ async function pergBuscar(silencioso = false) {
       _perg.erro = "Erro: " + erros.map(e => e.erro).join(" · ");
     } else {
       const novaLista = bons.flatMap(r => r.lista);
-      // Só substitui se a nova lista tiver itens, OU se a lista atual estiver vazia/nula.
-      // Nunca apaga perguntas existentes por uma busca que retornou vazio (timing do ML).
-      if (novaLista.length > 0 || !_perg.lista || _perg.lista.length === 0) {
-        _perg.lista = novaLista;
-      }
+      _perg.lista = novaLista;
       if (erros.length) _perg.erro = "Aviso: falha em algumas contas.";
       // Para o auto-busca interval — busca bem-sucedida, não precisa mais disparar
       if (window._pergStopAutoBusca) window._pergStopAutoBusca();
