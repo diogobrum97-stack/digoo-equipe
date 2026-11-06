@@ -2577,7 +2577,10 @@ function renderPickingTab(panel, quemSou, modoOperar) {
         </div>
         <div style="font-size:13px;font-weight:600;color:${T.text};line-height:1.3;">${tituloAnuncio}</div>
         <div style="margin-top:2px;display:flex;flex-direction:column;gap:1px;">
-          <div style="font-family:Inter,sans-serif;font-size:11px;color:#777;">Venda #${pedido.order_id}${pedido.shipment_id ? ` · Envio #${pedido.shipment_id}` : ""}</div>
+          <div style="font-family:Inter,sans-serif;font-size:11px;color:#777;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <span data-copy="${pedido.order_id}" style="cursor:pointer;border-bottom:1px dashed #444;" title="Copiar número da venda">Venda #${pedido.order_id}</span>
+            ${pedido.shipment_id ? `<span style="color:#444;">·</span><span data-copy="${pedido.shipment_id}" style="cursor:pointer;border-bottom:1px dashed #444;" title="Copiar número do envio">Envio #${pedido.shipment_id}</span>` : ""}
+          </div>
           <div style="font-size:11px;color:#777;">${pedido.comprador || ""}</div>
         </div>
       </div>
@@ -2594,6 +2597,22 @@ function renderPickingTab(panel, quemSou, modoOperar) {
     cabecalho.appendChild(blocoAnuncio);
     cabecalho.appendChild(progressWrap);
     colDetalhe.appendChild(cabecalho);
+
+    // Copiar número da venda / envio ao clicar
+    blocoAnuncio.querySelectorAll("[data-copy]").forEach(el => {
+      el.onclick = () => {
+        const val = el.dataset.copy;
+        navigator.clipboard.writeText(val).then(() => {
+          const orig = el.textContent;
+          el.textContent = "Copiado!";
+          el.style.color = "#10b981";
+          setTimeout(() => { el.textContent = orig; el.style.color = ""; }, 1500);
+        }).catch(() => {
+          const sel = window.getSelection(), r = document.createRange();
+          r.selectNodeContents(el); sel.removeAllRanges(); sel.addRange(r);
+        });
+      };
+    });
 
     // Aviso de pack: venda com múltiplos pacotes (mesma etiqueta/envio)
     if (pedido.pack_id && pedido.order_ids && pedido.order_ids.length > 1) {
