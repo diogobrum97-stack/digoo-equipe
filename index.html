@@ -2358,6 +2358,8 @@ async function finalizarPedidoPicking(refreshFn) {
       titulo: pedido.itens?.[0]?.titulo || pedido.itens_bipagem?.[0]?.nome || "",
       por: pedido.operador,
       ts: Date.now(),
+      comprador: pedido.comprador || "",
+      conta: pedido.conta || "",
       impressao_automatica: impressaoAutomatica,
       itens_final: (pedido.itens_bipagem || []).map(l => ({
         sku: l.sku, nome: l.nome, ean: l.ean || null,
@@ -2397,6 +2399,8 @@ async function marcarPedidoFeitoExterno(pedido, quemSou, refreshFn) {
       titulo: pedido.itens[0]?.titulo || "",
       por: quemSou,
       ts: Date.now(),
+      comprador: pedido.comprador || "",
+      conta: pedido.conta || "",
       viaExterno: true,
     });
     if (pickingState.fila) {
@@ -2714,113 +2718,193 @@ function renderPickingTab(panel, quemSou, modoOperar) {
 // útil pra investigar reclamação de quantidade errada.
 function renderPickingHistorico(panel) {
   panel.innerHTML = "";
-  if (window._pickingHistFiltroData === undefined) window._pickingHistFiltroData = "";
+  if (window._pickHistDiaOffset === undefined) window._pickHistDiaOffset = 0;
+  if (window._pickHistContaFiltro === undefined) window._pickHistContaFiltro = "todos";
+  if (window._pickHistDataManual === undefined) window._pickHistDataManual = null;
   if (window._pickingHistAberto === undefined) window._pickingHistAberto = null;
+  if (window._pickHistCalAberto === undefined) window._pickHistCalAberto = false;
+  if (window._pickHistCalMes === undefined) {
+    const h = new Date();
+    window._pickHistCalMes = { y: h.getFullYear(), m: h.getMonth() };
+  }
+
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  function dataDeOffset(off) { const d = new Date(hoje); d.setDate(d.getDate() - off); return d; }
+  function mesmoDia(ts, d) { const x = new Date(ts); return x.getFullYear()===d.getFullYear()&&x.getMonth()===d.getMonth()&&x.getDate()===d.getDate(); }
+  function labelDia(off) {
+    if (off === 0) return "Hoje";
+    if (off === 1) return "Ontem";
+    return dataDeOffset(off).toLocaleDateString("pt-BR", { day:"2-digit", month:"2-digit" });
+  }
+
+  const diaRef = window._pickHistDataManual ? window._pickHistDataManual : dataDeOffset(window._pickHistDiaOffset);
+
+  const concluidos = state.picking_concluidos || {};
+  let todasEntradas = Object.entries(concluidos)
+    .filter(([, c]) => c && c.ts && mesmoDia(c.ts, diaRef))
+    .sort((a, b) => (b[1].ts || 0) - (a[1].ts || 0));
+
+  if (window._pickHistContaFiltro !== "todos") {
+    todasEntradas = todasEntradas.filter(([, c]) => {
+      const conta = (c.conta || "").toLowerCase();
+      return conta.includes(window._pickHistContaFiltro);
+    });
+  }
 
   const wrap = document.createElement("div");
   wrap.style.cssText = "max-width:900px;";
 
-  const concluidos = state.picking_concluidos || {};
-  const todasEntradas = Object.entries(concluidos)
-    .filter(([, c]) => c && c.ts)
-    .sort((a, b) => (b[1].ts || 0) - (a[1].ts || 0));
+  // ---- HEADER: título + total ----
+  const hdrTop = document.createElement("div");
+  hdrTop.style.cssText = "display:flex;align-items:baseline;gap:10px;margin-bottom:12px;";
+  hdrTop.innerHTML = `<div style="font-size:14px;font-weight:700;color:${T.text};">Histórico de bipagem</div><div style="font-size:11px;color:#666;">${todasEntradas.length} pedido${todasEntradas.length===1?"":"s"}</div>`;
+  wrap.appendChild(hdrTop);
 
-  // Filtro por dia (formato yyyy-mm-dd, igual input type=date)
-  const filtro = window._pickingHistFiltroData;
-  const entradasFiltradas = filtro
-    ? todasEntradas.filter(([, c]) => {
-        const d = new Date(c.ts);
-        const dStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-        return dStr === filtro;
-      })
-    : todasEntradas;
+  // ---- NAVEGAÇÃO DE DIAS ----
+  const navWrap = document.createElement("div");
+  navWrap.style.cssText = "display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;";
 
-  const header = document.createElement("div");
-  header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;";
-  header.innerHTML = `
-    <div>
-      <div style="font-size:14px;font-weight:700;color:#fff;">Histórico de bipagem</div>
-      <div style="font-size:11px;color:#666;margin-top:2px;">${entradasFiltradas.length} pedido${entradasFiltradas.length===1?"":"s"}${filtro ? " nesse dia" : " no total"}</div>
-    </div>
-    <div style="display:flex;gap:8px;align-items:center;">
-      <input id="picking-hist-data" type="date" value="${filtro}" style="background:${T.bg3};border:1px solid ${T.border};border-radius:6px;padding:7px 10px;color:${T.text2};font-size:11px;font-family:Inter,sans-serif;outline:none;">
-      ${filtro ? `<button id="picking-hist-limpar" style="background:none;border:1px solid ${T.border};border-radius:6px;padding:7px 12px;color:#888;font-size:11px;cursor:pointer;">Limpar filtro</button>` : ""}
-    </div>
-  `;
-  wrap.appendChild(header);
+  const navDias = document.createElement("div");
+  navDias.style.cssText = "display:flex;align-items:center;gap:4px;background:"+T.bg3+";border-radius:8px;padding:3px;";
+  const off = window._pickHistDiaOffset;
+  const isHoje = !window._pickHistDataManual && off === 0;
+  const labelNav = window._pickHistDataManual
+    ? window._pickHistDataManual.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit",year:"2-digit"})
+    : labelDia(off);
+  navDias.innerHTML =
+    `<button id="phd-prev" style="background:none;border:none;color:${T.text2};cursor:pointer;padding:5px 10px;border-radius:6px;font-size:15px;line-height:1;">‹</button>` +
+    `<div style="font-size:13px;font-weight:600;color:${isHoje?"#3b82f6":T.text};min-width:80px;text-align:center;">${labelNav}</div>` +
+    `<button id="phd-next" style="background:none;border:none;color:${T.text2};cursor:pointer;padding:5px 10px;border-radius:6px;font-size:15px;line-height:1;opacity:${isHoje?"0.3":"1"};" ${isHoje?"disabled":""}>›</button>`;
+  navWrap.appendChild(navDias);
 
+  // ---- CALENDÁRIO ----
+  const calWrap = document.createElement("div");
+  calWrap.style.cssText = "position:relative;";
+  const calBtn = document.createElement("button");
+  calBtn.id = "phd-cal-btn";
+  const calBtnActive = !!window._pickHistDataManual;
+  calBtn.style.cssText = "padding:5px 12px;border-radius:20px;border:1.5px solid "+(calBtnActive?"#3b82f6":T.border)+";background:"+(calBtnActive?"rgba(59,130,246,0.1)":"none")+";color:"+(calBtnActive?"#3b82f6":T.text2)+";font-size:12px;font-weight:500;cursor:pointer;font-family:Inter,sans-serif;";
+  calBtn.textContent = window._pickHistDataManual
+    ? window._pickHistDataManual.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric"})
+    : "Data";
+  calWrap.appendChild(calBtn);
+
+  // dropdown do calendário
+  const calDrop = document.createElement("div");
+  calDrop.id = "phd-cal-drop";
+  calDrop.style.cssText = "position:absolute;top:calc(100% + 6px);left:0;background:"+T.card+";border:1px solid "+T.border+";border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.3);padding:14px;z-index:200;width:250px;" + (window._pickHistCalAberto ? "" : "display:none;");
+  calWrap.appendChild(calDrop);
+  navWrap.appendChild(calWrap);
+
+  wrap.appendChild(navWrap);
+
+  // ---- FILTROS CONTA ----
+  const filtrosWrap = document.createElement("div");
+  filtrosWrap.style.cssText = "display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;";
+  ["todos","matriz","filial"].forEach(f => {
+    const btn = document.createElement("button");
+    const ativo = window._pickHistContaFiltro === f;
+    const cor = f==="todos" ? "#3b82f6" : f==="matriz" ? "#7c3aed" : "#0891b2";
+    const bgAtivo = f==="todos" ? "#3b82f6" : f==="matriz" ? "rgba(124,58,237,0.15)" : "rgba(8,145,178,0.15)";
+    const corAtivo = f==="todos" ? "#fff" : (f==="matriz" ? "#a78bfa" : "#22d3ee");
+    btn.style.cssText = "padding:4px 12px;border-radius:20px;border:1.5px solid "+(ativo?cor:T.border)+";background:"+(ativo?bgAtivo:"none")+";color:"+(ativo?corAtivo:T.text2)+";font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;letter-spacing:.03em;";
+    btn.textContent = f==="todos" ? "Todas" : f==="matriz" ? "Matriz" : "Filial";
+    btn.onclick = () => { window._pickHistContaFiltro = f; renderPickingHistorico(panel); };
+    filtrosWrap.appendChild(btn);
+  });
+  wrap.appendChild(filtrosWrap);
+
+  // ---- LISTA DE CARDS ----
   const lista = document.createElement("div");
-  if (entradasFiltradas.length === 0) {
-    lista.innerHTML = `<div style="font-size:11px;color:#555;text-align:center;padding:30px 0;">Nenhum pedido bipado ${filtro ? "nesse dia" : "ainda"}.</div>`;
+  if (todasEntradas.length === 0) {
+    lista.innerHTML = `<div style="font-size:12px;color:#555;text-align:center;padding:36px 0;">Nenhum pedido bipado nesse dia.</div>`;
   } else {
-    entradasFiltradas.forEach(([orderId, c]) => {
+    todasEntradas.forEach(([orderId, c]) => {
       const aberto = window._pickingHistAberto === orderId;
-      const dataHora = new Date(c.ts).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+      const hora = new Date(c.ts).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+      const contaLabel = (c.conta||"").toLowerCase().includes("filial") ? "Filial" : (c.conta||"").toLowerCase().includes("matriz") ? "Matriz" : "";
+      const contaCor = contaLabel==="Filial" ? "#22d3ee" : contaLabel==="Matriz" ? "#a78bfa" : "#888";
+      const contaBg = contaLabel==="Filial" ? "rgba(8,145,178,0.15)" : contaLabel==="Matriz" ? "rgba(124,58,237,0.15)" : T.bg3;
 
       const card = document.createElement("div");
-      card.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:14px 16px;margin-bottom:8px;cursor:pointer;`;
-      card.innerHTML = `
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:12px;font-weight:600;color:#fff;">#${orderId} — ${c.titulo || "Pedido"}</div>
-            <div style="font-size:10px;color:#666;margin-top:3px;">Etiqueta gerada às ${dataHora} · por ${c.por}${c.viaExterno ? " (registrado manualmente)" : ""}</div>
-          </div>
-          <div style="font-size:10px;color:#888;flex-shrink:0;">${aberto ? "▲" : "▼"}</div>
-        </div>
-      `;
-      card.onclick = () => { window._pickingHistAberto = aberto ? null : orderId; renderPickingHistorico(panel); };
+      card.style.cssText = "background:"+T.card+";border:1px solid "+T.border+";border-radius:10px;padding:12px 14px;margin-bottom:8px;";
+
+      // linha topo: número + copiar + conta badge
+      const topoDiv = document.createElement("div");
+      topoDiv.style.cssText = "display:flex;align-items:center;gap:8px;margin-bottom:4px;";
+      topoDiv.innerHTML =
+        `<span style="font-size:12px;font-weight:600;color:${T.text};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;">#${orderId}</span>` +
+        `<button data-copyid="${orderId}" style="background:none;border:1px solid ${T.border};border-radius:5px;color:#888;cursor:pointer;padding:2px 7px;font-size:10px;font-family:Inter,sans-serif;white-space:nowrap;flex-shrink:0;">Copiar</button>` +
+        (contaLabel ? `<span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;background:${contaBg};color:${contaCor};white-space:nowrap;flex-shrink:0;">${contaLabel}</span>` : "");
+      card.appendChild(topoDiv);
+
+      // título do pedido
+      if (c.titulo) {
+        const titDiv = document.createElement("div");
+        titDiv.style.cssText = "font-size:11px;color:"+T.text2+";margin-bottom:5px;line-height:1.4;";
+        titDiv.textContent = c.titulo;
+        card.appendChild(titDiv);
+      }
+
+      // linha inferior: comprador + hora + operador + seta
+      const rodapeDiv = document.createElement("div");
+      rodapeDiv.style.cssText = "display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;";
+      const infoEsq = document.createElement("div");
+      infoEsq.style.cssText = "display:flex;align-items:center;gap:10px;flex-wrap:wrap;";
+      if (c.comprador) {
+        infoEsq.innerHTML += `<span style="font-size:11px;color:${T.text};font-weight:500;">👤 ${c.comprador}</span>`;
+      }
+      infoEsq.innerHTML += `<span style="font-size:10px;color:#666;">${hora} · por ${c.por}${c.viaExterno?" (manual)":""}</span>`;
+      const setaBtn = document.createElement("button");
+      setaBtn.style.cssText = "background:none;border:none;color:#666;cursor:pointer;font-size:11px;padding:0;flex-shrink:0;";
+      setaBtn.textContent = aberto ? "▲" : "▼";
+      setaBtn.onclick = () => { window._pickingHistAberto = aberto ? null : orderId; renderPickingHistorico(panel); };
+      rodapeDiv.appendChild(infoEsq);
+      rodapeDiv.appendChild(setaBtn);
+      card.appendChild(rodapeDiv);
+
+      // click no card abre/fecha (exceto no botão copiar)
+      card.style.cursor = "pointer";
+      card.onclick = (e) => {
+        if (e.target.dataset.copyid) return;
+        window._pickingHistAberto = aberto ? null : orderId;
+        renderPickingHistorico(panel);
+      };
       lista.appendChild(card);
 
       if (aberto) {
         const detalhe = document.createElement("div");
         detalhe.style.cssText = "background:"+T.bg+";border:1px solid "+T.border+";border-radius:8px;padding:14px 16px;margin:-4px 0 12px;";
-
-        // Conferência final: esperado x bipado
         if (c.itens_final && c.itens_final.length > 0) {
-          detalhe.innerHTML += `<div style="font-size:10px;color:#666;margin-bottom:8px;">CONFERÊNCIA FINAL</div>`;
+          detalhe.innerHTML += `<div style="font-size:10px;color:#666;margin-bottom:8px;letter-spacing:.06em;">CONFERÊNCIA FINAL</div>`;
           c.itens_final.forEach(it => {
             const bateu = it.quantidadeBipada >= it.quantidadeNecessaria;
-            detalhe.innerHTML += `
-              <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #1e1e1e;">
-                <div style="font-size:11px;color:${T.text2};">${it.nome || it.sku}</div>
-                <div style="font-size:11px;font-weight:700;color:${bateu ? "#10b981" : "#e8432d"};">${it.quantidadeBipada}/${it.quantidadeNecessaria}</div>
-              </div>
-            `;
+            detalhe.innerHTML += `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #1e1e1e;"><div style="font-size:11px;color:${T.text2};">${it.nome||it.sku}</div><div style="font-size:11px;font-weight:700;color:${bateu?"#10b981":"#e8432d"};">${it.quantidadeBipada}/${it.quantidadeNecessaria}</div></div>`;
           });
         }
-
-        // Timeline de bipagem — carregado sob demanda
         const timelineWrap = document.createElement("div");
         timelineWrap.style.cssText = "margin-top:14px;";
-        timelineWrap.innerHTML = `<div style="font-size:10px;color:#666;margin-bottom:8px;">LINHA DO TEMPO DAS LEITURAS</div><div style="font-size:11px;color:#555;">Carregando...</div>`;
+        timelineWrap.innerHTML = `<div style="font-size:10px;color:#666;margin-bottom:8px;letter-spacing:.06em;">LINHA DO TEMPO DAS LEITURAS</div><div style="font-size:11px;color:#555;">Carregando...</div>`;
         detalhe.appendChild(timelineWrap);
         lista.appendChild(detalhe);
-
-        // Busca o histórico de bipagem desse pedido específico (evento a evento)
         (async () => {
           try {
             const snap = await get(ref(db, `/picking_historico_bipagem/${orderId}`));
             const val = snap.exists() ? snap.val() : {};
-            const eventos = Object.values(val).sort((a, b) => (a.ts || 0) - (b.ts || 0));
+            const eventos = Object.values(val).sort((a,b) => (a.ts||0)-(b.ts||0));
             if (eventos.length === 0) {
-              timelineWrap.innerHTML = `<div style="font-size:10px;color:#666;margin-bottom:8px;">LINHA DO TEMPO DAS LEITURAS</div><div style="font-size:11px;color:#555;">Sem registro individual de leituras (pedido marcado manualmente, ou anterior a essa função).</div>`;
+              timelineWrap.innerHTML = `<div style="font-size:10px;color:#666;margin-bottom:8px;letter-spacing:.06em;">LINHA DO TEMPO DAS LEITURAS</div><div style="font-size:11px;color:#555;">Sem registro individual de leituras.</div>`;
               return;
             }
-            let html = `<div style="font-size:10px;color:#666;margin-bottom:8px;">LINHA DO TEMPO DAS LEITURAS</div>`;
+            let html = `<div style="font-size:10px;color:#666;margin-bottom:8px;letter-spacing:.06em;">LINHA DO TEMPO DAS LEITURAS</div>`;
             eventos.forEach(ev => {
-              const hora = new Date(ev.ts).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+              const h = new Date(ev.ts).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
               const cor = ev.acertou ? "#10b981" : "#e8432d";
-              html += `
-                <div style="display:flex;align-items:center;gap:8px;padding:5px 0;">
-                  <div style="font-size:10px;color:#555;width:70px;flex-shrink:0;">${hora}</div>
-                  <div style="width:6px;height:6px;border-radius:50%;background:${cor};flex-shrink:0;"></div>
-                  <div style="font-size:11px;color:${T.text2};">${ev.acertou ? (ev.nome || ev.sku) : `Código ${ev.codigo} — não pertence ao pedido`}</div>
-                </div>
-              `;
+              html += `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;"><div style="font-size:10px;color:#555;width:70px;flex-shrink:0;">${h}</div><div style="width:6px;height:6px;border-radius:50%;background:${cor};flex-shrink:0;"></div><div style="font-size:11px;color:${T.text2};">${ev.acertou?(ev.nome||ev.sku):`Código ${ev.codigo} — não pertence ao pedido`}</div></div>`;
             });
             timelineWrap.innerHTML = html;
           } catch (e) {
-            timelineWrap.innerHTML = `<div style="font-size:10px;color:#666;margin-bottom:8px;">LINHA DO TEMPO DAS LEITURAS</div><div style="font-size:11px;color:#e8432d;">Erro ao carregar: ${e.message}</div>`;
+            timelineWrap.innerHTML = `<div style="font-size:10px;color:#666;margin-bottom:8px;letter-spacing:.06em;">LINHA DO TEMPO DAS LEITURAS</div><div style="font-size:11px;color:#e8432d;">Erro: ${e.message}</div>`;
           }
         })();
       }
@@ -2829,10 +2913,113 @@ function renderPickingHistorico(panel) {
   wrap.appendChild(lista);
   panel.appendChild(wrap);
 
-  const inputData = panel.querySelector("#picking-hist-data");
-  if (inputData) inputData.onchange = (e) => { window._pickingHistFiltroData = e.target.value; renderPickingHistorico(panel); };
-  const btnLimpar = panel.querySelector("#picking-hist-limpar");
-  if (btnLimpar) btnLimpar.onclick = () => { window._pickingHistFiltroData = ""; renderPickingHistorico(panel); };
+  // ---- EVENTOS ----
+  // Botões prev/next
+  const btnPrev = panel.querySelector("#phd-prev");
+  const btnNext = panel.querySelector("#phd-next");
+  if (btnPrev) btnPrev.onclick = () => {
+    window._pickHistDataManual = null;
+    window._pickHistDiaOffset++;
+    renderPickingHistorico(panel);
+  };
+  if (btnNext) btnNext.onclick = () => {
+    if (window._pickHistDataManual) {
+      const d = new Date(window._pickHistDataManual);
+      d.setDate(d.getDate() + 1);
+      if (d > hoje) return;
+      const diff = Math.round((hoje - d) / 86400000);
+      window._pickHistDataManual = diff === 0 ? null : d;
+      window._pickHistDiaOffset = diff;
+    } else {
+      if (window._pickHistDiaOffset === 0) return;
+      window._pickHistDiaOffset--;
+    }
+    renderPickingHistorico(panel);
+  };
+
+  // Copiar número
+  panel.querySelectorAll("[data-copyid]").forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.copyid;
+      navigator.clipboard.writeText(id).then(() => {
+        btn.textContent = "✓ Copiado"; btn.style.color = "#10b981"; btn.style.borderColor = "#10b981";
+        setTimeout(() => { btn.textContent = "Copiar"; btn.style.color = "#888"; btn.style.borderColor = T.border; }, 1800);
+      }).catch(() => {
+        const ta = document.createElement("textarea");
+        ta.value = id; ta.style.cssText = "position:fixed;opacity:0;"; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta);
+        btn.textContent = "✓ Copiado"; btn.style.color = "#10b981"; btn.style.borderColor = "#10b981";
+        setTimeout(() => { btn.textContent = "Copiar"; btn.style.color = "#888"; btn.style.borderColor = T.border; }, 1800);
+      });
+    };
+  });
+
+  // Calendário
+  const calBtnEl = panel.querySelector("#phd-cal-btn");
+  const calDropEl = panel.querySelector("#phd-cal-drop");
+  function renderCalPick() {
+    const meses = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+    const { y, m } = window._pickHistCalMes;
+    const primeiro = new Date(y, m, 1);
+    const ultimo = new Date(y, m+1, 0);
+    const startDow = primeiro.getDay();
+    const dows = ["D","S","T","Q","Q","S","S"];
+    const selRef = window._pickHistDataManual ? window._pickHistDataManual : dataDeOffset(window._pickHistDiaOffset);
+    let grid = dows.map(d => `<div style="font-size:9px;font-weight:600;color:#666;text-align:center;padding:3px 0;letter-spacing:.05em;">${d}</div>`).join("");
+    for (let i=0; i<startDow; i++) grid += `<div></div>`;
+    for (let d=1; d<=ultimo.getDate(); d++) {
+      const thisDate = new Date(y, m, d);
+      const isFuture = thisDate > hoje;
+      const isSel = !isFuture && mesmoDia(thisDate.getTime(), selRef);
+      const isHojeD = mesmoDia(thisDate.getTime(), hoje);
+      const bg = isSel ? "#3b82f6" : "none";
+      const fg = isSel ? "#fff" : isFuture ? "#333" : isHojeD ? "#3b82f6" : T.text2;
+      const fw = (isSel || isHojeD) ? "700" : "400";
+      const click = isFuture ? "" : ` data-calday="${y}-${m}-${d}"`;
+      grid += `<div${click} style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:6px;font-size:11px;cursor:${isFuture?"default":"pointer"};background:${bg};color:${fg};font-weight:${fw};">${d}</div>`;
+    }
+    calDropEl.innerHTML =
+      `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">` +
+        `<button id="phd-mes-prev" style="background:none;border:none;color:${T.text2};cursor:pointer;padding:4px 8px;border-radius:6px;font-size:14px;font-family:Inter,sans-serif;">‹</button>` +
+        `<div style="font-size:12px;font-weight:600;color:${T.text};">${meses[m]} ${y}</div>` +
+        `<button id="phd-mes-next" style="background:none;border:none;color:${T.text2};cursor:pointer;padding:4px 8px;border-radius:6px;font-size:14px;font-family:Inter,sans-serif;">›</button>` +
+      `</div>` +
+      `<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;">${grid}</div>`;
+    calDropEl.querySelector("#phd-mes-prev").onclick = (e) => { e.stopPropagation(); let {y:cy,m:cm}=window._pickHistCalMes; cm--; if(cm<0){cm=11;cy--;} window._pickHistCalMes={y:cy,m:cm}; renderCalPick(); };
+    calDropEl.querySelector("#phd-mes-next").onclick = (e) => { e.stopPropagation(); let {y:cy,m:cm}=window._pickHistCalMes; cm++; if(cm>11){cm=0;cy++;} window._pickHistCalMes={y:cy,m:cm}; renderCalPick(); };
+    calDropEl.querySelectorAll("[data-calday]").forEach(el => {
+      el.onclick = (e) => {
+        e.stopPropagation();
+        const [cy,cm,cd] = el.dataset.calday.split("-").map(Number);
+        const sel = new Date(cy, cm, cd); sel.setHours(0,0,0,0);
+        const diff = Math.round((hoje - sel) / 86400000);
+        window._pickHistDataManual = diff > 0 ? sel : null;
+        window._pickHistDiaOffset = diff > 0 ? diff : 0;
+        window._pickHistCalAberto = false;
+        calDropEl.style.display = "none";
+        renderPickingHistorico(panel);
+      };
+    });
+  }
+  if (calBtnEl) {
+    calBtnEl.onclick = (e) => {
+      e.stopPropagation();
+      window._pickHistCalAberto = !window._pickHistCalAberto;
+      calDropEl.style.display = window._pickHistCalAberto ? "" : "none";
+      if (window._pickHistCalAberto) {
+        const ref2 = window._pickHistDataManual ? window._pickHistDataManual : dataDeOffset(window._pickHistDiaOffset);
+        window._pickHistCalMes = { y: ref2.getFullYear(), m: ref2.getMonth() };
+        renderCalPick();
+      }
+    };
+  }
+  document.addEventListener("click", function closeCal(e) {
+    if (!calWrap.contains(e.target)) {
+      window._pickHistCalAberto = false;
+      if (calDropEl) calDropEl.style.display = "none";
+      document.removeEventListener("click", closeCal);
+    }
+  });
 }
 
 function renderPickingAcompanhar(panel) {
