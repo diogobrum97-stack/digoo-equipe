@@ -2723,6 +2723,7 @@ function renderPickingHistorico(panel) {
   if (window._pickHistDataManual === undefined) window._pickHistDataManual = null;
   if (window._pickingHistAberto === undefined) window._pickingHistAberto = null;
   if (window._pickHistCalAberto === undefined) window._pickHistCalAberto = false;
+  if (window._pickHistBusca === undefined) window._pickHistBusca = "";
   if (window._pickHistCalMes === undefined) {
     const h = new Date();
     window._pickHistCalMes = { y: h.getFullYear(), m: h.getMonth() };
@@ -2737,32 +2738,53 @@ function renderPickingHistorico(panel) {
     return dataDeOffset(off).toLocaleDateString("pt-BR", { day:"2-digit", month:"2-digit" });
   }
 
+  const busca = (window._pickHistBusca || "").trim().toLowerCase();
+  const modosBusca = busca.length > 0;
+
   const diaRef = window._pickHistDataManual ? window._pickHistDataManual : dataDeOffset(window._pickHistDiaOffset);
 
   const concluidos = state.picking_concluidos || {};
-  let todasEntradas = Object.entries(concluidos)
-    .filter(([, c]) => c && c.ts && mesmoDia(c.ts, diaRef))
-    .sort((a, b) => (b[1].ts || 0) - (a[1].ts || 0));
-
-  if (window._pickHistContaFiltro !== "todos") {
-    todasEntradas = todasEntradas.filter(([, c]) => {
-      const conta = (c.conta || "").toLowerCase();
-      return conta.includes(window._pickHistContaFiltro);
-    });
+  let todasEntradas;
+  if (modosBusca) {
+    // busca em todos os registros, ignora filtro de dia e conta
+    todasEntradas = Object.entries(concluidos)
+      .filter(([orderId, c]) => {
+        if (!c || !c.ts) return false;
+        return orderId.includes(busca) || (c.comprador||"").toLowerCase().includes(busca) || (c.titulo||"").toLowerCase().includes(busca);
+      })
+      .sort((a, b) => (b[1].ts || 0) - (a[1].ts || 0));
+  } else {
+    todasEntradas = Object.entries(concluidos)
+      .filter(([, c]) => c && c.ts && mesmoDia(c.ts, diaRef))
+      .sort((a, b) => (b[1].ts || 0) - (a[1].ts || 0));
+    if (window._pickHistContaFiltro !== "todos") {
+      todasEntradas = todasEntradas.filter(([, c]) => {
+        const conta = (c.conta || "").toLowerCase();
+        return conta.includes(window._pickHistContaFiltro);
+      });
+    }
   }
 
   const wrap = document.createElement("div");
   wrap.style.cssText = "max-width:900px;";
 
-  // ---- HEADER: título + total ----
+  // ---- HEADER: título + total + campo de busca ----
   const hdrTop = document.createElement("div");
-  hdrTop.style.cssText = "display:flex;align-items:baseline;gap:10px;margin-bottom:12px;";
-  hdrTop.innerHTML = `<div style="font-size:14px;font-weight:700;color:${T.text};">Histórico de bipagem</div><div style="font-size:11px;color:#666;">${todasEntradas.length} pedido${todasEntradas.length===1?"":"s"}</div>`;
+  hdrTop.style.cssText = "display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap;";
+  hdrTop.innerHTML =
+    `<div style="display:flex;align-items:baseline;gap:8px;">` +
+      `<div style="font-size:14px;font-weight:700;color:${T.text};">Histórico de bipagem</div>` +
+      `<div style="font-size:11px;color:#666;">${todasEntradas.length} pedido${todasEntradas.length===1?"":"s"}${modosBusca?" encontrado"+( todasEntradas.length===1?"":"s"):""}</div>` +
+    `</div>` +
+    `<div style="position:relative;flex-shrink:0;">` +
+      `<input id="phd-busca" type="text" placeholder="Número ou cliente..." value="${busca.replace(/"/g,'&quot;')}" style="background:${T.bg3};border:1px solid ${modosBusca?"#3b82f6":T.border};border-radius:8px;padding:6px 28px 6px 10px;color:${T.text};font-size:12px;font-family:Inter,sans-serif;outline:none;width:200px;">` +
+      (modosBusca ? `<button id="phd-busca-clear" style="position:absolute;right:7px;top:50%;transform:translateY(-50%);background:none;border:none;color:#666;cursor:pointer;font-size:13px;padding:0;line-height:1;">✕</button>` : "") +
+    `</div>`;
   wrap.appendChild(hdrTop);
 
-  // ---- NAVEGAÇÃO DE DIAS ----
+  // ---- NAVEGAÇÃO DE DIAS (oculta durante busca) ----
   const navWrap = document.createElement("div");
-  navWrap.style.cssText = "display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;";
+  navWrap.style.cssText = "display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;" + (modosBusca ? "opacity:0.35;pointer-events:none;" : "");
 
   const navDias = document.createElement("div");
   navDias.style.cssText = "display:flex;align-items:center;gap:4px;background:"+T.bg3+";border-radius:8px;padding:3px;";
@@ -2914,6 +2936,15 @@ function renderPickingHistorico(panel) {
   panel.appendChild(wrap);
 
   // ---- EVENTOS ----
+  // ---- CAMPO DE BUSCA ----
+  const inputBusca = panel.querySelector("#phd-busca");
+  if (inputBusca) {
+    inputBusca.oninput = (e) => { window._pickHistBusca = e.target.value; renderPickingHistorico(panel); };
+    inputBusca.onclick = (e) => e.stopPropagation();
+  }
+  const btnBuscaClear = panel.querySelector("#phd-busca-clear");
+  if (btnBuscaClear) btnBuscaClear.onclick = () => { window._pickHistBusca = ""; renderPickingHistorico(panel); };
+
   // Botões prev/next
   const btnPrev = panel.querySelector("#phd-prev");
   const btnNext = panel.querySelector("#phd-next");
