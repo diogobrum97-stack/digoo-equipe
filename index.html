@@ -2124,10 +2124,17 @@ async function fetchPickingFila() {
     pickingState.carregando = false;
 
     const jaConcluidos = state.picking_concluidos || {};
+    // Um pedido está concluído se seu order_id OU qualquer um dos order_ids do pack estiver em picking_concluidos
+    function jaFoiConcluido(p) {
+      if (jaConcluidos[p.order_id]) return true;
+      if (p.pack_id && jaConcluidos[p.pack_id]) return true;
+      if (p.order_ids && p.order_ids.some(id => jaConcluidos[id])) return true;
+      return false;
+    }
     pickingState.fila = Object.entries(raw)
       .filter(([key]) => key !== "_sync")
       .map(([, v]) => v)
-      .filter(p => p && p.order_id && !jaConcluidos[p.order_id]);
+      .filter(p => p && p.order_id && !jaFoiConcluido(p));
     pickingState._fetchedAt = Date.now();
 
     // Avisa se o sync está desatualizado (mais de 5 min sem rodar)
@@ -2238,7 +2245,9 @@ async function abrirPedidoPicking(pedido, quemAbriu, refreshFn) {
   try {
     // Trava o pedido pro operador atual, com timestamp (locks muito antigos são
     // ignorados na exibição, caso alguém feche a aba sem terminar)
-    await set(ref(db, `/picking_locks/${pedido.order_id}`), { por: quemAbriu, ts: Date.now() });
+    // Para packs (ML "2 pacotes"), usa pack_id como chave única de trava
+    const lockChave = pedido.pack_id || pedido.order_id;
+    await set(ref(db, `/picking_locks/${lockChave}`), { por: quemAbriu, ts: Date.now() });
 
     // Limite geral de 40s pra abrir o pedido — se travar em algum lugar
     // (Bling lento, muitos componentes de kit, etc.), mostra erro em vez de
@@ -2251,7 +2260,7 @@ async function abrirPedidoPicking(pedido, quemAbriu, refreshFn) {
     pickingState.bipando = "";
   } catch (e) {
     pickingState.erro = "Erro ao abrir o pedido: " + e.message;
-    await remove(ref(db, `/picking_locks/${pedido.order_id}`)).catch(() => {});
+    await remove(ref(db, `/picking_locks/${pedido.pack_id || pedido.order_id}`)).catch(() => {});
   }
   pickingState.abrindoPedido = false;
   refreshPickingUI();
@@ -2259,7 +2268,8 @@ async function abrirPedidoPicking(pedido, quemAbriu, refreshFn) {
 
 function fecharPedidoPicking(refreshFn) {
   if (pickingState.pedidoAtivo) {
-    remove(ref(db, `/picking_locks/${pickingState.pedidoAtivo.order_id}`));
+    const p = pickingState.pedidoAtivo;
+    remove(ref(db, `/picking_locks/${p.pack_id || p.order_id}`));
   }
   pickingState.pedidoAtivo = null;
   pickingState.bipando = "";
@@ -2339,9 +2349,10 @@ async function finalizarPedidoPicking(refreshFn) {
     // e imprime automaticamente via SumatraPDF na A82pro.
     let impressaoAutomatica = false;
     try {
-      await set(ref(db, `/fila_impressao/${pedido.order_id}`), {
+      await set(ref(db, `/fila_impressao/${pedido.pack_id || pedido.order_id}`), {
         pdf_base64: data.pdf_base64,
         order_id: pedido.order_id,
+        pack_id: pedido.pack_id || null,
         operador: pedido.operador || "",
         ts: Date.now(),
         status: "aguardando",
@@ -2354,20 +2365,28 @@ async function finalizarPedidoPicking(refreshFn) {
     // Registra como concluído (histórico visível pro Diogo) e remove a trava
     // — inclui a conferência final item a item (esperado x bipado), útil pra
     // investigar reclamação de quantidade errada depois.
-    await set(ref(db, `/picking_concluidos/${pedido.order_id}`), {
+    // Pedidos de pack (ML "2 pacotes"): salva uma entrada por order_id do pack
+    // para que jaFoiConcluido() encontre qualquer um deles corretamente.
+    const chavesConcluido = pedido.pack_id
+      ? (pedido.order_ids && pedido.order_ids.length > 1 ? pedido.order_ids : [pedido.order_id])
+      : [pedido.order_id];
+    const dadosConcluido = {
       titulo: pedido.itens?.[0]?.titulo || pedido.itens_bipagem?.[0]?.nome || "",
       por: pedido.operador,
       ts: Date.now(),
       comprador: pedido.comprador || "",
       conta: pedido.conta || "",
+      pack_id: pedido.pack_id || null,
+      order_ids: pedido.order_ids || [pedido.order_id],
       impressao_automatica: impressaoAutomatica,
       itens_final: (pedido.itens_bipagem || []).map(l => ({
         sku: l.sku, nome: l.nome, ean: l.ean || null,
         quantidadeNecessaria: l.quantidadeNecessaria,
         quantidadeBipada: l.quantidadeBipada,
       })),
-    });
-    await remove(ref(db, `/picking_locks/${pedido.order_id}`));
+    };
+    await Promise.all(chavesConcluido.map(id => set(ref(db, `/picking_concluidos/${id}`), dadosConcluido)));
+    await remove(ref(db, `/picking_locks/${pedido.pack_id || pedido.order_id}`));
 
     // Some da fila local sem precisar buscar tudo de novo
     if (pickingState.fila) {
@@ -2395,14 +2414,21 @@ async function finalizarPedidoPicking(refreshFn) {
 // sincronizar o histórico do nosso sistema (não mexe em nada no ML).
 async function marcarPedidoFeitoExterno(pedido, quemSou, refreshFn) {
   try {
-    await set(ref(db, `/picking_concluidos/${pedido.order_id}`), {
+    // Para packs: salva uma entrada por order_id do pack
+    const chavesExt = pedido.pack_id
+      ? (pedido.order_ids && pedido.order_ids.length > 1 ? pedido.order_ids : [pedido.order_id])
+      : [pedido.order_id];
+    const dadosExt = {
       titulo: pedido.itens[0]?.titulo || "",
       por: quemSou,
       ts: Date.now(),
       comprador: pedido.comprador || "",
       conta: pedido.conta || "",
+      pack_id: pedido.pack_id || null,
+      order_ids: pedido.order_ids || [pedido.order_id],
       viaExterno: true,
-    });
+    };
+    await Promise.all(chavesExt.map(id => set(ref(db, `/picking_concluidos/${id}`), dadosExt)));
     if (pickingState.fila) {
       pickingState.fila = pickingState.fila.filter(p => p.order_id !== pedido.order_id);
     }
@@ -2421,8 +2447,10 @@ function renderPickingTab(panel, quemSou, modoOperar) {
 
   const locks = state.picking_locks || {};
   const agora = Date.now();
-  const lockValido = (orderId) => {
-    const l = locks[orderId];
+  // Verifica trava — para packs, a chave no Firebase é o pack_id
+  const lockValido = (pedidoItem) => {
+    const chave = pedidoItem.pack_id || pedidoItem.order_id || pedidoItem;
+    const l = locks[chave];
     if (!l) return null;
     if (agora - (l.ts || 0) > 20 * 60 * 1000) return null; // trava de +20min sem atividade é ignorada
     return l;
@@ -2474,7 +2502,7 @@ function renderPickingTab(panel, quemSou, modoOperar) {
 
   filaLista.forEach(pedido => {
     const ativo = pickingState.pedidoAtivo?.order_id === pedido.order_id;
-    const lock = lockValido(pedido.order_id);
+    const lock = lockValido(pedido);
     const travadoPorOutro = lock && lock.por !== quemSou;
     const nomeItem = pedido.itens[0]?.titulo || "Pedido";
     const etiquetaImpressa = pedido.substatus === "printed";
@@ -2854,9 +2882,15 @@ function renderPickingHistorico(panel) {
       // linha topo: número + copiar + conta badge
       const topoDiv = document.createElement("div");
       topoDiv.style.cssText = "display:flex;align-items:center;gap:8px;margin-bottom:4px;";
+      // Para packs, mostra todos os order_ids agrupados
+      const isPackHist = c.pack_id && c.order_ids && c.order_ids.length > 1;
+      const idsLabel = isPackHist
+        ? c.order_ids.map(id => `#${id}`).join(" + ")
+        : `#${orderId}`;
+      const copyVal = isPackHist ? c.order_ids[0] : orderId;
       topoDiv.innerHTML =
-        `<span style="font-size:12px;font-weight:600;color:${T.text};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;">#${orderId}</span>` +
-        `<button data-copyid="${orderId}" style="background:none;border:1px solid ${T.border};border-radius:5px;color:#888;cursor:pointer;padding:2px 7px;font-size:10px;font-family:Inter,sans-serif;white-space:nowrap;flex-shrink:0;">Copiar</button>` +
+        `<span style="font-size:12px;font-weight:600;color:${T.text};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;">${idsLabel}${isPackHist?` <span style="font-size:9px;background:#f59e0b22;color:#f59e0b;padding:1px 5px;border-radius:4px;font-weight:600;vertical-align:middle;">PACK</span>`:""}</span>` +
+        `<button data-copyid="${copyVal}" style="background:none;border:1px solid ${T.border};border-radius:5px;color:#888;cursor:pointer;padding:2px 7px;font-size:10px;font-family:Inter,sans-serif;white-space:nowrap;flex-shrink:0;">Copiar</button>` +
         (contaLabel ? `<span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;background:${contaBg};color:${contaCor};white-space:nowrap;flex-shrink:0;">${contaLabel}</span>` : "");
       card.appendChild(topoDiv);
 
