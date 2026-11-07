@@ -95,6 +95,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, onValue, onChildAdded, push, remove, update, set, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBbaxrk7TXl9BiAZJzHwnJ6vI_LA5g-zzk",
@@ -108,6 +109,14 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+const auth = getAuth(app);
+
+// Autenticação anônima — bloqueia acesso externo sem auth nas regras do Firebase.
+// Se falhar (ex: modo offline), tenta novamente em 5s mas não trava a UI.
+signInAnonymously(auth).catch(e => {
+  console.warn("[Firebase Auth] signInAnonymously falhou:", e.message);
+  setTimeout(() => signInAnonymously(auth).catch(() => {}), 5000);
+});
 const PIN = "845278";
 const STORAGE_KEY = "digoo_identity_v1";
 const THEME_KEY = "digoo_theme_v1";
