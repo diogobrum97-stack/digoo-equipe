@@ -12343,24 +12343,74 @@ async function fetchKitsFull() {
   if (kitsFullState.carregando) return;
   kitsFullState.carregando = true;
   kitsFullState.erro = null;
+  kitsFullState.progresso = "Buscando lista de kits...";
   renderKitsFull(document.querySelector(".kits-full-container"), window._lastColor);
+  const base = `${VERCEL_BACKEND}/api/bling-produtos?action=kit-full-planner`;
+  const call = async (step, body) => {
+    const r = await fetch(`${base}&step=${step}`, body
+      ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }
+      : {});
+    const txt = await r.text();
+    let d = {}; try { d = JSON.parse(txt); } catch(_) {}
+    if (!r.ok || !d.ok) throw new Error(`${step} (HTTP ${r.status}): ${d.erro || d.error || txt.slice(0, 150)}`);
+    return d;
+  };
   try {
-    const blingToken = state.bling_token?.access_token;
-    if (!blingToken) throw new Error("Token Bling não encontrado");
-    const r = await fetch(`${BACKEND}/api/bling-produtos?action=kit-full-planner`, {
-      headers: { "x-bling-token": blingToken }
-    });
-    const data = await r.json();
-    if (!r.ok || !data.ok) throw new Error(data.erro || "Erro ao buscar kits");
-    kitsFullState.dados = data.kits || [];
+    // 1) lista de kits
+    const { kits: lista } = await call("lista");
+    if (!lista.length) { kitsFullState.dados = []; return; }
+
+    // 2) estrutura dos kits em lotes de 6
+    const estruturas = [];
+    for (let i = 0; i < lista.length; i += 6) {
+      kitsFullState.progresso = `Lendo estrutura dos kits... ${Math.min(i + 6, lista.length)}/${lista.length}`;
+      renderKitsFull(document.querySelector(".kits-full-container"), window._lastColor);
+      const { kits } = await call("detalhes", { ids: lista.slice(i, i + 6).map(k => k.id) });
+      estruturas.push(...kits);
+    }
+
+    // 3) saldos de todos os componentes (únicos) em uma rodada
+    kitsFullState.progresso = "Buscando estoque dos componentes...";
+    renderKitsFull(document.querySelector(".kits-full-container"), window._lastColor);
+    const compIds = [...new Set(estruturas.flatMap(k => k.componentes.map(c => c.compId)).filter(Boolean))];
+    const saldos = {};
+    for (let i = 0; i < compIds.length; i += 200) {
+      const { saldos: s } = await call("saldos", { ids: compIds.slice(i, i + 200) });
+      Object.assign(saldos, s);
+    }
+
+    // 4) calcula quantos kits dá pra montar
+    const kits = [];
+    for (const k of estruturas) {
+      if (!k.componentes?.length) continue;
+      const base = lista.find(l => l.id === k.id) || {};
+      const componentes = k.componentes.map(c => ({
+        sku: c.sku || saldos[c.compId]?.sku || `id:${c.compId}`,
+        nome: c.nome || c.sku || saldos[c.compId]?.sku || "",
+        qtdPorKit: c.qtdPorKit,
+        estoque: saldos[c.compId]?.estoque ?? 0,
+      }));
+      let maxKits = Infinity, limitante = "";
+      for (const c of componentes) {
+        const possiveis = Math.floor(Math.max(0, c.estoque) / c.qtdPorKit);
+        if (possiveis < maxKits) { maxKits = possiveis; limitante = c.sku; }
+      }
+      if (maxKits === Infinity) maxKits = 0;
+      kits.push({ sku: k.sku || base.sku || "", nome: k.nome || base.nome || "", maxKits, limitante, componentes });
+    }
+    kits.sort((a, b) => b.maxKits - a.maxKits);
+    kitsFullState.dados = kits;
     kitsFullState._fetchedAt = Date.now();
   } catch(e) {
+    console.error("[Kits Full]", e);
     kitsFullState.erro = e.message;
   } finally {
     kitsFullState.carregando = false;
+    kitsFullState.progresso = null;
     renderKitsFull(document.querySelector(".kits-full-container"), window._lastColor);
   }
 }
+window.fetchKitsFull = fetchKitsFull;
 
 function renderKitsFull(container, color) {
   if (!container) return;
@@ -12405,7 +12455,7 @@ function renderKitsFull(container, color) {
       ⚠️ ${erro}
     </div>`;
   } else if (carregando && !kits) {
-    html += `<div style="text-align:center;padding:40px 0;color:${txt3};font-size:12px;">Buscando kits e estoques no Bling...</div>`;
+    html += `<div style="text-align:center;padding:40px 0;color:${txt3};font-size:12px;">${kitsFullState.progresso || "Buscando kits e estoques no Bling..."}</div>`;
   } else if (!kits) {
     html += `<div style="text-align:center;padding:40px 0;color:${txt3};font-size:12px;border:1px dashed ${bdr};border-radius:10px;">
       Clique em "Sincronizar Bling" para buscar os kits e estoque atual
