@@ -7757,7 +7757,7 @@ function render(){
             { label: "Dashboard", tab: "dashboard", subs: [] },
             { label: "Tarefas", tab: "tarefas", subs: [] },
             { label: "Equipe", tab: null, subs: [{label:"Concluídas",tab:"concluidas"},{label:"Conversas",tab:"conversas"}] },
-            { label: "Mercado Livre", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência de Compra",tab:"experiencia"},{label:"Clonar Anúncio",tab:"clonar"},{label:"Perguntas",tab:"perguntas"},{label:"Reclamações",tab:"reclamacoes-ml"},{label:"Picking & Packing",tab:"picking"},{label:"Promoções",tab:"promocoes"},{label:"Kits Full",tab:"kits-full"}] },
+            { label: "Mercado Livre", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência de Compra",tab:"experiencia"},{label:"Clonar Anúncio",tab:"clonar"},{label:"Perguntas",tab:"perguntas"},{label:"Reclamações",tab:"reclamacoes-ml"},{label:"Picking & Packing",tab:"picking"},{label:"Promoções",tab:"promocoes"},{label:"Kits Full",tab:"kits-full"},{label:"⚠ Ajuste Filial",tab:"ajuste-filial"}] },
             { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"},{label:"NF Transferência Full",tab:"nf-full"},{label:"NF Importação",tab:"nf-importacao"},{label:"Contas a Pagar",tab:"contas-pagar"},{label:"NFs Emitidas",tab:"nfs-emitidas"},{label:"Painel Fiscal",tab:"painel-fiscal"}] },
             { label: "Email", tab: "email", subs: [] },
           ].filter(g => {
@@ -8466,6 +8466,11 @@ function render(){
             let pickingContainer = panel.querySelector(".picking-container");
             if(!pickingContainer){ pickingContainer = document.createElement("div"); pickingContainer.className="picking-container"; panel.appendChild(pickingContainer); }
             renderPickingDiogo(pickingContainer);
+          }else if(window._diogotab==="ajuste-filial"){
+            panel.style.maxHeight="none"; panel.style.overflowY="auto";
+            let afContainer = panel.querySelector(".ajuste-filial-container");
+            if(!afContainer){ afContainer=document.createElement("div"); afContainer.className="ajuste-filial-container"; panel.appendChild(afContainer); }
+            renderAjusteFilial(afContainer, color);
           }else if(window._diogotab==="kits-full"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
             let kfContainer = panel.querySelector(".kits-full-container");
@@ -12015,6 +12020,149 @@ async function renderNfImportacao(container) {
       btn.disabled = false; btn.textContent = 'Emitir NF-e de Entrada';
     }
   };
+}
+
+// ═══════════════ Ajuste Filial — NF 021011 (23/10/2026) ═══════════════
+const AJUSTE_FILIAL_NF = [
+  { sku:"WINDX-PRETO",       nome:"Fan Wind X ARGB 120mm Preto",          qtdNF:1850 },
+  { sku:"ATRIX",             nome:"Controladora ARGB Atrix 6 Pinos",       qtdNF:600  },
+  { sku:"WINDX-REV-PRETO",   nome:"Fan Wind X Reverse ARGB 120mm Preto",   qtdNF:700  },
+  { sku:"ZOLOE-PRETO",       nome:"Fan Zoloe ARGB 120mm Preto",            qtdNF:1850 },
+  { sku:"ZOLOE-REV-PRETO",   nome:"Fan Zoloe Reverse ARGB 120mm Preto",    qtdNF:700  },
+  { sku:"C5",                nome:"Carcaça Moldura Tela Dell 3510/3515",    qtdNF:300  },
+  { sku:"G3",                nome:"Dobradiças Dell 3510/3515/3520",         qtdNF:300  },
+  { sku:"GVT1",              nome:"Parafusos Notebook M2.5x3x7",           qtdNF:3900 },
+  { sku:"C1",                nome:"Carcaça Tampa Tela Dell 3510/3515 Preto",qtdNF:500  },
+  { sku:"AURORA-HUB-PRETO",  nome:"Controladora Aurora Hub 10 Fans ARGB",  qtdNF:150  },
+  { sku:"COLDEN",            nome:"Pasta Térmica Colden 5G 13.8w/m-k",     qtdNF:150  },
+  { sku:"COSMIQ-REV-PRETO",  nome:"Fan Cosmiq Reverse Unifan C/3 Preto",   qtdNF:126  },
+  { sku:"COSMIQ-PRETO",      nome:"Fan Cosmiq Unifan ARGB C/3 Preto",      qtdNF:180  },
+  { sku:"WC-HDC-PRETO",      nome:"Water Cooler HydroCool 240mm ARGB Preto",qtdNF:63  },
+  { sku:"G1",                nome:"Dobradiças Acer A515-51/A315-41",       qtdNF:100  },
+  { sku:"C7",                nome:"Carcaça Tampa Tela Acer A515-51/A315-41",qtdNF:100 },
+  { sku:"C8",                nome:"Carcaça Moldura Tela Acer A515-51",     qtdNF:50   },
+];
+
+function renderAjusteFilial(container, color) {
+  container.innerHTML = "";
+  const T = getThemeTokens();
+
+  // ── Header ──────────────────────────────────────────────────
+  const header = document.createElement("div");
+  header.style.cssText = "display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:20px;";
+  header.innerHTML = `
+    <div>
+      <div style="font-size:15px;font-weight:800;color:${T.text};">⚠ Ajuste de Estoque — Filial SP</div>
+      <div style="font-size:11px;color:${T.text3};margin-top:3px;">NF 021011 · Transferência de 23/10/2026 · Calculando saídas não lançadas</div>
+    </div>
+    <div style="font-size:11px;color:#f0b400;background:#f0b40015;border:1px solid #f0b40040;padding:5px 12px;border-radius:6px;">Ferramenta temporária</div>
+  `;
+  container.appendChild(header);
+
+  // ── Pega estoque atual do ML Full (estoqueExcelData) ────────
+  const estoqueRows = estoqueExcelData?.rows || [];
+  const estoqueMap = {};
+  estoqueRows.forEach(r => {
+    if (r.sku) estoqueMap[r.sku.trim().toUpperCase()] = r.aptas || 0;
+  });
+
+  const semEstoque = estoqueRows.length === 0;
+
+  if (semEstoque) {
+    const aviso = document.createElement("div");
+    aviso.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:24px;text-align:center;color:${T.text3};font-size:12px;`;
+    aviso.innerHTML = `Sem dados de estoque do ML Full.<br><br>Acesse <strong>Mercado Livre → Estoque → Filial SP</strong> primeiro para carregar o estoque atual.`;
+    container.appendChild(aviso);
+    return;
+  }
+
+  // ── Calcula diferenças ───────────────────────────────────────
+  let totalSaida = 0;
+  const linhas = AJUSTE_FILIAL_NF.map(item => {
+    const skuKey = item.sku.trim().toUpperCase();
+    const estoqueAtual = estoqueMap[skuKey] ?? null;
+    const saida = estoqueAtual !== null ? Math.max(0, item.qtdNF - estoqueAtual) : null;
+    if (saida !== null) totalSaida += saida;
+    return { ...item, estoqueAtual, saida };
+  });
+
+  // ── Cards resumo ─────────────────────────────────────────────
+  const resumoWrap = document.createElement("div");
+  resumoWrap.style.cssText = "display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;";
+  const skusComSaida = linhas.filter(l => l.saida > 0).length;
+  const skusSemMatch = linhas.filter(l => l.estoqueAtual === null).length;
+  [
+    { label:"TOTAL A DAR SAÍDA", value: totalSaida.toLocaleString("pt-BR")+" un", cor:"#e8432d" },
+    { label:"SKUs COM SAÍDA",    value: skusComSaida+" de "+linhas.length,          cor:"#f0b400" },
+    { label:"SKUs SEM MATCH",    value: skusSemMatch > 0 ? skusSemMatch+" SKUs" : "✓ Todos mapeados", cor: skusSemMatch > 0 ? "#e8432d" : "#10b981" },
+  ].forEach(s => {
+    const c = document.createElement("div");
+    c.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-top:3px solid ${s.cor};border-radius:10px;padding:14px 16px;`;
+    c.innerHTML = `<div style="font-size:9px;color:${T.text3};letter-spacing:1.2px;text-transform:uppercase;margin-bottom:8px;">${s.label}</div><div style="font-size:22px;font-weight:800;color:${T.text};font-family:'IBM Plex Mono',monospace;">${s.value}</div>`;
+    resumoWrap.appendChild(c);
+  });
+  container.appendChild(resumoWrap);
+
+  // ── Botão copiar lista ───────────────────────────────────────
+  const actionsRow = document.createElement("div");
+  actionsRow.style.cssText = "display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;";
+  const copyBtn = document.createElement("button");
+  copyBtn.textContent = "📋 Copiar lista de saídas";
+  copyBtn.style.cssText = "padding:8px 16px;background:#3b82f6;border:none;border-radius:6px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;";
+  copyBtn.addEventListener("click", () => {
+    const linhasComSaida = linhas.filter(l => l.saida > 0);
+    const txt = linhasComSaida.map(l => `${l.sku}\t${l.saida}`).join("\n");
+    navigator.clipboard.writeText(txt).then(() => {
+      copyBtn.textContent = "✓ Copiado!";
+      setTimeout(() => { copyBtn.textContent = "📋 Copiar lista de saídas"; }, 2000);
+    }).catch(() => { copyBtn.textContent = "Erro ao copiar"; });
+  });
+  actionsRow.appendChild(copyBtn);
+  container.appendChild(actionsRow);
+
+  // ── Tabela ───────────────────────────────────────────────────
+  const tableWrap = document.createElement("div");
+  tableWrap.style.cssText = "overflow-x:auto;";
+  const table = document.createElement("table");
+  table.style.cssText = `width:100%;border-collapse:collapse;font-size:12px;`;
+
+  const thead = document.createElement("thead");
+  thead.innerHTML = `<tr style="border-bottom:2px solid ${T.border};">
+    <th style="text-align:left;padding:8px 12px;color:${T.text3};font-size:10px;letter-spacing:1px;text-transform:uppercase;font-weight:600;">SKU</th>
+    <th style="text-align:left;padding:8px 12px;color:${T.text3};font-size:10px;letter-spacing:1px;text-transform:uppercase;font-weight:600;">Produto</th>
+    <th style="text-align:right;padding:8px 12px;color:${T.text3};font-size:10px;letter-spacing:1px;text-transform:uppercase;font-weight:600;">Entrou NF</th>
+    <th style="text-align:right;padding:8px 12px;color:${T.text3};font-size:10px;letter-spacing:1px;text-transform:uppercase;font-weight:600;">Estoque Full Atual</th>
+    <th style="text-align:right;padding:8px 12px;color:${T.text3};font-size:10px;letter-spacing:1px;text-transform:uppercase;font-weight:600;">Saída a Lançar</th>
+  </tr>`;
+  table.appendChild(thead);
+
+  const tbody = document.createElement("tbody");
+  linhas.forEach((l, i) => {
+    const tr = document.createElement("tr");
+    tr.style.cssText = `border-bottom:1px solid ${T.border}08;background:${i%2===0?T.bg:"transparent"};`;
+    const saidaColor = l.saida === null ? T.text3 : l.saida === 0 ? "#10b981" : "#e8432d";
+    const saidaVal = l.saida === null ? "—" : l.saida === 0 ? "✓ Zero" : `−${l.saida.toLocaleString("pt-BR")}`;
+    const saidaWeight = l.saida > 0 ? "800" : "400";
+    tr.innerHTML = `
+      <td style="padding:9px 12px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:${T.text};white-space:nowrap;">${l.sku}</td>
+      <td style="padding:9px 12px;color:${T.text2};font-size:11px;">${l.nome}</td>
+      <td style="padding:9px 12px;text-align:right;font-family:'IBM Plex Mono',monospace;color:${T.text};">${l.qtdNF.toLocaleString("pt-BR")}</td>
+      <td style="padding:9px 12px;text-align:right;font-family:'IBM Plex Mono',monospace;color:${l.estoqueAtual===null?T.text3:T.text};">${l.estoqueAtual===null?"Não encontrado":l.estoqueAtual.toLocaleString("pt-BR")}</td>
+      <td style="padding:9px 12px;text-align:right;font-family:'IBM Plex Mono',monospace;color:${saidaColor};font-weight:${saidaWeight};font-size:13px;">${saidaVal}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  tableWrap.appendChild(table);
+  container.appendChild(tableWrap);
+
+  // ── Aviso SKUs sem match ─────────────────────────────────────
+  if (skusSemMatch > 0) {
+    const warn = document.createElement("div");
+    warn.style.cssText = `margin-top:14px;background:#e8432d12;border:1px solid #e8432d40;border-radius:8px;padding:12px 16px;font-size:11px;color:${T.text2};`;
+    warn.innerHTML = `<strong style="color:#e8432d;">⚠ ${skusSemMatch} SKU(s) não encontrado(s) no estoque do Full.</strong><br>Verifique se o nome do SKU no Bling bate com o da planilha, ou atualize o estoque do Full.`;
+    container.appendChild(warn);
+  }
 }
 
 // ═══════════════ Calculadora de Kits Full ═══════════════
