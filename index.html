@@ -12096,11 +12096,14 @@ async function fetchAjusteFilial() {
     for (const item of todosItensResposta) {
       const key = (item.sku || '').trim().toUpperCase();
       if (!key) continue;
+      const origens = (item.origens && item.origens.length)
+        ? item.origens.map(o => ({ kitSku: o.kit, qtd: o.qtd }))
+        : [{ kitSku: item.kitOrigem || '?', qtd: item.quantidade }];
       if (agrupado[key]) {
         agrupado[key].qtdTotal += item.quantidade;
-        agrupado[key].origem.push({ kitSku: item.kitOrigem || item.kitsOrigem?.[0] || '?', qtd: item.quantidade });
+        agrupado[key].origem.push(...origens);
       } else {
-        agrupado[key] = { sku: item.sku, nome: item.descricao || item.sku, qtdTotal: item.quantidade, origem: [{ kitSku: item.kitOrigem || item.kitsOrigem?.[0] || '?', qtd: item.quantidade }] };
+        agrupado[key] = { sku: item.sku, nome: item.descricao || item.sku, qtdTotal: item.quantidade, origem: origens };
       }
     }
     const componentes = Object.values(agrupado).sort((a, b) => b.qtdTotal - a.qtdTotal);
