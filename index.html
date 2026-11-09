@@ -7757,7 +7757,7 @@ function render(){
             { label: "Dashboard", tab: "dashboard", subs: [] },
             { label: "Tarefas", tab: "tarefas", subs: [] },
             { label: "Equipe", tab: null, subs: [{label:"Concluídas",tab:"concluidas"},{label:"Conversas",tab:"conversas"}] },
-            { label: "Mercado Livre", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência de Compra",tab:"experiencia"},{label:"Clonar Anúncio",tab:"clonar"},{label:"Perguntas",tab:"perguntas"},{label:"Reclamações",tab:"reclamacoes-ml"},{label:"Picking & Packing",tab:"picking"},{label:"Promoções",tab:"promocoes"}] },
+            { label: "Mercado Livre", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência de Compra",tab:"experiencia"},{label:"Clonar Anúncio",tab:"clonar"},{label:"Perguntas",tab:"perguntas"},{label:"Reclamações",tab:"reclamacoes-ml"},{label:"Picking & Packing",tab:"picking"},{label:"Promoções",tab:"promocoes"},{label:"Kits Full",tab:"kits-full"}] },
             { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"},{label:"NF Transferência Full",tab:"nf-full"},{label:"NF Importação",tab:"nf-importacao"},{label:"Contas a Pagar",tab:"contas-pagar"},{label:"NFs Emitidas",tab:"nfs-emitidas"},{label:"Painel Fiscal",tab:"painel-fiscal"}] },
             { label: "Email", tab: "email", subs: [] },
           ].filter(g => {
@@ -8466,6 +8466,13 @@ function render(){
             let pickingContainer = panel.querySelector(".picking-container");
             if(!pickingContainer){ pickingContainer = document.createElement("div"); pickingContainer.className="picking-container"; panel.appendChild(pickingContainer); }
             renderPickingDiogo(pickingContainer);
+          }else if(window._diogotab==="kits-full"){
+            panel.style.maxHeight="none"; panel.style.overflowY="auto";
+            let kfContainer = panel.querySelector(".kits-full-container");
+            if(!kfContainer){ kfContainer=document.createElement("div"); kfContainer.className="kits-full-container"; panel.appendChild(kfContainer); }
+            window._lastColor = color;
+            renderKitsFull(kfContainer, color);
+            if (!kitsFullState.dados && !kitsFullState.carregando) fetchKitsFull();
           }else if(window._diogotab==="nf-full"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
             let nfFullContainer = panel.querySelector(".nf-full-container");
@@ -12008,6 +12015,129 @@ async function renderNfImportacao(container) {
       btn.disabled = false; btn.textContent = 'Emitir NF-e de Entrada';
     }
   };
+}
+
+// ═══════════════ Calculadora de Kits Full ═══════════════
+let kitsFullState = { dados: null, carregando: false, erro: null, _fetchedAt: 0 };
+
+async function fetchKitsFull() {
+  if (kitsFullState.carregando) return;
+  kitsFullState.carregando = true;
+  kitsFullState.erro = null;
+  renderKitsFull(document.querySelector(".kits-full-container"), window._lastColor);
+  try {
+    const blingToken = state.bling_token?.access_token;
+    if (!blingToken) throw new Error("Token Bling não encontrado");
+    const r = await fetch(`${BACKEND}/api/bling-produtos?action=kit-full-planner`, {
+      headers: { "x-bling-token": blingToken }
+    });
+    const data = await r.json();
+    if (!r.ok || !data.ok) throw new Error(data.erro || "Erro ao buscar kits");
+    kitsFullState.dados = data.kits || [];
+    kitsFullState._fetchedAt = Date.now();
+  } catch(e) {
+    kitsFullState.erro = e.message;
+  } finally {
+    kitsFullState.carregando = false;
+    renderKitsFull(document.querySelector(".kits-full-container"), window._lastColor);
+  }
+}
+
+function renderKitsFull(container, color) {
+  if (!container) return;
+  const T = color || window._lastColor || {};
+  const bg   = T.isLight ? "#ffffff" : "#141414";
+  const bg2  = T.isLight ? "#f4f4f5" : "#111111";
+  const bg3  = T.isLight ? "#e8e8e8" : "#1a1a1a";
+  const bdr  = T.isLight ? "#e4e4e7" : "#242424";
+  const txt  = T.isLight ? "#111111" : "#f0f0f0";
+  const txt2 = T.isLight ? "#555555" : "#aaaaaa";
+  const txt3 = T.isLight ? "#999999" : "#555555";
+
+  const kits = kitsFullState.dados;
+  const carregando = kitsFullState.carregando;
+  const erro = kitsFullState.erro;
+
+  let html = `<div style="padding:20px 16px;max-width:620px;margin:0 auto;">`;
+  html += `<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">
+    <div>
+      <div style="font-size:15px;font-weight:800;color:${txt};">Calculadora de Kits Full</div>
+      <div style="font-size:11px;color:${txt3};margin-top:3px;">Quanto de cada kit dá pra montar com o estoque atual da Matriz</div>
+    </div>
+    <button onclick="fetchKitsFull()" style="display:flex;align-items:center;gap:6px;background:${bg2};border:1px solid ${bdr};color:${txt2};font:600 11px/1 Inter,sans-serif;padding:7px 14px;border-radius:6px;cursor:pointer;">
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="${carregando?"animation:_kspin 1s linear infinite;":""}">
+        <path d="M13.5 2.5A6.5 6.5 0 0 0 2 8M2.5 13.5A6.5 6.5 0 0 0 14 8"/>
+        <polyline points="13.5,2.5 13.5,5.5 10.5,5.5"/>
+        <polyline points="2.5,13.5 2.5,10.5 5.5,10.5"/>
+      </svg>
+      ${carregando ? "Buscando..." : "Sincronizar Bling"}
+    </button>
+  </div>`;
+
+  if (!document.getElementById('_kscss')) {
+    const s = document.createElement('style');
+    s.id = '_kscss';
+    s.textContent = '@keyframes _kspin{to{transform:rotate(360deg)}}';
+    document.head.appendChild(s);
+  }
+
+  if (erro) {
+    html += `<div style="background:#ef444422;border:1px solid #ef444455;border-radius:8px;padding:14px 16px;font-size:12px;color:#ef4444;">
+      ⚠️ ${erro}
+    </div>`;
+  } else if (carregando && !kits) {
+    html += `<div style="text-align:center;padding:40px 0;color:${txt3};font-size:12px;">Buscando kits e estoques no Bling...</div>`;
+  } else if (!kits) {
+    html += `<div style="text-align:center;padding:40px 0;color:${txt3};font-size:12px;border:1px dashed ${bdr};border-radius:10px;">
+      Clique em "Sincronizar Bling" para buscar os kits e estoque atual
+    </div>`;
+  } else if (!kits.length) {
+    html += `<div style="text-align:center;padding:40px 0;color:${txt3};font-size:12px;">Nenhum kit encontrado no Bling</div>`;
+  } else {
+    kits.forEach((kit, i) => {
+      const cls = kit.maxKits === 0 ? 'zero' : i === 0 ? 'melhor' : kit.maxKits >= 10 ? 'bom' : 'baixo';
+      const cor = cls === 'melhor' ? '#00dfc3' : cls === 'bom' ? '#10b981' : cls === 'baixo' ? '#f59e0b' : txt3;
+      const corBg = cls === 'melhor' ? 'rgba(0,223,195,0.10)' : cls === 'bom' ? 'rgba(16,185,129,0.10)' : cls === 'baixo' ? 'rgba(245,158,11,0.10)' : bg3;
+      const corBdr = cls === 'melhor' ? 'rgba(0,223,195,0.30)' : cls === 'bom' ? 'rgba(16,185,129,0.30)' : cls === 'baixo' ? 'rgba(245,158,11,0.30)' : bdr;
+      const lbl = cls === 'melhor' ? 'Melhor opção' : cls === 'bom' ? 'Estoque bom' : cls === 'baixo' ? 'Estoque baixo' : 'Sem estoque';
+      const opacity = cls === 'zero' ? 'opacity:0.45;' : '';
+      const detId = `kf-det-${i}`;
+
+      const compsHtml = kit.componentes.map(c => {
+        const totalNec = c.qtdPorKit * kit.maxKits;
+        const cCls = c.estoque >= totalNec ? 'ok' : c.estoque > 0 ? 'low' : 'out';
+        const cCor = cCls === 'ok' ? '#10b981' : cCls === 'low' ? '#f59e0b' : '#ef4444';
+        const isLim = c.sku === kit.limitante && kit.maxKits > 0;
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid ${bdr};font-size:11px;">
+          <span style="color:${txt2};flex:1;min-width:0;padding-right:8px;">${c.nome || c.sku}</span>
+          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+            <span style="color:${txt3};">×${c.qtdPorKit}/kit</span>
+            <span style="font-weight:700;color:${cCor};font-variant-numeric:tabular-nums;">${c.estoque} un</span>
+            ${isLim ? `<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(245,158,11,0.15);color:#f59e0b;border:1px solid rgba(245,158,11,0.3);">limitante</span>` : ''}
+          </div>
+        </div>`;
+      }).join('').replace(/border-bottom[^;]+;(?=[^<]*<\/div>\s*$)/, '');
+
+      html += `<div style="${opacity}background:${kit.maxKits > 0 ? corBg : bg3};border:1px solid ${corBdr};border-radius:10px;overflow:hidden;margin-bottom:8px;">
+        <div onclick="document.getElementById('${detId}').style.display=document.getElementById('${detId}').style.display==='none'?'block':'none';this.querySelector('.kf-chev').textContent=document.getElementById('${detId}').style.display==='none'?'▾':'▴';"
+          style="display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;">
+          <div style="font-size:28px;font-weight:800;min-width:44px;text-align:center;line-height:1;font-variant-numeric:tabular-nums;color:${cor};">${kit.maxKits}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:12px;font-weight:700;color:${txt};">${kit.nome}</div>
+            <div style="font-size:10px;color:${txt3};margin-top:2px;">${kit.sku}</div>
+          </div>
+          <span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;white-space:nowrap;background:${corBg};color:${cor};border:1px solid ${corBdr};">${lbl}</span>
+          <span class="kf-chev" style="color:${txt3};font-size:11px;">▾</span>
+        </div>
+        <div id="${detId}" style="display:none;padding:0 14px 12px;border-top:1px solid ${bdr};">
+          ${compsHtml}
+        </div>
+      </div>`;
+    });
+  }
+
+  html += `</div>`;
+  container.innerHTML = html;
 }
 
 async function renderNfTransferenciaFull(container, color) {
