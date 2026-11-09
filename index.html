@@ -12412,6 +12412,65 @@ async function fetchKitsFull() {
 }
 window.fetchKitsFull = fetchKitsFull;
 
+// Monta plano de envio: divide o estoque unitário entre os kits pedidos (round-robin)
+async function kitsFullMontar() {
+  const ta = document.getElementById("kf-entrada");
+  if (ta) kitsFullState.entrada = ta.value;
+  const texto = kitsFullState.entrada || "";
+  if (!kitsFullState.dados) {
+    await fetchKitsFull();
+    if (!kitsFullState.dados) return;
+  }
+  const porSku = {};
+  kitsFullState.dados.forEach(k => { porSku[(k.sku || "").trim().toUpperCase()] = k; });
+  const estoque = {};
+  kitsFullState.dados.forEach(k => k.componentes.forEach(c => { estoque[c.sku] = Math.max(0, c.estoque || 0); }));
+
+  const pedidos = [], naoEncontrados = [];
+  texto.split("\n").map(l => l.trim()).filter(Boolean).forEach(l => {
+    const m = l.match(/^(\S+)(?:[\s·x×:;,\t-]+(\d+))?\s*$/i);
+    if (!m) { naoEncontrados.push(l); return; }
+    const kit = porSku[m[1].toUpperCase()];
+    if (!kit) { naoEncontrados.push(m[1]); return; }
+    const ja = pedidos.find(p => p.kit === kit);
+    const alvo = m[2] ? Number(m[2]) : Infinity;
+    if (ja) ja.alvo = ja.alvo === Infinity || alvo === Infinity ? Infinity : ja.alvo + alvo;
+    else pedidos.push({ kit, alvo, qtd: 0, limitante: null });
+  });
+
+  const resto = { ...estoque };
+  let avancou = true;
+  while (avancou) {
+    avancou = false;
+    for (const p of pedidos) {
+      if (p.qtd >= p.alvo || p.limitante) continue;
+      const falta = p.kit.componentes.find(c => (resto[c.sku] || 0) < c.qtdPorKit);
+      if (falta) { p.limitante = falta.sku; continue; }
+      p.kit.componentes.forEach(c => { resto[c.sku] -= c.qtdPorKit; });
+      p.qtd++; avancou = true;
+    }
+  }
+
+  const usados = {};
+  pedidos.forEach(p => p.kit.componentes.forEach(c => {
+    if (!usados[c.sku]) usados[c.sku] = { sku: c.sku, nome: c.nome, estoque: estoque[c.sku] || 0, usado: 0 };
+    usados[c.sku].usado += c.qtdPorKit * p.qtd;
+  }));
+  kitsFullState.plano = {
+    pedidos, naoEncontrados,
+    componentes: Object.values(usados).map(u => ({ ...u, sobra: u.estoque - u.usado })).sort((a, b) => a.sobra - b.sobra),
+  };
+  renderKitsFull(document.querySelector(".kits-full-container"), window._lastColor);
+}
+window.kitsFullMontar = kitsFullMontar;
+window.kitsFullCopiar = function() {
+  const pl = kitsFullState.plano; if (!pl) return;
+  const txt = pl.pedidos.filter(p => p.qtd > 0).map(p => `${p.kit.sku}\t${p.qtd}`).join("\n");
+  navigator.clipboard.writeText(txt).then(() => {
+    const b = document.getElementById("kf-copiar"); if (b) { b.textContent = "Copiado ✓"; setTimeout(() => b.textContent = "Copiar envio (SKU + qtd)", 1500); }
+  });
+};
+
 function renderKitsFull(container, color) {
   if (!container) return;
   const T = color || window._lastColor || {};
@@ -12431,7 +12490,7 @@ function renderKitsFull(container, color) {
   html += `<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">
     <div>
       <div style="font-size:15px;font-weight:800;color:${txt};">Calculadora de Kits Full</div>
-      <div style="font-size:11px;color:${txt3};margin-top:3px;">Quanto de cada kit dá pra montar com o estoque atual da Matriz</div>
+      <div style="font-size:11px;color:${txt3};margin-top:3px;">Cole os SKUs dos kits — o sistema divide o estoque unitário entre eles</div>
     </div>
     <button onclick="fetchKitsFull()" style="display:flex;align-items:center;gap:6px;background:${bg2};border:1px solid ${bdr};color:${txt2};font:600 11px/1 Inter,sans-serif;padding:7px 14px;border-radius:6px;cursor:pointer;">
       <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="${carregando?"animation:_kspin 1s linear infinite;":""}">
@@ -12460,9 +12519,52 @@ function renderKitsFull(container, color) {
     html += `<div style="text-align:center;padding:40px 0;color:${txt3};font-size:12px;border:1px dashed ${bdr};border-radius:10px;">
       Clique em "Sincronizar Bling" para buscar os kits e estoque atual
     </div>`;
-  } else if (!kits.length) {
-    html += `<div style="text-align:center;padding:40px 0;color:${txt3};font-size:12px;">Nenhum kit encontrado no Bling</div>`;
-  } else {
+  }
+
+  // ── Entrada de SKUs ──
+  const esc = v => String(v ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;");
+  html += `<div style="background:${bg};border:1px solid ${bdr};border-radius:10px;padding:14px;margin:${erro||!kits?"12px":"0"} 0 14px;">
+    <div style="font-size:11px;font-weight:700;color:${txt2};margin-bottom:6px;">Kits para enviar <span style="font-weight:400;color:${txt3};">— um por linha. Quantidade opcional: sem ela, o sistema monta o máximo dividindo o estoque.</span></div>
+    <textarea id="kf-entrada" rows="6" placeholder="WINDX-KIT10-PRETO 50&#10;ZOLOE-KIT7-PRETO&#10;COSMIQ-REV-PRETO 100" style="width:100%;box-sizing:border-box;background:${bg2};border:1px solid ${bdr};border-radius:6px;padding:10px 12px;color:${txt};font:12px/1.5 'IBM Plex Mono',monospace;outline:none;resize:vertical;">${esc(kitsFullState.entrada)}</textarea>
+    <button onclick="kitsFullMontar()" ${carregando?"disabled":""} style="margin-top:8px;width:100%;padding:10px;border-radius:6px;background:#3b82f6;border:none;color:#fff;font:700 12px Inter,sans-serif;cursor:pointer;">${carregando ? (kitsFullState.progresso || "Buscando no Bling...") : "Montar envio"}</button>
+  </div>`;
+
+  // ── Plano ──
+  const pl = kitsFullState.plano;
+  if (pl) {
+    const totalKits = pl.pedidos.reduce((a, p) => a + p.qtd, 0);
+    if (pl.naoEncontrados.length) html += `<div style="background:#f59e0b18;border:1px solid #f59e0b55;border-radius:8px;padding:10px 12px;font-size:11px;color:#f59e0b;margin-bottom:10px;">Não encontrado como kit no Bling: ${pl.naoEncontrados.map(esc).join(", ")}</div>`;
+    html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <div style="font-size:12px;font-weight:800;color:${txt};">Dá pra enviar: <span style="color:#10b981;">${totalKits} kits</span></div>
+      <button id="kf-copiar" onclick="kitsFullCopiar()" style="background:${bg2};border:1px solid ${bdr};color:${txt2};font:600 11px Inter,sans-serif;padding:6px 12px;border-radius:6px;cursor:pointer;">Copiar envio (SKU + qtd)</button>
+    </div>
+    <div style="border:1px solid ${bdr};border-radius:10px;overflow:hidden;margin-bottom:16px;">
+      <div style="display:grid;grid-template-columns:1fr 70px 70px;gap:8px;padding:8px 12px;background:${bg2};font-size:9px;font-weight:700;letter-spacing:.08em;color:${txt3};text-transform:uppercase;"><span>Kit</span><span style="text-align:right;">Pedido</span><span style="text-align:right;">Monta</span></div>
+      ${pl.pedidos.map(p => {
+        const ok = p.alvo === Infinity || p.qtd >= p.alvo;
+        const cor = p.qtd === 0 ? "#ef4444" : ok ? "#10b981" : "#f59e0b";
+        return `<div style="display:grid;grid-template-columns:1fr 70px 70px;gap:8px;padding:9px 12px;border-top:1px solid ${bdr};align-items:center;font-size:12px;">
+          <div style="min-width:0;"><div style="font-weight:700;color:${txt};font-family:'IBM Plex Mono',monospace;font-size:11px;">${esc(p.kit.sku)}</div>
+          ${!ok || (p.alvo === Infinity && p.limitante) ? `<div style="font-size:10px;color:${txt3};margin-top:2px;">parou por falta de <b style="color:#f59e0b;">${esc(p.limitante)}</b></div>` : ""}</div>
+          <span style="text-align:right;color:${txt3};font-variant-numeric:tabular-nums;">${p.alvo === Infinity ? "máx" : p.alvo}</span>
+          <span style="text-align:right;font-weight:800;color:${cor};font-variant-numeric:tabular-nums;">${p.qtd}</span>
+        </div>`;
+      }).join("")}
+    </div>
+    <div style="font-size:10px;font-weight:700;letter-spacing:.08em;color:${txt3};text-transform:uppercase;margin-bottom:6px;">Componentes usados</div>
+    <div style="border:1px solid ${bdr};border-radius:10px;overflow:hidden;margin-bottom:16px;">
+      <div style="display:grid;grid-template-columns:1fr 70px 70px 70px;gap:8px;padding:8px 12px;background:${bg2};font-size:9px;font-weight:700;letter-spacing:.08em;color:${txt3};text-transform:uppercase;"><span>SKU</span><span style="text-align:right;">Estoque</span><span style="text-align:right;">Usa</span><span style="text-align:right;">Sobra</span></div>
+      ${pl.componentes.map(c => `<div style="display:grid;grid-template-columns:1fr 70px 70px 70px;gap:8px;padding:7px 12px;border-top:1px solid ${bdr};font-size:11px;font-variant-numeric:tabular-nums;">
+        <span style="color:${txt2};font-family:'IBM Plex Mono',monospace;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(c.nome)}">${esc(c.sku)}</span>
+        <span style="text-align:right;color:${txt3};">${c.estoque}</span>
+        <span style="text-align:right;color:${txt};font-weight:700;">${c.usado}</span>
+        <span style="text-align:right;color:${c.sobra === 0 ? "#ef4444" : txt2};">${c.sobra}</span>
+      </div>`).join("")}
+    </div>`;
+  }
+
+  if (kits && kits.length) {
+    html += `<details style="margin-top:4px;"><summary style="cursor:pointer;font-size:11px;color:${txt3};padding:6px 0;">Ver máximo de cada kit sozinho (${kits.length} kits)</summary><div style="margin-top:8px;">`;
     kits.forEach((kit, i) => {
       const cls = kit.maxKits === 0 ? 'zero' : i === 0 ? 'melhor' : kit.maxKits >= 10 ? 'bom' : 'baixo';
       const cor = cls === 'melhor' ? '#00dfc3' : cls === 'bom' ? '#10b981' : cls === 'baixo' ? '#f59e0b' : txt3;
@@ -12503,6 +12605,7 @@ function renderKitsFull(container, color) {
         </div>
       </div>`;
     });
+    html += `</div></details>`;
   }
 
   html += `</div>`;
