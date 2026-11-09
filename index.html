@@ -12054,7 +12054,7 @@ async function fetchAjusteFilial() {
   try {
     const tokenFilial = state.ml_token_filial?.access_token;
     if (!tokenFilial) throw new Error("Token ML Filial não encontrado. Conecte o ML Filial.");
-    const r = await fetch(`${BACKEND}/api/ml-vendas?action=saidas-nf-filial&token=${encodeURIComponent(tokenFilial)}&de=2026-10-23`);
+    const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=saidas-nf-filial&token=${encodeURIComponent(tokenFilial)}&de=2026-10-23`);
     const data = await r.json();
     if (!r.ok || !data.ok) throw new Error(data.erro || "Erro ao buscar vendas");
     ajusteFilialState.dados = data;
