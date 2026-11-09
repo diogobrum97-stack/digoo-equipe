@@ -12071,24 +12071,36 @@ async function fetchAjusteFilial() {
       return;
     }
 
-    // Chama backend em um único request (maxDuration:60 no vercel.json)
-    const r = await fetch(`${VERCEL_BACKEND}/api/bling-produtos?action=desmembrar-kits-full`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ itens: kitsComVenda.map(k => ({ sku: k.sku, descricao: k.sku, quantidade: k.vendido })) })
-    });
-    const d = await r.json();
-    if (!r.ok || !d.ok) throw new Error(d.erro || "Erro ao desmembrar kits");
+    // Manda em lotes de 5 (igual NF transferência) — evita timeout e rate limiting
+    const LOTE = 5;
+    const itensTodos = kitsComVenda.map(k => ({ sku: k.sku, descricao: k.sku, quantidade: k.vendido }));
+    const todosItensResposta = [];
+    for (let i = 0; i < itensTodos.length; i += LOTE) {
+      const lote = itensTodos.slice(i, i + LOTE);
+      const r = await fetch(`${VERCEL_BACKEND}/api/bling-produtos?action=desmembrar-kits-full`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ itens: lote })
+      });
+      const txt = await r.text();
+      let d = {};
+      try { d = JSON.parse(txt); } catch(_) {}
+      if (!r.ok || !d.ok) {
+        console.error("[Ajuste Filial] lote", i / LOTE + 1, "status", r.status, txt);
+        throw new Error(`Lote ${i / LOTE + 1} (HTTP ${r.status}): ${d.erro || d.error?.message || d.error || txt.slice(0, 200)}`);
+      }
+      todosItensResposta.push(...(d.itens || []));
+    }
 
     const agrupado = {};
-    for (const item of (d.itens || [])) {
+    for (const item of todosItensResposta) {
       const key = (item.sku || '').trim().toUpperCase();
       if (!key) continue;
       if (agrupado[key]) {
         agrupado[key].qtdTotal += item.quantidade;
-        agrupado[key].origem.push({ kitSku: item.kitOrigem || '?', qtd: item.quantidade });
+        agrupado[key].origem.push({ kitSku: item.kitOrigem || item.kitsOrigem?.[0] || '?', qtd: item.quantidade });
       } else {
-        agrupado[key] = { sku: item.sku, nome: item.descricao || item.sku, qtdTotal: item.quantidade, origem: [{ kitSku: item.kitOrigem || '?', qtd: item.quantidade }] };
+        agrupado[key] = { sku: item.sku, nome: item.descricao || item.sku, qtdTotal: item.quantidade, origem: [{ kitSku: item.kitOrigem || item.kitsOrigem?.[0] || '?', qtd: item.quantidade }] };
       }
     }
     const componentes = Object.values(agrupado).sort((a, b) => b.qtdTotal - a.qtdTotal);
