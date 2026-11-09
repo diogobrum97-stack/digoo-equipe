@@ -12071,34 +12071,59 @@ async function fetchAjusteFilial() {
       return;
     }
 
-    // Chama desmembrar-kits-full em lotes de 4 (evita timeout Vercel 10s)
-    const itensDesmembrar = kitsComVenda.map(k => ({ sku: k.sku, descricao: k.sku, quantidade: k.vendido }));
-    const loteSize = 4;
-    const todosItens = [];
-    for (let i = 0; i < itensDesmembrar.length; i += loteSize) {
-      const lote = itensDesmembrar.slice(i, i + loteSize);
-      const r = await fetch(`${VERCEL_BACKEND}/api/bling-produtos?action=desmembrar-kits-full`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ itens: lote })
-      });
-      const d = await r.json();
-      if (!r.ok || !d.ok) throw new Error(d.erro || `Erro no lote ${i/loteSize+1}`);
-      todosItens.push(...(d.itens || []));
-    }
+    // Chama Bling diretamente do frontend (sem passar pelo backend/Vercel)
+    const blingToken = state.bling_token?.access_token;
+    if (!blingToken) throw new Error("Token Bling não encontrado. Conecte o Bling em Config → APIs.");
+    const blingHeaders = { "Authorization": `Bearer ${blingToken}` };
 
-    // Agrupa componentes iguais de lotes diferentes
+    // Para cada kit vendido: busca produto no Bling → pega estrutura → desmembra
     const agrupado = {};
-    for (const item of todosItens) {
-      const key = (item.sku || '').trim().toUpperCase();
-      if (!key) continue;
-      if (agrupado[key]) {
-        agrupado[key].qtdTotal += item.quantidade;
-        agrupado[key].origem.push({ kitSku: item.kitOrigem || '?', qtd: item.quantidade });
-      } else {
-        agrupado[key] = { sku: item.sku, nome: item.descricao || item.sku, qtdTotal: item.quantidade, origem: [{ kitSku: item.kitOrigem || '?', qtd: item.quantidade }] };
+
+    await Promise.all(kitsComVenda.map(async ({ sku, vendido }) => {
+      // 1. Busca ID do produto pelo SKU
+      const buscaR = await fetch(`https://api.bling.com.br/Api/v3/produtos?codigo=${encodeURIComponent(sku)}&limite=5`, { headers: blingHeaders });
+      if (!buscaR.ok) return;
+      const buscaD = await buscaR.json();
+      const enc = (buscaD.data || []).find(p => String(p.codigo||'').trim() === sku.trim()) || (buscaD.data||[])[0];
+      if (!enc) return;
+
+      // 2. Busca detalhe completo com estrutura
+      const detR = await fetch(`https://api.bling.com.br/Api/v3/produtos/${enc.id}`, { headers: blingHeaders });
+      if (!detR.ok) return;
+      const prod = (await detR.json()).data || {};
+      const estrutura = Array.isArray(prod.estrutura)
+        ? prod.estrutura
+        : (prod.estrutura?.componentes || prod.componentes || []);
+
+      if (!estrutura.length) {
+        // Produto simples — saída direta
+        const key = sku.trim().toUpperCase();
+        if (agrupado[key]) { agrupado[key].qtdTotal += vendido; agrupado[key].origem.push({ kitSku: sku, qtd: vendido }); }
+        else agrupado[key] = { sku, nome: prod.nome || sku, qtdTotal: vendido, origem: [{ kitSku: sku, qtd: vendido }] };
+        return;
       }
-    }
+
+      // 3. Desmembra componentes (já têm SKU/nome na estrutura ou busca por ID)
+      await Promise.all(estrutura.map(async comp => {
+        let compSku  = comp.produto?.codigo || comp.codigo || '';
+        let compNome = comp.produto?.nome   || comp.descricao || compSku;
+        const compQtd  = Number(comp.quantidade || 1) * vendido;
+        const compId   = comp.produto?.id;
+
+        if (!compSku && compId) {
+          const r = await fetch(`https://api.bling.com.br/Api/v3/produtos/${compId}`, { headers: blingHeaders });
+          const d = r.ok ? ((await r.json()).data || {}) : {};
+          compSku  = d.codigo || `id:${compId}`;
+          compNome = d.nome   || compSku;
+        }
+        if (!compSku) return;
+
+        const key = compSku.trim().toUpperCase();
+        if (agrupado[key]) { agrupado[key].qtdTotal += compQtd; agrupado[key].origem.push({ kitSku: sku, qtd: compQtd }); }
+        else agrupado[key] = { sku: compSku, nome: compNome, qtdTotal: compQtd, origem: [{ kitSku: sku, qtd: compQtd }] };
+      }));
+    }));
+
     const componentes = Object.values(agrupado).sort((a, b) => b.qtdTotal - a.qtdTotal);
 
     ajusteFilialState.dados = { resultado: componentes, kitsVendidos: kitsVendidosAll };
