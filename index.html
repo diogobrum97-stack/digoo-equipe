@@ -12059,38 +12059,45 @@ async function fetchAjusteFilial() {
     const estoqueFullMap = {};
     estoqueRows.forEach(r => { if (r.sku) estoqueFullMap[r.sku.trim().toUpperCase()] = r.aptas || 0; });
 
-    const kitsVendidos = AJUSTE_FILIAL_KITS.map(k => {
+    const kitsVendidosAll = AJUSTE_FILIAL_KITS.map(k => {
       const agoraNoFull = estoqueFullMap[k.sku.trim().toUpperCase()] ?? null;
       const vendido = agoraNoFull !== null ? Math.max(0, k.qtdEntrou - agoraNoFull) : null;
       return { ...k, agoraNoFull, vendido };
-    }).filter(k => k.vendido !== null && k.vendido > 0);
+    });
+    const kitsComVenda = kitsVendidosAll.filter(k => k.vendido !== null && k.vendido > 0);
 
-    if (!kitsVendidos.length) {
-      ajusteFilialState.dados = { resultado: [], kitsVendidos: AJUSTE_FILIAL_KITS.map(k => ({
-        ...k, agoraNoFull: estoqueFullMap[k.sku.trim().toUpperCase()] ?? null,
-        vendido: estoqueFullMap[k.sku.trim().toUpperCase()] !== undefined ? Math.max(0, k.qtdEntrou - (estoqueFullMap[k.sku.trim().toUpperCase()]||0)) : null
-      })), semEstoque: estoqueRows.length === 0 };
+    if (!kitsComVenda.length) {
+      ajusteFilialState.dados = { resultado: [], kitsVendidos: kitsVendidosAll };
       return;
     }
 
-    // Monta payload e envia pro backend desmembrar
-    const r = await fetch(`${VERCEL_BACKEND}/api/bling-produtos?action=desmembrar-kits`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ kits: kitsVendidos.map(k => ({ sku: k.sku, qtd: k.vendido })) })
-    });
-    const data = await r.json();
-    if (!r.ok || !data.ok) throw new Error(data.erro || "Erro ao desmembrar kits");
+    // Busca estrutura de cada kit no Bling em paralelo (1 chamada por kit = rápido)
+    const estruturas = await Promise.all(
+      kitsComVenda.map(async k => {
+        const r = await fetch(`${VERCEL_BACKEND}/api/bling-produtos?action=estrutura-kit&sku=${encodeURIComponent(k.sku)}`);
+        const d = await r.json();
+        if (!r.ok || !d.ok) return { sku: k.sku, vendido: k.vendido, tipo: 'erro', componentes: [] };
+        return { sku: k.sku, vendido: k.vendido, tipo: d.tipo, componentes: d.componentes || [] };
+      })
+    );
 
-    ajusteFilialState.dados = {
-      resultado: data.componentes,
-      kitsVendidos: AJUSTE_FILIAL_KITS.map(k => ({
-        ...k,
-        agoraNoFull: estoqueFullMap[k.sku.trim().toUpperCase()] ?? null,
-        vendido: estoqueFullMap[k.sku.trim().toUpperCase()] !== undefined
-          ? Math.max(0, k.qtdEntrou - (estoqueFullMap[k.sku.trim().toUpperCase()]||0)) : null
-      })),
-    };
+    // Desmembra: para cada kit vendido × estrutura → soma por componente
+    const agrupado = {};
+    for (const e of estruturas) {
+      for (const comp of e.componentes) {
+        const key = comp.sku.trim().toUpperCase();
+        const qtdComp = comp.qtdPorKit * e.vendido;
+        if (agrupado[key]) {
+          agrupado[key].qtdTotal += qtdComp;
+          agrupado[key].origem.push({ kitSku: e.sku, qtd: qtdComp });
+        } else {
+          agrupado[key] = { sku: comp.sku, nome: comp.nome, qtdTotal: qtdComp, origem: [{ kitSku: e.sku, qtd: qtdComp }] };
+        }
+      }
+    }
+    const componentes = Object.values(agrupado).sort((a, b) => b.qtdTotal - a.qtdTotal);
+
+    ajusteFilialState.dados = { resultado: componentes, kitsVendidos: kitsVendidosAll };
   } catch(e) {
     ajusteFilialState.erro = e.message;
   } finally {
