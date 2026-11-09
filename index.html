@@ -8477,7 +8477,6 @@ function render(){
             if(!kfContainer){ kfContainer=document.createElement("div"); kfContainer.className="kits-full-container"; panel.appendChild(kfContainer); }
             window._lastColor = color;
             renderKitsFull(kfContainer, color);
-            if (!kitsFullState.dados && !kitsFullState.carregando) fetchKitsFull();
           }else if(window._diogotab==="nf-full"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
             let nfFullContainer = panel.querySelector(".nf-full-container");
@@ -12339,104 +12338,89 @@ function renderAjusteFilial(container, color) {
 // ═══════════════ Calculadora de Kits Full ═══════════════
 let kitsFullState = { dados: null, carregando: false, erro: null, _fetchedAt: 0 };
 
-async function fetchKitsFull() {
-  if (kitsFullState.carregando) return;
-  kitsFullState.carregando = true;
+async function fetchKitsFull(skus) {
   kitsFullState.erro = null;
-  kitsFullState.progresso = "Buscando lista de kits...";
-  renderKitsFull(document.querySelector(".kits-full-container"), window._lastColor);
   const base = `${VERCEL_BACKEND}/api/bling-produtos?action=kit-full-planner`;
   const call = async (step, body) => {
-    const r = await fetch(`${base}&step=${step}`, body
-      ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }
-      : {});
+    const r = await fetch(`${base}&step=${step}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const txt = await r.text();
     let d = {}; try { d = JSON.parse(txt); } catch(_) {}
     if (!r.ok || !d.ok) throw new Error(`${step} (HTTP ${r.status}): ${d.erro || d.error || txt.slice(0, 150)}`);
     return d;
   };
-  try {
-    // 1) lista de kits
-    const { kits: lista } = await call("lista");
-    if (!lista.length) { kitsFullState.dados = []; return; }
+  const progresso = t => { kitsFullState.progresso = t; renderKitsFull(document.querySelector(".kits-full-container"), window._lastColor); };
 
-    // 2) estrutura dos kits em lotes de 6
-    const estruturas = [];
-    for (let i = 0; i < lista.length; i += 6) {
-      kitsFullState.progresso = `Lendo estrutura dos kits... ${Math.min(i + 6, lista.length)}/${lista.length}`;
-      renderKitsFull(document.querySelector(".kits-full-container"), window._lastColor);
-      const { kits } = await call("detalhes", { ids: lista.slice(i, i + 6).map(k => k.id) });
-      estruturas.push(...kits);
-    }
-
-    // 3) saldos de todos os componentes (únicos) em uma rodada
-    kitsFullState.progresso = "Buscando estoque dos componentes...";
-    renderKitsFull(document.querySelector(".kits-full-container"), window._lastColor);
-    const compIds = [...new Set(estruturas.flatMap(k => k.componentes.map(c => c.compId)).filter(Boolean))];
-    const saldos = {};
-    for (let i = 0; i < compIds.length; i += 200) {
-      const { saldos: s } = await call("saldos", { ids: compIds.slice(i, i + 200) });
-      Object.assign(saldos, s);
-    }
-
-    // 4) calcula quantos kits dá pra montar
-    const kits = [];
-    for (const k of estruturas) {
-      if (!k.componentes?.length) continue;
-      const base = lista.find(l => l.id === k.id) || {};
-      const componentes = k.componentes.map(c => ({
-        sku: c.sku || saldos[c.compId]?.sku || `id:${c.compId}`,
-        nome: c.nome || c.sku || saldos[c.compId]?.sku || "",
-        qtdPorKit: c.qtdPorKit,
-        estoque: saldos[c.compId]?.estoque ?? 0,
-      }));
-      let maxKits = Infinity, limitante = "";
-      for (const c of componentes) {
-        const possiveis = Math.floor(Math.max(0, c.estoque) / c.qtdPorKit);
-        if (possiveis < maxKits) { maxKits = possiveis; limitante = c.sku; }
-      }
-      if (maxKits === Infinity) maxKits = 0;
-      kits.push({ sku: k.sku || base.sku || "", nome: k.nome || base.nome || "", maxKits, limitante, componentes });
-    }
-    kits.sort((a, b) => b.maxKits - a.maxKits);
-    kitsFullState.dados = kits;
-    kitsFullState._fetchedAt = Date.now();
-  } catch(e) {
-    console.error("[Kits Full]", e);
-    kitsFullState.erro = e.message;
-  } finally {
-    kitsFullState.carregando = false;
-    kitsFullState.progresso = null;
-    renderKitsFull(document.querySelector(".kits-full-container"), window._lastColor);
+  const estruturas = [], naoEncontrados = [];
+  for (let i = 0; i < skus.length; i += 5) {
+    progresso(`Buscando kits no Bling... ${Math.min(i + 5, skus.length)}/${skus.length}`);
+    const d = await call("detalhes", { skus: skus.slice(i, i + 5) });
+    estruturas.push(...d.kits);
+    naoEncontrados.push(...(d.naoEncontrados || []));
   }
+  progresso("Buscando estoque dos componentes...");
+  const compIds = [...new Set(estruturas.flatMap(k => k.componentes.map(c => c.compId)).filter(Boolean))];
+  const saldos = {};
+  for (let i = 0; i < compIds.length; i += 200) {
+    const { saldos: s } = await call("saldos", { ids: compIds.slice(i, i + 200) });
+    Object.assign(saldos, s);
+  }
+  const kits = estruturas.map(k => ({
+    sku: k.sku, nome: k.nome,
+    componentes: k.componentes.map(c => ({
+      sku: c.sku || saldos[c.compId]?.sku || `id:${c.compId}`,
+      nome: c.nome || c.sku || "",
+      qtdPorKit: c.qtdPorKit,
+      estoque: saldos[c.compId]?.estoque ?? 0,
+    })),
+  }));
+  return { kits, naoEncontrados };
 }
 window.fetchKitsFull = fetchKitsFull;
 
 // Monta plano de envio: divide o estoque unitário entre os kits pedidos (round-robin)
 async function kitsFullMontar() {
+  if (kitsFullState.carregando) return;
   const ta = document.getElementById("kf-entrada");
   if (ta) kitsFullState.entrada = ta.value;
   const texto = kitsFullState.entrada || "";
-  if (!kitsFullState.dados) {
-    await fetchKitsFull();
-    if (!kitsFullState.dados) return;
-  }
-  const porSku = {};
-  kitsFullState.dados.forEach(k => { porSku[(k.sku || "").trim().toUpperCase()] = k; });
-  const estoque = {};
-  kitsFullState.dados.forEach(k => k.componentes.forEach(c => { estoque[c.sku] = Math.max(0, c.estoque || 0); }));
 
-  const pedidos = [], naoEncontrados = [];
+  const linhas = [], invalidas = [];
   texto.split("\n").map(l => l.trim()).filter(Boolean).forEach(l => {
     const m = l.match(/^(\S+)(?:[\s·x×:;,\t-]+(\d+))?\s*$/i);
-    if (!m) { naoEncontrados.push(l); return; }
-    const kit = porSku[m[1].toUpperCase()];
-    if (!kit) { naoEncontrados.push(m[1]); return; }
-    const ja = pedidos.find(p => p.kit === kit);
-    const alvo = m[2] ? Number(m[2]) : Infinity;
-    if (ja) ja.alvo = ja.alvo === Infinity || alvo === Infinity ? Infinity : ja.alvo + alvo;
-    else pedidos.push({ kit, alvo, qtd: 0, limitante: null });
+    if (!m) { invalidas.push(l); return; }
+    linhas.push({ sku: m[1].toUpperCase(), alvo: m[2] ? Number(m[2]) : Infinity });
   });
+  if (!linhas.length) { kitsFullState.erro = "Cole pelo menos um SKU de kit."; renderKitsFull(document.querySelector(".kits-full-container"), window._lastColor); return; }
+
+  kitsFullState.carregando = true;
+  kitsFullState.plano = null;
+  let kitsBling, naoEncontrados;
+  try {
+    ({ kits: kitsBling, naoEncontrados } = await fetchKitsFull([...new Set(linhas.map(l => l.sku))]));
+  } catch(e) {
+    console.error("[Kits Full]", e);
+    kitsFullState.erro = e.message;
+    kitsFullState.carregando = false; kitsFullState.progresso = null;
+    renderKitsFull(document.querySelector(".kits-full-container"), window._lastColor);
+    return;
+  }
+  kitsFullState.carregando = false; kitsFullState.progresso = null;
+
+  const porSku = {};
+  kitsBling.forEach(k => { porSku[(k.sku || "").trim().toUpperCase()] = k; });
+  const estoque = {};
+  kitsBling.forEach(k => k.componentes.forEach(c => { estoque[c.sku] = Math.max(0, c.estoque || 0); }));
+
+  const pedidos = [];
+  naoEncontrados = [...invalidas, ...naoEncontrados];
+  for (const l of linhas) {
+    const kit = porSku[l.sku];
+    if (!kit) continue;
+    if (!kit.componentes.length) { naoEncontrados.push(`${l.sku} (sem estrutura de kit)`); continue; }
+    const ja = pedidos.find(p => p.kit === kit);
+    if (ja) ja.alvo = ja.alvo === Infinity || l.alvo === Infinity ? Infinity : ja.alvo + l.alvo;
+    else pedidos.push({ kit, alvo: l.alvo, qtd: 0, limitante: null });
+  }
 
   const resto = { ...estoque };
   let avancou = true;
@@ -12492,14 +12476,7 @@ function renderKitsFull(container, color) {
       <div style="font-size:15px;font-weight:800;color:${txt};">Calculadora de Kits Full</div>
       <div style="font-size:11px;color:${txt3};margin-top:3px;">Cole os SKUs dos kits — o sistema divide o estoque unitário entre eles</div>
     </div>
-    <button onclick="fetchKitsFull()" style="display:flex;align-items:center;gap:6px;background:${bg2};border:1px solid ${bdr};color:${txt2};font:600 11px/1 Inter,sans-serif;padding:7px 14px;border-radius:6px;cursor:pointer;">
-      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="${carregando?"animation:_kspin 1s linear infinite;":""}">
-        <path d="M13.5 2.5A6.5 6.5 0 0 0 2 8M2.5 13.5A6.5 6.5 0 0 0 14 8"/>
-        <polyline points="13.5,2.5 13.5,5.5 10.5,5.5"/>
-        <polyline points="2.5,13.5 2.5,10.5 5.5,10.5"/>
-      </svg>
-      ${carregando ? "Buscando..." : "Sincronizar Bling"}
-    </button>
+
   </div>`;
 
   if (!document.getElementById('_kscss')) {
@@ -12513,17 +12490,11 @@ function renderKitsFull(container, color) {
     html += `<div style="background:#ef444422;border:1px solid #ef444455;border-radius:8px;padding:14px 16px;font-size:12px;color:#ef4444;">
       ⚠️ ${erro}
     </div>`;
-  } else if (carregando && !kits) {
-    html += `<div style="text-align:center;padding:40px 0;color:${txt3};font-size:12px;">${kitsFullState.progresso || "Buscando kits e estoques no Bling..."}</div>`;
-  } else if (!kits) {
-    html += `<div style="text-align:center;padding:40px 0;color:${txt3};font-size:12px;border:1px dashed ${bdr};border-radius:10px;">
-      Clique em "Sincronizar Bling" para buscar os kits e estoque atual
-    </div>`;
   }
 
   // ── Entrada de SKUs ──
   const esc = v => String(v ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;");
-  html += `<div style="background:${bg};border:1px solid ${bdr};border-radius:10px;padding:14px;margin:${erro||!kits?"12px":"0"} 0 14px;">
+  html += `<div style="background:${bg};border:1px solid ${bdr};border-radius:10px;padding:14px;margin:${erro?"12px":"0"} 0 14px;">
     <div style="font-size:11px;font-weight:700;color:${txt2};margin-bottom:6px;">Kits para enviar <span style="font-weight:400;color:${txt3};">— um por linha. Quantidade opcional: sem ela, o sistema monta o máximo dividindo o estoque.</span></div>
     <textarea id="kf-entrada" rows="6" placeholder="WINDX-KIT10-PRETO 50&#10;ZOLOE-KIT7-PRETO&#10;COSMIQ-REV-PRETO 100" style="width:100%;box-sizing:border-box;background:${bg2};border:1px solid ${bdr};border-radius:6px;padding:10px 12px;color:${txt};font:12px/1.5 'IBM Plex Mono',monospace;outline:none;resize:vertical;">${esc(kitsFullState.entrada)}</textarea>
     <button onclick="kitsFullMontar()" ${carregando?"disabled":""} style="margin-top:8px;width:100%;padding:10px;border-radius:6px;background:#3b82f6;border:none;color:#fff;font:700 12px Inter,sans-serif;cursor:pointer;">${carregando ? (kitsFullState.progresso || "Buscando no Bling...") : "Montar envio"}</button>
@@ -12563,50 +12534,6 @@ function renderKitsFull(container, color) {
     </div>`;
   }
 
-  if (kits && kits.length) {
-    html += `<details style="margin-top:4px;"><summary style="cursor:pointer;font-size:11px;color:${txt3};padding:6px 0;">Ver máximo de cada kit sozinho (${kits.length} kits)</summary><div style="margin-top:8px;">`;
-    kits.forEach((kit, i) => {
-      const cls = kit.maxKits === 0 ? 'zero' : i === 0 ? 'melhor' : kit.maxKits >= 10 ? 'bom' : 'baixo';
-      const cor = cls === 'melhor' ? '#00dfc3' : cls === 'bom' ? '#10b981' : cls === 'baixo' ? '#f59e0b' : txt3;
-      const corBg = cls === 'melhor' ? 'rgba(0,223,195,0.10)' : cls === 'bom' ? 'rgba(16,185,129,0.10)' : cls === 'baixo' ? 'rgba(245,158,11,0.10)' : bg3;
-      const corBdr = cls === 'melhor' ? 'rgba(0,223,195,0.30)' : cls === 'bom' ? 'rgba(16,185,129,0.30)' : cls === 'baixo' ? 'rgba(245,158,11,0.30)' : bdr;
-      const lbl = cls === 'melhor' ? 'Melhor opção' : cls === 'bom' ? 'Estoque bom' : cls === 'baixo' ? 'Estoque baixo' : 'Sem estoque';
-      const opacity = cls === 'zero' ? 'opacity:0.45;' : '';
-      const detId = `kf-det-${i}`;
-
-      const compsHtml = kit.componentes.map(c => {
-        const totalNec = c.qtdPorKit * kit.maxKits;
-        const cCls = c.estoque >= totalNec ? 'ok' : c.estoque > 0 ? 'low' : 'out';
-        const cCor = cCls === 'ok' ? '#10b981' : cCls === 'low' ? '#f59e0b' : '#ef4444';
-        const isLim = c.sku === kit.limitante && kit.maxKits > 0;
-        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid ${bdr};font-size:11px;">
-          <span style="color:${txt2};flex:1;min-width:0;padding-right:8px;">${c.nome || c.sku}</span>
-          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
-            <span style="color:${txt3};">×${c.qtdPorKit}/kit</span>
-            <span style="font-weight:700;color:${cCor};font-variant-numeric:tabular-nums;">${c.estoque} un</span>
-            ${isLim ? `<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(245,158,11,0.15);color:#f59e0b;border:1px solid rgba(245,158,11,0.3);">limitante</span>` : ''}
-          </div>
-        </div>`;
-      }).join('').replace(/border-bottom[^;]+;(?=[^<]*<\/div>\s*$)/, '');
-
-      html += `<div style="${opacity}background:${kit.maxKits > 0 ? corBg : bg3};border:1px solid ${corBdr};border-radius:10px;overflow:hidden;margin-bottom:8px;">
-        <div onclick="document.getElementById('${detId}').style.display=document.getElementById('${detId}').style.display==='none'?'block':'none';this.querySelector('.kf-chev').textContent=document.getElementById('${detId}').style.display==='none'?'▾':'▴';"
-          style="display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;">
-          <div style="font-size:28px;font-weight:800;min-width:44px;text-align:center;line-height:1;font-variant-numeric:tabular-nums;color:${cor};">${kit.maxKits}</div>
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:12px;font-weight:700;color:${txt};">${kit.nome}</div>
-            <div style="font-size:10px;color:${txt3};margin-top:2px;">${kit.sku}</div>
-          </div>
-          <span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;white-space:nowrap;background:${corBg};color:${cor};border:1px solid ${corBdr};">${lbl}</span>
-          <span class="kf-chev" style="color:${txt3};font-size:11px;">▾</span>
-        </div>
-        <div id="${detId}" style="display:none;padding:0 14px 12px;border-top:1px solid ${bdr};">
-          ${compsHtml}
-        </div>
-      </div>`;
-    });
-    html += `</div></details>`;
-  }
 
   html += `</div>`;
   container.innerHTML = html;
