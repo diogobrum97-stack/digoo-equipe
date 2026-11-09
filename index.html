@@ -12071,28 +12071,32 @@ async function fetchAjusteFilial() {
       return;
     }
 
-    // Busca estrutura de cada kit no Bling em paralelo (1 chamada por kit = rápido)
-    const estruturas = await Promise.all(
-      kitsComVenda.map(async k => {
-        const r = await fetch(`${VERCEL_BACKEND}/api/bling-produtos?action=estrutura-kit&sku=${encodeURIComponent(k.sku)}`);
-        const d = await r.json();
-        if (!r.ok || !d.ok) return { sku: k.sku, vendido: k.vendido, tipo: 'erro', componentes: [] };
-        return { sku: k.sku, vendido: k.vendido, tipo: d.tipo, componentes: d.componentes || [] };
-      })
-    );
+    // Chama desmembrar-kits-full em lotes de 4 (evita timeout Vercel 10s)
+    const itensDesmembrar = kitsComVenda.map(k => ({ sku: k.sku, descricao: k.sku, quantidade: k.vendido }));
+    const loteSize = 4;
+    const todosItens = [];
+    for (let i = 0; i < itensDesmembrar.length; i += loteSize) {
+      const lote = itensDesmembrar.slice(i, i + loteSize);
+      const r = await fetch(`${VERCEL_BACKEND}/api/bling-produtos?action=desmembrar-kits-full`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ itens: lote })
+      });
+      const d = await r.json();
+      if (!r.ok || !d.ok) throw new Error(d.erro || `Erro no lote ${i/loteSize+1}`);
+      todosItens.push(...(d.itens || []));
+    }
 
-    // Desmembra: para cada kit vendido × estrutura → soma por componente
+    // Agrupa componentes iguais de lotes diferentes
     const agrupado = {};
-    for (const e of estruturas) {
-      for (const comp of e.componentes) {
-        const key = comp.sku.trim().toUpperCase();
-        const qtdComp = comp.qtdPorKit * e.vendido;
-        if (agrupado[key]) {
-          agrupado[key].qtdTotal += qtdComp;
-          agrupado[key].origem.push({ kitSku: e.sku, qtd: qtdComp });
-        } else {
-          agrupado[key] = { sku: comp.sku, nome: comp.nome, qtdTotal: qtdComp, origem: [{ kitSku: e.sku, qtd: qtdComp }] };
-        }
+    for (const item of todosItens) {
+      const key = (item.sku || '').trim().toUpperCase();
+      if (!key) continue;
+      if (agrupado[key]) {
+        agrupado[key].qtdTotal += item.quantidade;
+        agrupado[key].origem.push({ kitSku: item.kitOrigem || '?', qtd: item.quantidade });
+      } else {
+        agrupado[key] = { sku: item.sku, nome: item.descricao || item.sku, qtdTotal: item.quantidade, origem: [{ kitSku: item.kitOrigem || '?', qtd: item.quantidade }] };
       }
     }
     const componentes = Object.values(agrupado).sort((a, b) => b.qtdTotal - a.qtdTotal);
