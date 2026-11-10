@@ -10533,7 +10533,8 @@ function renderConfig(panel, color) {
       <pre id="ps-logs" style="background:var(--bg3);border-radius:10px;padding:12px;margin:0;max-height:320px;overflow:auto;font:11px/1.5 'IBM Plex Mono',monospace;color:var(--text2);white-space:pre-wrap;word-break:break-word;">Aguardando log…</pre>`;
     panel.appendChild(wrap);
 
-    const $ = id => document.getElementById(id);
+    // busca dentro do próprio painel (ele ainda não está no document quando os listeners são ligados)
+    const $ = id => wrap.querySelector("#" + id);
     let status = null, cfg = null;
     const ago = ms => { const s = Math.round(ms/1000); return s < 5 ? "agora" : s < 60 ? s+"s" : s < 3600 ? Math.round(s/60)+"min" : s < 86400 ? Math.round(s/3600)+"h" : Math.round(s/86400)+"d"; };
 
@@ -10568,7 +10569,7 @@ function renderConfig(panel, color) {
 
     window._psUnsubs.push(onValue(ref(db, "/print_server_status"), snap => { status = snap.val(); pintarStatus(); preencherSelect(); }));
     window._psUnsubs.push(onValue(ref(db, "/print_server/config"), snap => { cfg = snap.val() || {}; preencherSelect(); }));
-    const tick = setInterval(() => { if(!$("ps-dot")) return clearInterval(tick); pintarStatus(); }, 5000);
+    const tick = setInterval(() => { if(!wrap.isConnected) return clearInterval(tick); pintarStatus(); }, 5000);
 
     window._psUnsubs.push(onValue(ref(db, "/print_server/logs"), snap => {
       const el = $("ps-logs"); if(!el) return;
