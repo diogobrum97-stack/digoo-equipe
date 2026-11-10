@@ -12452,17 +12452,23 @@ async function kitsFullMontar() {
   }
 
   const resto = { ...estoque };
-  let avancou = true;
-  while (avancou) {
-    avancou = false;
-    for (const p of pedidos) {
-      if (p.qtd >= p.alvo || p.limitante) continue;
-      const falta = p.kit.componentes.find(c => (resto[c.sku] || 0) < c.qtdPorKit);
-      if (falta) { p.limitante = falta.sku; continue; }
-      p.kit.componentes.forEach(c => { resto[c.sku] -= c.qtdPorKit; });
-      p.qtd++; avancou = true;
+  // Monta 1 kit por vez de cada pedido do grupo, até bater o alvo ou faltar componente
+  const distribuir = grupo => {
+    let avancou = true;
+    while (avancou) {
+      avancou = false;
+      for (const p of grupo) {
+        if (p.qtd >= p.alvo || p.limitante) continue;
+        const falta = p.kit.componentes.find(c => (resto[c.sku] || 0) < c.qtdPorKit);
+        if (falta) { p.limitante = falta.sku; continue; }
+        p.kit.componentes.forEach(c => { resto[c.sku] -= c.qtdPorKit; });
+        p.qtd++; avancou = true;
+      }
     }
-  }
+  };
+  // 1º reserva os kits com quantidade digitada; 2º divide o que sobrou entre os "máx"
+  distribuir(pedidos.filter(p => p.alvo !== Infinity));
+  distribuir(pedidos.filter(p => p.alvo === Infinity));
 
   const usados = {};
   pedidos.forEach(p => p.kit.componentes.forEach(c => {
@@ -12524,7 +12530,7 @@ function renderKitsFull(container, color) {
   // ── Entrada de SKUs ──
   const esc = v => String(v ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;");
   html += `<div style="background:${bg};border:1px solid ${bdr};border-radius:10px;padding:14px;margin:${erro?"12px":"0"} 0 14px;">
-    <div style="font-size:11px;font-weight:700;color:${txt2};margin-bottom:6px;">Kits para enviar <span style="font-weight:400;color:${txt3};">— um por linha. Quantidade opcional: sem ela, o sistema monta o máximo dividindo o estoque.</span></div>
+    <div style="font-size:11px;font-weight:700;color:${txt2};margin-bottom:6px;">Kits para enviar <span style="font-weight:400;color:${txt3};">— um por linha. Com quantidade, o estoque é reservado primeiro. Sem quantidade, monta o máximo com o que sobrar.</span></div>
     <textarea id="kf-entrada" rows="6" placeholder="WINDX-KIT10-PRETO 50&#10;ZOLOE-KIT7-PRETO&#10;COSMIQ-REV-PRETO 100" style="width:100%;box-sizing:border-box;background:${bg2};border:1px solid ${bdr};border-radius:6px;padding:10px 12px;color:${txt};font:12px/1.5 'IBM Plex Mono',monospace;outline:none;resize:vertical;">${esc(kitsFullState.entrada)}</textarea>
     <button onclick="kitsFullMontar()" ${carregando?"disabled":""} style="margin-top:8px;width:100%;padding:10px;border-radius:6px;background:#3b82f6;border:none;color:#fff;font:700 12px Inter,sans-serif;cursor:pointer;">${carregando ? (kitsFullState.progresso || "Buscando no Bling...") : "Montar envio"}</button>
   </div>`;
