@@ -10452,155 +10452,157 @@ function renderConfig(panel, color) {
     return;
   }
 
-  // ── Sub-aba: Impressão ───────────────────────────────────────
+  // ── Sub-aba: Impressão (controle remoto do digoo-print-server) ──
   if(window._configTab === "impressao") {
-    const impTitle = document.createElement("div");
-    impTitle.style.cssText = "font-size:8px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin-bottom:14px;";
-    impTitle.textContent = "Servidor de Impressão";
-    panel.appendChild(impTitle);
+    (window._psUnsubs || []).forEach(u => { try { u(); } catch(_){} });
+    window._psUnsubs = [];
+    const esc = v => String(v ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");
+    const lbl = "font-size:9px;letter-spacing:1px;color:var(--text3);text-transform:uppercase;margin-bottom:3px;";
+    const sec = "font-size:8px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin:16px 0 10px;";
+    const btn = "background:var(--bg2);border:1px solid var(--border,#333);color:var(--text2);font:600 11px Inter,sans-serif;padding:8px 12px;border-radius:7px;cursor:pointer;";
+    const cell = (l, id) => `<div style="background:var(--bg2);border-radius:7px;padding:10px 12px;min-width:0;"><div style="${lbl}">${l}</div><div id="${id}" style="font-size:12px;color:var(--text2);font-weight:500;overflow:hidden;text-overflow:ellipsis;">—</div></div>`;
 
-    // Card principal de status
-    const card = document.createElement("div");
-    card.style.cssText = "background:var(--bg3);border-radius:10px;padding:16px;margin-bottom:14px;";
-    panel.appendChild(card);
+    const wrap = document.createElement("div");
+    wrap.innerHTML = `
+      <div style="font-size:8px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin-bottom:14px;">Servidor de Impressão</div>
+      <div style="background:var(--bg3);border-radius:10px;padding:16px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          <div id="ps-dot" style="width:8px;height:8px;border-radius:50%;background:#888;flex-shrink:0;"></div>
+          <div style="flex:1;"><div style="font-size:12px;font-weight:600;color:var(--text);">digoo-print-server</div>
+          <div id="ps-status" style="font-size:11px;color:var(--text3);margin-top:2px;">Verificando…</div></div>
+        </div>
+        <div id="ps-alerta"></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;">
+          ${cell("Última resposta","ps-last")}${cell("Impressora","ps-printer")}${cell("Na fila","ps-queue")}
+          ${cell("Versão","ps-version")}${cell("PC","ps-host")}${cell("Rodando há","ps-uptime")}
+        </div>
+      </div>
 
-    // Linha: dot + nome + status
-    const headerRow = document.createElement("div");
-    headerRow.style.cssText = "display:flex;align-items:center;gap:10px;margin-bottom:12px;";
+      <div style="${sec}">Configuração</div>
+      <div style="background:var(--bg3);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px;">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
+          <div style="flex:1;min-width:200px;"><div style="${lbl}">Impressora</div>
+            <select id="ps-sel-printer" style="width:100%;background:var(--bg2);border:1px solid var(--border,#333);color:var(--text);font:12px Inter,sans-serif;padding:8px;border-radius:7px;"><option>Carregando…</option></select></div>
+          <div style="min-width:150px;"><div style="${lbl}">Ajuste da página</div>
+            <select id="ps-sel-ajuste" style="width:100%;background:var(--bg2);border:1px solid var(--border,#333);color:var(--text);font:12px Inter,sans-serif;padding:8px;border-radius:7px;">
+              <option value="fit">Ajustar à página</option><option value="noscale">Tamanho real</option><option value="shrink">Só reduzir</option></select></div>
+          <button id="ps-salvar" style="${btn}background:#3b82f6;border-color:#3b82f6;color:#fff;">Salvar</button>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button data-acao="test" style="${btn}">🖨 Imprimir teste</button>
+          <button id="ps-pausar" style="${btn}">⏸ Pausar impressão</button>
+          <button data-acao="printers" style="${btn}">↻ Atualizar lista de impressoras</button>
+          <button data-acao="restart" style="${btn}">⟳ Reiniciar servidor</button>
+          <button data-acao="update" style="${btn}">⬇ Atualizar código (GitHub)</button>
+          <button data-acao="limpar_antigos" style="${btn}">Expirar fila pendente</button>
+        </div>
+        <div id="ps-cmd" style="font-size:11px;color:var(--text3);min-height:14px;"></div>
+      </div>
 
-    const dot = document.createElement("div");
-    dot.id = "ps-dot";
-    dot.style.cssText = "width:8px;height:8px;border-radius:50%;background:#888;flex-shrink:0;";
+      <div style="display:flex;justify-content:space-between;align-items:center;"><div style="${sec}">Últimas impressões</div>
+        <button id="ps-hist-refresh" style="${btn}padding:4px 10px;font-size:10px;">↻ Atualizar</button></div>
+      <div id="ps-hist" style="display:flex;flex-direction:column;gap:6px;"><div style="font-size:11px;color:var(--text3);">Carregando…</div></div>
 
-    const headerInfo = document.createElement("div");
-    headerInfo.style.cssText = "flex:1;";
-    const nomeSrv = document.createElement("div");
-    nomeSrv.style.cssText = "font-size:12px;font-weight:600;color:var(--text);";
-    nomeSrv.textContent = "digoo-print-server";
-    const statusSrv = document.createElement("div");
-    statusSrv.id = "ps-status";
-    statusSrv.style.cssText = "font-size:11px;color:var(--text3);margin-top:2px;";
-    statusSrv.textContent = "Verificando…";
-    headerInfo.appendChild(nomeSrv);
-    headerInfo.appendChild(statusSrv);
-    headerRow.appendChild(dot);
-    headerRow.appendChild(headerInfo);
-    card.appendChild(headerRow);
+      <div style="${sec}">Log do servidor (ao vivo)</div>
+      <pre id="ps-logs" style="background:var(--bg3);border-radius:10px;padding:12px;margin:0;max-height:320px;overflow:auto;font:11px/1.5 'IBM Plex Mono',monospace;color:var(--text2);white-space:pre-wrap;word-break:break-word;">Aguardando log…</pre>`;
+    panel.appendChild(wrap);
 
-    // Grade de detalhes
-    const grid = document.createElement("div");
-    grid.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:8px;";
+    const $ = id => document.getElementById(id);
+    let status = null, cfg = null;
+    const ago = ms => { const s = Math.round(ms/1000); return s < 5 ? "agora" : s < 60 ? s+"s" : s < 3600 ? Math.round(s/60)+"min" : s < 86400 ? Math.round(s/3600)+"h" : Math.round(s/86400)+"d"; };
 
-    const mkCell = (label, id) => {
-      const c = document.createElement("div");
-      c.style.cssText = "background:var(--bg2);border-radius:7px;padding:10px 12px;";
-      const l = document.createElement("div");
-      l.style.cssText = "font-size:9px;letter-spacing:1px;color:var(--text3);text-transform:uppercase;margin-bottom:3px;";
-      l.textContent = label;
-      const v = document.createElement("div");
-      v.id = id;
-      v.style.cssText = "font-size:12px;color:var(--text2);font-weight:500;";
-      v.textContent = "—";
-      c.appendChild(l); c.appendChild(v);
-      return c;
+    const preencherSelect = () => {
+      const sel = $("ps-sel-printer"); if(!sel || sel === document.activeElement) return;
+      const lista = [...new Set([...(status?.printers || []), cfg?.printer].filter(Boolean))];
+      sel.innerHTML = lista.length ? lista.map(n => `<option value="${esc(n)}" ${n === cfg?.printer ? "selected" : ""}>${esc(n)}${n === status?.printer_padrao ? " (padrão do Windows)" : ""}${status?.printers && !status.printers.includes(n) ? " ⚠ não instalada" : ""}</option>`).join("") : `<option value="">Nenhuma impressora informada</option>`;
+      const aj = $("ps-sel-ajuste"); if(aj && cfg?.print_settings && aj !== document.activeElement) aj.value = cfg.print_settings;
+      const pz = $("ps-pausar"); if(pz) pz.textContent = cfg?.paused ? "▶ Retomar impressão" : "⏸ Pausar impressão";
     };
 
-    grid.appendChild(mkCell("Última resposta", "ps-last"));
-    grid.appendChild(mkCell("Impressora", "ps-printer"));
-    grid.appendChild(mkCell("Na fila", "ps-queue"));
-    grid.appendChild(mkCell("Versão", "ps-version"));
-    card.appendChild(grid);
+    const pintarStatus = () => {
+      const s = status, dotEl = $("ps-dot"); if(!dotEl) return;
+      if(!s) { dotEl.style.background = "#888"; $("ps-status").textContent = "Nenhum sinal recebido"; return; }
+      const ms = Date.now() - s.ts, online = ms < 15000;
+      const cor = online ? (s.paused ? "#f0b400" : "#22c55e") : ms < 60000 ? "#f0b400" : "#e8432d";
+      dotEl.style.background = cor; dotEl.style.animation = online ? "" : "siren 1s infinite";
+      $("ps-status").style.color = cor;
+      $("ps-status").textContent = online ? (s.paused ? "Conectado — impressão PAUSADA" : "Conectado") : `Sem sinal há ${ago(ms)} — PC desligado, sem internet ou servidor fechado`;
+      $("ps-last").textContent = ago(ms) === "agora" ? "agora" : ago(ms) + " atrás";
+      $("ps-printer").textContent = (s.printer || "—") + (s.printer_instalada === false ? " ⚠" : "");
+      $("ps-queue").textContent = s.queue_size ?? "—";
+      $("ps-version").textContent = s.version || "—";
+      $("ps-host").textContent = s.hostname || "—";
+      $("ps-uptime").textContent = s.started_at ? ago(Date.now() - s.started_at) : "—";
+      const al = [];
+      if(s.printer_instalada === false) al.push(`Impressora "${esc(s.printer)}" não está instalada no PC. Escolha outra abaixo.`);
+      if(s.sumatra_ok === false) al.push("SumatraPDF.exe não encontrado na pasta do servidor.");
+      if(s.ultimo_erro && Date.now() - s.ultimo_erro.ts < 3600000) al.push(`Último erro (${ago(Date.now()-s.ultimo_erro.ts)} atrás): ${esc(s.ultimo_erro.msg)}`);
+      $("ps-alerta").innerHTML = al.map(t => `<div style="background:#e8432d18;border:1px solid #e8432d55;color:#ff8a7a;border-radius:7px;padding:8px 10px;font-size:11px;margin-bottom:8px;">${t}</div>`).join("");
+    };
 
-    // Histórico da fila
-    const histTitle = document.createElement("div");
-    histTitle.style.cssText = "font-size:8px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin-bottom:10px;margin-top:14px;";
-    histTitle.textContent = "Últimas impressões";
-    panel.appendChild(histTitle);
+    window._psUnsubs.push(onValue(ref(db, "/print_server_status"), snap => { status = snap.val(); pintarStatus(); preencherSelect(); }));
+    window._psUnsubs.push(onValue(ref(db, "/print_server/config"), snap => { cfg = snap.val() || {}; preencherSelect(); }));
+    const tick = setInterval(() => { if(!$("ps-dot")) return clearInterval(tick); pintarStatus(); }, 5000);
 
-    const histList = document.createElement("div");
-    histList.id = "ps-hist";
-    histList.style.cssText = "display:flex;flex-direction:column;gap:6px;";
-    histList.innerHTML = `<div style="font-size:11px;color:var(--text3);">Carregando…</div>`;
-    panel.appendChild(histList);
+    window._psUnsubs.push(onValue(ref(db, "/print_server/logs"), snap => {
+      const el = $("ps-logs"); if(!el) return;
+      const l = snap.val()?.linhas || [];
+      const noFim = el.scrollTop + el.clientHeight >= el.scrollHeight - 20;
+      el.innerHTML = l.length ? l.slice(-100).map(x => { const e = esc(x); return /\bERRO\b|✗/.test(x) ? `<span style="color:#ff6b5a;">${e}</span>` : /\bAVISO\b/.test(x) ? `<span style="color:#f0b400;">${e}</span>` : /✓/.test(x) ? `<span style="color:#22c55e;">${e}</span>` : e; }).join("\n") : "Sem log ainda — o servidor precisa estar na versão 3.0+";
+      if(noFim) el.scrollTop = el.scrollHeight;
+    }));
 
-    // Lê Firebase para popular o painel (usa db e funções já importadas no topo)
-    (async () => {
-      try {
-        // Status do servidor (heartbeat) — escuta em tempo real
-        onValue(ref(db, "/print_server_status"), (snap) => {
-          const s = snap.val();
-          const dotEl = document.getElementById("ps-dot");
-          const stEl = document.getElementById("ps-status");
-          const lastEl = document.getElementById("ps-last");
-          const printerEl = document.getElementById("ps-printer");
-          const queueEl = document.getElementById("ps-queue");
-          const verEl = document.getElementById("ps-version");
-          if(!dotEl) return; // painel foi desmontado
+    let cmdAtual = null;
+    window._psUnsubs.push(onValue(ref(db, "/print_server/cmd"), snap => {
+      const c = snap.val(), el = $("ps-cmd"); if(!el || !c) return;
+      const cor = c.status === "feito" ? "#22c55e" : c.status === "erro" ? "#e8432d" : "#f0b400";
+      el.innerHTML = `<span style="color:${cor};">${c.status === "pendente" ? "⏳ Enviado" : c.status === "feito" ? "✓" : "✗"} ${esc(c.acao)}</span>${c.resultado ? " — " + esc(c.resultado) : ""} <span style="opacity:.6;">(${ago(Date.now() - (c.feito_em || c.ts))} atrás)</span>`;
+      if(c.status !== "pendente" && cmdAtual === c.ts) { cmdAtual = null; setTimeout(carregarHist, 1500); }
+    }));
 
-          if(!s) {
-            dotEl.style.background = "#888";
-            if(stEl) stEl.textContent = "Nenhum sinal recebido";
-            return;
-          }
-
-          const secsAgo = Math.round((Date.now() - s.ts) / 1000);
-          const online = secsAgo < 15;
-          const dotColor = online ? "#22c55e" : secsAgo < 60 ? "#f0b400" : "#e8432d";
-          dotEl.style.background = dotColor;
-          dotEl.style.animation = online ? "" : "siren 1s infinite";
-          if(stEl) { stEl.style.color = dotColor; stEl.textContent = online ? "Conectado" : `Sem sinal há ${secsAgo < 60 ? secsAgo+"s" : Math.round(secsAgo/60)+"min"}`; }
-          if(lastEl) lastEl.textContent = secsAgo < 5 ? "agora" : secsAgo < 60 ? secsAgo+"s atrás" : Math.round(secsAgo/60)+"min atrás";
-          if(printerEl) printerEl.textContent = s.printer || "—";
-          if(queueEl) queueEl.textContent = s.queue_size != null ? String(s.queue_size) : "—";
-          if(verEl) verEl.textContent = s.version || "—";
-        });
-
-        // Últimas 10 impressões da fila (leitura única)
-        const filaSnap = await get(ref(db, "/fila_impressao"));
-        const filaData = filaSnap.val() || {};
-        const histEl = document.getElementById("ps-hist");
-        if(!histEl) return;
-
-        const entries = Object.entries(filaData)
-          .map(([k, v]) => ({ order_id: k, ...v }))
-          .sort((a,b) => (b.ts||0) - (a.ts||0))
-          .slice(0, 10);
-
-        if(entries.length === 0) {
-          histEl.innerHTML = `<div style="font-size:11px;color:var(--text3);">Nenhuma impressão registrada</div>`;
-          return;
-        }
-
-        histEl.innerHTML = "";
-        entries.forEach(e => {
-          const row = document.createElement("div");
-          row.style.cssText = "display:flex;align-items:center;justify-content:space-between;background:var(--bg3);border-radius:7px;padding:10px 12px;";
-
-          const left = document.createElement("div");
-          const oid = document.createElement("div");
-          oid.style.cssText = "font-size:11px;color:var(--text2);font-weight:500;";
-          oid.textContent = e.order_id || "—";
-          const meta = document.createElement("div");
-          meta.style.cssText = "font-size:10px;color:var(--text3);margin-top:2px;";
-          const ago = e.ts ? Math.round((Date.now() - e.ts) / 60000) : null;
-          meta.textContent = (e.operador ? e.operador + " · " : "") + (ago != null ? (ago < 1 ? "agora" : ago+"min atrás") : "");
-          left.appendChild(oid); left.appendChild(meta);
-
-          const badge = document.createElement("div");
-          const st = e.status || "aguardando";
-          const stColor = st === "impresso" ? "#22c55e" : st === "erro" ? "#e8432d" : "#f0b400";
-          badge.style.cssText = `font-size:10px;color:${stColor};background:${stColor}22;border-radius:4px;padding:3px 8px;font-weight:500;`;
-          badge.textContent = st === "impresso" ? "Impresso" : st === "erro" ? "Erro" : "Aguardando";
-
-          row.appendChild(left); row.appendChild(badge);
-          histEl.appendChild(row);
-        });
-      } catch(e) {
-        const histEl = document.getElementById("ps-hist");
-        if(histEl) histEl.innerHTML = `<div style="font-size:11px;color:#e8432d;">Erro ao carregar: ${e.message}</div>`;
+    const enviarCmd = async acao => {
+      if(["restart","update"].includes(acao) && !window._psConfirm) {
+        window._psConfirm = acao; $("ps-cmd").innerHTML = `<span style="color:#f0b400;">Clique de novo para confirmar: ${acao === "restart" ? "reiniciar" : "atualizar código"}</span>`;
+        setTimeout(() => { window._psConfirm = null; }, 4000); return;
       }
-    })();
+      window._psConfirm = null;
+      cmdAtual = Date.now();
+      await set(ref(db, "/print_server/cmd"), { acao, status: "pendente", ts: cmdAtual, por: (typeof currentUser === "string" ? currentUser : currentUser?.nome) || "" });
+    };
+    wrap.querySelectorAll("[data-acao]").forEach(b => b.addEventListener("click", () => enviarCmd(b.dataset.acao)));
+    $("ps-salvar").addEventListener("click", async () => {
+      const printer = $("ps-sel-printer").value, print_settings = $("ps-sel-ajuste").value;
+      if(!printer) return;
+      await update(ref(db, "/print_server/config"), { printer, print_settings });
+      $("ps-cmd").innerHTML = `<span style="color:#22c55e;">✓ Configuração salva — impressora: ${esc(printer)}</span>`;
+    });
+    $("ps-pausar").addEventListener("click", () => update(ref(db, "/print_server/config"), { paused: !cfg?.paused }));
 
+    const carregarHist = async () => {
+      const histEl = $("ps-hist"); if(!histEl) return;
+      try {
+        const fila = (await get(ref(db, "/fila_impressao"))).val() || {};
+        const itens = Object.entries(fila).map(([k, v]) => ({ id: k, ...v })).sort((a,b) => (b.ts||0) - (a.ts||0)).slice(0, 15);
+        if(!itens.length) { histEl.innerHTML = `<div style="font-size:11px;color:var(--text3);">Nenhuma impressão registrada</div>`; return; }
+        const cores = { impresso:["#22c55e","Impresso"], erro:["#e8432d","Erro"], expirado:["#888","Expirado"], aguardando:["#f0b400","Aguardando"] };
+        histEl.innerHTML = itens.map(e => {
+          const [cor, txt] = cores[e.status] || cores.aguardando;
+          return `<div style="display:flex;align-items:center;gap:10px;background:var(--bg3);border-radius:7px;padding:10px 12px;">
+            <div style="flex:1;min-width:0;"><div style="font-size:11px;color:var(--text2);font-weight:500;">${esc(e.order_id || e.id)}</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:2px;">${esc(e.operador || "")}${e.operador ? " · " : ""}${e.ts ? ago(Date.now()-e.ts) + " atrás" : ""}${e.impressora ? " · " + esc(e.impressora) : ""}</div>
+            ${e.status === "erro" && e.erro_msg ? `<div style="font-size:10px;color:#ff8a7a;margin-top:3px;word-break:break-word;">${esc(e.erro_msg)}</div>` : ""}</div>
+            <button data-reimp="${esc(e.id)}" style="${btn}padding:4px 10px;font-size:10px;">Reimprimir</button>
+            <div style="font-size:10px;color:${cor};background:${cor}22;border-radius:4px;padding:3px 8px;font-weight:500;white-space:nowrap;">${txt}</div></div>`;
+        }).join("");
+        histEl.querySelectorAll("[data-reimp]").forEach(b => b.addEventListener("click", async () => {
+          b.textContent = "Enviado…"; b.disabled = true;
+          await update(ref(db, `/fila_impressao/${b.dataset.reimp}`), { status: "aguardando", ts: Date.now(), erro_msg: null });
+          setTimeout(carregarHist, 4000);
+        }));
+      } catch(e) { histEl.innerHTML = `<div style="font-size:11px;color:#e8432d;">Erro ao carregar: ${esc(e.message)}</div>`; }
+    };
+    $("ps-hist-refresh").addEventListener("click", carregarHist);
+    carregarHist();
     return;
   }
 
