@@ -84,6 +84,32 @@
 </div>
 
 <script>
+  // Mostra erros de JavaScript na tela (suporte remoto sem precisar abrir o console)
+  (function() {
+    var vistos = {};
+    function mostrar(msg, onde) {
+      msg = String(msg || "erro desconhecido"); if (vistos[msg]) return; vistos[msg] = 1;
+      var box = document.getElementById("erro-tela");
+      if (!box) {
+        box = document.createElement("div"); box.id = "erro-tela";
+        box.style.cssText = "position:fixed;left:12px;right:12px;bottom:12px;z-index:2147483647;background:#2a0d0a;border:1px solid #e8432d;color:#ffb4a8;border-radius:10px;padding:10px 12px;font:12px/1.5 monospace;max-height:40vh;overflow:auto;box-shadow:0 8px 30px #000a;";
+        box.innerHTML = '<div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:6px;font-family:Inter,sans-serif;"><b style="color:#fff;">⚠ Erro no OPS — tire um print e mande pro suporte</b><span style="cursor:pointer;color:#fff;" onclick="this.closest(\'#erro-tela\').remove()">✕</span></div>';
+        (document.body || document.documentElement).appendChild(box);
+      }
+      var l = document.createElement("div"); l.style.cssText = "border-top:1px solid #e8432d44;padding-top:4px;margin-top:4px;word-break:break-word;";
+      l.textContent = new Date().toLocaleTimeString("pt-BR") + " — " + msg + (onde ? "  (" + onde + ")" : "");
+      box.appendChild(l);
+    }
+    window.addEventListener("error", function(e) {
+      if (!e.message) return; // falha de carregar imagem/script externo
+      mostrar(e.message, (e.filename || "").split("/").pop() + ":" + e.lineno);
+    });
+    window.addEventListener("unhandledrejection", function(e) {
+      var r = e.reason; mostrar((r && (r.message || r.code)) || r, "promise");
+    });
+    window._mostrarErroTela = mostrar;
+  })();
+
   window._firebaseTimeout = setTimeout(function() {
     var el = document.getElementById('identity-screen');
     if(el && !window._firebaseOk) {
