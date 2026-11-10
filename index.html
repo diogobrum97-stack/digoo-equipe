@@ -12407,7 +12407,7 @@ async function fetchKitsFull(skus) {
 window.fetchKitsFull = fetchKitsFull;
 
 // Monta plano de envio: divide o estoque unitário entre os kits pedidos (round-robin)
-async function kitsFullMontar() {
+async function kitsFullMontar(opts = {}) {
   if (kitsFullState.carregando) return;
   const ta = document.getElementById("kf-entrada");
   if (ta) kitsFullState.entrada = ta.value;
@@ -12421,11 +12421,17 @@ async function kitsFullMontar() {
   });
   if (!linhas.length) { kitsFullState.erro = "Cole pelo menos um SKU de kit."; renderKitsFull(document.querySelector(".kits-full-container"), window._lastColor); return; }
 
-  kitsFullState.carregando = true;
-  kitsFullState.plano = null;
+  const skusUnicos = [...new Set(linhas.map(l => l.sku))];
+  const chave = skusUnicos.slice().sort().join("|");
   let kitsBling, naoEncontrados;
-  try {
-    ({ kits: kitsBling, naoEncontrados } = await fetchKitsFull([...new Set(linhas.map(l => l.sku))]));
+  const cache = kitsFullState._cache;
+  if (cache && cache.chave === chave && (opts.semBusca || Date.now() - cache.ts < 10 * 60 * 1000)) {
+    kitsBling = cache.kits; naoEncontrados = [...cache.naoEncontrados];
+  } else try {
+    kitsFullState.carregando = true;
+    kitsFullState.plano = null;
+    ({ kits: kitsBling, naoEncontrados } = await fetchKitsFull(skusUnicos));
+    kitsFullState._cache = { chave, kits: kitsBling, naoEncontrados: [...naoEncontrados], ts: Date.now() };
   } catch(e) {
     console.error("[Kits Full]", e);
     kitsFullState.erro = e.message;
@@ -12482,6 +12488,24 @@ async function kitsFullMontar() {
   renderKitsFull(document.querySelector(".kits-full-container"), window._lastColor);
 }
 window.kitsFullMontar = kitsFullMontar;
+// Edita a quantidade de um kit direto na tabela: reescreve a linha na caixa de texto e recalcula sem buscar no Bling
+window.kitsFullSetQtd = function(sku, valor) {
+  const ta = document.getElementById("kf-entrada");
+  if (ta) kitsFullState.entrada = ta.value;
+  const n = String(valor).trim() === "" ? null : Math.max(0, parseInt(valor, 10) || 0);
+  const alvo = sku.toUpperCase();
+  let achou = false;
+  const linhas = (kitsFullState.entrada || "").split("\n").map(l => {
+    const m = l.trim().match(/^(\S+)/);
+    if (m && m[1].toUpperCase() === alvo && !achou) { achou = true; return n === null ? m[1] : `${m[1]} ${n}`; }
+    if (m && m[1].toUpperCase() === alvo) return null; // remove duplicatas do mesmo SKU
+    return l;
+  }).filter(l => l !== null);
+  if (!achou) linhas.push(n === null ? sku : `${sku} ${n}`);
+  kitsFullState.entrada = linhas.join("\n");
+  if (ta) ta.value = kitsFullState.entrada; // senão o recálculo lê o texto antigo
+  kitsFullMontar({ semBusca: true });
+};
 window.kitsFullCopiar = function() {
   const pl = kitsFullState.plano; if (!pl) return;
   const txt = pl.pedidos.filter(p => p.qtd > 0).map(p => `${p.kit.sku}\t${p.qtd}`).join("\n");
@@ -12545,14 +12569,17 @@ function renderKitsFull(container, color) {
       <button id="kf-copiar" onclick="kitsFullCopiar()" style="background:${bg2};border:1px solid ${bdr};color:${txt2};font:600 11px Inter,sans-serif;padding:6px 12px;border-radius:6px;cursor:pointer;">Copiar envio (SKU + qtd)</button>
     </div>
     <div style="border:1px solid ${bdr};border-radius:10px;overflow:hidden;margin-bottom:16px;">
-      <div style="display:grid;grid-template-columns:1fr 70px 70px;gap:8px;padding:8px 12px;background:${bg2};font-size:9px;font-weight:700;letter-spacing:.08em;color:${txt3};text-transform:uppercase;"><span>Kit</span><span style="text-align:right;">Pedido</span><span style="text-align:right;">Monta</span></div>
+      <div style="display:grid;grid-template-columns:1fr 80px 70px;gap:8px;padding:8px 12px;background:${bg2};font-size:9px;font-weight:700;letter-spacing:.08em;color:${txt3};text-transform:uppercase;"><span>Kit</span><span style="text-align:right;">Pedido</span><span style="text-align:right;">Monta</span></div>
       ${pl.pedidos.map(p => {
         const ok = p.alvo === Infinity || p.qtd >= p.alvo;
         const cor = p.qtd === 0 ? "#ef4444" : ok ? "#10b981" : "#f59e0b";
-        return `<div style="display:grid;grid-template-columns:1fr 70px 70px;gap:8px;padding:9px 12px;border-top:1px solid ${bdr};align-items:center;font-size:12px;">
+        return `<div style="display:grid;grid-template-columns:1fr 80px 70px;gap:8px;padding:9px 12px;border-top:1px solid ${bdr};align-items:center;font-size:12px;">
           <div style="min-width:0;"><div style="font-weight:700;color:${txt};font-family:'IBM Plex Mono',monospace;font-size:11px;">${esc(p.kit.sku)}</div>
           ${!ok || (p.alvo === Infinity && p.limitante) ? `<div style="font-size:10px;color:${txt3};margin-top:2px;">parou por falta de <b style="color:#f59e0b;">${esc(p.limitante)}</b></div>` : ""}</div>
-          <span style="text-align:right;color:${txt3};font-variant-numeric:tabular-nums;">${p.alvo === Infinity ? "máx" : p.alvo}</span>
+          <input type="number" min="0" inputmode="numeric" value="${p.alvo === Infinity ? "" : p.alvo}" placeholder="máx"
+            onchange="kitsFullSetQtd('${esc(p.kit.sku)}', this.value)" onkeydown="if(event.key==='Enter')this.blur()"
+            title="Digite a quantidade que você quer deste kit. Vazio = máximo com o que sobrar."
+            style="width:100%;box-sizing:border-box;text-align:right;background:${bg2};border:1px solid ${p.alvo === Infinity ? bdr : '#3b82f6'};border-radius:5px;padding:4px 6px;color:${txt};font:600 12px Inter,sans-serif;font-variant-numeric:tabular-nums;outline:none;">
           <span style="text-align:right;font-weight:800;color:${cor};font-variant-numeric:tabular-nums;">${p.qtd}</span>
         </div>`;
       }).join("")}
