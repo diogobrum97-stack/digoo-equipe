@@ -12576,7 +12576,7 @@ function renderKitsFull(container, color) {
         return `<div style="display:grid;grid-template-columns:1fr 80px 70px;gap:8px;padding:9px 12px;border-top:1px solid ${bdr};align-items:center;font-size:12px;">
           <div style="min-width:0;"><div style="font-weight:700;color:${txt};font-family:'IBM Plex Mono',monospace;font-size:11px;">${esc(p.kit.sku)}</div>
           ${!ok || (p.alvo === Infinity && p.limitante) ? `<div style="font-size:10px;color:${txt3};margin-top:2px;">parou por falta de <b style="color:#f59e0b;">${esc(p.limitante)}</b></div>` : ""}</div>
-          <input type="number" min="0" inputmode="numeric" value="${p.alvo === Infinity ? "" : p.alvo}" placeholder="máx"
+          <input type="text" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/\D/g,'')" value="${p.alvo === Infinity ? "" : p.alvo}" placeholder="máx"
             onchange="kitsFullSetQtd('${esc(p.kit.sku)}', this.value)" onkeydown="if(event.key==='Enter')this.blur()"
             title="Digite a quantidade que você quer deste kit. Vazio = máximo com o que sobrar."
             style="width:100%;box-sizing:border-box;text-align:right;background:${bg2};border:1px solid ${p.alvo === Infinity ? bdr : '#3b82f6'};border-radius:5px;padding:4px 6px;color:${txt};font:600 12px Inter,sans-serif;font-variant-numeric:tabular-nums;outline:none;">
