@@ -1247,6 +1247,8 @@ let _perg = {
 // Isso garante que perg-root sempre existe e pergRender() sempre consegue atualizar,
 // mesmo quando o usuário está no dashboard ou em outra aba.
 const _pergShell = document.createElement("div");
+document.addEventListener("pointerdown", e => { if (!_pergShell.contains(e.target)) window._ultimoCliqueFora = Date.now(); }, true);
+document.addEventListener("click", e => { if (!_pergShell.contains(e.target)) window._ultimoCliqueFora = Date.now(); }, true);
 _pergShell.style.cssText = "max-width:760px;";
 _pergShell.innerHTML = `
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
@@ -1286,8 +1288,19 @@ _pergShell.innerHTML = `
   <div id="perg-hist-root" style="display:none;"></div>
 `;
 
+// Perguntas abertas com itens pendentes = tela congelada (não recarrega sozinha)
+function _pergCongelada() {
+  return window._diogotab === "perguntas" && !window._showEquipe && _perg.lista && _perg.lista.length > 0;
+}
+// Depois de responder/excluir/bloquear: se acabou tudo, aí sim busca as novas
+function _pergAposAcao() {
+  pergRender();
+  if (_perg.lista && _perg.lista.length === 0) { _perg.atualizarDepois = false; setTimeout(() => pergBuscar(true), 800); }
+}
+
 async function pergBuscar(silencioso = false) {
   if (_perg.carregando) return;
+  if (silencioso && _pergCongelada()) { _perg.atualizarDepois = true; return; }
   _perg.carregando = true;
   _perg.erro = null;
   pergRender();
@@ -1392,7 +1405,7 @@ async function pergEnviar(qid, texto) {
     const d = await r.json().catch(() => ({}));
     if (d.ok) {
       _perg.lista = _perg.lista.filter(x => String(x.question_id) !== String(qid));
-      pergRender();
+      _pergAposAcao();
     } else {
       if (btn) { btn.disabled = false; btn.textContent = "Enviar"; }
       alert("Erro ao enviar: " + (d.error || "desconhecido"));
@@ -1422,7 +1435,7 @@ async function pergExcluir(qid, btn) {
     const d = await r.json().catch(() => ({}));
     if (d.ok) {
       _perg.lista = _perg.lista.filter(x => String(x.question_id) !== String(qid));
-      pergRender();
+      _pergAposAcao();
     } else {
       if (btn) { btn.disabled = false; btn.textContent = "Excluir"; }
       alert("Erro ao excluir: " + (d.error || "desconhecido"));
@@ -1454,7 +1467,7 @@ async function pergBloquear(qid, btn) {
     if (d.ok) {
       // Remove todas as perguntas desse comprador da lista
       _perg.lista = _perg.lista.filter(x => String(x.from_user) !== String(p.from_user));
-      pergRender();
+      _pergAposAcao();
     } else {
       if (btn) { btn.disabled = false; btn.textContent = "Bloquear"; }
       alert("Erro ao bloquear: " + (d.error || "desconhecido"));
@@ -7608,6 +7621,19 @@ function renderChatModal(memberName, color) {
 function render(){
   window._renderTab = render;
   if(!currentUser) return;
+  // ── Perguntas congeladas: enquanto a aba está aberta, nada redesenha a tela sozinho
+  // (senão o scroll volta pro topo e atrapalha quem está escrevendo). Só passa render
+  // disparado por clique do usuário fora da área das perguntas (menu, abas, tema).
+  {
+    const naPerg = window._diogotab === "perguntas" && !window._showEquipe;
+    const jaEstava = window._pergUltimaAba === "perguntas";
+    const cliqueRecente = Date.now() - (window._ultimoCliqueFora || 0) < 1500;
+    if (naPerg && jaEstava && !cliqueRecente) { window._pergRenderAdiado = true; return; }
+    const saiuDaPerg = jaEstava && !naPerg;
+    window._pergUltimaAba = naPerg ? "perguntas" : (window._diogotab || "");
+    window._pergRenderAdiado = false;
+    if (saiuDaPerg && _perg.atualizarDepois) { _perg.atualizarDepois = false; setTimeout(() => pergBuscar(true), 300); }
+  }
   try{
   setSyncing(false);
   const container=document.getElementById("cards");container.innerHTML="";
