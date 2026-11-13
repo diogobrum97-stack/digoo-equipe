@@ -2499,6 +2499,34 @@ async function marcarPedidoFeitoExterno(pedido, quemSou, refreshFn) {
 // Renderiza a tela de Picking & Packing dentro de um panel.
 // quemSou = "Bruno" ou "Diogo" (define quem fica dono da trava ao abrir um pedido).
 // modoOperar = true mostra a tela operacional (fila + bipagem).
+// Foto do pedido no picking: mesma fonte do checkout (anuncio_foto vindo do sync),
+// depois miniatura do item; se não tiver nenhuma, busca a foto do anúncio no ML (com cache).
+const _pkFotoCache = {};
+const _pkFotoBuscando = new Set();
+function pkFotoPedido(pedido) {
+  if (!pedido) return "";
+  if (pedido.anuncio_foto) return pedido.anuncio_foto;
+  const it = (pedido.itens || []).find(i => i.thumbnail || i.foto);
+  if (it) return it.thumbnail || it.foto;
+  const itemId = (pedido.itens || []).map(i => i.item_id || i.id || i.mlb).find(Boolean);
+  if (!itemId) return "";
+  if (_pkFotoCache[itemId] !== undefined) return _pkFotoCache[itemId];
+  if (!_pkFotoBuscando.has(itemId)) {
+    _pkFotoBuscando.add(itemId);
+    const token = pedido.conta && String(pedido.conta).toLowerCase().includes("filial") ? state.ml_token_filial?.access_token : (state.ml_token?.access_token || state.ml_token_filial?.access_token);
+    fetch(`https://api.mercadolibre.com/items?ids=${itemId}&attributes=id,thumbnail,pictures`, token ? { headers: { Authorization: `Bearer ${token}` } } : {})
+      .then(r => r.ok ? r.json() : [])
+      .then(arr => {
+        const b = arr?.[0]?.body || {};
+        const pic = (b.pictures || [])[0];
+        _pkFotoCache[itemId] = (pic?.secure_url || pic?.url || b.thumbnail || "").replace(/^http:/, "https:");
+        if (_pkFotoCache[itemId] && typeof refreshPickingUI === "function") refreshPickingUI();
+      })
+      .catch(() => { _pkFotoCache[itemId] = ""; });
+  }
+  return "";
+}
+
 function renderPickingTab(panel, quemSou, modoOperar) {
   panel.innerHTML = "";
   const refresh = () => renderPickingTab(panel, quemSou, modoOperar);
@@ -2589,7 +2617,7 @@ function renderPickingTab(panel, quemSou, modoOperar) {
     const clicavel = !travadoPorOutro && modoOperar && !etiquetaImpressa;
     const isPack = pedido.pack_id && pedido.order_ids && pedido.order_ids.length > 1;
     const qtdItens = (pedido.itens || []).reduce((t, it) => t + (Number(it.quantidade) || 1), 0);
-    const foto = (pedido.itens || []).find(it => it.thumbnail)?.thumbnail || "";
+    const foto = pkFotoPedido(pedido);
     const minDesde = pedido.data ? Math.max(0, Math.round((Date.now() - new Date(pedido.data).getTime()) / 60000)) : null;
     const desde = minDesde == null ? "" : minDesde < 60 ? `há ${minDesde}min` : minDesde < 1440 ? `há ${Math.round(minDesde / 60)}h` : `há ${Math.round(minDesde / 1440)}d`;
     const corBorda = ativo ? "#3b82f6" : travadoPorOutro ? "rgba(245,158,11,0.45)" : etiquetaImpressa ? "rgba(16,185,129,0.4)" : (T.isLight ? "#e4e4e7" : "#262626");
@@ -2644,7 +2672,7 @@ function renderPickingTab(panel, quemSou, modoOperar) {
     if (!proximo) {
       colDetalhe.innerHTML = `<div style="text-align:center;padding:70px 0;"><div style="font-size:34px;color:#10b981;">✓</div><div style="font-size:15px;font-weight:600;color:${T.text};margin-top:8px;">${pickingState.carregando ? "Buscando pedidos..." : "Tudo separado por enquanto"}</div><div style="font-size:12px;color:${pkSub};margin-top:4px;">${pickingState.carregando ? "" : "Pedidos novos aparecem aqui sozinhos."}</div></div>`;
     } else {
-      const fotoP = (proximo.itens || []).find(it => it.thumbnail)?.thumbnail || "";
+      const fotoP = pkFotoPedido(proximo);
       const qtdP = (proximo.itens || []).reduce((t, it) => t + (Number(it.quantidade) || 1), 0);
       const tituloP = proximo.itens?.[0]?.titulo || "Pedido";
       colDetalhe.innerHTML = `
@@ -2678,7 +2706,7 @@ function renderPickingTab(panel, quemSou, modoOperar) {
 
     // Bloco de anuncio: foto + titulo do ML + numero do pedido
     const blocoAnuncio = document.createElement("div");
-    const fotoUrl = pedido.anuncio_foto || pedido.itens?.[0]?.thumbnail || "";
+    const fotoUrl = pkFotoPedido(pedido);
     const tituloAnuncio = pedido.anuncio_titulo || pedido.itens?.[0]?.titulo || "Pedido";
     const totalItens = pedido.itens_bipagem.reduce((s, l) => s + l.quantidadeNecessaria, 0);
     const totalBipados = pedido.itens_bipagem.reduce((s, l) => s + l.quantidadeBipada, 0);
