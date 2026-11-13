@@ -835,6 +835,7 @@ onValue(ref(db,"/fechamentos"),         snap => { state.fechamentos = snap.val()
 onValue(ref(db,"/config_atributos"),    snap => { state.config_atributos = snap.val() || null; });
 onValue(ref(db,"/config_kits"),         snap => { state.config_kits = snap.val() || null; });
 onValue(ref(db,"/picking_concluidos"),  snap => { state.picking_concluidos = snap.val() || {}; });
+onValue(ref(db,"/print_server_status"), snap => { state._printStatus = snap.val() || null; });
 onValue(ref(db,"/picking_locks"),       snap => { state.picking_locks = snap.val() || {}; });
 
 // ── Webhooks do Mercado Livre (tempo real) ─────────────────────────────────
@@ -2511,19 +2512,41 @@ function renderPickingTab(panel, quemSou, modoOperar) {
     fetchPickingFila().then(refreshPickingUI);
   }
 
+  const pkTxt = T.isLight ? "#111111" : "#ffffff";
+  const pkSub = T.isLight ? "#666" : "#8a8a8a";
+  const pkSurf = T.isLight ? "#f4f4f5" : "#151515";
+  const pkMono = "'IBM Plex Mono',monospace";
   const header = document.createElement("div");
-  header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;";
+  header.style.cssText = "display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px;";
   header.innerHTML = `
     <div>
-      <div style="font-size:16px;font-weight:700;color:${T.isLight?"#111111":"#ffffff"};">Picking & Packing</div>
-      <div style="font-size:11px;color:#666;margin-top:2px;">${pickingState.fila ? `${pickingState.fila.length} pedidos prontos pra separar` : "Carregando fila..."}</div>
+      <div style="font-size:18px;font-weight:700;color:${pkTxt};">Picking & Packing</div>
+      <div style="font-size:12px;color:${pkSub};margin-top:2px;">Pedidos do Mercado Livre pra enviar hoje</div>
     </div>
     <div style="display:flex;gap:8px;">
-      <button id="picking-btn-diagnostico" style="background:none;border:1px solid ${T.border};border-radius:6px;padding:7px 14px;color:#666;font-size:11px;cursor:pointer;">🔍 Diagnóstico</button>
-      <button id="picking-btn-atualizar" style="background:${T.bg3};border:1px solid ${T.border};border-radius:6px;padding:7px 14px;color:${T.text2};font-size:11px;cursor:pointer;">${pickingState.carregando ? "Buscando..." : "↻ Atualizar"}</button>
+      <button id="picking-btn-diagnostico" style="background:none;border:1px solid ${T.border};border-radius:8px;padding:8px 14px;color:${pkSub};font:500 12px Inter,sans-serif;cursor:pointer;">Diagnóstico</button>
+      <button id="picking-btn-atualizar" style="background:${T.bg3};border:1px solid ${T.border};border-radius:8px;padding:8px 14px;color:${T.text2};font:600 12px Inter,sans-serif;cursor:pointer;">${pickingState.carregando ? "Buscando..." : "↻ Atualizar"}</button>
     </div>
   `;
   wrap.appendChild(header);
+
+  const inicioHoje = new Date(); inicioHoje.setHours(0,0,0,0);
+  const vistosHoje = new Set();
+  Object.values(state.picking_concluidos || {}).forEach(c => {
+    if (c && (c.ts || 0) >= inicioHoje.getTime()) vistosHoje.add((c.order_ids || []).join(",") + "|" + c.ts);
+  });
+  const ps = state._printStatus;
+  const psOnline = ps && Date.now() - (ps.ts || 0) < 20000;
+  const psTxt = !ps ? "Sem sinal" : psOnline ? (ps.paused ? "Pausada" : "Online") : "Offline";
+  const psCor = psOnline && !ps.paused ? "#10b981" : (psOnline ? "#f59e0b" : "#ef4444");
+  const stats = document.createElement("div");
+  stats.style.cssText = "display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px;";
+  const stat = (label, valor) => `<div style="background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:12px 14px;box-shadow:${T.cardShadow};"><div style="font-size:11px;color:${pkSub};">${label}</div><div style="margin-top:4px;">${valor}</div></div>`;
+  stats.innerHTML =
+    stat("Na fila", `<span style="font:600 26px ${pkMono};color:${pkTxt};">${pickingState.fila ? pickingState.fila.length : "—"}</span>`) +
+    stat("Separados hoje", `<span style="font:600 26px ${pkMono};color:${pkTxt};">${vistosHoje.size}</span>`) +
+    stat("Impressora", `<span style="display:inline-flex;align-items:center;gap:7px;font:600 14px Inter,sans-serif;color:${psCor};padding-top:7px;"><span style="width:8px;height:8px;border-radius:50%;background:${psCor};"></span>${psTxt}${ps?.printer ? `<span style="font-weight:400;color:${pkSub};font-size:12px;">· ${ps.printer}</span>` : ""}</span>`);
+  wrap.appendChild(stats);
 
   if (pickingState.erro) {
     const errBox = document.createElement("div");
@@ -2533,19 +2556,19 @@ function renderPickingTab(panel, quemSou, modoOperar) {
   }
 
   const row = document.createElement("div");
-  row.style.cssText = "display:grid;grid-template-columns:280px 1fr;gap:16px;align-items:start;";
+  row.style.cssText = "display:grid;grid-template-columns:minmax(260px,320px) minmax(0,1fr);gap:16px;align-items:start;";
   wrap.appendChild(row);
 
   // ── Coluna esquerda: fila ──
   const colFila = document.createElement("div");
-  colFila.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:14px;box-shadow:${T.cardShadow};`;
+  colFila.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:12px;padding:12px;box-shadow:${T.cardShadow};`;
   const filaLista = pickingState.fila || [];
-  colFila.innerHTML = `<div style="font-size:11px;color:#888;margin-bottom:10px;">FILA · ${filaLista.length} pedidos</div>`;
+  colFila.innerHTML = `<div style="font-size:12px;font-weight:600;color:${pkSub};margin-bottom:10px;">Fila · ${filaLista.length} ${filaLista.length === 1 ? "pedido" : "pedidos"}</div>`;
   const filaBody = document.createElement("div");
-  filaBody.style.cssText = "display:flex;flex-direction:column;gap:8px;max-height:600px;overflow-y:auto;";
+  filaBody.style.cssText = "display:flex;flex-direction:column;gap:8px;max-height:640px;overflow-y:auto;";
 
   if (filaLista.length === 0 && !pickingState.carregando) {
-    filaBody.innerHTML = `<div style="font-size:11px;color:#555;text-align:center;padding:20px 0;">Nenhum pedido pendente ✓</div>`;
+    filaBody.innerHTML = `<div style="font-size:12px;color:#10b981;text-align:center;padding:24px 0;">✓ Nenhum pedido pendente</div>`;
   }
 
   filaLista.forEach(pedido => {
@@ -2555,21 +2578,32 @@ function renderPickingTab(panel, quemSou, modoOperar) {
     const nomeItem = pedido.itens[0]?.titulo || "Pedido";
     const etiquetaImpressa = pedido.substatus === "printed";
     const clicavel = !travadoPorOutro && modoOperar && !etiquetaImpressa;
-    const card = document.createElement("div");
-    card.style.cssText = `padding:10px 12px;border-radius:8px;cursor:${clicavel ? "pointer" : "default"};background:${ativo ? (T.isLight?"#ffffff":"#1e1e1e") : (T.isLight?"#f2f2f2":"#111")};border:1px solid ${ativo ? T.border : (T.isLight?"#e0e0e0":"#282828")};opacity:${travadoPorOutro ? "0.5" : "1"};`;
     const isPack = pedido.pack_id && pedido.order_ids && pedido.order_ids.length > 1;
+    const qtdItens = (pedido.itens || []).reduce((t, it) => t + (Number(it.quantidade) || 1), 0);
+    const foto = (pedido.itens || []).find(it => it.thumbnail)?.thumbnail || "";
+    const minDesde = pedido.data ? Math.max(0, Math.round((Date.now() - new Date(pedido.data).getTime()) / 60000)) : null;
+    const desde = minDesde == null ? "" : minDesde < 60 ? `há ${minDesde}min` : minDesde < 1440 ? `há ${Math.round(minDesde / 60)}h` : `há ${Math.round(minDesde / 1440)}d`;
+    const corBorda = ativo ? "#3b82f6" : travadoPorOutro ? "rgba(245,158,11,0.45)" : etiquetaImpressa ? "rgba(16,185,129,0.4)" : (T.isLight ? "#e4e4e7" : "#262626");
+    const chip = (txt, cor) => `<span style="display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:500;white-space:nowrap;background:${cor ? cor + "1f" : pkSurf};color:${cor || pkSub};">${txt}</span>`;
+    const card = document.createElement("div");
+    card.style.cssText = `display:flex;gap:10px;padding:10px;border-radius:10px;cursor:${clicavel ? "pointer" : "default"};background:${ativo ? (T.isLight ? "rgba(59,130,246,0.06)" : "rgba(59,130,246,0.10)") : (T.isLight ? "#fafafa" : "#101010")};border:1px solid ${corBorda};opacity:${travadoPorOutro ? "0.65" : "1"};transition:border-color .15s,background .15s;`;
+    if (clicavel && !ativo) {
+      card.onmouseenter = () => { card.style.borderColor = "#3b82f6"; };
+      card.onmouseleave = () => { card.style.borderColor = corBorda; };
+    }
     card.innerHTML = `
-      <div style="font-size:11px;font-weight:700;color:${T.text};display:flex;align-items:center;gap:6px;">
-        #${pedido.order_id}
-        ${isPack ? `<span style="font-size:8px;font-weight:700;padding:2px 6px;border-radius:4px;background:rgba(245,158,11,0.18);color:#f59e0b;letter-spacing:.04em;white-space:nowrap;">📦 ${pedido.order_ids.length} PACOTES</span>` : ""}
+      ${foto ? `<img src="${foto}" style="width:48px;height:48px;object-fit:contain;border-radius:8px;background:${T.isLight ? "#fff" : "#1a1a1a"};border:1px solid ${T.border};flex-shrink:0;" onerror="this.style.visibility='hidden'">` : `<div style="width:48px;height:48px;border-radius:8px;background:${pkSurf};flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;">📦</div>`}
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;font-weight:600;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${nomeItem.replace(/"/g, "&quot;")}">${nomeItem}</div>
+        <div style="font-size:11px;color:${T.text3};margin-top:2px;">#${pedido.order_id}</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;">
+          ${chip(`${qtdItens} ${qtdItens === 1 ? "item" : "itens"}`)}
+          ${desde ? chip(desde) : ""}
+          ${isPack ? chip(`📦 ${pedido.order_ids.length} pacotes`, "#f59e0b") : ""}
+        </div>
+        <div style="font-size:11px;font-weight:500;margin-top:6px;color:${travadoPorOutro ? "#f59e0b" : ativo ? "#3b82f6" : etiquetaImpressa ? "#10b981" : T.text3};">${travadoPorOutro ? `🔒 ${lock.por} separando` : ativo ? "● Separando agora" : etiquetaImpressa ? "✓ Etiqueta impressa" : "Pronto pra separar"}</div>
+        ${etiquetaImpressa && modoOperar ? `<button data-marcar-feito="${pedido.order_id}" style="width:100%;margin-top:8px;padding:6px;border-radius:6px;background:${T.okBg};border:1px solid ${T.okBor};color:#10b981;font:600 11px Inter,sans-serif;cursor:pointer;">Marcar como já feito</button>` : ""}
       </div>
-      <div style="font-size:10px;color:${T.text2};margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nomeItem}</div>
-      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;">
-        <div style="display:inline-block;padding:2px 7px;border-radius:9px;font-size:8px;font-weight:700;background:rgba(59,130,246,0.15);color:#3b82f6;">Enviar hoje</div>
-        <div style="display:inline-block;padding:2px 7px;border-radius:9px;font-size:8px;font-weight:700;background:${etiquetaImpressa ? "rgba(16,185,129,0.15)" : "rgba(139,92,246,0.15)"};color:${etiquetaImpressa ? "#10b981" : "#8b5cf6"};">${etiquetaImpressa ? "Etiqueta impressa" : "Etiqueta pronta para imprimir"}</div>
-      </div>
-      <div style="font-size:9px;color:${T.text3};margin-top:6px;">${travadoPorOutro ? `● sendo separado por ${lock.por}` : (ativo ? "● separando agora" : "na fila")}</div>
-      ${etiquetaImpressa && modoOperar ? `<button data-marcar-feito="${pedido.order_id}" style="width:100%;margin-top:8px;padding:6px;border-radius:6px;background:${T.okBg};border:1px solid ${T.okBor};color:#10b981;font-size:9px;font-weight:600;cursor:pointer;">Marcar como já feito</button>` : ""}
     `;
     if (clicavel) {
       card.onclick = () => { if (!ativo) abrirPedidoPicking(pedido, quemSou, refresh); };
@@ -2592,12 +2626,37 @@ function renderPickingTab(panel, quemSou, modoOperar) {
 
   // ── Coluna direita: detalhe do pedido ativo, ou instrução ──
   const colDetalhe = document.createElement("div");
-  colDetalhe.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:18px;min-height:300px;box-shadow:${T.cardShadow};`;
+  colDetalhe.style.cssText = `background:${T.card};border:1px solid ${T.border};border-radius:12px;padding:20px;min-height:320px;box-shadow:${T.cardShadow};`;
 
   if (pickingState.abrindoPedido) {
-    colDetalhe.innerHTML = `<div style="font-size:12px;color:#555;text-align:center;padding:60px 0;">Abrindo pedido e consultando o Bling...</div>`;
+    colDetalhe.innerHTML = `<div style="font-size:13px;color:${pkSub};text-align:center;padding:80px 0;">Abrindo pedido e consultando o Bling...</div>`;
   } else if (!pickingState.pedidoAtivo) {
-    colDetalhe.innerHTML = `<div style="font-size:12px;color:#555;text-align:center;padding:60px 0;">Clique num pedido da fila pra começar a separar.</div>`;
+    const proximo = filaLista.find(p => { const l = lockValido(p); return !(l && l.por !== quemSou) && p.substatus !== "printed"; });
+    if (!proximo) {
+      colDetalhe.innerHTML = `<div style="text-align:center;padding:70px 0;"><div style="font-size:34px;color:#10b981;">✓</div><div style="font-size:15px;font-weight:600;color:${T.text};margin-top:8px;">${pickingState.carregando ? "Buscando pedidos..." : "Tudo separado por enquanto"}</div><div style="font-size:12px;color:${pkSub};margin-top:4px;">${pickingState.carregando ? "" : "Pedidos novos aparecem aqui sozinhos."}</div></div>`;
+    } else {
+      const fotoP = (proximo.itens || []).find(it => it.thumbnail)?.thumbnail || "";
+      const qtdP = (proximo.itens || []).reduce((t, it) => t + (Number(it.quantidade) || 1), 0);
+      const tituloP = proximo.itens?.[0]?.titulo || "Pedido";
+      colDetalhe.innerHTML = `
+        <div style="font-size:12px;font-weight:600;color:${pkSub};margin-bottom:12px;">Próximo da fila</div>
+        <div style="display:flex;gap:16px;align-items:center;">
+          ${fotoP ? `<img src="${fotoP}" style="width:112px;height:112px;object-fit:contain;border-radius:10px;background:${T.isLight ? "#fff" : "#1a1a1a"};border:1px solid ${T.border};flex-shrink:0;" onerror="this.style.visibility='hidden'">` : `<div style="width:112px;height:112px;border-radius:10px;background:${pkSurf};flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:40px;">📦</div>`}
+          <div style="min-width:0;">
+            <div style="font-size:17px;font-weight:600;color:${T.text};line-height:1.35;">${tituloP}</div>
+            <div style="font-size:12px;color:${pkSub};margin-top:6px;">Venda #${proximo.order_id}${proximo.comprador ? " · " + proximo.comprador : ""}</div>
+            <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+              <span style="padding:3px 10px;border-radius:999px;font-size:11px;font-weight:500;background:${pkSurf};color:${pkSub};">${qtdP} ${qtdP === 1 ? "item" : "itens"}</span>
+              <span style="padding:3px 10px;border-radius:999px;font-size:11px;font-weight:500;background:rgba(59,130,246,0.12);color:#3b82f6;">Enviar hoje</span>
+            </div>
+          </div>
+        </div>
+        ${modoOperar ? `<button id="picking-btn-comecar" style="width:100%;margin-top:20px;height:48px;border:none;border-radius:10px;background:#3b82f6;color:#fff;font:700 14px Inter,sans-serif;cursor:pointer;">▶ Começar a separar</button>
+        <div style="font-size:11px;color:${T.text3};text-align:center;margin-top:8px;">Ou clique em qualquer pedido da fila</div>` : ""}
+      `;
+      const bc = colDetalhe.querySelector("#picking-btn-comecar");
+      if (bc) bc.onclick = () => { bc.disabled = true; bc.textContent = "Abrindo..."; abrirPedidoPicking(proximo, quemSou, refresh); };
+    }
   } else {
     const pedido = pickingState.pedidoAtivo;
     const temKit = pedido.itens_bipagem.some(l => l.deKit);
@@ -2615,15 +2674,15 @@ function renderPickingTab(panel, quemSou, modoOperar) {
     const totalItens = pedido.itens_bipagem.reduce((s, l) => s + l.quantidadeNecessaria, 0);
     const totalBipados = pedido.itens_bipagem.reduce((s, l) => s + l.quantidadeBipada, 0);
     const progressPct = totalItens > 0 ? Math.round((totalBipados / totalItens) * 100) : 0;
-    blocoAnuncio.style.cssText = `display:flex;gap:14px;padding:12px 0 14px;border-bottom:0.5px solid ${T.border};align-items:flex-start;`;
+    blocoAnuncio.style.cssText = `display:flex;gap:14px;padding:8px 0 14px;align-items:flex-start;`;
     blocoAnuncio.innerHTML = `
       ${fotoUrl ? `<img src="${fotoUrl}" style="width:88px;height:88px;object-fit:contain;border-radius:8px;background:${T.isLight?"#f2f2f2":"#141414"};border:0.5px solid ${T.border};flex-shrink:0;" onerror="this.style.display='none'">` : `<div style="width:88px;height:88px;border-radius:8px;background:${T.isLight?"#f2f2f2":"#141414"};border:0.5px solid ${T.border};flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:26px;">📦</div>`}
       <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;padding-top:2px;">
         <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:${temKit||pedido.pack_id?"4px":"0"};">
-          ${temKit ? `<div style="display:inline-flex;align-items:center;padding:2px 7px;border-radius:3px;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;background:${T.isLight?"#f2f2f2":"#141414"};color:#777;border:0.5px solid ${T.isLight?"#d0d0d0":"#333"};">KIT</div>` : ""}
-          ${pedido.pack_id && pedido.order_ids && pedido.order_ids.length > 1 ? `<div style="display:inline-flex;align-items:center;padding:2px 7px;border-radius:3px;font-size:9px;font-weight:700;letter-spacing:.04em;background:rgba(245,158,11,0.15);color:#f59e0b;border:0.5px solid rgba(245,158,11,0.3);">📦 ${pedido.order_ids.length} PACOTES</div>` : ""}
+          ${temKit ? `<div style="display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;background:${pkSurf};color:${pkSub};">Kit</div>` : ""}
+          ${pedido.pack_id && pedido.order_ids && pedido.order_ids.length > 1 ? `<div style="display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;background:rgba(245,158,11,0.15);color:#f59e0b;">📦 ${pedido.order_ids.length} pacotes</div>` : ""}
         </div>
-        <div style="font-size:13px;font-weight:600;color:${T.text};line-height:1.3;">${tituloAnuncio}</div>
+        <div style="font-size:15px;font-weight:600;color:${T.text};line-height:1.35;">${tituloAnuncio}</div>
         <div style="margin-top:2px;display:flex;flex-direction:column;gap:1px;">
           <div style="font-family:Inter,sans-serif;font-size:11px;color:#777;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
             <span data-copy="${pedido.order_id}" style="cursor:pointer;border-bottom:1px dashed #444;" title="Copiar número da venda">Venda #${pedido.order_id}</span>
@@ -2632,12 +2691,16 @@ function renderPickingTab(panel, quemSou, modoOperar) {
           <div style="font-size:11px;color:#777;">${pedido.comprador || ""}</div>
         </div>
       </div>
+      <div style="flex-shrink:0;text-align:right;padding-top:2px;">
+        <div style="font:600 30px ${pkMono};color:${todosBipados ? "#10b981" : T.text};line-height:1;">${totalBipados}<span style="font-size:18px;color:${T.text3};">/${totalItens}</span></div>
+        <div style="font-size:11px;color:${T.text3};margin-top:4px;">bipados</div>
+      </div>
     `;
 
     // barra de progresso (sangra até as bordas do card)
     const progressWrap = document.createElement("div");
-    progressWrap.style.cssText = "height:2px;background:" + (T.isLight?"#f2f2f2":"#141414") + ";margin:0 -18px;";
-    progressWrap.innerHTML = `<div id="picking-progress-bar" style="height:100%;background:#00a63e;width:${progressPct}%;transition:width .35s ease;"></div>`;
+    progressWrap.style.cssText = `height:6px;border-radius:3px;overflow:hidden;background:${pkSurf};margin:2px 0 4px;`;
+    progressWrap.innerHTML = `<div id="picking-progress-bar" style="height:100%;background:#10b981;width:${progressPct}%;transition:width .35s ease;"></div>`;
 
     const cabecalho = document.createElement("div");
     cabecalho.style.cssText = "margin-bottom:6px;";
@@ -2688,30 +2751,29 @@ function renderPickingTab(panel, quemSou, modoOperar) {
 
     // label da seção
     const secLabel = document.createElement("div");
-    secLabel.style.cssText = `padding:10px 0 5px;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#777;`;
+    secLabel.style.cssText = `padding:12px 0 6px;font-size:12px;font-weight:600;color:${pkSub};`;
     secLabel.textContent = "Itens para bipar";
     colDetalhe.appendChild(secLabel);
 
     const listaItens = document.createElement("div");
-    listaItens.style.cssText = "display:flex;flex-direction:column;gap:3px;margin-bottom:12px;";
+    listaItens.style.cssText = "display:flex;flex-direction:column;gap:6px;margin-bottom:14px;";
     pedido.itens_bipagem.forEach(l => {
       const completo = l.quantidadeBipada >= l.quantidadeNecessaria;
       const linha = document.createElement("div");
-      linha.style.cssText = `display:flex;align-items:center;gap:12px;padding:10px 10px 10px 12px;border-radius:7px;border:0.5px solid ${completo ? "#00a63e" : T.border};background:${completo ? (T.isLight?"rgba(0,166,62,0.08)":"rgba(0,166,62,0.10)") : (T.isLight?"#f8f8f8":"#0d0d0d")};transition:border-color .25s,background .25s;`;
+      linha.style.cssText = `display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;border:1px solid ${completo ? "rgba(16,185,129,0.55)" : T.border};background:${completo ? (T.isLight?"rgba(16,185,129,0.08)":"rgba(16,185,129,0.10)") : (T.isLight?"#fafafa":"#101010")};transition:border-color .25s,background .25s;`;
       linha.innerHTML = `
         <div style="flex:1;min-width:0;">
           <div style="font-size:13px;font-weight:500;color:${T.text};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;">${l.nome}</div>
           <div style="display:flex;align-items:center;gap:5px;margin-top:3px;">
-            <span style="font-family:Inter,sans-serif;font-size:10px;color:#777;">${l.sku}</span>
-            ${l.ean ? `<span style="color:${T.isLight?"#d0d0d0":"#333"};font-size:10px;">·</span><span style="font-family:Inter,sans-serif;font-size:10px;color:#777;">${l.ean}</span>` : ""}
+            <span style="font-family:Inter,sans-serif;font-size:11px;color:#777;">${l.sku}</span>
+            ${l.ean ? `<span style="color:${T.isLight?"#d0d0d0":"#333"};font-size:11px;">·</span><span style="font-family:Inter,sans-serif;font-size:11px;color:#777;">${l.ean}</span>` : ""}
           </div>
         </div>
         <div style="display:flex;align-items:baseline;gap:2px;flex-shrink:0;">
-          <span style="font-family:Inter,sans-serif;font-size:20px;font-weight:600;color:${completo ? "#00a63e" : (T.isLight?"#555":"#ccc")};min-width:24px;text-align:right;line-height:1;">${l.quantidadeBipada}</span>
-          <span style="font-size:13px;color:#777;margin:0 2px;line-height:1;">/</span>
-          <span style="font-family:Inter,sans-serif;font-size:13px;color:#777;line-height:1;">${l.quantidadeNecessaria}</span>
+          <span style="font:600 24px ${pkMono};color:${completo ? "#10b981" : T.text};min-width:28px;text-align:right;line-height:1;">${l.quantidadeBipada}</span>
+          <span style="font:500 15px ${pkMono};color:#777;line-height:1;">/${l.quantidadeNecessaria}</span>
         </div>
-        <div style="width:20px;height:20px;border-radius:50%;border:1.5px solid ${completo ? "#00a63e" : (T.isLight?"#d0d0d0":"#333")};background:${completo ? "#00a63e" : "transparent"};flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .25s;">
+        <div style="width:24px;height:24px;border-radius:50%;border:1.5px solid ${completo ? "#10b981" : (T.isLight?"#d0d0d0":"#3a3a3a")};background:${completo ? "#10b981" : "transparent"};flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .25s;">
           ${completo ? `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>` : ""}
         </div>
       `;
@@ -2721,7 +2783,7 @@ function renderPickingTab(panel, quemSou, modoOperar) {
 
     // divider antes do scan
     const divider = document.createElement("div");
-    divider.style.cssText = `height:0.5px;background:${T.border};margin:0 -18px;`;
+    divider.style.cssText = `display:none;`;
     colDetalhe.appendChild(divider);
 
     // scan area
@@ -2731,9 +2793,9 @@ function renderPickingTab(panel, quemSou, modoOperar) {
       const bipInput = document.createElement("input");
       bipInput.id = "picking-input-bip";
       bipInput.type = "text";
-      bipInput.placeholder = "Bipar código de barras...";
+      bipInput.placeholder = "Bipe o código de barras";
       bipInput.autocomplete = "off";
-      bipInput.style.cssText = `width:100%;padding:11px 44px 11px 14px;background:${T.isLight?"#f2f2f2":"#141414"};border:0.5px solid ${T.isLight?"#d0d0d0":"#333"};border-radius:7px;color:${T.text};font-size:14px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;`;
+      bipInput.style.cssText = `width:100%;height:54px;padding:0 50px 0 16px;background:${pkSurf};border:2px solid ${T.isLight?"#d0d0d0":"#333"};border-radius:10px;color:${T.text};font-size:16px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;`;
       bipInput.value = pickingState.bipando;
       bipInput.oninput = (e) => { pickingState.bipando = e.target.value; };
       bipInput.addEventListener("focus", () => { bipInput.style.borderColor = "#3b82f6"; });
@@ -2754,8 +2816,8 @@ function renderPickingTab(panel, quemSou, modoOperar) {
       // Foca imediatamente ao renderizar o campo
       setTimeout(() => { const el = document.getElementById("picking-input-bip"); if (el) el.focus(); }, 50);
       const scanIcon = document.createElement("span");
-      scanIcon.style.cssText = "position:absolute;right:12px;top:50%;transform:translateY(-50%);color:#777;pointer-events:none;";
-      scanIcon.innerHTML = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9V5a2 2 0 0 1 2-2h4M3 15v4a2 2 0 0 0 2 2h4M21 9V5a2 2 0 0 0-2-2h-4M21 15v4a2 2 0 0 1-2 2h-4M7 12h10"/></svg>`;
+      scanIcon.style.cssText = "position:absolute;right:16px;top:50%;transform:translateY(-50%);color:#3b82f6;pointer-events:none;";
+      scanIcon.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9V5a2 2 0 0 1 2-2h4M3 15v4a2 2 0 0 0 2 2h4M21 9V5a2 2 0 0 0-2-2h-4M21 15v4a2 2 0 0 1-2 2h-4M7 12h10"/></svg>`;
       scanArea.appendChild(bipInput);
       scanArea.appendChild(scanIcon);
     } else if (pickingState.processandoEtiqueta) {
@@ -2768,7 +2830,7 @@ function renderPickingTab(panel, quemSou, modoOperar) {
 
     // footer de status com separador visual
     const footerDivider = document.createElement("div");
-    footerDivider.style.cssText = `height:0.5px;background:${T.border};margin:0 -18px;`;
+    footerDivider.style.cssText = `display:none;`;
     colDetalhe.appendChild(footerDivider);
 
     const statusFooter = document.createElement("div");
@@ -2777,7 +2839,7 @@ function renderPickingTab(panel, quemSou, modoOperar) {
       ? `<strong style="color:${T.isLight?"#555":"#ccc"};">${totalBipados} de ${totalItens}</strong> <span style="color:#777;"> itens bipados — ${pickingState.processandoEtiqueta ? "gerando etiqueta..." : "finalizando..."}</span>`
       : `<strong style="color:${T.isLight?"#555":"#ccc"};">${totalBipados} de ${totalItens}</strong> <span style="color:#777;"> itens bipados</span>`;
     statusFooter.innerHTML = `<div style="font-size:12px;">${statusText}</div>`;
-    colDetalhe.appendChild(statusFooter);
+    if (todosBipados) colDetalhe.appendChild(statusFooter); // antes disso o contador grande no topo já mostra o progresso
   }
   row.appendChild(colDetalhe);
 
