@@ -137,11 +137,20 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 
-// Autenticação anônima — bloqueia acesso externo sem auth nas regras do Firebase.
-// Se falhar (ex: modo offline), tenta novamente em 5s mas não trava a UI.
-signInAnonymously(auth).catch(e => {
-  console.warn("[Firebase Auth] signInAnonymously falhou:", e.message);
-  setTimeout(() => signInAnonymously(auth).catch(() => {}), 5000);
+// Autenticação anônima — as regras do Firebase exigem auth != null.
+// IMPORTANTE: espera o login terminar ANTES de ligar qualquer onValue/onChildAdded.
+// Se um listener for ligado antes, o Firebase recusa (permission_denied) e cancela
+// aquele listener para sempre — era isso que fazia o OPS abrir com "Erro ao carregar".
+await new Promise(resolve => {
+  let feito = false;
+  const fim = () => { if (!feito) { feito = true; resolve(); } };
+  const un = onAuthStateChanged(auth, u => { if (u) { un(); fim(); } });
+  const tentar = (n) => signInAnonymously(auth).catch(e => {
+    console.warn(`[Firebase Auth] signInAnonymously falhou (tentativa ${n}):`, e.message);
+    if (n < 5) setTimeout(() => tentar(n + 1), 1500 * n);
+  });
+  tentar(1);
+  setTimeout(() => { if (!feito) console.warn("[Firebase Auth] login demorou mais de 20s — seguindo assim mesmo"); fim(); }, 20000);
 });
 const PIN = "845278";
 const STORAGE_KEY = "digoo_identity_v1";
