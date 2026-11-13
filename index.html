@@ -2527,6 +2527,22 @@ function pkFotoPedido(pedido) {
   return "";
 }
 
+// Torna copiável ao clicar todo elemento [data-copy] dentro do container
+function pkLigarCopiar(container) {
+  container.querySelectorAll("[data-copy]").forEach(el => {
+    el.onclick = (e) => {
+      e.stopPropagation();
+      const val = el.dataset.copy;
+      const orig = el.textContent;
+      const ok = () => { el.textContent = "Copiado!"; el.style.color = "#10b981"; setTimeout(() => { el.textContent = orig; el.style.color = ""; }, 1300); };
+      navigator.clipboard.writeText(val).then(ok).catch(() => {
+        const sel = window.getSelection(), r = document.createRange();
+        r.selectNodeContents(el); sel.removeAllRanges(); sel.addRange(r);
+      });
+    };
+  });
+}
+
 function renderPickingTab(panel, quemSou, modoOperar) {
   panel.innerHTML = "";
   const refresh = () => renderPickingTab(panel, quemSou, modoOperar);
@@ -2629,7 +2645,7 @@ function renderPickingTab(panel, quemSou, modoOperar) {
       card.onmouseleave = () => { card.style.borderColor = corBorda; };
     }
     card.innerHTML = `
-      ${foto ? `<img src="${foto}" style="width:48px;height:48px;object-fit:contain;border-radius:8px;background:${T.isLight ? "#fff" : "#1a1a1a"};border:1px solid ${T.border};flex-shrink:0;" onerror="this.style.visibility='hidden'">` : `<div style="width:48px;height:48px;border-radius:8px;background:${pkSurf};flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;">📦</div>`}
+      ${foto ? `<img src="${foto}" style="width:48px;height:48px;object-fit:cover;border-radius:10px;background:${T.isLight ? "#fff" : "#1a1a1a"};border:1px solid ${T.border};flex-shrink:0;" onerror="this.style.visibility='hidden'">` : `<div style="width:48px;height:48px;border-radius:8px;background:${pkSurf};flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;">📦</div>`}
       <div style="flex:1;min-width:0;">
         <div style="font-size:12px;font-weight:600;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${nomeItem.replace(/"/g, "&quot;")}">${nomeItem}</div>
         <div style="font-size:11px;color:${T.text3};margin-top:2px;">#${pedido.order_id}</div>
@@ -2678,10 +2694,13 @@ function renderPickingTab(panel, quemSou, modoOperar) {
       colDetalhe.innerHTML = `
         <div style="font-size:12px;font-weight:600;color:${pkSub};margin-bottom:12px;">Próximo da fila</div>
         <div style="display:flex;gap:16px;align-items:center;">
-          ${fotoP ? `<img src="${fotoP}" style="width:112px;height:112px;object-fit:contain;border-radius:10px;background:${T.isLight ? "#fff" : "#1a1a1a"};border:1px solid ${T.border};flex-shrink:0;" onerror="this.style.visibility='hidden'">` : `<div style="width:112px;height:112px;border-radius:10px;background:${pkSurf};flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:40px;">📦</div>`}
+          ${fotoP ? `<img src="${fotoP}" style="width:112px;height:112px;object-fit:cover;border-radius:14px;background:${T.isLight ? "#fff" : "#1a1a1a"};border:1px solid ${T.border};flex-shrink:0;" onerror="this.style.visibility='hidden'">` : `<div style="width:112px;height:112px;border-radius:10px;background:${pkSurf};flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:40px;">📦</div>`}
           <div style="min-width:0;">
             <div style="font-size:17px;font-weight:600;color:${T.text};line-height:1.35;">${tituloP}</div>
-            <div style="font-size:12px;color:${pkSub};margin-top:6px;">Venda #${proximo.order_id}${proximo.comprador ? " · " + proximo.comprador : ""}</div>
+            <div style="font-size:12px;color:${pkSub};margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+              <span data-copy="${proximo.order_id}" title="Clique pra copiar o número da venda" style="cursor:pointer;border-bottom:1px dashed ${T.isLight ? "#bbb" : "#444"};">Venda #${proximo.order_id}</span>
+              ${proximo.comprador ? `<span style="color:${T.text3};">·</span><span data-copy="${proximo.comprador}" title="Clique pra copiar o apelido" style="cursor:pointer;border-bottom:1px dashed ${T.isLight ? "#bbb" : "#444"};">${proximo.comprador}</span>` : ""}
+            </div>
             <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
               <span style="padding:3px 10px;border-radius:999px;font-size:11px;font-weight:500;background:${pkSurf};color:${pkSub};">${qtdP} ${qtdP === 1 ? "item" : "itens"}</span>
               <span style="padding:3px 10px;border-radius:999px;font-size:11px;font-weight:500;background:rgba(59,130,246,0.12);color:#3b82f6;">Enviar hoje</span>
@@ -2691,6 +2710,7 @@ function renderPickingTab(panel, quemSou, modoOperar) {
         ${modoOperar ? `<button id="picking-btn-comecar" style="width:100%;margin-top:20px;height:48px;border:none;border-radius:10px;background:#3b82f6;color:#fff;font:700 14px Inter,sans-serif;cursor:pointer;">▶ Começar a separar</button>
         <div style="font-size:11px;color:${T.text3};text-align:center;margin-top:8px;">Ou clique em qualquer pedido da fila</div>` : ""}
       `;
+      pkLigarCopiar(colDetalhe);
       const bc = colDetalhe.querySelector("#picking-btn-comecar");
       if (bc) bc.onclick = () => { bc.disabled = true; bc.textContent = "Abrindo..."; abrirPedidoPicking(proximo, quemSou, refresh); };
     }
@@ -2713,7 +2733,7 @@ function renderPickingTab(panel, quemSou, modoOperar) {
     const progressPct = totalItens > 0 ? Math.round((totalBipados / totalItens) * 100) : 0;
     blocoAnuncio.style.cssText = `display:flex;gap:14px;padding:8px 0 14px;align-items:flex-start;`;
     blocoAnuncio.innerHTML = `
-      ${fotoUrl ? `<img src="${fotoUrl}" style="width:88px;height:88px;object-fit:contain;border-radius:8px;background:${T.isLight?"#f2f2f2":"#141414"};border:0.5px solid ${T.border};flex-shrink:0;" onerror="this.style.display='none'">` : `<div style="width:88px;height:88px;border-radius:8px;background:${T.isLight?"#f2f2f2":"#141414"};border:0.5px solid ${T.border};flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:26px;">📦</div>`}
+      ${fotoUrl ? `<img src="${fotoUrl}" style="width:88px;height:88px;object-fit:cover;border-radius:12px;background:${T.isLight?"#f2f2f2":"#141414"};border:0.5px solid ${T.border};flex-shrink:0;" onerror="this.style.display='none'">` : `<div style="width:88px;height:88px;border-radius:8px;background:${T.isLight?"#f2f2f2":"#141414"};border:0.5px solid ${T.border};flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:26px;">📦</div>`}
       <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;padding-top:2px;">
         <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:${temKit||pedido.pack_id?"4px":"0"};">
           ${temKit ? `<div style="display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;background:${pkSurf};color:${pkSub};">Kit</div>` : ""}
@@ -2725,7 +2745,7 @@ function renderPickingTab(panel, quemSou, modoOperar) {
             <span data-copy="${pedido.order_id}" style="cursor:pointer;border-bottom:1px dashed #444;" title="Copiar número da venda">Venda #${pedido.order_id}</span>
             ${pedido.shipment_id ? `<span style="color:#444;">·</span><span data-copy="${pedido.shipment_id}" style="cursor:pointer;border-bottom:1px dashed #444;" title="Copiar número do envio">Envio #${pedido.shipment_id}</span>` : ""}
           </div>
-          <div style="font-size:11px;color:#777;">${pedido.comprador || ""}</div>
+          ${pedido.comprador ? `<div style="font-size:11px;color:#777;"><span data-copy="${pedido.comprador}" style="cursor:pointer;border-bottom:1px dashed #444;" title="Copiar apelido do comprador">${pedido.comprador}</span></div>` : ""}
         </div>
       </div>
       <div style="flex-shrink:0;text-align:right;padding-top:2px;">
