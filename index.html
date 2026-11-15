@@ -14084,7 +14084,10 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
     const statusPill = o.status === "candidate" ? pill("Nova proposta", amarelo) : o._programada ? pill("Programada", azul) : pill("Ativa", verde);
     const periodo = o.inicio || o.fim ? `${fmtD(o.inicio)}${o.fim ? " a " + fmtD(o.fim) : ""}` : (o.tipo === "LIGHTNING" || o.tipo === "DOD" ? "Data definida pelo ML" : "");
     // Valor em R$ por venda: a % do ML incide sobre o preço original (confere com o "Reduzimos R$ X" do site)
-    const meliR = o.meli_pct > 0 && orig ? orig * o.meli_pct / 100 : 0;
+    // Exceção: "Impulsione suas vendas" — o ML reduz 1% do preço final (centavos cortados), confere com o site em 5 de 5 anúncios
+    const impulsione = o.meli_pct > 0 && /impulsione/i.test(o.nome || "") && final > 0;
+    const meliR = impulsione ? Math.floor(Math.round(final * 100) / 100) / 100
+      : o.meli_pct > 0 && orig ? orig * o.meli_pct / 100 : 0;
     const voceR = descR != null ? Math.max(0, descR - meliR) : (orig ? orig * (o.seller_pct || 0) / 100 : null);
     const quem = o.meli_pct > 0
       ? `<span style="color:${verde};font-weight:600;">ML paga ${fmtR(meliR)}</span><span style="color:${T.text2};"> · você ${fmtR(voceR)}</span><div style="color:${T.text2};font-size:11px;">por venda</div>`
