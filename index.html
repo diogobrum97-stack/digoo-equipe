@@ -14086,7 +14086,20 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
   const itens = itensTodos
     .map(i => ({ ...i, _of: prep.get(i.item_id).filter(filtroOf).sort((a, b) => (a.status === "candidate") - (b.status === "candidate")) }))
     .filter(i => i._of.length && (!busca || ((i.titulo || "") + " " + (i.sku || "") + " " + i.item_id).toLowerCase().includes(busca)))
-    .sort((a, b) => b._of.filter(o => o.status === "candidate").length - a._of.filter(o => o.status === "candidate").length);
+    ;
+  // Um cartão por SKU: anúncios diferentes do mesmo produto (normal, catálogo, Clássico/Premium) ficam juntos,
+  // cada um com a sua faixa e as suas promoções (o Participar vale só pra aquele MLB)
+  const novasDe = i => i._of.filter(o => o.status === "candidate").length;
+  const gruposMap = new Map();
+  for (const i of itens) {
+    const k = (i.sku || "").trim().toUpperCase() || i.item_id;
+    if (!gruposMap.has(k)) gruposMap.set(k, []);
+    gruposMap.get(k).push(i);
+  }
+  const grupos = [...gruposMap.values()]
+    .map(g => g.sort((a, b) => novasDe(b) - novasDe(a) || (a.catalogo === true) - (b.catalogo === true)))
+    .sort((a, b) => b.reduce((n, i) => n + novasDe(i), 0) - a.reduce((n, i) => n + novasDe(i), 0));
+  const tipoAnuncio = i => i.catalogo ? "Catálogo" : i.tipo_anuncio === "gold_pro" ? "Premium" : i.tipo_anuncio === "gold_special" ? "Clássico" : "";
 
   const stat = (lbl, v, cor) => `<div style="background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:12px 14px;"><div style="font-size:11px;color:${T.text2};">${lbl}</div><div style="font:600 22px 'IBM Plex Mono',monospace;color:${cor || T.text};margin-top:2px;">${v}</div></div>`;
   const chipF = (k, lbl) => `<button data-of-filtro="${k}" style="font-size:11px;padding:4px 12px;border-radius:20px;border:0.5px solid ${st.ofertasFiltro===k?azul:T.border};background:${st.ofertasFiltro===k?azul+'18':'transparent'};color:${st.ofertasFiltro===k?azul:T.text2};cursor:pointer;">${lbl}</button>`;
@@ -14141,24 +14154,28 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
       <input id="of-busca" placeholder="Buscar produto ou SKU" value="${esc(st.ofertasBusca)}" style="flex:1;min-width:160px;font:12px Inter,sans-serif;padding:6px 10px;border-radius:8px;border:0.5px solid ${T.border};background:${T.bg3};color:${T.text};outline:none;">
     </div>
     <div style="display:flex;flex-direction:column;gap:10px;">
-      ${itens.length ? itens.map(it => `
+      ${grupos.length ? grupos.map(g => { const it = g.find(i => !i.sem_dados) || g[0]; const varios = g.length > 1; const nNov = g.reduce((n, i) => n + novasDe(i), 0); return `
         <div style="background:${T.card};border:0.5px solid ${T.border};border-radius:12px;overflow:hidden;">
           <div style="display:flex;gap:12px;align-items:center;padding:12px 14px;">
             <div style="width:48px;height:48px;border-radius:10px;overflow:hidden;flex-shrink:0;background:#fff;border:1px solid ${T.border};box-sizing:border-box;padding:3px;">${it.foto ? `<img src="${esc(it.foto)}" style="width:100%;height:100%;object-fit:contain;display:block;">` : ""}</div>
             <div style="min-width:0;flex:1;">
               ${it.sem_dados
                 ? `<div style="font-size:13px;font-weight:600;color:${amarelo};">Dados do anúncio indisponíveis</div>
-                   <div style="font-size:11px;color:${T.text2};margin-top:2px;">${it.item_id} · <a href="${esc(it.permalink)}" target="_blank" rel="noopener" style="color:${azul};">abrir no ML</a> · clique em ↻ Atualizar pra tentar de novo</div>`
+                   <div style="font-size:11px;color:${T.text2};margin-top:2px;">${it.item_id} · <a href="${esc(it.permalink)}" target="_blank" rel="noopener" style="color:${azul};">abrir no ML</a> · entra na próxima atualização, em 1-2 min</div>`
                 : `<div style="font-size:13px;font-weight:600;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(it.titulo)}</div>
-                   <div style="font-size:11px;color:${T.text2};margin-top:2px;">${esc(it.sku || "sem SKU")} · ${it.item_id} · ${fmtR(it.preco)}${it.estoque != null ? ` · ${it.estoque} un` : ""}${it.catalogo ? " · catálogo" : ""}</div>`}
+                   <div style="font-size:11px;color:${T.text2};margin-top:2px;">${esc(it.sku || "sem SKU")} · ${varios
+                     ? `${g.length} anúncios`
+                     : `${it.item_id} · ${fmtR(it.preco)}${it.estoque != null ? ` · ${it.estoque} un` : ""}${tipoAnuncio(it) ? " · " + tipoAnuncio(it) : ""}`}</div>`}
             </div>
-            ${(() => { const n = it._of.filter(o => o.status === "candidate").length; return n ? pill(`${n} ${n === 1 ? "nova" : "novas"}`, amarelo) : ""; })()}
+            ${nNov ? pill(`${nNov} ${nNov === 1 ? "nova" : "novas"}`, amarelo) : ""}
           </div>
           <div style="display:grid;grid-template-columns:minmax(0,1.7fr) 80px 100px minmax(0,1.2fr) 96px;gap:10px;padding:6px 14px;border-top:0.5px solid ${T.border};font-size:11px;color:${T.text2};">
             <span>Promoção</span><span>Desconto</span><span>Preço final</span><span>Quem paga</span><span></span>
           </div>
-          ${it._of.map(o => linha(it, o, o._idx)).join("")}
-        </div>`).join("") : `<div style="font-size:13px;color:${T.text2};padding:20px 0;text-align:center;">Nenhuma oferta com esse filtro.</div>`}
+          ${g.map(a => `${varios ? `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:7px 14px;border-top:0.5px solid ${T.border};background:${T.bg3};font-size:11px;color:${T.text2};">
+              <span style="font-weight:600;color:${T.text};">${a.item_id}</span>${tipoAnuncio(a) ? `<span>${tipoAnuncio(a)}</span>` : ""}<span>${fmtR(a.preco)}</span>${a.estoque != null ? `<span>${a.estoque} un</span>` : ""}
+            </div>` : ""}${a._of.map(o => linha(a, o, o._idx)).join("")}`).join("")}
+        </div>`; }).join("") : `<div style="font-size:13px;color:${T.text2};padding:20px 0;text-align:center;">Nenhuma oferta com esse filtro.</div>`}
     </div>`;
 
   container.querySelectorAll("[data-of-filtro]").forEach(b => b.onclick = () => { st.ofertasFiltro = b.dataset.ofFiltro; window._renderOfertasML(container, token, BACKEND); });
