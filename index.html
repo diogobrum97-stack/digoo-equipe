@@ -14081,7 +14081,8 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
   const nAtivas = todasOf.filter(o => o.status !== "candidate").length;
 
   const filtroOf = o => st.ofertasFiltro === "novas" ? o.status === "candidate"
-    : st.ofertasFiltro === "tarifa" ? o.meli_pct > 0 : true;
+    : st.ofertasFiltro === "tarifa" ? o.meli_pct > 0
+    : st.ofertasFiltro === "voce" ? !(o.meli_pct > 0) : true;
   const busca = (st.ofertasBusca || "").toLowerCase();
   const itens = itensTodos
     .map(i => ({ ...i, _of: prep.get(i.item_id).filter(filtroOf).sort((a, b) => (a.status === "candidate") - (b.status === "candidate")) }))
@@ -14150,7 +14151,7 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
       ${stat("Novas propostas", nNovas, amarelo)}${stat("Novas com redução de tarifa", nTarifa, verde)}${stat("Participando", nAtivas)}
     </div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
-      ${chipF("todas","Todas")}${chipF("novas","Só novas propostas")}${chipF("tarifa","Só com redução de tarifa")}
+      ${chipF("todas","Todas")}${chipF("novas","Só novas propostas")}${chipF("tarifa","Só com redução de tarifa")}${chipF("voce","Só onde você paga tudo")}
       <input id="of-busca" placeholder="Buscar produto ou SKU" value="${esc(st.ofertasBusca)}" style="flex:1;min-width:160px;font:12px Inter,sans-serif;padding:6px 10px;border-radius:8px;border:0.5px solid ${T.border};background:${T.bg3};color:${T.text};outline:none;">
     </div>
     <div style="display:flex;flex-direction:column;gap:10px;">
