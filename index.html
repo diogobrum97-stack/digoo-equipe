@@ -11,7 +11,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <title>Digoo · Equipe</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -57,7 +57,7 @@
 <div id="ml-fullscreen">
   <div id="ml-fullscreen-header">
     <div style="display:flex;align-items:center;gap:10px;">
-      <span style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:4px;color:#f0b400;">MERCADO LIVRE</span>
+      <span style="font-family:Inter,sans-serif;font-weight:700;font-size:20px;letter-spacing:2px;color:#f0b400;">MERCADO LIVRE</span>
     </div>
     <div style="display:flex;gap:8px;align-items:center;">
       <div id="ml-fs-subtabs" style="display:flex;border-bottom:none;"></div>
@@ -76,7 +76,7 @@
         <ellipse cx="16" cy="16" rx="12" ry="8" stroke="#f0b400" stroke-width="1.5" fill="none"/>
         <path d="M8 16 Q12 10 16 16 Q20 22 24 16" stroke="#f0b400" stroke-width="2" fill="none" stroke-linecap="round"/>
       </svg>
-      <span style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:4px;color:#f0b400;">MERCADO LIVRE</span>
+      <span style="font-family:Inter,sans-serif;font-weight:700;font-size:22px;letter-spacing:2px;color:#f0b400;">MERCADO LIVRE</span>
     </div>
     <button onclick="fecharML()" style="background:none;border:1px solid #f0b40044;border-radius:50%;width:30px;height:30px;color:#f0b400;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
   </div>
@@ -92,7 +92,7 @@
       var box = document.getElementById("erro-tela");
       if (!box) {
         box = document.createElement("div"); box.id = "erro-tela";
-        box.style.cssText = "position:fixed;left:12px;right:12px;bottom:12px;z-index:2147483647;background:#2a0d0a;border:1px solid #e8432d;color:#ffb4a8;border-radius:10px;padding:10px 12px;font:12px/1.5 monospace;max-height:40vh;overflow:auto;box-shadow:0 8px 30px #000a;";
+        box.style.cssText = "position:fixed;left:12px;right:12px;bottom:12px;z-index:2147483647;background:#2a0d0a;border:1px solid #e8432d;color:#ffb4a8;border-radius:10px;padding:10px 12px;font:12px/1.5 Inter,sans-serif;max-height:40vh;overflow:auto;box-shadow:0 8px 30px #000a;";
         box.innerHTML = '<div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:6px;font-family:Inter,sans-serif;"><b style="color:#fff;">⚠ Erro no OPS — tire um print e mande pro suporte</b><span style="cursor:pointer;color:#fff;" onclick="this.closest(\'#erro-tela\').remove()">✕</span></div>';
         (document.body || document.documentElement).appendChild(box);
       }
@@ -2568,7 +2568,7 @@ function renderPickingTab(panel, quemSou, modoOperar) {
   const pkTxt = T.isLight ? "#111111" : "#ffffff";
   const pkSub = T.isLight ? "#666" : "#8a8a8a";
   const pkSurf = T.isLight ? "#f4f4f5" : "#151515";
-  const pkMono = "'IBM Plex Mono',monospace";
+  const pkMono = "Inter,sans-serif";
   const header = document.createElement("div");
   header.style.cssText = "display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px;";
   header.innerHTML = `
@@ -3501,7 +3501,7 @@ function renderClonarTab(container) {
           <div><div style="font-size:10px;color:${T.text3};margin-bottom:4px;">Quantidade</div><input id="clonar-input-qtd" type="number" value="${item.available_quantity}" style="width:100%;background:${T.bg3};border:1px solid ${T.border};border-radius:6px;padding:8px 10px;color:${T.text};font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;"></div>
         </div>
         <div style="font-size:10px;color:${T.text3};margin-bottom:4px;">Preço</div>
-        <div style="font-size:16px;font-weight:700;color:${T.text};font-family:'IBM Plex Mono',monospace;margin-bottom:12px;">R$ ${Number(item.price).toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
+        <div style="font-size:16px;font-weight:700;color:${T.text};font-family:Inter,sans-serif;margin-bottom:12px;">R$ ${Number(item.price).toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
         <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:${T.bg3};border-radius:6px;margin-bottom:12px;font-size:11px;">
           <span style="color:${T.text3};">Clonando para</span><span style="color:${T.text};font-weight:600;">${contaDestino}</span>
         </div>
@@ -4893,7 +4893,7 @@ function renderDashboard(panel, color) {
             <div style="font-size:11px;font-weight:500;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.fornecedor||"—"}</div>
             <div style="font-size:10px;color:${cor};margin-top:2px;">${diaLabel} · ${c.dataVencimento.slice(8,10)}/${c.dataVencimento.slice(5,7)}</div>
           </div>
-          <div style="font-size:11px;font-weight:600;font-family:'IBM Plex Mono',monospace;color:${T.text};flex-shrink:0;">R$ ${Number(c.valor||0).toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
+          <div style="font-size:11px;font-weight:600;font-family:Inter,sans-serif;color:${T.text};flex-shrink:0;">R$ ${Number(c.valor||0).toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
         </div>`;
       }).join("");
 
@@ -5219,7 +5219,7 @@ function renderDashboard(panel, color) {
           </div>
           <div style="display:flex;align-items:center;gap:8px;">
             <span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;background:${isUrgente?"rgba(226,75,74,.12)":"rgba(240,180,0,.1)"};color:${cor};">${diaLabel.toLowerCase()}</span>
-            <span style="font-size:12px;font-weight:600;font-family:'IBM Plex Mono',monospace;color:${T.text};">R$ ${Number(c.valor||0).toLocaleString("pt-BR",{minimumFractionDigits:2})}</span>
+            <span style="font-size:12px;font-weight:600;font-family:Inter,sans-serif;color:${T.text};">R$ ${Number(c.valor||0).toLocaleString("pt-BR",{minimumFractionDigits:2})}</span>
           </div>`;
 
         // Clicar no item vai para Contas a Pagar
@@ -6511,7 +6511,7 @@ function renderNfComplementarInline(box, taskFake, calc, nf, panel) {
     </div>
     <div>
       <div style="font-size:10px;color:${T.text2};margin-bottom:3px;">Chave de Acesso da NF original (44 dígitos)</div>
-      <input id="nfi-chave-ref" value="${chaveRef}" placeholder="44 dígitos" style="width:100%;background:${T.bg3};border:0.5px solid ${T.border};border-radius:6px;padding:8px 10px;color:${T.text};font-size:11px;font-family:'IBM Plex Mono',monospace;outline:none;box-sizing:border-box;">
+      <input id="nfi-chave-ref" value="${chaveRef}" placeholder="44 dígitos" style="width:100%;background:${T.bg3};border:0.5px solid ${T.border};border-radius:6px;padding:8px 10px;color:${T.text};font-size:11px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;">
     </div>`;
   box.appendChild(refBlock);
 
@@ -6535,14 +6535,14 @@ function renderNfComplementarInline(box, taskFake, calc, nf, panel) {
             <td style="padding:7px 8px;color:${T.text};">${p.sku}</td>
             <td style="padding:7px 8px;text-align:center;color:${T.text2};">${p.quantidade}</td>
             <td style="padding:7px 8px;text-align:center;color:${T.text2};">${parseFloat((Number(p.aliquota)*100).toFixed(2)).toString()}%</td>
-            <td style="padding:7px 8px;text-align:right;font-family:'IBM Plex Mono',monospace;">R$ ${u.toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
-            <td style="padding:7px 8px;text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:600;">R$ ${(u*Number(p.quantidade)).toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
+            <td style="padding:7px 8px;text-align:right;font-family:Inter,sans-serif;">R$ ${u.toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
+            <td style="padding:7px 8px;text-align:right;font-family:Inter,sans-serif;font-weight:600;">R$ ${(u*Number(p.quantidade)).toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
           </tr>`;
         }).join("")}
       </tbody>
       <tfoot><tr style="border-top:1px solid ${T.border};">
         <td colspan="4" style="padding:10px 8px;text-align:right;color:${T.text2};font-size:11px;">Total IPI</td>
-        <td style="padding:10px 8px;text-align:right;color:#10b981;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:14px;">R$ ${totalIPI.toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
+        <td style="padding:10px 8px;text-align:right;color:#10b981;font-family:Inter,sans-serif;font-weight:700;font-size:14px;">R$ ${totalIPI.toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
       </tr></tfoot>
     </table>`;
   box.appendChild(tblWrap);
@@ -6584,7 +6584,7 @@ function renderNfComplementarInline(box, taskFake, calc, nf, panel) {
       });
       const data = await r.json();
       if (!data.ok) { statusEl.innerHTML = `<div style="color:#e8432d;font-size:12px;padding:6px 0;">Erro ${data.cStat}: ${data.xMotivo||data.erro}</div>`; emitirBtn.disabled=false; emitirBtn.textContent="Tentar novamente"; return; }
-      statusEl.innerHTML = `<div style="color:#10b981;font-size:13px;font-weight:600;padding:10px 0;">✓ Autorizada! NF ${nNumVal}</div><div style="font-size:10px;color:${T.text2};font-family:'IBM Plex Mono',monospace;word-break:break-all;margin-bottom:10px;">${data.chave}</div>`;
+      statusEl.innerHTML = `<div style="color:#10b981;font-size:13px;font-weight:600;padding:10px 0;">✓ Autorizada! NF ${nNumVal}</div><div style="font-size:10px;color:${T.text2};font-family:Inter,sans-serif;word-break:break-all;margin-bottom:10px;">${data.chave}</div>`;
       // Botão download XML
       const btnDlXml = document.createElement("button");
       btnDlXml.textContent = "⬇ Baixar XML";
@@ -6685,15 +6685,15 @@ async function renderNfComplementarPreview(container, task, calc) {
             <td style="padding:8px;text-align:center;color:${T.text2};">${p.ncm || "—"}</td>
             <td style="padding:8px;text-align:center;color:${T.text2};">${p.quantidade}</td>
             <td style="padding:8px;text-align:center;color:${T.text2};">${Number(p.aliquota*100).toFixed(0)}%</td>
-            <td style="padding:8px;text-align:right;color:${T.text};font-family:'IBM Plex Mono',monospace;">R$ ${ipiUnit.toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
-            <td style="padding:8px;text-align:right;color:${T.text};font-family:'IBM Plex Mono',monospace;font-weight:600;">R$ ${ipiTotal.toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
+            <td style="padding:8px;text-align:right;color:${T.text};font-family:Inter,sans-serif;">R$ ${ipiUnit.toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
+            <td style="padding:8px;text-align:right;color:${T.text};font-family:Inter,sans-serif;font-weight:600;">R$ ${ipiTotal.toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
           </tr>`;
         }).join("")}
       </tbody>
       <tfoot>
         <tr style="border-top:2px solid ${T.border};">
           <td colspan="5" style="padding:10px 8px;text-align:right;color:${T.text3};font-size:11px;">Total IPI Complementar</td>
-          <td style="padding:10px 8px;text-align:right;color:#10b981;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px;">R$ ${produtosComIpi.reduce((s,p)=>{const u=parseFloat(p.ipiUnitario||0);return s+u*Number(p.quantidade);},0).toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
+          <td style="padding:10px 8px;text-align:right;color:#10b981;font-family:Inter,sans-serif;font-weight:700;font-size:13px;">R$ ${produtosComIpi.reduce((s,p)=>{const u=parseFloat(p.ipiUnitario||0);return s+u*Number(p.quantidade);},0).toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
         </tr>
       </tfoot>
     `;
@@ -6786,7 +6786,7 @@ cStat: ${data.cStat||""}</div>`;
           <div style="background:${T.okBg};border:1px solid ${T.okBor};border-radius:8px;padding:14px;margin-bottom:12px;">
             <div style="font-size:13px;font-weight:700;color:${T.okTxt};margin-bottom:8px;">✓ NF emitida com sucesso!</div>
             <div style="font-size:11px;color:${T.text2};margin-bottom:4px;">Número: <strong style="color:${T.text};">${data.numero || "—"}</strong></div>
-            <div style="font-size:11px;color:${T.text2};margin-bottom:8px;">Chave: <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:${T.text};">${data.chaveAcesso || "—"}</span></div>
+            <div style="font-size:11px;color:${T.text2};margin-bottom:8px;">Chave: <span style="font-family:Inter,sans-serif;font-size:10px;color:${T.text};">${data.chaveAcesso || "—"}</span></div>
             <div style="font-size:10px;color:${T.text3};">Status SEFAZ: ${data.status || "—"}</div>
           </div>
         `;
@@ -6886,7 +6886,7 @@ function renderVendasTab(panel, color) {
   ].forEach(s=>{
     const card=document.createElement("div");
     card.style.cssText=`background:${T.card};border:1px solid ${T.border};border-radius:8px;padding:12px;text-align:center;border-top:2px solid ${s.color};`;
-    card.innerHTML=`<div style="font-size:8px;color:var(--text3);letter-spacing:2px;margin-bottom:6px;">${s.label}</div><div style="font-size:18px;font-family:'Bebas Neue',sans-serif;letter-spacing:2px;color:${s.color};">${s.value}</div>`;
+    card.innerHTML=`<div style="font-size:8px;color:var(--text3);letter-spacing:2px;margin-bottom:6px;">${s.label}</div><div style="font-size:18px;font-family:Inter,sans-serif;font-weight:700;letter-spacing:2px;color:${s.color};">${s.value}</div>`;
     summaryGrid.appendChild(card);
   });
   panel.appendChild(summaryGrid);
@@ -7062,7 +7062,7 @@ function renderDiogoDevTab(panel, color) {
   // Total
   const totalDiv = document.createElement("div");
   totalDiv.style.cssText = "display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--bg2);border-radius:5px;margin-bottom:12px;";
-  totalDiv.innerHTML = `<span style="font-size:11px;color:var(--text3);letter-spacing:1px">${diogoDevolucoes.count} devoluções</span><span style="font-size:16px;font-family:'Bebas Neue',sans-serif;color:#e8432d;letter-spacing:2px;">-R$ ${diogoDevolucoes.totalCost.toLocaleString("pt-BR",{minimumFractionDigits:2})}</span>`;
+  totalDiv.innerHTML = `<span style="font-size:11px;color:var(--text3);letter-spacing:1px">${diogoDevolucoes.count} devoluções</span><span style="font-size:16px;font-family:Inter,sans-serif;font-weight:700;color:#e8432d;letter-spacing:2px;">-R$ ${diogoDevolucoes.totalCost.toLocaleString("pt-BR",{minimumFractionDigits:2})}</span>`;
   panel.appendChild(totalDiv);
 
   // Lista
@@ -7129,7 +7129,7 @@ function renderDiogoCustoTab(panel, color) {
       <div style="font-size:11px;color:var(--text3);letter-spacing:2px;margin-bottom:4px">CUSTO REAL DE DEVOLUÇÕES</div>
       <div style="font-size:11px;color:var(--text3);">${diogoCustoData.negCount} devoluções com frete negativo</div>
     </div>
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;color:#e8432d;">
+    <div style="font-family:Inter,sans-serif;font-weight:700;font-size:24px;letter-spacing:2px;color:#e8432d;">
       R$ ${Math.abs(diogoCustoData.totalNeg).toLocaleString("pt-BR",{minimumFractionDigits:2})}
     </div>`;
   panel.appendChild(totalCard);
@@ -7261,7 +7261,7 @@ function renderFinanceiroTab(panel,color){
   const totalLabel=document.createElement("div");
   totalLabel.innerHTML=`<div style="font-size:11px;color:var(--text3);letter-spacing:2px;margin-bottom:4px">CUSTO DE DEVOLUÇÕES</div><div style="font-size:11px;color:var(--text3);letter-spacing:1px">${finData.count} devoluções concluídas</div>`;
   const totalValue=document.createElement("div");
-  totalValue.style.cssText=`font-size:22px;font-family:'Bebas Neue',sans-serif;letter-spacing:2px;color:${finData.totalCost>0?"#e8432d":"#4ade80"};`;
+  totalValue.style.cssText=`font-size:22px;font-family:Inter,sans-serif;font-weight:700;letter-spacing:2px;color:${finData.totalCost>0?"#e8432d":"#4ade80"};`;
   totalValue.textContent=`-R$ ${finData.totalCost.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
   totalCard.appendChild(totalLabel);totalCard.appendChild(totalValue);
   panel.appendChild(totalCard);
@@ -7587,7 +7587,7 @@ function formatChatMsg(text) {
     let l = line
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.+?)\*/g, '<em>$1</em>')
-      .replace(/`([^`]+)`/g, '<code style="background:var(--bg2);padding:1px 5px;border-radius:3px;font-size:11px;font-family:monospace;">$1</code>');
+      .replace(/`([^`]+)`/g, '<code style="background:var(--bg2);padding:1px 5px;border-radius:3px;font-size:11px;font-family:Inter,sans-serif;">$1</code>');
     out.push('<div style="line-height:1.75;">' + l + '</div>');
   }
   return out.join("");
@@ -8142,7 +8142,7 @@ function render(){
                 emitirDiv.style.cssText = "margin-top:16px;";
                 const chaveInput = document.createElement("input");
                 chaveInput.placeholder = "Chave de acesso da NF original (44 dígitos)";
-                chaveInput.style.cssText = `width:100%;padding:10px 12px;border-radius:8px;border:0.5px solid ${T.border};background:${T.bg3};color:${T.text};font-size:12px;font-family:'IBM Plex Mono',monospace;outline:none;box-sizing:border-box;margin-bottom:10px;`;
+                chaveInput.style.cssText = `width:100%;padding:10px 12px;border-radius:8px;border:0.5px solid ${T.border};background:${T.bg3};color:${T.text};font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;margin-bottom:10px;`;
                 if (calc.chaveAcesso) chaveInput.value = calc.chaveAcesso;
                 emitirDiv.appendChild(chaveInput);
 
@@ -9588,7 +9588,7 @@ function renderFilialSP(panel, color) {
   ].forEach(s => {
     const card = document.createElement("div");
     card.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:16px 18px;border-top:3px solid ${s.color};`;
-    card.innerHTML = `<div style="font-size:10px;color:${T.text2};letter-spacing:1px;margin-bottom:10px;text-transform:uppercase;">${s.label}</div><div style="font-size:26px;font-weight:700;color:${T.text};font-family:'IBM Plex Mono',monospace;">${s.value}</div><div style="font-size:11px;color:${T.text2};margin-top:6px;">${s.sub}</div>`;
+    card.innerHTML = `<div style="font-size:10px;color:${T.text2};letter-spacing:1px;margin-bottom:10px;text-transform:uppercase;">${s.label}</div><div style="font-size:26px;font-weight:700;color:${T.text};font-family:Inter,sans-serif;">${s.value}</div><div style="font-size:11px;color:${T.text2};margin-top:6px;">${s.sub}</div>`;
     resumo.appendChild(card);
   });
   panel.appendChild(resumo);
@@ -9821,7 +9821,7 @@ function renderMatrizRS(panel, color) {
       tr.style.borderBottom = "1px solid var(--sep2)";
       tr.innerHTML = `
         <td style="padding:8px 8px;color:#e8e8e8;font-size:11px;white-space:nowrap;font-weight:600;">${r.sku}</td>
-        <td style="padding:8px 8px;color:var(--text2);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;">${r.produto}</td>
+        <td style="padding:8px 8px;color:var(--text2);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-family:Inter,sans-serif;">${r.produto}</td>
         <td style="padding:8px 8px;text-align:center;color:${r.qty>0?"var(--text)":"var(--text3)"};font-weight:${r.qty>0?"500":"400"};">${r.qty||"—"}</td>
         <td style="padding:8px 8px;text-align:right;color:var(--text2);">${r.custo>0?`R$ ${r.custo.toLocaleString("pt-BR",{minimumFractionDigits:2})}`:"—"}</td>
         <td style="padding:8px 8px;text-align:right;color:${r.valor>5000?"#10b981":r.valor>1000?"#10b981":"var(--text2)"};font-weight:500;">${r.valor>0?`R$ ${r.valor.toLocaleString("pt-BR",{minimumFractionDigits:2})}`:"—"}</td>`;
@@ -9847,7 +9847,7 @@ function renderMatrizRS(panel, color) {
 
 function renderSaudeChart(panel, enriched) {
   const saudeWrap = document.createElement("div");
-  saudeWrap.style.cssText = "font-family:system-ui,-apple-system,sans-serif;";
+  saudeWrap.style.cssText = "font-family:Inter,sans-serif;";
 
   // Legenda
   const leg = document.createElement("div");
@@ -9937,7 +9937,7 @@ function renderSaudeChart(panel, enriched) {
           '<div><div style="font-size:11px;color:var(--text3);letter-spacing:1px;margin-bottom:3px;">DIAS ESTOQUE</div><div style="font-size:16px;font-weight:600;color:' + c + ';">' + diasLabel(d) + '</div></div>' +
           '<div><div style="font-size:11px;color:var(--text3);letter-spacing:1px;margin-bottom:3px;">UNIDADES</div><div style="font-size:16px;font-weight:500;color:var(--text);">' + d.aptas + '</div></div>' +
         '</div>' +
-        '<div style="font-size:12px;color:var(--text3);line-height:1.6;font-family:system-ui,sans-serif;">' + msg + '</div>';
+        '<div style="font-size:12px;color:var(--text3);line-height:1.6;font-family:Inter,sans-serif;">' + msg + '</div>';
 
       // ── Projeção do mês ─────────────────────────────────────────────────────
       const projSection = document.createElement("div");
@@ -10280,7 +10280,7 @@ function renderFechamentoMensal(panel, color) {
     const vazio = !val || String(val).toUpperCase().includes("NÃO") || String(val) === "—";
     inp.value = vazio ? "" : (val || "");
     inp.placeholder = vazio ? "⚠ preencher" : (placeholder || "");
-    inp.style.cssText = `background:none;border:none;border-bottom:1px solid ${vazio?"#e8432d44":"transparent"};color:${vazio?"#e8432d":(cor||"var(--text)")};font-family:${mono?"var(--font-mono, monospace)":"inherit"};font-size:inherit;padding:0;outline:none;width:100%;`;
+    inp.style.cssText = `background:none;border:none;border-bottom:1px solid ${vazio?"#e8432d44":"transparent"};color:${vazio?"#e8432d":(cor||"var(--text)")};font-family:${mono?"inherit":"inherit"};font-size:inherit;padding:0;outline:none;width:100%;`;
     inp.addEventListener("focus", () => inp.style.borderBottomColor = color);
     inp.addEventListener("blur",  () => { inp.style.borderBottomColor = "transparent"; if(inp.value) inp.style.color = cor||"var(--text)"; });
     return inp;
@@ -10675,7 +10675,7 @@ function renderConfig(panel, color) {
       <div id="ps-hist" style="display:flex;flex-direction:column;gap:6px;"><div style="font-size:11px;color:var(--text3);">Carregando…</div></div>
 
       <div style="${sec}">Log do servidor (ao vivo)</div>
-      <pre id="ps-logs" style="background:var(--bg3);border-radius:10px;padding:12px;margin:0;max-height:320px;overflow:auto;font:11px/1.5 'IBM Plex Mono',monospace;color:var(--text2);white-space:pre-wrap;word-break:break-word;">Aguardando log…</pre>`;
+      <pre id="ps-logs" style="background:var(--bg3);border-radius:10px;padding:12px;margin:0;max-height:320px;overflow:auto;font:11px/1.5 Inter,sans-serif;color:var(--text2);white-space:pre-wrap;word-break:break-word;">Aguardando log…</pre>`;
     panel.appendChild(wrap);
 
     // busca dentro do próprio painel (ele ainda não está no document quando os listeners são ligados)
@@ -11020,7 +11020,7 @@ function abrirModalComparacaoKits({ apiComposicoes, apiTotal, planilhaComposicoe
     };
     const [c,bg,bd] = cores[cls]||cores.neutral;
     const s = document.createElement("span");
-    s.style.cssText = `font-family:monospace;font-size:10.5px;padding:2px 8px;border-radius:5px;background:${bg};border:1px solid ${bd};color:${c};white-space:nowrap;`;
+    s.style.cssText = `font-family:Inter,sans-serif;font-size:10.5px;padding:2px 8px;border-radius:5px;background:${bg};border:1px solid ${bd};color:${c};white-space:nowrap;`;
     s.textContent = txt;
     return s;
   }
@@ -11081,7 +11081,7 @@ function abrirModalComparacaoKits({ apiComposicoes, apiTotal, planilhaComposicoe
       const skuCol = document.createElement("div");
       skuCol.style.cssText = "display:flex;flex-direction:column;gap:4px;";
       const skuTxt = document.createElement("div");
-      skuTxt.style.cssText = `font-family:monospace;font-size:11px;font-weight:500;color:var(--text1);word-break:break-all;`;
+      skuTxt.style.cssText = `font-family:Inter,sans-serif;font-size:11px;font-weight:500;color:var(--text1);word-break:break-all;`;
       skuTxt.textContent = r.sku;
       const badge = document.createElement("span");
       badge.style.cssText = `font-size:10px;font-weight:600;padding:1px 7px;border-radius:10px;width:fit-content;color:${corStatus};background:${corStatus}18;border:1px solid ${corStatus}40;`;
@@ -11147,7 +11147,7 @@ function abrirModalComparacaoKits({ apiComposicoes, apiTotal, planilhaComposicoe
           const tr = document.createElement("tr");
           tr.style.borderTop = "1px solid var(--border)";
           const sitLabels = {added:"<span style='font-size:10px;font-weight:600;padding:1px 6px;border-radius:4px;background:rgba(59,130,246,.15);color:#3b82f6;border:1px solid rgba(59,130,246,.3);'>componente novo</span>", removed:"<span style='font-size:10px;font-weight:600;padding:1px 6px;border-radius:4px;background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3);'>removido</span>", qtd:"<span style='font-size:10px;font-weight:600;padding:1px 6px;border-radius:4px;background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3);'>qtd diferente</span>"};
-          tr.innerHTML = `<td style="padding:4px 8px 4px 0;font-family:monospace;color:var(--text2);">${d.sku}</td><td style="padding:4px 8px 4px 0;font-family:monospace;color:var(--text2);">${d.qtdP!=null?"×"+d.qtdP:"—"}</td><td style="padding:4px 8px 4px 0;font-family:monospace;color:#f59e0b;">${d.qtdA!=null?"×"+d.qtdA:"—"}</td><td style="padding:4px 0;">${sitLabels[d.tipo]||""}</td>`;
+          tr.innerHTML = `<td style="padding:4px 8px 4px 0;font-family:Inter,sans-serif;color:var(--text2);">${d.sku}</td><td style="padding:4px 8px 4px 0;font-family:Inter,sans-serif;color:var(--text2);">${d.qtdP!=null?"×"+d.qtdP:"—"}</td><td style="padding:4px 8px 4px 0;font-family:Inter,sans-serif;color:#f59e0b;">${d.qtdA!=null?"×"+d.qtdA:"—"}</td><td style="padding:4px 0;">${sitLabels[d.tipo]||""}</td>`;
           tbl.appendChild(tr);
         });
         det.appendChild(tbl);
@@ -12176,7 +12176,7 @@ async function renderNfImportacao(container) {
         statusEl.innerHTML = `<div style="background:${T.okBg||'#00a63e22'};border:0.5px solid #00a63e;border-radius:8px;padding:14px;">
           <div style="font-size:13px;font-weight:700;color:#00a63e;margin-bottom:8px;">✓ NF-e emitida com sucesso!</div>
           <div style="font-size:11px;color:${T.text2};">Número: <strong style="color:${T.text};">${numero}</strong></div>
-          <div style="font-size:11px;color:${T.text2};">Chave: <span style="font-family:monospace;font-size:10px;">${d.chave||'—'}</span></div>
+          <div style="font-size:11px;color:${T.text2};">Chave: <span style="font-family:Inter,sans-serif;font-size:10px;">${d.chave||'—'}</span></div>
           <div style="font-size:10px;color:${T.text2};margin-top:4px;">Status: ${d.xMotivo||'Autorizado'}</div>
         </div>`;
         btn.textContent = '✓ Emitida';
@@ -12363,10 +12363,10 @@ function renderAjusteFilial(container, color) {
       tr.style.cssText = `border-bottom:1px solid ${T.border}20;background:${i%2===0?"transparent":T.bg+"44"};`;
       const vendCor = k.vendido === null ? T.text3 : k.vendido > 0 ? "#e8432d" : "#10b981";
       tr.innerHTML = `
-        <td style="padding:7px 12px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:${T.text};white-space:nowrap;">${k.sku}</td>
-        <td style="padding:7px 12px;text-align:right;font-family:'IBM Plex Mono',monospace;color:${T.text};">${k.qtdEntrou}</td>
-        <td style="padding:7px 12px;text-align:right;font-family:'IBM Plex Mono',monospace;color:${k.agoraNoFull===null?T.text3:T.text};">${k.agoraNoFull===null?"—":k.agoraNoFull}</td>
-        <td style="padding:7px 12px;text-align:right;font-family:'IBM Plex Mono',monospace;color:${vendCor};font-weight:${k.vendido>0?"800":"400"};">${k.vendido===null?"?":k.vendido===0?"✓ 0":k.vendido}</td>
+        <td style="padding:7px 12px;font-family:Inter,sans-serif;font-size:11px;color:${T.text};white-space:nowrap;">${k.sku}</td>
+        <td style="padding:7px 12px;text-align:right;font-family:Inter,sans-serif;color:${T.text};">${k.qtdEntrou}</td>
+        <td style="padding:7px 12px;text-align:right;font-family:Inter,sans-serif;color:${k.agoraNoFull===null?T.text3:T.text};">${k.agoraNoFull===null?"—":k.agoraNoFull}</td>
+        <td style="padding:7px 12px;text-align:right;font-family:Inter,sans-serif;color:${vendCor};font-weight:${k.vendido>0?"800":"400"};">${k.vendido===null?"?":k.vendido===0?"✓ 0":k.vendido}</td>
       `;
       ptb.appendChild(tr);
     });
@@ -12411,7 +12411,7 @@ function renderAjusteFilial(container, color) {
   ].forEach(s => {
     const c = document.createElement("div");
     c.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-top:3px solid ${s.cor};border-radius:10px;padding:14px 16px;`;
-    c.innerHTML = `<div style="font-size:9px;color:${T.text3};letter-spacing:1.2px;text-transform:uppercase;margin-bottom:8px;">${s.label}</div><div style="font-size:22px;font-weight:800;color:${T.text};font-family:'IBM Plex Mono',monospace;">${s.value}</div>`;
+    c.innerHTML = `<div style="font-size:9px;color:${T.text3};letter-spacing:1.2px;text-transform:uppercase;margin-bottom:8px;">${s.label}</div><div style="font-size:22px;font-weight:800;color:${T.text};font-family:Inter,sans-serif;">${s.value}</div>`;
     resumoWrap.appendChild(c);
   });
   container.appendChild(resumoWrap);
@@ -12465,8 +12465,8 @@ function renderAjusteFilial(container, color) {
     tr.style.cssText = `border-bottom:1px solid ${T.border}20;background:${i%2===0?"transparent":T.bg+"44"};`;
     const origem = (c.origem||[]).map(o=>`${o.kitSku}×${o.qtd}`).join(", ");
     tr.innerHTML = `
-      <td style="padding:9px 12px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:${T.text};white-space:nowrap;">${c.sku}</td>
-      <td style="padding:9px 12px;text-align:right;font-family:'IBM Plex Mono',monospace;color:#e8432d;font-weight:800;font-size:14px;">${(c.qtdTotal||0).toLocaleString("pt-BR")}</td>
+      <td style="padding:9px 12px;font-family:Inter,sans-serif;font-size:11px;color:${T.text};white-space:nowrap;">${c.sku}</td>
+      <td style="padding:9px 12px;text-align:right;font-family:Inter,sans-serif;color:#e8432d;font-weight:800;font-size:14px;">${(c.qtdTotal||0).toLocaleString("pt-BR")}</td>
       <td style="padding:9px 12px;font-size:10px;color:${T.text3};">${origem}</td>
     `;
     tbody.appendChild(tr);
@@ -12497,10 +12497,10 @@ function renderAjusteFilial(container, color) {
     tr.style.cssText = `border-bottom:1px solid ${T.border}20;background:${i%2===0?"transparent":T.bg+"44"};`;
     const vendCor = k.vendido === null ? T.text3 : k.vendido > 0 ? "#e8432d" : "#10b981";
     tr.innerHTML = `
-      <td style="padding:7px 12px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:${T.text};white-space:nowrap;">${k.sku}</td>
-      <td style="padding:7px 12px;text-align:right;font-family:'IBM Plex Mono',monospace;color:${T.text};">${k.qtdEntrou}</td>
-      <td style="padding:7px 12px;text-align:right;font-family:'IBM Plex Mono',monospace;color:${k.agoraNoFull===null?T.text3:T.text};">${k.agoraNoFull===null?"—":k.agoraNoFull}</td>
-      <td style="padding:7px 12px;text-align:right;font-family:'IBM Plex Mono',monospace;color:${vendCor};font-weight:${k.vendido>0?"800":"400"};">${k.vendido===null?"?":k.vendido===0?"✓ 0":k.vendido}</td>
+      <td style="padding:7px 12px;font-family:Inter,sans-serif;font-size:11px;color:${T.text};white-space:nowrap;">${k.sku}</td>
+      <td style="padding:7px 12px;text-align:right;font-family:Inter,sans-serif;color:${T.text};">${k.qtdEntrou}</td>
+      <td style="padding:7px 12px;text-align:right;font-family:Inter,sans-serif;color:${k.agoraNoFull===null?T.text3:T.text};">${k.agoraNoFull===null?"—":k.agoraNoFull}</td>
+      <td style="padding:7px 12px;text-align:right;font-family:Inter,sans-serif;color:${vendCor};font-weight:${k.vendido>0?"800":"400"};">${k.vendido===null?"?":k.vendido===0?"✓ 0":k.vendido}</td>
     `;
     ktb.appendChild(tr);
   });
@@ -12700,7 +12700,7 @@ function renderKitsFull(container, color) {
   const esc = v => String(v ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;");
   html += `<div style="background:${bg};border:1px solid ${bdr};border-radius:10px;padding:14px;margin:${erro?"12px":"0"} 0 14px;">
     <div style="font-size:11px;font-weight:700;color:${txt2};margin-bottom:6px;">Kits para enviar <span style="font-weight:400;color:${txt3};">— um por linha. Com quantidade, o estoque é reservado primeiro. Sem quantidade, monta o máximo com o que sobrar.</span></div>
-    <textarea id="kf-entrada" rows="6" placeholder="WINDX-KIT10-PRETO 50&#10;ZOLOE-KIT7-PRETO&#10;COSMIQ-REV-PRETO 100" style="width:100%;box-sizing:border-box;background:${bg2};border:1px solid ${bdr};border-radius:6px;padding:10px 12px;color:${txt};font:12px/1.5 'IBM Plex Mono',monospace;outline:none;resize:vertical;">${esc(kitsFullState.entrada)}</textarea>
+    <textarea id="kf-entrada" rows="6" placeholder="WINDX-KIT10-PRETO 50&#10;ZOLOE-KIT7-PRETO&#10;COSMIQ-REV-PRETO 100" style="width:100%;box-sizing:border-box;background:${bg2};border:1px solid ${bdr};border-radius:6px;padding:10px 12px;color:${txt};font:12px/1.5 Inter,sans-serif;outline:none;resize:vertical;">${esc(kitsFullState.entrada)}</textarea>
     <button onclick="kitsFullMontar()" ${carregando?"disabled":""} style="margin-top:8px;width:100%;padding:10px;border-radius:6px;background:#3b82f6;border:none;color:#fff;font:700 12px Inter,sans-serif;cursor:pointer;">${carregando ? (kitsFullState.progresso || "Buscando no Bling...") : "Montar envio"}</button>
   </div>`;
 
@@ -12719,7 +12719,7 @@ function renderKitsFull(container, color) {
         const ok = p.alvo === Infinity || p.qtd >= p.alvo;
         const cor = p.qtd === 0 ? "#ef4444" : ok ? "#10b981" : "#f59e0b";
         return `<div style="display:grid;grid-template-columns:1fr 80px 70px;gap:8px;padding:9px 12px;border-top:1px solid ${bdr};align-items:center;font-size:12px;">
-          <div style="min-width:0;"><div style="font-weight:700;color:${txt};font-family:'IBM Plex Mono',monospace;font-size:11px;">${esc(p.kit.sku)}</div>
+          <div style="min-width:0;"><div style="font-weight:700;color:${txt};font-family:Inter,sans-serif;font-size:11px;">${esc(p.kit.sku)}</div>
           ${!ok || (p.alvo === Infinity && p.limitante) ? `<div style="font-size:10px;color:${txt3};margin-top:2px;">parou por falta de <b style="color:#f59e0b;">${esc(p.limitante)}</b></div>` : ""}</div>
           <input type="text" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/\D/g,'')" value="${p.alvo === Infinity ? "" : p.alvo}" placeholder="máx"
             onchange="kitsFullSetQtd('${esc(p.kit.sku)}', this.value)" onkeydown="if(event.key==='Enter')this.blur()"
@@ -12733,7 +12733,7 @@ function renderKitsFull(container, color) {
     <div style="border:1px solid ${bdr};border-radius:10px;overflow:hidden;margin-bottom:16px;">
       <div style="display:grid;grid-template-columns:1fr 70px 70px 70px;gap:8px;padding:8px 12px;background:${bg2};font-size:9px;font-weight:700;letter-spacing:.08em;color:${txt3};text-transform:uppercase;"><span>SKU</span><span style="text-align:right;">Estoque</span><span style="text-align:right;">Usa</span><span style="text-align:right;">Sobra</span></div>
       ${pl.componentes.map(c => `<div style="display:grid;grid-template-columns:1fr 70px 70px 70px;gap:8px;padding:7px 12px;border-top:1px solid ${bdr};font-size:11px;font-variant-numeric:tabular-nums;">
-        <span style="color:${txt2};font-family:'IBM Plex Mono',monospace;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(c.nome)}">${esc(c.sku)}</span>
+        <span style="color:${txt2};font-family:Inter,sans-serif;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(c.nome)}">${esc(c.sku)}</span>
         <span style="text-align:right;color:${txt3};">${c.estoque}</span>
         <span style="text-align:right;color:${txt};font-weight:700;">${c.usado}</span>
         <span style="text-align:right;color:${c.sobra === 0 ? "#ef4444" : txt2};">${c.sobra}</span>
@@ -12768,7 +12768,7 @@ async function renderNfTransferenciaFull(container, color) {
     </label>
 
     <div style="font-size:11px;color:${T.text3};margin-bottom:8px;">2. Ou cole os itens manualmente (SKU · Quantidade)</div>
-    <textarea id="nf-full-manual" rows="6" placeholder="COSMIQ-REV-PRETO · 72\nWINDX-REV-KIT10-PRETO · 50\nWC-HDC-PRETO · 38" style="width:100%;background:${T.bg3};border:1px solid ${T.border};border-radius:6px;padding:10px 12px;color:${T.text};font-size:12px;font-family:'IBM Plex Mono',monospace;outline:none;box-sizing:border-box;resize:vertical;margin-bottom:16px;"></textarea>
+    <textarea id="nf-full-manual" rows="6" placeholder="COSMIQ-REV-PRETO · 72\nWINDX-REV-KIT10-PRETO · 50\nWC-HDC-PRETO · 38" style="width:100%;background:${T.bg3};border:1px solid ${T.border};border-radius:6px;padding:10px 12px;color:${T.text};font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;resize:vertical;margin-bottom:16px;"></textarea>
 
     <button id="nf-full-processar" style="width:100%;padding:11px;border-radius:6px;background:#3b82f6;border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">
       ${nfFullState.processando ? "⏳ Buscando no Bling..." : "Processar e desmembrar kits"}
@@ -12780,11 +12780,11 @@ async function renderNfTransferenciaFull(container, color) {
       <div style="font-size:13px;font-weight:700;color:${T.okTxt};margin-bottom:10px;">✓ NF de Transferência emitida!</div>
       <div style="display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:11px;">
         <span style="color:${T.text3};">Número</span>
-        <span style="color:${T.text};font-weight:700;font-family:'IBM Plex Mono',monospace;">${nfFullState.nfEmitida.numero || "—"}</span>
+        <span style="color:${T.text};font-weight:700;font-family:Inter,sans-serif;">${nfFullState.nfEmitida.numero || "—"}</span>
         <span style="color:${T.text3};">Status</span>
         <span style="color:${T.okTxt};font-weight:600;">${nfFullState.nfEmitida.status || "Autorizada"}</span>
         <span style="color:${T.text3};">Chave</span>
-        <span style="color:${T.text};font-family:'IBM Plex Mono',monospace;font-size:10px;word-break:break-all;">${nfFullState.nfEmitida.chave || "—"}</span>
+        <span style="color:${T.text};font-family:Inter,sans-serif;font-size:10px;word-break:break-all;">${nfFullState.nfEmitida.chave || "—"}</span>
       </div>
       <button onclick="window._nfFullState.fase='upload';window._nfFullState.itens=[];window._nfFullState.nfEmitida=null;window._nfFullState.cmpAplicado=false;" style="margin-top:12px;width:100%;padding:8px;background:none;border:1px solid ${T.okBor};border-radius:6px;font-size:11px;color:${T.okTxt};cursor:pointer;font-family:inherit;">Nova transferência</button>
     </div>` : ""}
@@ -12832,7 +12832,7 @@ async function renderNfTransferenciaFull(container, color) {
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid ${T.sep};">
         <div style="font-size:12px;font-weight:600;color:${T.text};">${totalItens} produtos · ${totalUnidades} un</div>
         <div style="display:flex;align-items:center;gap:10px;">
-<div style="font-size:12px;color:${T.text2};">R$ <strong style="color:${T.text};font-family:'IBM Plex Mono',monospace;">${totalCusto.toLocaleString("pt-BR",{minimumFractionDigits:2})}</strong></div>
+<div style="font-size:12px;color:${T.text2};">R$ <strong style="color:${T.text};font-family:Inter,sans-serif;">${totalCusto.toLocaleString("pt-BR",{minimumFractionDigits:2})}</strong></div>
         </div>
       </div>
       <div style="max-height:calc(100vh - 280px);overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin-bottom:14px;">
@@ -12848,7 +12848,7 @@ async function renderNfTransferenciaFull(container, color) {
                 <span style="font-size:10px;color:${T.text3};">un</span>
                 <span style="font-size:10px;color:${T.text3};">·</span>
                 <span style="font-size:10px;color:${T.text3};">R$</span>
-                <input type="number" value="${Number(it.custo||0).toFixed(2)}" step="0.01" min="0" data-idx="${idx}" class="nf-full-custo" style="width:70px;background:${T.bg};border:1px solid ${T.border};border-radius:4px;padding:4px 6px;color:${T.text};font-size:11px;text-align:right;font-family:'IBM Plex Mono',monospace;" title="Custo unitário">
+                <input type="number" value="${Number(it.custo||0).toFixed(2)}" step="0.01" min="0" data-idx="${idx}" class="nf-full-custo" style="width:70px;background:${T.bg};border:1px solid ${T.border};border-radius:4px;padding:4px 6px;color:${T.text};font-size:11px;text-align:right;font-family:Inter,sans-serif;" title="Custo unitário">
               </div>
               <div style="font-size:10px;color:${T.text3};">= R$ ${(Number(it.custo||0)*Number(it.quantidade||0)).toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
             </div>
@@ -12884,7 +12884,7 @@ async function renderNfTransferenciaFull(container, color) {
       const row = document.createElement("div");
       row.style.cssText = `display:flex;align-items:center;gap:10px;padding:7px 10px;background:${T.bg3};border:0.5px solid ${T.border};border-radius:6px;margin-bottom:5px;`;
       row.innerHTML = `
-        <div style="font-size:12px;font-weight:700;color:#3B82F6;font-family:'IBM Plex Mono',monospace;min-width:48px;">NF ${nf.chave.replace(/_/g,"/")}</div>
+        <div style="font-size:12px;font-weight:700;color:#3B82F6;font-family:Inter,sans-serif;min-width:48px;">NF ${nf.chave.replace(/_/g,"/")}</div>
         <div style="flex:1;font-size:11px;color:${T.text2};">${dataStr}</div>
         <div style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap;letter-spacing:.1px;${temComp
           ? `background:#34c75922;color:#34c759;border:0.5px solid #34c75955;`
@@ -13112,7 +13112,7 @@ function renderNfFullEmitirModal(itens) {
     <div style="background:${T.bg3};border:1px solid ${T.border};border-radius:8px;padding:12px 14px;margin-bottom:16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;font-size:11px;">
       <div><div style="color:${T.text3};margin-bottom:2px;">Produtos</div><div style="font-weight:700;color:${T.text};">${itens.length}</div></div>
       <div><div style="color:${T.text3};margin-bottom:2px;">Unidades</div><div style="font-weight:700;color:${T.text};">${totalUnidades}</div></div>
-      <div><div style="color:${T.text3};margin-bottom:2px;">Valor total</div><div style="font-weight:700;color:${T.text};font-family:'IBM Plex Mono',monospace;">R$ ${totalCusto.toLocaleString("pt-BR",{minimumFractionDigits:2})}</div></div>
+      <div><div style="color:${T.text3};margin-bottom:2px;">Valor total</div><div style="font-weight:700;color:${T.text};font-family:Inter,sans-serif;">R$ ${totalCusto.toLocaleString("pt-BR",{minimumFractionDigits:2})}</div></div>
     </div>
 
     <table style="width:100%;border-collapse:collapse;font-size:11px;margin-bottom:16px;">
@@ -13132,14 +13132,14 @@ function renderNfFullEmitirModal(itens) {
             <td style="padding:8px;text-align:center;color:${T.text2};">${it.ncm||"—"}</td>
             <td style="padding:8px;text-align:center;font-weight:700;color:${T.text};">${it.quantidade}</td>
             <td style="padding:8px;text-align:right;color:${T.text2};">R$ ${Number(it.custo||0).toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
-            <td style="padding:8px;text-align:right;font-weight:600;color:${T.text};font-family:'IBM Plex Mono',monospace;" class="nf-modal-total-${itens.indexOf(it)}">R$ ${(Number(it.custo||0)*Number(it.quantidade||0)).toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
+            <td style="padding:8px;text-align:right;font-weight:600;color:${T.text};font-family:Inter,sans-serif;" class="nf-modal-total-${itens.indexOf(it)}">R$ ${(Number(it.custo||0)*Number(it.quantidade||0)).toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
           </tr>
         `).join("")}
       </tbody>
       <tfoot>
         <tr style="border-top:2px solid ${T.border};">
           <td colspan="4" style="padding:10px 8px;text-align:right;color:${T.text3};">Total NF</td>
-          <td style="padding:10px 8px;text-align:right;font-weight:700;color:#10b981;font-family:'IBM Plex Mono',monospace;font-size:13px;">R$ ${totalCusto.toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
+          <td style="padding:10px 8px;text-align:right;font-weight:700;color:#10b981;font-family:Inter,sans-serif;font-size:13px;">R$ ${totalCusto.toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
         </tr>
       </tfoot>
     </table>
@@ -13188,7 +13188,7 @@ function renderNfFullEmitirModal(itens) {
         <div style="background:${T.okBg};border:1px solid ${T.okBor};border-radius:8px;padding:14px;margin-bottom:12px;">
           <div style="font-size:13px;font-weight:700;color:${T.okTxt};margin-bottom:8px;">✓ NF emitida com sucesso!</div>
           <div style="font-size:11px;color:${T.text2};margin-bottom:4px;">Número: <strong style="color:${T.text};">${data.numero||"—"}</strong></div>
-          <div style="font-size:11px;color:${T.text2};">Chave: <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:${T.text};">${data.chaveAcesso||"—"}</span></div>
+          <div style="font-size:11px;color:${T.text2};">Chave: <span style="font-family:Inter,sans-serif;font-size:10px;color:${T.text};">${data.chaveAcesso||"—"}</span></div>
         </div>
       `;
       btn.style.background = T.okBg;
@@ -13580,7 +13580,7 @@ async function renderEmailDetalhe(panel, fmtData) {
           corpoEl.innerHTML = "<iframe id='email-iframe' style='width:100%;height:100%;min-height:0;border:none;background:#fff;border-radius:6px;display:block;'></iframe>";
           const iframe = document.getElementById("email-iframe");
           if (iframe) {
-            iframe.srcdoc = "<html><head><style>body{font-family:sans-serif;font-size:13px;color:#111;background:#fff;padding:8px;margin:0;word-break:break-word;} a{color:#3483fa;} *{max-width:100%;}</style></head><body>" + html + "</body></html>";
+            iframe.srcdoc = "<html><head><style>body{font-family:Inter,sans-serif;font-size:13px;color:#111;background:#fff;padding:8px;margin:0;word-break:break-word;} a{color:#3483fa;} *{max-width:100%;}</style></head><body>" + html + "</body></html>";
           }
         } else if (texto) {
           corpoEl.style.color = T.text;
@@ -14120,7 +14120,7 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
     .sort((a, b) => b.reduce((n, i) => n + novasDe(i), 0) - a.reduce((n, i) => n + novasDe(i), 0));
   const tipoAnuncio = i => i.catalogo ? "Catálogo" : "Tradicional";
 
-  const stat = (lbl, v, cor) => `<div style="background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:12px 14px;"><div style="font-size:11px;color:${T.text2};">${lbl}</div><div style="font:600 22px 'IBM Plex Mono',monospace;color:${cor || T.text};margin-top:2px;">${v}</div></div>`;
+  const stat = (lbl, v, cor) => `<div style="background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:12px 14px;"><div style="font-size:11px;color:${T.text2};">${lbl}</div><div style="font:600 22px Inter,sans-serif;color:${cor || T.text};margin-top:2px;">${v}</div></div>`;
   const chipF = (k, lbl, alerta) => {
     const on = st.ofertasFiltro === k, cor = alerta ? amarelo : azul;
     return `<button data-of-filtro="${k}" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:5px 12px;border-radius:999px;border:0.5px solid ${on || alerta ? cor + (on ? '' : '88') : T.border};background:${on ? cor + '1f' : 'transparent'};color:${on ? cor : alerta ? cor : T.text2};cursor:pointer;">${lbl}<span style="font-size:11px;font-weight:600;padding:0 7px;border-radius:999px;background:${on || alerta ? cor + '26' : T.bg3};color:${on || alerta ? cor : T.text2};">${contagem[k]}</span></button>`;
@@ -14157,8 +14157,8 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
         <div style="font-size:12px;color:${T.text};margin-top:4px;">${esc(nomeLinha)}${o.meli_pct > 0 ? ` <span style="color:${verde};font-size:11px;">· com redução de tarifa</span>` : ""}</div>
         ${periodo ? `<div style="font-size:11px;color:${T.text2};margin-top:1px;">${periodo}</div>` : ""}
       </div>
-      <div style="font:600 13px 'IBM Plex Mono',monospace;color:${T.text};">${descPct != null ? (o._ate ? "até " : "") + descPct + "%" : "—"}${descR != null ? `<div style="font:400 11px Inter,sans-serif;color:${T.text2};">${fmtR(descR)}</div>` : ""}</div>
-      <div style="font:600 13px 'IBM Plex Mono',monospace;color:${T.text};">${o._ate && final ? "até " : ""}${fmtR(final)}${o._ate && o.preco_sugerido ? `<div style="font:400 11px Inter,sans-serif;color:${T.text2};">sugerido ${fmtR(o.preco_sugerido)}</div>` : ""}</div>
+      <div style="font:600 13px Inter,sans-serif;color:${T.text};">${descPct != null ? (o._ate ? "até " : "") + descPct + "%" : "—"}${descR != null ? `<div style="font:400 11px Inter,sans-serif;color:${T.text2};">${fmtR(descR)}</div>` : ""}</div>
+      <div style="font:600 13px Inter,sans-serif;color:${T.text};">${o._ate && final ? "até " : ""}${fmtR(final)}${o._ate && o.preco_sugerido ? `<div style="font:400 11px Inter,sans-serif;color:${T.text2};">sugerido ${fmtR(o.preco_sugerido)}</div>` : ""}</div>
       <div style="font-size:11px;min-width:0;">${quem}</div>
       <div style="text-align:right;">${btn}<div data-of-msg="${key}" style="font-size:11px;margin-top:4px;"></div></div>
     </div>`;
@@ -15208,7 +15208,7 @@ async function renderCpLista(panel) {
     row.innerHTML = `
       <div style="font-size:13px;color:${T.text};font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:4px;padding:11px 0;">${c.fornecedor||"—"}${empresaTag}</div>
       <div style="font-size:12px;color:${T.text2};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.historico||"—"}</div>
-      <div style="font-size:13px;color:${T.text};font-family:'IBM Plex Mono',monospace;text-align:center;">R$ ${valor.toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
+      <div style="font-size:13px;color:${T.text};font-family:Inter,sans-serif;text-align:center;">R$ ${valor.toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
       <div style="font-size:12px;color:${T.text2};text-align:center;">${c.competencia ? c.competencia.slice(5,7)+"/"+c.competencia.slice(0,4) : "—"}</div>
       <div style="position:relative;display:flex;align-items:center;justify-content:center;width:100%;padding:0 36px;">
         ${currentUser === "Resicon"
@@ -15334,7 +15334,7 @@ async function renderCpLista(panel) {
   tfootLeft.textContent = cpState.contas.length+" lançamentos";
 
   const tfootCenter = document.createElement("div");
-  tfootCenter.style.cssText = "font-size:14px;font-weight:600;color:"+T.text+";font-family:'IBM Plex Mono',monospace;text-align:center;";
+  tfootCenter.style.cssText = "font-size:14px;font-weight:600;color:"+T.text+";font-family:Inter,sans-serif;text-align:center;";
   tfootCenter.textContent = "R$ "+total.toLocaleString("pt-BR",{minimumFractionDigits:2});
 
   const btnMarcarTodos = document.createElement("button");
@@ -15840,7 +15840,7 @@ async function renderNfsEmitidas(panel) {
             refCard.style.cssText = `background:${T.bg3};border:0.5px solid ${T.border};border-radius:8px;padding:10px 14px;margin-bottom:16px;`;
             refCard.innerHTML = `
               <div style="font-size:9px;font-weight:600;color:${T.text3};letter-spacing:.8px;margin-bottom:4px;">CHAVE DE ACESSO DA ORIGINAL</div>
-              <div style="font-size:11px;color:${T.text};font-family:'IBM Plex Mono',monospace;word-break:break-all;">${chaveAcesso44}</div>`;
+              <div style="font-size:11px;color:${T.text};font-family:Inter,sans-serif;word-break:break-all;">${chaveAcesso44}</div>`;
             box.appendChild(refCard);
           }
           // Calculadora completa
@@ -15917,7 +15917,7 @@ async function renderNfsEmitidas(panel) {
         <div style="display:flex;flex-wrap:wrap;gap:6px;">
           ${nf.itens.map(it => `<span style="background:${T.card};border:0.5px solid ${T.border};border-radius:6px;padding:3px 10px;font-size:11px;color:${T.text2};">${it.sku||it.codigo||it}${it.quantidade ? ` × ${it.quantidade}` : ""}</span>`).join("")}
         </div>
-        ${nf.chaveAcesso ? `<div style="margin-top:10px;font-size:10px;color:${T.text3};font-family:'IBM Plex Mono',monospace;word-break:break-all;">${nf.chaveAcesso}</div>` : ""}`;
+        ${nf.chaveAcesso ? `<div style="margin-top:10px;font-size:10px;color:${T.text3};font-family:Inter,sans-serif;word-break:break-all;">${nf.chaveAcesso}</div>` : ""}`;
       card.insertAdjacentElement("afterend", detail);
     });
 
@@ -15998,7 +15998,7 @@ async function renderConferencia(panel, color) {
     lbl.style.cssText = "font-size:8px;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;margin-bottom:8px;font-weight:500;";
     lbl.textContent = label;
     const val = document.createElement("div");
-    val.style.cssText = `font-size:18px;font-weight:700;color:${T.text};letter-spacing:-0.5px;font-family:'IBM Plex Mono',monospace;`;
+    val.style.cssText = `font-size:18px;font-weight:700;color:${T.text};letter-spacing:-0.5px;font-family:Inter,sans-serif;`;
     val.textContent = "R$ "+valor.toLocaleString("pt-BR",{minimumFractionDigits:2});
     const cnt = document.createElement("div");
     cnt.style.cssText = `display:inline-block;font-size:10px;font-weight:600;color:${T.text2};background:${T.bg3};border:1px solid ${T.border};border-radius:5px;padding:2px 8px;margin-top:8px;`;

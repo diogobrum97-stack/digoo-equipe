@@ -1,7 +1,7 @@
 /* ── Layout principal ────────────────────────────────────────────────── */
 header { text-align: center; margin-bottom: 24px; }
 
-h1 { font-family: 'Digoo', 'Bebas Neue', sans-serif; font-size: 44px; letter-spacing: 0; color: var(--text); }
+h1 { font-family: 'Digoo', Inter, sans-serif; font-size: 44px; letter-spacing: 0; color: var(--text); }
 
 .sub { font-size: 10px; letter-spacing: 0; color: #9a9a9a; margin-bottom: 6px; text-transform: uppercase; font-weight: 400; }
 
