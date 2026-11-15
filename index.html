@@ -14055,8 +14055,11 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
     const nomeLinha = isBF ? (OFERTA_TIPOS[o.tipo] || o.tipo) : nome;
     const statusPill = o.status === "candidate" ? pill("Nova proposta", amarelo) : o.status === "pending" ? pill("Programada", azul) : pill("Ativa", verde);
     const periodo = o.inicio || o.fim ? `${fmtD(o.inicio)}${o.fim ? " a " + fmtD(o.fim) : ""}` : (o.tipo === "LIGHTNING" || o.tipo === "DOD" ? "Data definida pelo ML" : "");
+    // Valor em R$ por venda: a % do ML incide sobre o preço original (confere com o "Reduzimos R$ X" do site)
+    const meliR = o.meli_pct > 0 && orig ? orig * o.meli_pct / 100 : 0;
+    const voceR = descR != null ? Math.max(0, descR - meliR) : (orig ? orig * (o.seller_pct || 0) / 100 : null);
     const quem = o.meli_pct > 0
-      ? `<span style="color:${verde};font-weight:600;">ML paga ${Math.round(o.meli_pct * 10) / 10}%</span><span style="color:${T.text2};"> · você ${Math.round((o.seller_pct || Math.max(0,(descPct||0) - o.meli_pct)) * 10) / 10}%</span>`
+      ? `<span style="color:${verde};font-weight:600;">ML paga ${fmtR(meliR)}</span><span style="color:${T.text2};"> · você ${fmtR(voceR)}</span><div style="color:${T.text2};font-size:11px;">por venda</div>`
       : `<span style="color:${T.text2};">Você paga tudo</span>`;
     const key = `${it.item_id}|${idx}`;
     const btn = o.status === "candidate"
