@@ -14100,7 +14100,7 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
   const grupos = [...gruposMap.values()]
     .map(g => g.sort((a, b) => novasDe(b) - novasDe(a) || (a.catalogo === true) - (b.catalogo === true)))
     .sort((a, b) => b.reduce((n, i) => n + novasDe(i), 0) - a.reduce((n, i) => n + novasDe(i), 0));
-  const tipoAnuncio = i => i.catalogo ? "Catálogo" : i.tipo_anuncio === "gold_pro" ? "Premium" : i.tipo_anuncio === "gold_special" ? "Clássico" : "";
+  const tipoAnuncio = i => i.catalogo ? "Catálogo" : "Tradicional";
 
   const stat = (lbl, v, cor) => `<div style="background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:12px 14px;"><div style="font-size:11px;color:${T.text2};">${lbl}</div><div style="font:600 22px 'IBM Plex Mono',monospace;color:${cor || T.text};margin-top:2px;">${v}</div></div>`;
   const chipF = (k, lbl) => `<button data-of-filtro="${k}" style="font-size:11px;padding:4px 12px;border-radius:20px;border:0.5px solid ${st.ofertasFiltro===k?azul:T.border};background:${st.ofertasFiltro===k?azul+'18':'transparent'};color:${st.ofertasFiltro===k?azul:T.text2};cursor:pointer;">${lbl}</button>`;
