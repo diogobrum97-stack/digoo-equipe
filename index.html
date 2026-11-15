@@ -13986,7 +13986,7 @@ window.renderPromocoes = async function renderPromocoes(panel) {
 const OFERTA_TIPOS = {
   DEAL: "Campanha do ML", MARKETPLACE_CAMPAIGN: "Campanha compartilhada", SMART: "Campanha automática",
   PRICE_MATCHING: "Preço competitivo", PRICE_MATCHING_MELI_ALL: "Preço competitivo", LIGHTNING: "Oferta relâmpago",
-  DOD: "Oferta do dia", PRICE_DISCOUNT: "Desconto próprio", SELLER_CAMPAIGN: "Campanha própria",
+  DOD: "Oferta do dia", PRICE_DISCOUNT: "Desconto por porcentagem", SELLER_CAMPAIGN: "Campanha própria",
   VOLUME: "Desconto por quantidade", PRE_NEGOTIATED: "Desconto pré-acordado", UNHEALTHY_STOCK: "Liquidação Full",
   SELLER_COUPON_CAMPAIGN: "Cupom",
 };
@@ -14028,7 +14028,34 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
   const atualizadoTxt = minAtras == null ? "" : minAtras < 1 ? "atualizado agora" : minAtras < 60 ? `atualizado há ${minAtras} min` : `atualizado há ${Math.round(minAtras / 60)}h`;
   const nFalhas = new Set([...(meta.falhas?.dados || []), ...(meta.falhas?.promocoes || [])]).size;
   const itensTodos = st.ofertas[conta];
-  const todasOf = itensTodos.flatMap(i => i.ofertas);
+  // Ajusta as ofertas do anúncio pra mostrar igual ao painel do ML:
+  // - Black Friday (DEAL): o preço final mostrado é o máximo permitido (a API manda 0)
+  // - Com campanha Black Friday, propostas SMART aparecem no máximo da BF e a relâmpago no menor entre o preço dela e máximo − 1%
+  // - Relâmpago sem redução some quando existe a relâmpago com redução (o ML não mostra as duas)
+  // - Entre as iniciadas, só a de menor preço está valendo (Ativa); as outras ficam Programada
+  const prepOfertas = it => {
+    const ofs = (it.ofertas || []).map((o, i) => ({ ...o, _idx: i }));
+    const deal = ofs.find(o => o.tipo === "DEAL" && o.preco_max > 0);
+    const bfMax = deal ? deal.preco_max : null;
+    const temRelReducao = ofs.some(o => o.tipo === "SMART_LIGHTNING");
+    const out = ofs.filter(o => !(o.tipo === "LIGHTNING" && o.status === "candidate" && temRelReducao));
+    for (const o of out) {
+      let f = o.preco || o.preco_sugerido || null;
+      if (o.tipo === "DEAL" && o.status === "candidate") { f = o.preco_max || f; o._ate = true; }
+      else if (bfMax && o.status === "candidate" && o.tipo === "SMART") f = bfMax;
+      else if (bfMax && o.status === "candidate" && o.tipo === "SMART_LIGHTNING") {
+        const teto = Math.floor(Math.round(bfMax * 100) * 99 / 100) / 100;
+        if (f == null || f > teto) f = teto;
+      }
+      o._final = f;
+    }
+    const iniciadas = out.filter(o => o.status === "started" && o._final > 0);
+    const valendo = iniciadas.length ? iniciadas.reduce((a, b) => b._final < a._final ? b : a) : null;
+    for (const o of out) o._programada = o.status === "pending" || (o.status === "started" && o !== valendo);
+    return out;
+  };
+  const prep = new Map(itensTodos.map(i => [i.item_id, prepOfertas(i)]));
+  const todasOf = itensTodos.flatMap(i => prep.get(i.item_id));
   const nNovas = todasOf.filter(o => o.status === "candidate").length;
   const nTarifa = todasOf.filter(o => o.status === "candidate" && o.meli_pct > 0).length;
   const nAtivas = todasOf.filter(o => o.status !== "candidate").length;
@@ -14037,7 +14064,7 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
     : st.ofertasFiltro === "tarifa" ? o.meli_pct > 0 : true;
   const busca = (st.ofertasBusca || "").toLowerCase();
   const itens = itensTodos
-    .map(i => ({ ...i, _of: i.ofertas.filter(filtroOf).sort((a, b) => (a.status === "candidate") - (b.status === "candidate")) }))
+    .map(i => ({ ...i, _of: prep.get(i.item_id).filter(filtroOf).sort((a, b) => (a.status === "candidate") - (b.status === "candidate")) }))
     .filter(i => i._of.length && (!busca || ((i.titulo || "") + " " + (i.sku || "") + " " + i.item_id).toLowerCase().includes(busca)))
     .sort((a, b) => b._of.filter(o => o.status === "candidate").length - a._of.filter(o => o.status === "candidate").length);
 
@@ -14047,13 +14074,14 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
 
   const linha = (it, o, idx) => {
     const orig = o.preco_original || it.preco || 0;
-    const final = o.preco ?? o.preco_sugerido;
-    const descPct = orig && final ? Math.round((1 - final / orig) * 100) : null;
+    const final = o._final;
+    // O ML arredonda a porcentagem pra cima (33,26% aparece como 34%)
+    const descPct = orig && final ? Math.ceil((1 - final / orig) * 100 - 1e-9) : null;
     const descR = orig && final ? orig - final : null;
     const nome = o.nome || OFERTA_TIPOS[o.tipo] || o.tipo;
     const isBF = /black\s*friday/i.test(nome);
     const nomeLinha = isBF ? (OFERTA_TIPOS[o.tipo] || o.tipo) : nome;
-    const statusPill = o.status === "candidate" ? pill("Nova proposta", amarelo) : o.status === "pending" ? pill("Programada", azul) : pill("Ativa", verde);
+    const statusPill = o.status === "candidate" ? pill("Nova proposta", amarelo) : o._programada ? pill("Programada", azul) : pill("Ativa", verde);
     const periodo = o.inicio || o.fim ? `${fmtD(o.inicio)}${o.fim ? " a " + fmtD(o.fim) : ""}` : (o.tipo === "LIGHTNING" || o.tipo === "DOD" ? "Data definida pelo ML" : "");
     // Valor em R$ por venda: a % do ML incide sobre o preço original (confere com o "Reduzimos R$ X" do site)
     const meliR = o.meli_pct > 0 && orig ? orig * o.meli_pct / 100 : 0;
@@ -14071,8 +14099,8 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
         <div style="font-size:12px;color:${T.text};margin-top:4px;">${esc(nomeLinha)}${o.meli_pct > 0 ? ` <span style="color:${verde};font-size:11px;">· com redução de tarifa</span>` : ""}</div>
         ${periodo ? `<div style="font-size:11px;color:${T.text2};margin-top:1px;">${periodo}</div>` : ""}
       </div>
-      <div style="font:600 13px 'IBM Plex Mono',monospace;color:${T.text};">${descPct != null ? descPct + "%" : "—"}${descR != null ? `<div style="font:400 11px Inter,sans-serif;color:${T.text2};">${fmtR(descR)}</div>` : ""}</div>
-      <div style="font:600 13px 'IBM Plex Mono',monospace;color:${T.text};">${fmtR(final)}</div>
+      <div style="font:600 13px 'IBM Plex Mono',monospace;color:${T.text};">${descPct != null ? (o._ate ? "até " : "") + descPct + "%" : "—"}${descR != null ? `<div style="font:400 11px Inter,sans-serif;color:${T.text2};">${fmtR(descR)}</div>` : ""}</div>
+      <div style="font:600 13px 'IBM Plex Mono',monospace;color:${T.text};">${o._ate && final ? "até " : ""}${fmtR(final)}${o._ate && o.preco_sugerido ? `<div style="font:400 11px Inter,sans-serif;color:${T.text2};">sugerido ${fmtR(o.preco_sugerido)}</div>` : ""}</div>
       <div style="font-size:11px;min-width:0;">${quem}</div>
       <div style="text-align:right;">${btn}<div data-of-msg="${key}" style="font-size:11px;margin-top:4px;"></div></div>
     </div>`;
@@ -14106,7 +14134,7 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
           <div style="display:grid;grid-template-columns:minmax(0,1.7fr) 80px 100px minmax(0,1.2fr) 96px;gap:10px;padding:6px 14px;border-top:0.5px solid ${T.border};font-size:11px;color:${T.text2};">
             <span>Promoção</span><span>Desconto</span><span>Preço final</span><span>Quem paga</span><span></span>
           </div>
-          ${it._of.map(o => linha(it, o, it.ofertas.indexOf(o))).join("")}
+          ${it._of.map(o => linha(it, o, o._idx)).join("")}
         </div>`).join("") : `<div style="font-size:13px;color:${T.text2};padding:20px 0;text-align:center;">Nenhuma oferta com esse filtro.</div>`}
     </div>`;
 
