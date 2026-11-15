@@ -13331,7 +13331,7 @@ window.promState = {
   aba: "minhas",                         // "minhas" | "ofertas"
   ofertas: { filial: null, matriz: null }, // cache da aba Ofertas do ML
   ofertasMeta: { filial: null, matriz: null }, // { gerado_em, falhas, total_anuncios }
-  ofertasFiltro: "todas",                // "todas" | "novas" | "tarifa"
+  ofertasFiltro: "todas",                // "todas" | "oportunidades" | "voce"
   ofertasBusca: "",
 };
 
@@ -14080,24 +14080,32 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
   const nTarifa = todasOf.filter(o => o.status === "candidate" && o.meli_pct > 0).length;
   const nAtivas = todasOf.filter(o => o.status !== "candidate").length;
 
-  const filtroOf = o => st.ofertasFiltro === "novas" ? o.status === "candidate"
-    : st.ofertasFiltro === "tarifa" ? o.meli_pct > 0
-    : true;
-  // "Pagando tudo, tem com redução": anúncio cuja promoção que está valendo não tem redução do ML,
-  // mas que tem proposta com redução de tarifa disponível (mostra todas as promoções dele pra comparar)
+  // Filtros: Todas · Oportunidades (proposta nova em que o ML paga parte) · Pago tudo, mas tem compartilhada
+  if (!["todas", "oportunidades", "voce"].includes(st.ofertasFiltro)) st.ofertasFiltro = "todas";
+  // "Pago tudo, mas tem compartilhada": a promoção que está valendo não tem redução do ML,
+  // mas o anúncio tem proposta com redução de tarifa (mostra todas as promoções dele pra comparar)
   const pagandoTudoComOpcao = ofs => {
     const valendo = ofs.find(o => o.status === "started" && !o._programada);
     return !!valendo && !(valendo.meli_pct > 0) && ofs.some(o => o.status === "candidate" && o.meli_pct > 0);
   };
+  const ofertasNoFiltro = (ofs, f) => f === "voce" ? (pagandoTudoComOpcao(ofs) ? ofs : [])
+    : f === "oportunidades" ? ofs.filter(o => o.status === "candidate" && o.meli_pct > 0)
+    : ofs;
+  const contagem = Object.fromEntries(["todas", "oportunidades", "voce"].map(f =>
+    [f, itensTodos.filter(i => ofertasNoFiltro(prep.get(i.item_id), f).length).length]));
   const busca = (st.ofertasBusca || "").toLowerCase();
   const itens = itensTodos
     .map(i => {
-      const ofs = prep.get(i.item_id);
-      const _of = st.ofertasFiltro === "voce" ? (pagandoTudoComOpcao(ofs) ? ofs : []) : ofs.filter(filtroOf);
+      const _of = ofertasNoFiltro(prep.get(i.item_id), st.ofertasFiltro);
       return { ...i, _of: _of.slice().sort((a, b) => (a.status === "candidate") - (b.status === "candidate")) };
     })
-    .filter(i => i._of.length && (!busca || ((i.titulo || "") + " " + (i.sku || "") + " " + i.item_id).toLowerCase().includes(busca)))
-    ;
+    .filter(i => i._of.length && (!busca || ((i.titulo || "") + " " + (i.sku || "") + " " + i.item_id).toLowerCase().includes(busca)));
+  const nAnunc = n => `${n} ${n === 1 ? "anúncio" : "anúncios"}`;
+  const explicaFiltro = {
+    todas: `Todas as promoções de ${nAnunc(itens.length)}.`,
+    oportunidades: `${nAnunc(itens.length)} com proposta nova em que o ML paga parte da tarifa.`,
+    voce: `${nAnunc(itens.length)} com promoção ativa paga só por você, que ${itens.length === 1 ? "tem" : "têm"} proposta compartilhada com o ML.`,
+  }[st.ofertasFiltro];
   // Um cartão por SKU: anúncios diferentes do mesmo produto (normal, catálogo, Clássico/Premium) ficam juntos,
   // cada um com a sua faixa e as suas promoções (o Participar vale só pra aquele MLB)
   const novasDe = i => i._of.filter(o => o.status === "candidate").length;
@@ -14113,7 +14121,10 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
   const tipoAnuncio = i => i.catalogo ? "Catálogo" : "Tradicional";
 
   const stat = (lbl, v, cor) => `<div style="background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:12px 14px;"><div style="font-size:11px;color:${T.text2};">${lbl}</div><div style="font:600 22px 'IBM Plex Mono',monospace;color:${cor || T.text};margin-top:2px;">${v}</div></div>`;
-  const chipF = (k, lbl) => `<button data-of-filtro="${k}" style="font-size:11px;padding:4px 12px;border-radius:20px;border:0.5px solid ${st.ofertasFiltro===k?azul:T.border};background:${st.ofertasFiltro===k?azul+'18':'transparent'};color:${st.ofertasFiltro===k?azul:T.text2};cursor:pointer;">${lbl}</button>`;
+  const chipF = (k, lbl, alerta) => {
+    const on = st.ofertasFiltro === k, cor = alerta ? amarelo : azul;
+    return `<button data-of-filtro="${k}" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:5px 12px;border-radius:999px;border:0.5px solid ${on || alerta ? cor + (on ? '' : '88') : T.border};background:${on ? cor + '1f' : 'transparent'};color:${on ? cor : alerta ? cor : T.text2};cursor:pointer;">${lbl}<span style="font-size:11px;font-weight:600;padding:0 7px;border-radius:999px;background:${on || alerta ? cor + '26' : T.bg3};color:${on || alerta ? cor : T.text2};">${contagem[k]}</span></button>`;
+  };
   const pill = (txt, cor, solido) => `<span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap;background:${solido ? cor : cor + '1f'};color:${solido ? '#fff' : cor};">${txt}</span>`;
 
   const linha = (it, o, idx) => {
@@ -14161,9 +14172,10 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
       ${stat("Novas propostas", nNovas, amarelo)}${stat("Novas com redução de tarifa", nTarifa, verde)}${stat("Participando", nAtivas)}
     </div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
-      ${chipF("todas","Todas")}${chipF("novas","Só novas propostas")}${chipF("tarifa","Só com redução de tarifa")}${chipF("voce","Pagando tudo, mas tem com redução")}
+      ${chipF("todas","Todas")}${chipF("oportunidades","Oportunidades")}${chipF("voce","Pago tudo, mas tem compartilhada", true)}
       <input id="of-busca" placeholder="Buscar produto ou SKU" value="${esc(st.ofertasBusca)}" style="flex:1;min-width:160px;font:12px Inter,sans-serif;padding:6px 10px;border-radius:8px;border:0.5px solid ${T.border};background:${T.bg3};color:${T.text};outline:none;">
     </div>
+    <div style="font-size:12px;color:${st.ofertasFiltro === "voce" ? amarelo : T.text2};margin:-4px 0 12px;">${explicaFiltro}</div>
     <div style="display:flex;flex-direction:column;gap:10px;">
       ${grupos.length ? grupos.map(g => { const it = g.find(i => !i.sem_dados) || g[0]; const varios = g.length > 1; const nNov = g.reduce((n, i) => n + novasDe(i), 0); return `
         <div style="background:${T.card};border:0.5px solid ${T.border};border-radius:12px;overflow:hidden;">
