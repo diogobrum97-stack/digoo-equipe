@@ -13330,6 +13330,7 @@ window.promState = {
   historico: {},
   aba: "minhas",                         // "minhas" | "ofertas"
   ofertas: { filial: null, matriz: null }, // cache da aba Ofertas do ML
+  ofertasMeta: { filial: null, matriz: null }, // { gerado_em, falhas, total_anuncios }
   ofertasFiltro: "todas",                // "todas" | "novas" | "tarifa"
   ofertasBusca: "",
 };
@@ -13997,18 +13998,35 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
   const fmtD = d => { if (!d) return ""; const s = String(d); const dt = /^\d{4}-\d{2}-\d{2}$/.test(s) ? new Date(s + "T12:00:00") : new Date(s); return dt.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"}); };
   const verde = T.cVerde, azul = T.cAzul, amarelo = T.cAmarelo || "#f59e0b", vermelho = T.cVermelho;
 
-  if (forcar || !st.ofertas[conta]) {
+  // Carrega: 1º a lista guardada no Firebase (instantâneo); se não houver, ou se "Atualizar", monta no backend
+  const guardar = d => {
+    st.ofertas[conta] = d.itens || [];
+    st.ofertasMeta[conta] = { gerado_em: d.gerado_em || null, falhas: d.falhas || { dados: [], promocoes: [] }, total_anuncios: d.total_anuncios || 0 };
+  };
+  const buscarNoBackend = async (forcarBusca) => {
     container.innerHTML = `<div style="font-size:13px;color:${T.text2};padding:30px 0;text-align:center;">Buscando as ofertas de todos os anúncios no Mercado Livre... pode levar até 1 minuto.</div>`;
-    try {
-      const r = await fetch(`${BACKEND}/api/ml-vendas?action=ofertas-ml&token=${encodeURIComponent(token)}`);
-      const d = await r.json();
-      if (!d.ok) throw new Error(d.error || `HTTP ${r.status}`);
-      st.ofertas[conta] = d.itens || [];
-    } catch (e) {
-      container.innerHTML = `<div style="color:${vermelho};font-size:13px;">Erro ao buscar ofertas: ${esc(e.message)}</div>`;
-      return;
+    const r = await fetch(`${BACKEND}/api/ml-vendas?action=ofertas-ml-cache&conta=${conta}${forcarBusca ? "&forcar=1" : ""}`);
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.error || `HTTP ${r.status}`);
+    guardar(d);
+  };
+  try {
+    if (forcar) await buscarNoBackend(true);
+    else if (!st.ofertas[conta]) {
+      const snap = await get(ref(db, `/ofertas_ml_cache/${conta}`));
+      const salvo = snap.val();
+      if (salvo?.itens && salvo.gerado_em) guardar(salvo);
+      else await buscarNoBackend(false);
     }
+  } catch (e) {
+    container.innerHTML = `<div style="color:${vermelho};font-size:13px;">Erro ao buscar ofertas: ${esc(e.message)} <button id="of-tentar" style="margin-left:8px;font-size:11px;padding:4px 10px;border-radius:7px;border:0.5px solid ${T.border};background:transparent;color:${T.text2};cursor:pointer;">Tentar de novo</button></div>`;
+    const bt = container.querySelector("#of-tentar"); if (bt) bt.onclick = () => window._renderOfertasML(container, token, BACKEND, true);
+    return;
   }
+  const meta = st.ofertasMeta[conta] || {};
+  const minAtras = meta.gerado_em ? Math.max(0, Math.round((Date.now() - meta.gerado_em) / 60000)) : null;
+  const atualizadoTxt = minAtras == null ? "" : minAtras < 1 ? "atualizado agora" : minAtras < 60 ? `atualizado há ${minAtras} min` : `atualizado há ${Math.round(minAtras / 60)}h`;
+  const nFalhas = new Set([...(meta.falhas?.dados || []), ...(meta.falhas?.promocoes || [])]).size;
   const itensTodos = st.ofertas[conta];
   const todasOf = itensTodos.flatMap(i => i.ofertas);
   const nNovas = todasOf.filter(o => o.status === "candidate").length;
@@ -14020,7 +14038,7 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
   const busca = (st.ofertasBusca || "").toLowerCase();
   const itens = itensTodos
     .map(i => ({ ...i, _of: i.ofertas.filter(filtroOf).sort((a, b) => (a.status === "candidate") - (b.status === "candidate")) }))
-    .filter(i => i._of.length && (!busca || (i.titulo + " " + i.sku + " " + i.item_id).toLowerCase().includes(busca)))
+    .filter(i => i._of.length && (!busca || ((i.titulo || "") + " " + (i.sku || "") + " " + i.item_id).toLowerCase().includes(busca)))
     .sort((a, b) => b._of.filter(o => o.status === "candidate").length - a._of.filter(o => o.status === "candidate").length);
 
   const stat = (lbl, v, cor) => `<div style="background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:12px 14px;"><div style="font-size:11px;color:${T.text2};">${lbl}</div><div style="font:600 22px 'IBM Plex Mono',monospace;color:${cor || T.text};margin-top:2px;">${v}</div></div>`;
@@ -14058,6 +14076,8 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
   };
 
   container.innerHTML = `
+    <div style="font-size:11px;color:${T.text2};margin-bottom:8px;">${atualizadoTxt}${meta.total_anuncios ? ` · ${meta.total_anuncios} anúncios verificados` : ""}</div>
+    ${nFalhas ? `<div style="background:${amarelo}18;border:0.5px solid ${amarelo}66;color:${amarelo};border-radius:8px;padding:9px 12px;font-size:12px;margin-bottom:12px;">${nFalhas} ${nFalhas === 1 ? "anúncio não carregou" : "anúncios não carregaram"} por completo nessa busca. Clique em <b>↻ Atualizar</b> pra tentar de novo.</div>` : ""}
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px;">
       ${stat("Novas propostas", nNovas, amarelo)}${stat("Novas com redução de tarifa", nTarifa, verde)}${stat("Participando", nAtivas)}
     </div>
@@ -14072,8 +14092,11 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
           <div style="display:flex;gap:12px;align-items:center;padding:12px 14px;">
             <div style="width:48px;height:48px;border-radius:10px;overflow:hidden;flex-shrink:0;background:#fff;border:1px solid ${T.border};box-sizing:border-box;padding:3px;">${it.foto ? `<img src="${esc(it.foto)}" style="width:100%;height:100%;object-fit:contain;display:block;">` : ""}</div>
             <div style="min-width:0;flex:1;">
-              <div style="font-size:13px;font-weight:600;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(it.titulo)}</div>
-              <div style="font-size:11px;color:${T.text2};margin-top:2px;">${esc(it.sku || "sem SKU")} · ${it.item_id} · ${fmtR(it.preco)}${it.estoque != null ? ` · ${it.estoque} un` : ""}${it.catalogo ? " · catálogo" : ""}</div>
+              ${it.sem_dados
+                ? `<div style="font-size:13px;font-weight:600;color:${amarelo};">Dados do anúncio indisponíveis</div>
+                   <div style="font-size:11px;color:${T.text2};margin-top:2px;">${it.item_id} · <a href="${esc(it.permalink)}" target="_blank" rel="noopener" style="color:${azul};">abrir no ML</a> · clique em ↻ Atualizar pra tentar de novo</div>`
+                : `<div style="font-size:13px;font-weight:600;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(it.titulo)}</div>
+                   <div style="font-size:11px;color:${T.text2};margin-top:2px;">${esc(it.sku || "sem SKU")} · ${it.item_id} · ${fmtR(it.preco)}${it.estoque != null ? ` · ${it.estoque} un` : ""}${it.catalogo ? " · catálogo" : ""}</div>`}
             </div>
             ${(() => { const n = it._of.filter(o => o.status === "candidate").length; return n ? pill(`${n} ${n === 1 ? "nova" : "novas"}`, amarelo) : ""; })()}
           </div>
