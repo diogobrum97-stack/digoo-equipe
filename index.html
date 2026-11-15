@@ -13335,6 +13335,45 @@ window.promState = {
   ofertasBusca: "",
 };
 
+// ── Ofertas do ML ao vivo: liga assim que o OPS abre (já depois do login no Firebase).
+// A VPS grava em /ofertas_ml_cache/{conta}; aqui só escutamos — o Firebase manda só o que mudou.
+window._ofertasLive = { filial: { itens: null, meta: null }, matriz: { itens: null, meta: null } };
+(() => {
+  const timers = {};
+  // Redesenha a aba Ofertas (se estiver aberta nessa conta) sem piscar: espera o usuário
+  // terminar de digitar na busca ou uma ação em andamento, e mantém a rolagem.
+  window._ofertasMudou = (conta, agora) => {
+    clearTimeout(timers[conta]);
+    const rodar = () => {
+      const ctx = window._ofertasCtx, st = window.promState;
+      if (!ctx?.container?.isConnected || st.aba !== "ofertas" || st.conta !== conta || st.detalhe) return;
+      const c = ctx.container;
+      const ocupado = (document.activeElement && c.contains(document.activeElement) && document.activeElement.tagName === "INPUT")
+        || c.querySelector('[data-ocupado="1"], [data-confirmar="1"], [data-confirmado="1"]');
+      if (ocupado && !agora) { timers[conta] = setTimeout(() => window._ofertasMudou(conta), 3000); return; }
+      const y = window.scrollY;
+      window._renderOfertasML(c, ctx.token, ctx.BACKEND).then(() => { if (Math.abs(window.scrollY - y) > 2) window.scrollTo(0, y); });
+    };
+    if (agora) rodar(); else timers[conta] = setTimeout(rodar, 400);
+  };
+  // Plano B: se a VPS parar (dados com mais de 10 min), o OPS pede uma busca direto ao backend (no máx. 1 a cada 5 min)
+  const ultimoPlanoB = {};
+  window._ofertasPlanoB = (conta, BACKEND) => {
+    if (Date.now() - (ultimoPlanoB[conta] || 0) < 5 * 60 * 1000) return;
+    ultimoPlanoB[conta] = Date.now();
+    fetch(`${BACKEND}/api/ml-vendas?action=ofertas-ml-cache&conta=${conta}`).catch(() => {});
+  };
+  for (const conta of ["filial", "matriz"]) {
+    const L = window._ofertasLive[conta];
+    onValue(ref(db, `/ofertas_ml_cache/${conta}/itens`), snap => { L.itens = snap.val() || {}; window._ofertasMudou(conta); },
+      e => console.warn("[ofertas ML] listener itens:", e.message));
+    onValue(ref(db, `/ofertas_ml_cache/${conta}/meta`), snap => { L.meta = snap.val(); window._ofertasMudou(conta); },
+      e => console.warn("[ofertas ML] listener meta:", e.message));
+  }
+  // o "atualizado há X min" e o aviso de atraso se mantêm certos mesmo sem dado novo
+  setInterval(() => { window._ofertasMudou(window.promState.conta); }, 60 * 1000);
+})();
+
 // ── Email Hostinger ───────────────────────────────────────────────────────
 
 const EMAIL_BACKEND = "https://digoo-backend.vercel.app";
@@ -13998,55 +14037,36 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
   const fmtD = d => { if (!d) return ""; const s = String(d); const dt = /^\d{4}-\d{2}-\d{2}$/.test(s) ? new Date(s + "T12:00:00") : new Date(s); return dt.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"}); };
   const verde = T.cVerde, azul = T.cAzul, amarelo = T.cAmarelo || "#f59e0b", vermelho = T.cVermelho;
 
-  // Carrega: 1º a lista guardada no Firebase (instantâneo); se não houver, ou se "Atualizar", monta no backend
-  const guardar = d => {
-    st.ofertas[conta] = d.itens || [];
-    st.ofertasMeta[conta] = { gerado_em: d.gerado_em || null, falhas: d.falhas || { dados: [], promocoes: [] }, total_anuncios: d.total_anuncios || 0 };
-  };
-  const buscarNoBackend = async (forcarBusca) => {
-    container.innerHTML = `<div style="font-size:13px;color:${T.text2};padding:30px 0;text-align:center;">Buscando as ofertas de todos os anúncios no Mercado Livre... pode levar até 1 minuto.</div>`;
-    const r = await fetch(`${BACKEND}/api/ml-vendas?action=ofertas-ml-cache&conta=${conta}${forcarBusca ? "&forcar=1" : ""}`);
-    const d = await r.json();
-    if (!d.ok) throw new Error(d.error || `HTTP ${r.status}`);
-    guardar(d);
-  };
-  try {
-    if (forcar) await buscarNoBackend(true);
-    else if (!st.ofertas[conta]) {
-      const snap = await get(ref(db, `/ofertas_ml_cache/${conta}`));
-      const salvo = snap.val();
-      if (salvo?.itens && salvo.gerado_em) guardar(salvo);
-      else await buscarNoBackend(false);
-    }
-  } catch (e) {
-    container.innerHTML = `<div style="color:${vermelho};font-size:13px;">Erro ao buscar ofertas: ${esc(e.message)} <button id="of-tentar" style="margin-left:8px;font-size:11px;padding:4px 10px;border-radius:7px;border:0.5px solid ${T.border};background:transparent;color:${T.text2};cursor:pointer;">Tentar de novo</button></div>`;
-    const bt = container.querySelector("#of-tentar"); if (bt) bt.onclick = () => window._renderOfertasML(container, token, BACKEND, true);
+  // Dados ao vivo: a VPS atualiza /ofertas_ml_cache/{conta} a cada ~1-2 min e o OPS escuta desde que abre
+  // (window._ofertasLive). Nada de cache antigo: se passar de 10 min, avisa e busca direto do ML.
+  window._ofertasCtx = { container, token, BACKEND };
+  const live = window._ofertasLive?.[conta];
+  if (!live || live.itens === null) {
+    container.innerHTML = `<div style="font-size:13px;color:${T.text2};padding:30px 0;text-align:center;">Carregando ofertas...</div>`;
     return;
   }
+  const idadeMin = live.meta?.gerado_em ? (Date.now() - live.meta.gerado_em) / 60000 : Infinity;
+  const velho = idadeMin > 10;
+  if (velho) window._ofertasPlanoB(conta, BACKEND);
+  st.ofertas[conta] = Object.values(live.itens || {}).map(i => ({ ...i, ofertas: Array.isArray(i.ofertas) ? i.ofertas : Object.values(i.ofertas || {}) }));
+  st.ofertasMeta[conta] = { gerado_em: live.meta?.gerado_em || null, falhas: live.meta?.falhas || {}, total_anuncios: live.meta?.total_anuncios || 0 };
   const meta = st.ofertasMeta[conta] || {};
   const minAtras = meta.gerado_em ? Math.max(0, Math.round((Date.now() - meta.gerado_em) / 60000)) : null;
-  const atualizadoTxt = minAtras == null ? "" : minAtras < 1 ? "atualizado agora" : minAtras < 60 ? `atualizado há ${minAtras} min` : `atualizado há ${Math.round(minAtras / 60)}h`;
+  const atualizadoTxt = minAtras == null ? "" : minAtras < 1 ? "atualizado agora · direto do ML" : minAtras < 60 ? `atualizado há ${minAtras} min` : `atualizado há ${Math.round(minAtras / 60)}h`;
   const nFalhas = new Set([...(meta.falhas?.dados || []), ...(meta.falhas?.promocoes || [])]).size;
   const itensTodos = st.ofertas[conta];
-  // Ajusta as ofertas do anúncio pra mostrar igual ao painel do ML:
-  // - Black Friday (DEAL): o preço final mostrado é o máximo permitido (a API manda 0)
-  // - Com campanha Black Friday, propostas SMART aparecem no máximo da BF e a relâmpago no menor entre o preço dela e máximo − 1%
+  // Ajustes de exibição (o preço de cada proposta é o da API — é o que vale ao participar;
+  // a tela do ML às vezes mostra uma simulação da Black Friday que não se confirma):
+  // - Black Friday (DEAL): você escolhe o preço; mostra "até" o máximo permitido (a API manda 0)
   // - Relâmpago sem redução some quando existe a relâmpago com redução (o ML não mostra as duas)
   // - Entre as iniciadas, só a de menor preço está valendo (Ativa); as outras ficam Programada
   const prepOfertas = it => {
     const ofs = (it.ofertas || []).map((o, i) => ({ ...o, _idx: i }));
-    const deal = ofs.find(o => o.tipo === "DEAL" && o.preco_max > 0);
-    const bfMax = deal ? deal.preco_max : null;
     const temRelReducao = ofs.some(o => o.tipo === "SMART_LIGHTNING");
     const out = ofs.filter(o => !(o.tipo === "LIGHTNING" && o.status === "candidate" && temRelReducao));
     for (const o of out) {
       let f = o.preco || o.preco_sugerido || null;
       if (o.tipo === "DEAL" && o.status === "candidate") { f = o.preco_max || f; o._ate = true; }
-      else if (bfMax && o.status === "candidate" && o.tipo === "SMART") f = bfMax;
-      else if (bfMax && o.status === "candidate" && o.tipo === "SMART_LIGHTNING") {
-        const teto = Math.floor(Math.round(bfMax * 100) * 99 / 100) / 100;
-        if (f == null || f > teto) f = teto;
-      }
       o._final = f;
     }
     const iniciadas = out.filter(o => o.status === "started" && o._final > 0);
@@ -14111,14 +14131,14 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
 
   container.innerHTML = `
     <div style="font-size:11px;color:${T.text2};margin-bottom:8px;">${atualizadoTxt}${meta.total_anuncios ? ` · ${meta.total_anuncios} anúncios verificados` : ""}</div>
-    ${nFalhas ? `<div style="background:${amarelo}18;border:0.5px solid ${amarelo}66;color:${amarelo};border-radius:8px;padding:9px 12px;font-size:12px;margin-bottom:12px;">${nFalhas} ${nFalhas === 1 ? "anúncio não carregou" : "anúncios não carregaram"} por completo nessa busca. Clique em <b>↻ Atualizar</b> pra tentar de novo.</div>` : ""}
+    ${velho ? `<div style="background:${amarelo}18;border:0.5px solid ${amarelo}66;color:${amarelo};border-radius:8px;padding:9px 12px;font-size:12px;margin-bottom:12px;">A atualização automática está atrasada (${meta.gerado_em ? atualizadoTxt : "sem dados"}). Buscando direto do ML — os números trocam sozinhos em até 1 minuto.</div>` : ""}
+    ${nFalhas && !velho ? `<div style="font-size:11px;color:${T.text2};margin-bottom:8px;">${nFalhas} ${nFalhas === 1 ? "anúncio não respondeu" : "anúncios não responderam"} na última volta — entram na próxima, em 1-2 min.</div>` : ""}
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px;">
       ${stat("Novas propostas", nNovas, amarelo)}${stat("Novas com redução de tarifa", nTarifa, verde)}${stat("Participando", nAtivas)}
     </div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
       ${chipF("todas","Todas")}${chipF("novas","Só novas propostas")}${chipF("tarifa","Só com redução de tarifa")}
       <input id="of-busca" placeholder="Buscar produto ou SKU" value="${esc(st.ofertasBusca)}" style="flex:1;min-width:160px;font:12px Inter,sans-serif;padding:6px 10px;border-radius:8px;border:0.5px solid ${T.border};background:${T.bg3};color:${T.text};outline:none;">
-      <button id="of-recarregar" style="font-size:11px;padding:5px 12px;border-radius:8px;border:0.5px solid ${T.border};background:transparent;color:${T.text2};cursor:pointer;">↻ Atualizar</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:10px;">
       ${itens.length ? itens.map(it => `
@@ -14145,7 +14165,6 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
   const inp = container.querySelector("#of-busca");
   if (inp) inp.onkeydown = e => { if (e.key === "Enter") { st.ofertasBusca = inp.value; window._renderOfertasML(container, token, BACKEND); } };
   if (inp) inp.onchange = () => { st.ofertasBusca = inp.value; window._renderOfertasML(container, token, BACKEND); };
-  container.querySelector("#of-recarregar").onclick = () => window._renderOfertasML(container, token, BACKEND, true);
 
   container.querySelectorAll("[data-of-acao]").forEach(b => b.onclick = async () => {
     const [itemId, idx] = b.dataset.ofKey.split("|");
@@ -14158,21 +14177,56 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
       setTimeout(() => { if (b.isConnected) { b.dataset.confirmar = ""; b.textContent = "Sair"; } }, 4000);
       return;
     }
-    b.disabled = true; b.textContent = acao === "participar" ? "Enviando..." : "Saindo...";
+    const liveItem = window._ofertasLive?.[conta]?.itens?.[itemId];
+    // Busca as promoções desse anúncio direto do ML (o backend também grava no Firebase pra todos verem)
+    const buscarAtual = async () => {
+      const r = await fetch(`${BACKEND}/api/ml-vendas?action=oferta-item-atual&conta=${conta}&item_id=${itemId}`);
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.error || `HTTP ${r.status}`);
+      if (liveItem) liveItem.ofertas = d.ofertas;
+      return d.ofertas;
+    };
+    b.disabled = true;
+    b.dataset.ocupado = "1";
+    const fim = () => { delete b.dataset.ocupado; window._ofertasMudou(conta, true); };
     try {
+      let alvo = o;
+      if (acao === "participar") {
+        // Confere o valor do momento antes de entrar: se mudou, mostra o novo e pede outro clique
+        b.textContent = "Conferindo...";
+        const atuais = await buscarAtual();
+        alvo = atuais.find(x => x.promotion_id === o.promotion_id && x.tipo === o.tipo);
+        if (!alvo || alvo.status !== "candidate") {
+          b.disabled = false; delete b.dataset.ocupado; b.textContent = "Participar";
+          if (msg) { msg.style.color = amarelo; msg.textContent = "Essa proposta não está mais disponível no ML."; }
+          setTimeout(fim, 2500);
+          return;
+        }
+        const mudou = Math.abs((alvo.preco || 0) - (o.preco || 0)) > 0.005 || Math.abs((alvo.meli_pct || 0) - (o.meli_pct || 0)) > 0.001;
+        if (mudou && b.dataset.confirmado !== "1") {
+          delete b.dataset.ocupado;
+          window._ofertasMudou(conta, true);   // redesenha com os valores novos
+          const novaKey = `${itemId}|${atuais.indexOf(alvo)}`;
+          const nb = container.querySelector(`[data-of-key="${novaKey}"][data-of-acao="participar"]`);
+          const nm = container.querySelector(`[data-of-msg="${novaKey}"]`);
+          if (nb) { nb.dataset.confirmado = "1"; nb.textContent = "Confirmar"; }
+          if (nm) { nm.style.color = amarelo; nm.textContent = "O ML mudou os valores agora — confira e clique em Confirmar."; }
+          return;
+        }
+      }
+      b.textContent = acao === "participar" ? "Enviando..." : "Saindo...";
       const r = await fetch(`${BACKEND}/api/ml-vendas?action=${acao === "participar" ? "participar-oferta" : "sair-oferta"}`, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, item_id: itemId, promotion_id: o.promotion_id, tipo: o.tipo, offer_id: o.offer_id,
-          preco: o.preco ?? o.preco_sugerido, estoque: o.estoque_min || (it.estoque ? Math.min(it.estoque, o.estoque_max || it.estoque) : null) }),
+        body: JSON.stringify({ token, item_id: itemId, promotion_id: alvo.promotion_id, tipo: alvo.tipo, offer_id: alvo.offer_id,
+          preco: alvo.tipo === "DEAL" ? null : (alvo.preco || alvo.preco_sugerido),
+          estoque: alvo.estoque_min || (it.estoque ? Math.min(it.estoque, alvo.estoque_max || it.estoque) : null) }),
       });
       const d = await r.json();
       if (!d.ok) throw new Error((d.error || "Erro") + (d.causa ? " — " + d.causa : ""));
-      o.status = acao === "participar" ? "started" : "removida";
-      if (acao === "sair") it.ofertas.splice(Number(idx), 1);
-      if (acao === "participar" && d.resultado?.offer_id) o.offer_id = d.resultado.offer_id;
-      window._renderOfertasML(container, token, BACKEND);
+      try { await buscarAtual(); } catch (_) {}
+      fim();
     } catch (e) {
-      b.disabled = false; b.textContent = acao === "participar" ? "Participar" : "Sair";
+      b.disabled = false; delete b.dataset.ocupado; b.textContent = acao === "participar" ? "Participar" : "Sair";
       if (msg) { msg.style.color = vermelho; msg.textContent = e.message; }
     }
   });
