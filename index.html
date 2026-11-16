@@ -4075,6 +4075,7 @@ function renderDashboard(panel, color) {
 
     // ── Linha inferior: Vendas diárias + Top mês ─────────────────────────────
     const bottomRow = document.createElement("div");
+    bottomRow.className = "m-1col";
     bottomRow.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;";
 
     // Chart 1: Vendas diárias (linha) — mês atual vs anterior
