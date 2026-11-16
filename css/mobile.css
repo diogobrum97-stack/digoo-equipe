@@ -1,0 +1,153 @@
+/* ════════════════════════════════════════════════════════════════════════
+   Digoo OPS — celular (até 768px)
+   O computador não muda: tudo aqui vive dentro do @media.
+   Muitos componentes têm estilo inline, por isso o !important.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* Barra de abas e folha "Mais" existem só no celular */
+#m-tabbar, #m-sheet { display: none; }
+
+@media (max-width: 768px) {
+
+  html { -webkit-text-size-adjust: 100%; }
+  body { overflow-x: hidden; }
+
+  /* ── Cabeçalho compacto ─────────────────────────────────────────────── */
+  .card-header {
+    padding: 10px 14px !important;
+    padding-top: calc(10px + env(safe-area-inset-top, 0px)) !important;
+    gap: 10px !important;
+    min-height: 0 !important;
+  }
+  .card-header .avatar { width: 32px !important; height: 32px !important; font-size: 11px !important; }
+  .member-name { font-size: 20px !important; letter-spacing: 1px !important; }
+  .card-header button { width: 34px !important; height: 34px !important; }
+
+  /* ── Barra de abas fixa embaixo ─────────────────────────────────────── */
+  body.m-com-tabbar #m-tabbar {
+    display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 1050;
+    background: var(--bg); border-top: 0.5px solid var(--border2);
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
+  }
+  body.light.m-com-tabbar #m-tabbar { background: #f4f4f4; }
+  #m-tabbar .m-tab {
+    flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px;
+    background: none; border: none; padding: 4px 0; color: var(--text3);
+    font: 600 10px/1.2 Inter, sans-serif; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  }
+  #m-tabbar .m-tab.on { color: #3b82f6; }
+  /* espaço pro conteúdo não ficar atrás da barra */
+  body.m-com-tabbar .card.card-fullscreen .panel.open,
+  body.m-com-tabbar .panel.open { padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important; }
+
+  /* folha que sobe com as sub-abas (ML, Gestão, Mais) */
+  #m-sheet { display: block; position: fixed; inset: 0; z-index: 1100; }
+  #m-sheet .m-sheet-bg { position: absolute; inset: 0; background: rgba(0,0,0,0.55); animation: mFade .15s ease-out; }
+  #m-sheet .m-sheet-box {
+    position: absolute; left: 0; right: 0; bottom: 0; max-height: 75vh; overflow-y: auto;
+    background: var(--bg2); border-radius: 18px 18px 0 0; border-top: 0.5px solid var(--border2);
+    padding: 8px 12px calc(14px + env(safe-area-inset-bottom, 0px));
+    display: flex; flex-direction: column; gap: 2px; animation: mSobe .2s cubic-bezier(.2,.8,.2,1);
+  }
+  #m-sheet .m-sheet-alca { width: 38px; height: 4px; border-radius: 4px; background: var(--border2); margin: 2px auto 10px; }
+  #m-sheet .m-sheet-tit { font: 700 13px Inter, sans-serif; color: var(--text3); padding: 0 8px 8px; letter-spacing: .3px; }
+  #m-sheet .m-sheet-item {
+    text-align: left; background: none; border: none; border-radius: 10px;
+    padding: 14px 12px; font: 500 15px Inter, sans-serif; color: var(--text); cursor: pointer;
+  }
+  #m-sheet .m-sheet-item:active { background: var(--bg3); }
+  #m-sheet .m-sheet-item.on { color: #3b82f6; background: #3b82f614; }
+  @keyframes mSobe { from { transform: translateY(100%); } to { transform: none; } }
+  @keyframes mFade { from { opacity: 0; } to { opacity: 1; } }
+
+  /* avisos flutuantes: largura toda, acima da barra de abas */
+  [id^="notif-refresh-"] {
+    left: 12px !important; right: 12px !important; max-width: none !important;
+    bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important; padding: 12px 14px !important;
+  }
+
+  /* botão flutuante do assistente: sobe pra não ficar em cima da barra de abas */
+  body.m-com-tabbar #cc-fab { bottom: calc(84px + env(safe-area-inset-bottom, 0px)) !important; right: 14px !important; }
+
+  /* sub-abas do grupo atual, no topo */
+  .m-subnav {
+    display: flex; gap: 6px; padding: 10px 14px; overflow-x: auto; scrollbar-width: none;
+    -webkit-overflow-scrolling: touch; border-bottom: 0.5px solid var(--sep);
+  }
+  .m-subnav::-webkit-scrollbar { display: none; }
+  .m-subchip {
+    flex-shrink: 0; padding: 8px 14px; border-radius: 99px; white-space: nowrap; cursor: pointer;
+    font: 600 12px Inter, sans-serif; background: var(--bg2); color: var(--text3); border: 0.5px solid var(--border);
+  }
+  .m-subchip.on { background: #3b82f61f; color: #3b82f6; border-color: #3b82f655; }
+
+  /* ── Margens: aproveita a largura da tela ───────────────────────────── */
+  .panel { padding-left: 12px !important; padding-right: 12px !important; }
+  .prom-container, .m-dash-wrap { padding-left: 0 !important; padding-right: 0 !important; }
+
+  /* utilitários */
+  .m-nopad { padding-left: 0 !important; padding-right: 0 !important; }
+  .m-1col { grid-template-columns: minmax(0, 1fr) !important; }
+  .m-scroll-x { max-width: 100%; overflow-x: auto; flex-wrap: nowrap !important; scrollbar-width: none; }
+  .m-scroll-x::-webkit-scrollbar { display: none; }
+  .m-scroll-x > * { flex-shrink: 0; white-space: nowrap; }
+
+  /* ── Toque e digitação ──────────────────────────────────────────────── */
+  /* 16px impede o iPhone de dar zoom ao focar o campo */
+  input:not([type=checkbox]):not([type=radio]):not([type=range]), textarea, select { font-size: 16px !important; }
+
+  /* ── Painel (dashboard) ─────────────────────────────────────────────── */
+  .m-dash-grid { grid-template-columns: minmax(0, 1fr) !important; gap: 12px !important; }
+  .m-dash-grid > * { min-width: 0; }
+  #dash-sidebar { width: auto !important; }
+  .m-kpi-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+  .m-kpi-grid > :first-child { grid-column: 1 / -1; }
+  .m-kpi-grid > * { padding: 12px 14px !important; }
+
+  /* ── Grades genéricas de 3+ colunas com conteúdo largo ──────────────── */
+  .panel [style*="grid-template-columns:repeat(4"],
+  .panel [style*="grid-template-columns: repeat(4"] { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .panel [style*="grid-template-columns:1fr 380px"],
+  .panel [style*="grid-template-columns:1fr 360px"],
+  .panel [style*="grid-template-columns:1fr 340px"],
+  .panel [style*="grid-template-columns:1fr 320px"],
+  .panel [style*="grid-template-columns:1fr 300px"],
+  .panel [style*="grid-template-columns:2fr 1fr"],
+  .panel [style*="grid-template-columns:1fr 2fr"] { grid-template-columns: minmax(0, 1fr) !important; }
+
+  /* tabelas: rolam de lado dentro do próprio quadro, nunca empurram a tela */
+  .panel table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* ── Ofertas do ML: cada promoção vira um cartãozinho ───────────────── */
+  .of-head { display: none !important; }
+  .of-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    grid-template-areas: "nome nome nome" "desc final quem" "acao acao acao";
+    gap: 8px 10px !important; padding: 12px 14px !important;
+  }
+  .of-row { align-items: start !important; }
+  .of-row > :first-child { grid-area: nome; }
+  .of-row .of-quem .q-ml { display: block; white-space: nowrap; }
+  .of-row .of-quem .q-voce { display: block; font-size: 11px; }
+  .of-row .of-quem .q-sep { display: none; }
+  .of-row .of-quem .q-pv { display: none; }
+  .of-stats { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 8px !important; }
+  .of-stats > * { padding: 10px 12px !important; }
+  .of-stats > * > :first-child { font-size: 10px !important; line-height: 1.25; min-height: 2.5em; }
+  .of-stats > * > :last-child { font-size: 20px !important; }
+
+  /* cabeçalho de Promoções: tudo numa faixa que rola de lado */
+  .m-prom-head { flex-direction: column; align-items: stretch !important; gap: 10px; }
+  .m-prom-head > div { flex-wrap: nowrap !important; overflow-x: auto; scrollbar-width: none; }
+  .m-prom-head > div::-webkit-scrollbar { display: none; }
+  .m-prom-head button { white-space: nowrap; flex-shrink: 0; padding: 7px 14px !important; font-size: 12px !important; }
+  .of-row .of-desc { grid-area: desc; }
+  .of-row .of-final { grid-area: final; }
+  .of-row .of-quem { grid-area: quem; }
+  .of-row .of-acao { grid-area: acao; text-align: left !important; }
+  .of-row .of-desc::before, .of-row .of-final::before, .of-row .of-quem::before {
+    content: attr(data-lbl); display: block; font: 400 10px Inter, sans-serif; color: var(--text3); margin-bottom: 2px;
+  }
+  .of-row .of-acao button { width: 100%; padding: 10px 12px !important; font-size: 13px !important; }
+
+}

@@ -3890,6 +3890,7 @@ function renderDashboard(panel, color) {
   }
 
   const wrap = document.createElement("div");
+  wrap.className = "m-dash-wrap";
   wrap.style.cssText = "display:flex;flex-direction:column;gap:10px;padding:14px;";
 
   const now = new Date();
@@ -3904,6 +3905,7 @@ function renderDashboard(panel, color) {
   wrap.appendChild(header);
 
   const dashGrid = document.createElement("div");
+  dashGrid.className = "m-dash-grid";
   dashGrid.style.cssText = "display:grid;grid-template-columns:1fr 380px;gap:16px;align-items:start;";
 
   // Vendas ML com abas Filial/Matriz
@@ -3993,6 +3995,7 @@ function renderDashboard(panel, color) {
   const top5MesMerged = Object.values(mergedMes).sort((a,b) => b.revenue - a.revenue).slice(0,5);
 
   const vendasGrid = document.createElement("div");
+  vendasGrid.className = "m-kpi-grid";
   vendasGrid.style.cssText = "display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;";
   // Card 1: Total consolidado hoje
   vendasGrid.appendChild(mkKpiCard(
@@ -7755,6 +7758,8 @@ function render(){
   }
   try{
   setSyncing(false);
+  // barra de abas do celular é recriada a cada render (só existe quando o card do Diogo está aberto no celular)
+  document.getElementById("m-tabbar")?.remove(); document.getElementById("m-sheet")?.remove(); document.body.classList.remove("m-com-tabbar");
   const container=document.getElementById("cards");container.innerHTML="";
   // Centralizar card do Diogo quando sozinho
   if(currentUser === "Diogo" && !window._showEquipe) {
@@ -8020,67 +8025,86 @@ function render(){
           if (currentUser !== "Resicon") spacerR.appendChild(gearBtn);
           navBar.appendChild(spacerR);
 
-          if(isMobileNav) {
-            // Mobile — esconder nav desktop, mostrar chips
+          if(isMobileNav && !diogoEmPickingOperar) {
+            // ── Celular: barra de abas fixa embaixo (estilo app) + sub-abas do grupo atual no topo ──
             navBar.style.display = "none";
-
-            // Determinar grupo ativo
-            const tabToGroup = {
-              dashboard: "Dashboard",
-              tarefas: "Tarefas",
-              concluidas: "Equipe", conversas: "Equipe",
-              estoque: "ML", cancelamentos: "ML", experiencia: "ML", clonar: "ML", picking: "ML",
-              conferencia: "Gestão", config: "Gestão",
+            const ICO = {
+              dash: '<path d="M3 13h8V3H3zM13 21h8V11h-8zM3 21h8v-6H3zM13 3v6h8V3z"/>',
+              tar: '<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
+              ml: '<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/>',
+              ges: '<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>',
+              mais: '<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>',
             };
-            const activeGroupLabel = tabToGroup[currentTab] || "Tarefas";
-            if(!window._activeNavGroup) window._activeNavGroup = activeGroupLabel;
-
-            // Linha 1 — chips principais
-            const chipsRow = document.createElement("div");
-            chipsRow.style.cssText = "display:flex;gap:6px;padding:10px 14px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;border-bottom:0.5px solid var(--sep);justify-content:center;";
-
-            const mainGroups = [
-              { label: "Dashboard", tab: "dashboard", subs: [] },
-              { label: "Tarefas", tab: "tarefas", subs: [] },
-              { label: "Equipe", tab: null, subs: [{label:"Concluídas",tab:"concluidas"},{label:"Conversas",tab:"conversas"}] },
-              { label: "ML", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência",tab:"experiencia"},{label:"Clonar",tab:"clonar"},{label:"Perguntas",tab:"perguntas"},{label:"Reclamações",tab:"reclamacoes-ml"},{label:"Picking",tab:"picking"},{label:"Promoções",tab:"promocoes"}] },
-              { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"},{label:"NF Transferência Full",tab:"nf-full"}] },
-              { label: "📝", tab: null, subs: [], acao: "ideias" },
-              { label: "⚙", tab: "config", subs: [] },
+            const grupo = l => navGroups.find(g => g.label === l);
+            const mlGrupo = grupo("Mercado Livre"), gesGrupo = grupo("Gestão"), eqGrupo = grupo("Equipe");
+            const maisSubs = [
+              ...(eqGrupo ? eqGrupo.subs : []),
+              ...(grupo("Email") ? [{ label: "Email", tab: "email" }] : []),
+              ...(currentUser !== "Resicon" ? [{ label: "Ideias e melhorias", acao: "ideias" }, { label: "Configurações", tab: "config" }] : []),
             ];
+            const botoes = [
+              grupo("Dashboard") && { k: "dash", label: "Dashboard", tab: "dashboard", subs: [] },
+              grupo("Tarefas") && { k: "tar", label: "Tarefas", tab: "tarefas", subs: [] },
+              mlGrupo && { k: "ml", label: "ML", subs: mlGrupo.subs.map(x => ({ ...x, label: x.label.replace(/^⚠\s*/, "") })) },
+              gesGrupo && { k: "ges", label: "Gestão", subs: gesGrupo.subs },
+              maisSubs.length && { k: "mais", label: "Mais", subs: maisSubs },
+            ].filter(Boolean);
+            const ativo = botoes.find(b => b.tab === currentTab || b.subs.some(x => x.tab === currentTab)) || null;
 
-            mainGroups.forEach(group => {
-              const isActive = window._activeNavGroup === group.label || (group.tab && group.tab === currentTab);
-              const chip = document.createElement("div");
-              chip.style.cssText = `padding:6px 14px;border-radius:99px;font-size:11px;font-weight:600;letter-spacing:0.5px;white-space:nowrap;cursor:pointer;flex-shrink:0;transition:all .15s;background:${isActive?"#3b82f6":(T.isLight?"#e0e0e0":"#1a1a1a")};color:${isActive?"#fff":(T.isLight?"#444":"#666")};border:0.5px solid ${isActive?"transparent":(T.isLight?"#cccccc":"#222")};font-family:inherit;`;
-              chip.textContent = group.label;
-              chip.addEventListener("click", () => {
-                if(group.acao === "ideias") { window._openIdeiasModal(); return; }
-                window._activeNavGroup = group.label;
-                if(group.tab) { window._diogotab = group.tab; }
-                // Se tem sub-abas, só mostra os sub-chips sem navegar
-                render();
-              });
-              chipsRow.appendChild(chip);
-            });
-            panel.appendChild(chipsRow);
-
-            // Linha 2 — sub-chips se grupo tem subs
-            const activeGroup = mainGroups.find(g => g.label === window._activeNavGroup);
-            if(activeGroup && activeGroup.subs.length > 0) {
+            // Sub-abas do grupo ativo (rolagem horizontal, alinhada à esquerda — nada cortado)
+            if (ativo && ativo.subs.length) {
               const subRow = document.createElement("div");
-              subRow.style.cssText = "display:flex;gap:5px;padding:8px 14px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;border-bottom:0.5px solid var(--sep);background:var(--bg);";
-              activeGroup.subs.forEach(sub => {
-                const isSubActive = currentTab === sub.tab;
-                const subChip = document.createElement("div");
-                subChip.style.cssText = `padding:5px 12px;border-radius:99px;font-size:11px;font-weight:600;letter-spacing:0.5px;white-space:nowrap;cursor:pointer;flex-shrink:0;font-family:inherit;background:${isSubActive?"#3b82f622":"#141414"};color:${isSubActive?"#3b82f6":"#555"};border:0.5px solid ${isSubActive?"#3b82f644":"#1e1e1e"};`;
-                subChip.textContent = sub.label;
-                subChip.addEventListener("click", () => { window._diogotab = sub.tab; render(); });
-                subRow.appendChild(subChip);
+              subRow.className = "m-subnav";
+              ativo.subs.filter(x => x.tab).forEach(sub => {
+                const on = currentTab === sub.tab;
+                const c = document.createElement("button");
+                c.className = "m-subchip" + (on ? " on" : "");
+                c.textContent = sub.label;
+                c.addEventListener("click", () => { window._diogotab = sub.tab; render(); window.scrollTo(0, 0); });
+                subRow.appendChild(c);
               });
               panel.appendChild(subRow);
+              setTimeout(() => { const on = subRow.querySelector(".on"); if (on) subRow.scrollLeft = Math.max(0, on.offsetLeft - subRow.clientWidth / 2 + on.offsetWidth / 2); }, 0);
             }
 
+            // Barra fixa embaixo
+            document.getElementById("m-tabbar")?.remove();
+            document.getElementById("m-sheet")?.remove();
+            const bar = document.createElement("nav");
+            bar.id = "m-tabbar";
+            const abrirSheet = b => {
+              document.getElementById("m-sheet")?.remove();
+              const sh = document.createElement("div");
+              sh.id = "m-sheet";
+              sh.innerHTML = `<div class="m-sheet-bg"></div><div class="m-sheet-box"><div class="m-sheet-alca"></div><div class="m-sheet-tit">${b.label === "ML" ? "Mercado Livre" : b.label}</div></div>`;
+              const box = sh.querySelector(".m-sheet-box");
+              b.subs.forEach(sub => {
+                const it = document.createElement("button");
+                it.className = "m-sheet-item" + (sub.tab && sub.tab === currentTab ? " on" : "");
+                it.textContent = sub.label;
+                it.addEventListener("click", () => {
+                  sh.remove();
+                  if (sub.acao === "ideias") { window._openIdeiasModal(); return; }
+                  window._diogotab = sub.tab; render(); window.scrollTo(0, 0);
+                });
+                box.appendChild(it);
+              });
+              sh.querySelector(".m-sheet-bg").addEventListener("click", () => sh.remove());
+              document.body.appendChild(sh);
+            };
+            botoes.forEach(b => {
+              const on = ativo === b;
+              const btn = document.createElement("button");
+              btn.className = "m-tab" + (on ? " on" : "");
+              btn.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${ICO[b.k]}</svg><span>${b.label}</span>`;
+              btn.addEventListener("click", () => {
+                if (b.tab) { window._diogotab = b.tab; render(); window.scrollTo(0, 0); }
+                else abrirSheet(b);
+              });
+              bar.appendChild(btn);
+            });
+            document.body.appendChild(bar);
+            document.body.classList.add("m-com-tabbar");
           } else {
             // Desktop — nav normal
             panel.appendChild(navBar);
@@ -8870,6 +8894,9 @@ function render(){
 }
 // Expõe render no window para onclicks inline (script type="module" não acessa window por padrão)
 window.render = render;
+// Ao girar o celular ou redimensionar cruzando 768px, troca entre layout de celular e de computador
+{ let eraCel = window.innerWidth < 768;
+  window.addEventListener("resize", () => { const cel = window.innerWidth < 768; if (cel !== eraCel) { eraCel = cel; try { render(); } catch (_) {} } }); }
 
 function makeAddBtn(color,label){const btn=document.createElement("button");btn.className="add-dashed";btn.textContent=label;btn.style.cssText=`border-color:${color};color:${color};opacity:0.85;text-shadow:0 0 8px ${color}88;box-shadow:inset 0 0 12px ${color}11;`;btn.addEventListener("mouseenter",()=>{btn.style.opacity="1";btn.style.boxShadow=`inset 0 0 20px ${color}22`;});btn.addEventListener("mouseleave",()=>{btn.style.opacity="0.85";btn.style.boxShadow=`inset 0 0 12px ${color}11`;});return btn;}
 
@@ -13659,7 +13686,7 @@ window.renderPromocoes = async function renderPromocoes(panel) {
   const tokenMatriz = state?.ml_token?.access_token;
 
   panel.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+    <div class="m-prom-head" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
       <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
         <div style="font-size:14px;font-weight:500;color:${T.text};margin-right:6px;">Promoções</div>
         ${["minhas","ofertas"].map(a => `<button onclick="window.promState.aba='${a}';renderPromocoes(document.querySelector('.prom-container'));"
@@ -14145,22 +14172,22 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
       : o.meli_pct > 0 && orig ? orig * o.meli_pct / 100 : 0;
     const voceR = descR != null ? Math.max(0, descR - meliR) : (orig ? orig * (o.seller_pct || 0) / 100 : null);
     const quem = o.meli_pct > 0
-      ? `<span style="color:${verde};font-weight:600;">ML paga ${fmtR(meliR)}</span><span style="color:${T.text2};"> · você ${fmtR(voceR)}</span><div style="color:${T.text2};font-size:11px;">por venda</div>`
+      ? `<span class="q-ml" style="color:${verde};font-weight:600;">ML paga ${fmtR(meliR)}</span><span class="q-sep" style="color:${T.text2};"> · </span><span class="q-voce" style="color:${T.text2};">você ${fmtR(voceR)}</span><div class="q-pv" style="color:${T.text2};font-size:11px;">por venda</div>`
       : `<span style="color:${T.text2};">Você paga tudo</span>`;
     const key = `${it.item_id}|${idx}`;
     const btn = o.status === "candidate"
       ? `<button data-of-acao="participar" data-of-key="${key}" style="font:600 11px Inter,sans-serif;padding:6px 12px;border-radius:7px;border:none;background:${azul};color:#fff;cursor:pointer;white-space:nowrap;">Participar</button>`
       : `<button data-of-acao="sair" data-of-key="${key}" style="font:600 11px Inter,sans-serif;padding:6px 12px;border-radius:7px;border:0.5px solid ${vermelho}66;background:transparent;color:${vermelho};cursor:pointer;white-space:nowrap;">Sair</button>`;
-    return `<div style="display:grid;grid-template-columns:minmax(0,1.7fr) 80px 100px minmax(0,1.2fr) 96px;gap:10px;align-items:center;padding:10px 14px;border-top:0.5px solid ${T.border};${o.status==='candidate'?`background:${azul}0d;`:''}">
+    return `<div class="of-row" style="display:grid;grid-template-columns:minmax(0,1.7fr) 80px 100px minmax(0,1.2fr) 96px;gap:10px;align-items:center;padding:10px 14px;border-top:0.5px solid ${T.border};${o.status==='candidate'?`background:${azul}0d;`:''}">
       <div style="min-width:0;">
         <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;">${statusPill}${isBF ? pill("Black Friday", T.isLight ? "#111" : "#000", true) : ""}</div>
         <div style="font-size:12px;color:${T.text};margin-top:4px;">${esc(nomeLinha)}${o.meli_pct > 0 ? ` <span style="color:${verde};font-size:11px;">· com redução de tarifa</span>` : ""}</div>
         ${periodo ? `<div style="font-size:11px;color:${T.text2};margin-top:1px;">${periodo}</div>` : ""}
       </div>
-      <div style="font:600 13px Inter,sans-serif;color:${T.text};">${descPct != null ? (o._ate ? "até " : "") + descPct + "%" : "—"}${descR != null ? `<div style="font:400 11px Inter,sans-serif;color:${T.text2};">${fmtR(descR)}</div>` : ""}</div>
-      <div style="font:600 13px Inter,sans-serif;color:${T.text};">${o._ate && final ? "até " : ""}${fmtR(final)}${o._ate && o.preco_sugerido ? `<div style="font:400 11px Inter,sans-serif;color:${T.text2};">sugerido ${fmtR(o.preco_sugerido)}</div>` : ""}</div>
-      <div style="font-size:11px;min-width:0;">${quem}</div>
-      <div style="text-align:right;">${btn}<div data-of-msg="${key}" style="font-size:11px;margin-top:4px;"></div></div>
+      <div class="of-desc" data-lbl="Desconto" style="font:600 13px Inter,sans-serif;color:${T.text};">${descPct != null ? (o._ate ? "até " : "") + descPct + "%" : "—"}${descR != null ? `<div style="font:400 11px Inter,sans-serif;color:${T.text2};">${fmtR(descR)}</div>` : ""}</div>
+      <div class="of-final" data-lbl="Preço final" style="font:600 13px Inter,sans-serif;color:${T.text};">${o._ate && final ? "até " : ""}${fmtR(final)}${o._ate && o.preco_sugerido ? `<div style="font:400 11px Inter,sans-serif;color:${T.text2};">sugerido ${fmtR(o.preco_sugerido)}</div>` : ""}</div>
+      <div class="of-quem" data-lbl="Quem paga" style="font-size:11px;min-width:0;">${quem}</div>
+      <div class="of-acao" style="text-align:right;">${btn}<div data-of-msg="${key}" style="font-size:11px;margin-top:4px;"></div></div>
     </div>`;
   };
 
@@ -14168,7 +14195,7 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
     <div style="font-size:11px;color:${T.text2};margin-bottom:8px;">${atualizadoTxt}${meta.total_anuncios ? ` · ${meta.total_anuncios} anúncios verificados` : ""}</div>
     ${velho ? `<div style="background:${amarelo}18;border:0.5px solid ${amarelo}66;color:${amarelo};border-radius:8px;padding:9px 12px;font-size:12px;margin-bottom:12px;">A atualização automática está atrasada (${meta.gerado_em ? atualizadoTxt : "sem dados"}). Buscando direto do ML — os números trocam sozinhos em até 1 minuto.</div>` : ""}
     ${nFalhas && !velho ? `<div style="font-size:11px;color:${T.text2};margin-bottom:8px;">${nFalhas} ${nFalhas === 1 ? "anúncio não respondeu" : "anúncios não responderam"} na última volta — entram na próxima, em 1-2 min.</div>` : ""}
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px;">
+    <div class="of-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px;">
       ${stat("Novas propostas", nNovas, amarelo)}${stat("Novas com redução de tarifa", nTarifa, verde)}${stat("Participando", nAtivas)}
     </div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
@@ -14192,7 +14219,7 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
             </div>
             ${nNov ? pill(`${nNov} ${nNov === 1 ? "nova" : "novas"}`, amarelo) : ""}
           </div>
-          <div style="display:grid;grid-template-columns:minmax(0,1.7fr) 80px 100px minmax(0,1.2fr) 96px;gap:10px;padding:6px 14px;border-top:0.5px solid ${T.border};font-size:11px;color:${T.text2};">
+          <div class="of-head" style="display:grid;grid-template-columns:minmax(0,1.7fr) 80px 100px minmax(0,1.2fr) 96px;gap:10px;padding:6px 14px;border-top:0.5px solid ${T.border};font-size:11px;color:${T.text2};">
             <span>Promoção</span><span>Desconto</span><span>Preço final</span><span>Quem paga</span><span></span>
           </div>
           ${g.map(a => `${varios ? `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:7px 14px;border-top:0.5px solid ${T.border};background:${T.bg3};font-size:11px;color:${T.text2};">
@@ -14740,6 +14767,7 @@ async function renderContasPagar(panel) {
   try {
   panel.innerHTML = "";
   panel.style.cssText = "padding:16px 20px;font-family:'Inter',sans-serif;";
+  panel.classList.add("m-nopad");
 
   // ── Header ──
   const header = document.createElement("div");
@@ -14777,6 +14805,7 @@ async function renderContasPagar(panel) {
   filtrosWrap.appendChild(empresaWrap);
 
   const pillsWrap = document.createElement("div");
+  pillsWrap.className = "m-scroll-x";
   pillsWrap.style.cssText = `display:flex;gap:3px;background:${T.card};border:0.5px solid ${T.border};border-radius:20px;padding:3px;`;
   [["","Todas"],["pendente","Pendentes"],["aberto","Em aberto"],["pago","Pagas"],["cancelado","Canceladas"]].forEach(([val, label]) => {
     const p = document.createElement("button");
@@ -15543,6 +15572,7 @@ async function renderPainelFiscal(panel) {
 
   // Cards de totais
   const cardsWrap = document.createElement("div");
+  cardsWrap.className = "m-1col";
   cardsWrap.style.cssText = "display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;";
 
   [
