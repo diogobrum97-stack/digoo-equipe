@@ -1,4 +1,4 @@
-const CACHE = 'digoo-v1';
+const CACHE = 'digoo-v2';
 const SHELL = [
   '/digoo-equipe/',
   '/digoo-equipe/index.html',
@@ -26,24 +26,25 @@ self.addEventListener('activate', e => {
   );
 });
 
-// Estratégia: network-first para API/Firebase, cache-first para assets do shell
+// Estratégia: sempre a versão mais nova da rede (network-first).
+// A cópia guardada só é usada sem internet — assim uma atualização aparece já na primeira abertura.
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
   // Requisições externas (Firebase, Vercel, ML, Anthropic) — sempre rede, sem cache
   if (url.origin !== self.location.origin) return;
+  if (e.request.method !== 'GET') return;
 
-  // Assets do shell — cache-first
   e.respondWith(
-    caches.match(e.request).then(cached => {
-      const network = fetch(e.request).then(res => {
+    fetch(e.request, { cache: 'no-cache' })
+      .then(res => {
         if (res.ok) {
           const clone = res.clone();
           caches.open(CACHE).then(c => c.put(e.request, clone));
         }
         return res;
-      }).catch(() => cached);
-      return cached || network;
-    })
+      })
+      .catch(() => caches.match(e.request, { ignoreSearch: true })
+        .then(cached => cached || caches.match('/digoo-equipe/index.html')))
   );
 });
