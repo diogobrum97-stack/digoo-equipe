@@ -14415,7 +14415,7 @@ function renderListaPromocoes(container, promocoes, BACKEND, fmtVal, fmtData, to
         </div>
 
         <!-- 4 métricas -->
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;">
+        <div class="m-prom-met" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;">
           <div style="background:${T.bg3};border-radius:8px;padding:10px;">
             <div style="font-size:10px;color:${T.text2};">Preço com desc.</div>
             <div style="font-size:14px;font-weight:600;color:${T.text};margin-top:3px;">${fmtVal(p.preco_desconto)}</div>
@@ -14446,7 +14446,7 @@ function renderListaPromocoes(container, promocoes, BACKEND, fmtVal, fmtData, to
     </div>`;
   }).join("");
 
-  container.innerHTML = `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;">${cards}</div>`;
+  container.innerHTML = `<div class="m-prom-lista" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;">${cards}</div>`;
 
   // Buscar tendências do Firebase e dispara atualização em background
   (async () => {
