@@ -4133,6 +4133,16 @@ function renderDashboard(panel, color) {
     "↑ Em tempo real", "#3b82f618", "#3b82f6", "#3b82f6",
     top5Merged, "Mais vendidos hoje"
   ));
+  // Previsão do dia (discreta, no espaço livre à direita do Total hoje) — calculada pela VPS em /previsao_dia
+  {
+    const cardTot = vendasGrid.querySelector("#dash-kpi-total");
+    cardTot.style.position = "relative";
+    const slot = document.createElement("div");
+    slot.id = "dash-previsao";
+    slot.style.cssText = `position:absolute;top:14px;right:16px;text-align:right;pointer-events:auto;max-width:48%;`;
+    cardTot.appendChild(slot);
+    window._dashPrevisaoDesenhar?.(slot);
+  }
   // Card 2: Hoje SP
   vendasGrid.appendChild(mkKpiCard(
     "dash-kpi-sp",
@@ -13516,6 +13526,32 @@ window.promState = {
   ofertasFiltro: "todas",                // "todas" | "oportunidades" | "voce"
   ofertasBusca: "",
 };
+
+// ── Previsão de faturamento do dia: a VPS grava em /previsao_dia/{total,filial,matriz} a cada 5 min ──
+{
+  const prev = {};
+  const fmtR0 = v => "R$ " + Math.round(v).toLocaleString("pt-BR");
+  const fmtMil = v => Math.round(v / 1000).toLocaleString("pt-BR");
+  window._dashPrevisaoDesenhar = (elDireto) => {
+    const el = elDireto || document.getElementById("dash-previsao");
+    if (!el) return;
+    const p = prev.total, agora = new Date();
+    const hBRT = new Date(agora.getTime() - 3 * 3600e3).getUTCHours();
+    const hoje = new Date(agora.getTime() - 3 * 3600e3).toISOString().slice(0, 10);
+    const lbl = `<div style="font-size:10px;color:${T.text3};">Previsão do dia</div>`;
+    if (hBRT < 9) { el.innerHTML = lbl + `<div style="font-size:11px;color:${T.text3};margin-top:3px;">a partir das 9h</div>`; return; }
+    if (!p || p.dia !== hoje || Date.now() - (p.gerado_em || 0) > 20 * 60 * 1000) { el.innerHTML = ""; return; }
+    const det = ["filial", "matriz"].filter(k => prev[k]?.dia === hoje).map(k => `${k === "filial" ? "Filial SP" : "Matriz RS"}: ${fmtR0(prev[k].previsto)} (entre ${fmtMil(prev[k].min)} e ${fmtMil(prev[k].max)} mil)`).join("\n");
+    el.title = det;
+    el.innerHTML = lbl +
+      `<div style="font-size:16px;font-weight:600;color:${T.text2};margin-top:2px;letter-spacing:-0.3px;">${fmtR0(p.previsto)}</div>` +
+      `<div style="font-size:10px;color:${T.text3};margin-top:1px;">entre ${fmtMil(p.min)} e ${fmtMil(p.max)} mil</div>`;
+  };
+  for (const k of ["total", "filial", "matriz"]) {
+    onValue(ref(db, `/previsao_dia/${k}`), snap => { prev[k] = snap.val(); window._dashPrevisaoDesenhar(); }, () => {});
+  }
+  setInterval(() => window._dashPrevisaoDesenhar(), 60 * 1000);
+}
 
 // ── Ofertas do ML ao vivo: liga assim que o OPS abre (já depois do login no Firebase).
 // A VPS grava em /ofertas_ml_cache/{conta}; aqui só escutamos — o Firebase manda só o que mudou.
