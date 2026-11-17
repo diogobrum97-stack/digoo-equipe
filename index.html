@@ -1548,7 +1548,7 @@ function _pergCarregarCatalogo(contaLabel) {
 }
 const _pergNorm = t => String(t || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 function _pergLinkPicker(ta, contaLabel) {
-  let box = null, itens = [], sel = 0, inicio = -1;
+  let box = null, itens = [], sel = 0, inicio = -1, mexendoNaLista = false, totalAchados = 0;
   const fechar = () => { box?.remove(); box = null; inicio = -1; };
   const consulta = () => {
     const ate = ta.selectionStart, txt = ta.value.slice(0, ate);
@@ -1573,17 +1573,24 @@ function _pergLinkPicker(ta, contaLabel) {
     if (!box) {
       box = document.createElement("div");
       // lista logo abaixo da caixa de resposta (empurra os botões pra baixo enquanto aberta)
-      box.style.cssText = `margin-top:6px;background:${T.card};border:1px solid #3b82f655;border-radius:10px;overflow:hidden;max-height:290px;overflow-y:auto;`;
+      box.style.cssText = `margin-top:6px;background:${T.card};border:1px solid #3b82f655;border-radius:10px;overflow:hidden;max-height:320px;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;`;
+      // enquanto o dedo/mouse está na lista (rolando), ela não fecha
+      box.addEventListener("pointerdown", () => { mexendoNaLista = true; });
+      box.addEventListener("pointerup", () => setTimeout(() => { mexendoNaLista = false; }, 400));
+      box.addEventListener("pointercancel", () => setTimeout(() => { mexendoNaLista = false; }, 400));
+      box.addEventListener("scroll", () => { mexendoNaLista = true; clearTimeout(box._t); box._t = setTimeout(() => { mexendoNaLista = false; }, 600); });
       ta.insertAdjacentElement("afterend", box);
     }
+    const cab = `<div style="padding:7px 10px;font-size:10px;color:${T.text3};border-bottom:1px solid ${T.border};">${totalAchados ? `${totalAchados} ${totalAchados === 1 ? "anúncio" : "anúncios"}${totalAchados > itens.length ? ` · mostrando ${itens.length}, digite mais pra filtrar` : ""} · toque pra inserir o link` : ""}</div>`;
     if (!itens.length) { box.innerHTML = `<div style="padding:10px 12px;font-size:12px;color:${T.text2};">Nenhum anúncio ativo com esse título ou SKU.</div>`; return; }
-    box.innerHTML = itens.map((it, n) => `<div data-n="${n}" style="display:flex;gap:10px;align-items:center;padding:8px 10px;cursor:pointer;border-top:${n ? `1px solid ${T.border}` : "none"};background:${n === sel ? "#3b82f61f" : "transparent"};">
+    box.innerHTML = cab + itens.map((it, n) => `<div data-n="${n}" style="display:flex;gap:10px;align-items:center;padding:8px 10px;cursor:pointer;border-top:${n ? `1px solid ${T.border}` : "none"};background:${n === sel ? "#3b82f61f" : "transparent"};">
       ${it.foto ? `<img src="${it.foto}" style="width:32px;height:32px;object-fit:contain;border-radius:6px;background:#fff;flex-shrink:0;">` : `<div style="width:32px;height:32px;border-radius:6px;background:${T.bg3};flex-shrink:0;"></div>`}
       <div style="min-width:0;flex:1;">
         <div style="font-size:12px;font-weight:500;color:${T.text};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${String(it.titulo || "").replace(/</g, "&lt;")}</div>
         <div style="font-size:11px;color:${T.text2};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${String(it.sku || "sem SKU").replace(/</g, "&lt;")}${it.preco != null ? " · R$ " + Number(it.preco).toLocaleString("pt-BR", { minimumFractionDigits: 2 }) : ""} · ${it.id}</div>
       </div></div>`).join("");
-    box.querySelectorAll("[data-n]").forEach(d => d.addEventListener("pointerdown", ev => { ev.preventDefault(); inserir(itens[Number(d.dataset.n)]); }));
+    // escolhe no toque (click): arrastar o dedo pra rolar a lista não seleciona nada
+    box.querySelectorAll("[data-n]").forEach(d => d.addEventListener("click", ev => { ev.preventDefault(); inserir(itens[Number(d.dataset.n)]); }));
   };
   const atualizar = async () => {
     const c = consulta();
@@ -1591,14 +1598,22 @@ function _pergLinkPicker(ta, contaLabel) {
     inicio = c.i;
     const lista = await _pergCarregarCatalogo(contaLabel);
     const c2 = consulta(); if (!c2 || c2.i !== inicio) return; // mudou enquanto carregava
+    // cada palavra tem que aparecer no título, SKU ou MLB; hífen, ponto e espaço não importam ("a315-54" = "A315 54" = "a31554")
     const palavras = _pergNorm(c2.q).split(/\s+/).filter(Boolean);
-    itens = lista.filter(it => { const alvo = _pergNorm(it.titulo + " " + it.sku + " " + it.id); return palavras.every(w => alvo.includes(w)); }).slice(0, 6);
+    const compacto = t => t.replace(/[^a-z0-9]/g, "");
+    const achados = lista.filter(it => {
+      const alvo = _pergNorm(it.titulo + " " + it.sku + " " + it.id), alvoC = compacto(alvo);
+      return palavras.every(w => alvo.includes(w) || (compacto(w) && alvoC.includes(compacto(w))));
+    });
+    totalAchados = achados.length;
+    itens = achados.slice(0, 15);
     sel = 0;
     desenhar();
   };
   ta.addEventListener("input", atualizar);
   ta.addEventListener("click", atualizar);
-  ta.addEventListener("blur", () => setTimeout(fechar, 150));
+  ta.addEventListener("blur", () => setTimeout(() => { if (!mexendoNaLista) fechar(); }, 250));
+  document.addEventListener("pointerdown", ev => { if (box && ev.target !== ta && !box.contains(ev.target)) fechar(); });
   ta.addEventListener("keydown", ev => {
     if (!box || !itens.length) { if (ev.key === "Escape") fechar(); return; }
     if (ev.key === "ArrowDown") { ev.preventDefault(); sel = (sel + 1) % itens.length; desenhar(); }
