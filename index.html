@@ -1502,7 +1502,7 @@ async function pergBloquear(qid, btn) {
   const p = (_perg.lista || []).find(x => String(x.question_id) === String(qid));
   if (!p) return;
   if (!p.from_user) { alert("ID do comprador não disponível nessa pergunta."); return; }
-  if (!confirm(`Bloquear esse comprador no Mercado Livre?\n\nEle não poderá mais comprar na sua loja.`)) return;
+  if (!confirm(`Bloquear ${p.comprador_nick || "esse comprador"} (ID ${p.from_user}) no Mercado Livre?\n\nEle não poderá mais fazer perguntas nem comprar na sua loja.`)) return;
   const conta = [
     { label: "Matriz RS", token: state.ml_token?.access_token },
     { label: "Filial SP", token: state.ml_token_filial?.access_token },
@@ -1517,6 +1517,7 @@ async function pergBloquear(qid, btn) {
     });
     const d = await r.json().catch(() => ({}));
     if (d.ok) {
+      if (!d.compras) alert("Bloqueado para perguntas. O bloqueio de compras o ML recusou: " + (d.erros?.compras || "sem detalhe"));
       // Remove todas as perguntas desse comprador da lista
       _perg.lista = _perg.lista.filter(x => String(x.from_user) !== String(p.from_user));
       _pergAposAcao();
