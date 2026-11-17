@@ -21,8 +21,44 @@
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/digoo-equipe/sw.js', { scope: '/digoo-equipe/' })
+        .then(function(reg) { reg.update().catch(function(){}); })
         .catch(function(e) { console.warn('SW registration failed:', e); });
     }
+
+    // Aviso de nova versão: compara a "impressão digital" do index.html publicado com a de quando o OPS abriu.
+    // Confere a cada 5 min e sempre que o app volta pra frente (ex.: app do iPhone que ficou em segundo plano).
+    (function () {
+      var URL_IDX = '/digoo-equipe/index.html';
+      var inicial = null, avisado = false;
+      function versao() {
+        return fetch(URL_IDX, { method: 'HEAD', cache: 'no-store' })
+          .then(function (r) { return r.headers.get('etag') || r.headers.get('last-modified') || null; })
+          .catch(function () { return null; });
+      }
+      function mostrarAviso() {
+        if (avisado || document.getElementById('nova-versao')) return;
+        avisado = true;
+        var d = document.createElement('div');
+        d.id = 'nova-versao';
+        d.innerHTML = '<span>Nova versão do OPS disponível</span><button type="button">Atualizar</button>';
+        d.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:3000;display:flex;align-items:center;gap:12px;padding:10px 10px 10px 16px;border-radius:14px;background:#1d1d1f;color:#f5f5f7;border:0.5px solid #3a3a3c;font:500 13px Inter,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.35);max-width:calc(100vw - 24px);';
+        var b = d.querySelector('button');
+        b.style.cssText = 'border:none;border-radius:10px;padding:8px 14px;background:#3b82f6;color:#fff;font:600 13px Inter,sans-serif;cursor:pointer;';
+        b.onclick = function () { location.reload(); };
+        if (document.body.classList.contains('m-com-tabbar')) d.style.bottom = 'calc(86px + env(safe-area-inset-bottom,0px))';
+        document.body.appendChild(d);
+      }
+      function conferir() {
+        versao().then(function (v) {
+          if (!v) return;
+          if (inicial === null) { inicial = v; return; }
+          if (v !== inicial) mostrarAviso();
+        });
+      }
+      conferir();
+      setInterval(conferir, 5 * 60 * 1000);
+      document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') conferir(); });
+    })();
   </script>
 
 <div class="toggle-wrap">
