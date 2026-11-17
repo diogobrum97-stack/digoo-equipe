@@ -7893,6 +7893,7 @@ function render(){
       const chatBtn=document.createElement("button");
       chatBtn.style.cssText=`background:none;border:0.5px solid ${T.isLight?"rgba(0,0,0,0.2)":"rgba(255,255,255,0.25)"};border-radius:50%;width:26px;height:26px;color:${T.isLight?"#111":"rgba(255,255,255,0.4)"};font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-right:6px;flex-shrink:0;transition:all 0.15s;`;
       chatBtn.textContent="✦";
+      chatBtn.className="m-hbtn";
       chatBtn.title="Assistente Claude";
       chatBtn.addEventListener("click",(e)=>{e.stopPropagation();chatState[member.name].open=!chatState[member.name].open;renderChatModal(member.name,color);});
       header.appendChild(chatBtn);
@@ -7914,6 +7915,7 @@ function render(){
           calCircleBtn.appendChild(dot);
         }
         calCircleBtn.title = "Calendário Fiscal";
+        calCircleBtn.className = "m-hbtn";
         calCircleBtn.onclick = (e) => {
           e.stopPropagation();
           e.preventDefault();
@@ -7940,10 +7942,34 @@ function render(){
         diogoCardFullscreen = next === 2;
         render();
       });
+      minBtn.classList.add("m-hide-cel");
       header.appendChild(minBtn);
     }
     header.appendChild(chev);
-    if(currentUser !== "Resicon") header.addEventListener("click",()=>{openCard=openCard===member.name?null:member.name;if(!isOpen&&member.locked){diogoPinUnlocked=false;diogoAutoFullscreen=false;diogoCardFullscreen=false;}if(flashQueue[member.name]){delete flashQueue[member.name];remove(ref(db,`/flashes/${member.name}`));}render();});
+    // Celular, Diogo em tela cheia: cabeçalho de app — marca DIGOO OPS, ícones soltos, avatar com menu
+    const mHdr = window.innerWidth < 768 && member.locked && isOpen && diogoCardFullscreen && currentUser === "Diogo";
+    if (mHdr) {
+      header.classList.add("m-hdr");
+      nameEl.innerHTML = 'DIGOO<span class="m-ops">OPS</span>';
+      nameEl.style.color = "";
+      avatar.classList.add("m-hdr-av");
+      header.appendChild(avatar);
+      avatar.addEventListener("click", ev => {
+        ev.stopPropagation();
+        document.getElementById("m-hdr-menu")?.remove();
+        const m = document.createElement("div");
+        m.id = "m-hdr-menu";
+        m.innerHTML = `<div class="m-hdr-menu-bg"></div><div class="m-hdr-menu-box">
+          <div class="m-hdr-menu-quem">Diogo · Administrador</div>
+          <button data-a="tema">${T.isLight ? "Tema escuro" : "Tema claro"}</button>
+          <button data-a="trocar">Trocar usuário</button></div>`;
+        m.querySelector(".m-hdr-menu-bg").onclick = () => m.remove();
+        m.querySelector('[data-a="tema"]').onclick = () => { m.remove(); toggleTheme(); };
+        m.querySelector('[data-a="trocar"]').onclick = () => { m.remove(); document.getElementById("user-label")?.click(); };
+        document.body.appendChild(m);
+      });
+    }
+    if(currentUser !== "Resicon" && !mHdr) header.addEventListener("click",()=>{openCard=openCard===member.name?null:member.name;if(!isOpen&&member.locked){diogoPinUnlocked=false;diogoAutoFullscreen=false;diogoCardFullscreen=false;}if(flashQueue[member.name]){delete flashQueue[member.name];remove(ref(db,`/flashes/${member.name}`));}render();});
     card.appendChild(header);
 
     if(isOpen){

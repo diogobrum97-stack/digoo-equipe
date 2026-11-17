@@ -23,6 +23,40 @@
   .member-name { font-size: 20px !important; letter-spacing: 1px !important; }
   .card-header button { width: 34px !important; height: 34px !important; }
 
+  /* cabeçalho de app (Diogo em tela cheia): fundo liso, marca DIGOO OPS, ícones sem círculo */
+  .card-header.m-hdr {
+    background: var(--bg) !important; border: none !important; border-bottom: 0.5px solid var(--border2) !important;
+    box-shadow: none !important; border-radius: 0 !important; cursor: default !important; gap: 4px !important;
+    padding: 8px 10px 8px 16px !important; padding-top: calc(8px + env(safe-area-inset-top, 0px)) !important;
+  }
+  body.light .card-header.m-hdr { background: #f4f4f4 !important; }
+  .m-hdr .member-name { font-size: 19px !important; letter-spacing: 2px !important; color: var(--text) !important; display: flex; align-items: baseline; gap: 8px; }
+  .m-hdr .member-name .m-ops { color: var(--text3); }
+  .m-hdr .dots, .m-hdr .chevron, .m-hdr .m-hide-cel { display: none !important; }
+  .m-hdr .m-hbtn {
+    border: none !important; background: none !important; width: 40px !important; height: 40px !important;
+    color: var(--text2) !important; font-size: 18px !important; position: relative;
+  }
+  .m-hdr .m-hbtn svg { width: 20px; height: 20px; }
+  .m-hdr .m-hbtn > div { top: 8px !important; right: 8px !important; border-color: var(--bg) !important; }
+  .m-hdr .m-hdr-av {
+    order: 99; width: 32px !important; height: 32px !important; font-size: 11px !important; margin-left: 6px;
+    background: var(--bg3) !important; border: 0.5px solid var(--border2) !important; color: var(--text2) !important; cursor: pointer;
+  }
+  #m-hdr-menu { position: fixed; inset: 0; z-index: 1200; }
+  #m-hdr-menu .m-hdr-menu-bg { position: absolute; inset: 0; }
+  #m-hdr-menu .m-hdr-menu-box {
+    position: absolute; right: 12px; top: calc(56px + env(safe-area-inset-top, 0px)); min-width: 200px;
+    background: var(--bg2); border: 0.5px solid var(--border2); border-radius: 14px; padding: 6px;
+    box-shadow: 0 12px 32px rgba(0,0,0,.4); display: flex; flex-direction: column; animation: mFade .12s ease-out;
+  }
+  #m-hdr-menu .m-hdr-menu-quem { font: 500 12px Inter, sans-serif; color: var(--text3); padding: 8px 10px 6px; }
+  #m-hdr-menu button {
+    text-align: left; background: none; border: none; border-radius: 9px; padding: 11px 10px;
+    font: 500 14px Inter, sans-serif; color: var(--text); cursor: pointer;
+  }
+  #m-hdr-menu button:active { background: var(--bg3); }
+
   /* ── Barra de abas fixa embaixo ─────────────────────────────────────── */
   body.m-com-tabbar #m-tabbar {
     display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 1050;
