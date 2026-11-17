@@ -1533,6 +1533,7 @@ async function pergBloquear(qid, btn) {
 
 // ── "#" nas respostas das Perguntas: lista os anúncios da conta e insere o link ──
 // Digite # + parte do título ou do SKU (ex.: "#kit 10 wind", "#windx") e escolha o anúncio.
+// Lista anúncios da Filial e da Matriz (os da conta da pergunta primeiro).
 window._pergCatalogo = window._pergCatalogo || {};
 function _pergCarregarCatalogo(contaLabel) {
   const token = contaLabel.includes("Filial") ? state.ml_token_filial?.access_token : state.ml_token?.access_token;
@@ -1588,6 +1589,7 @@ function _pergLinkPicker(ta, contaLabel) {
       <div style="min-width:0;flex:1;">
         <div style="font-size:12px;font-weight:500;color:${T.text};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${String(it.titulo || "").replace(/</g, "&lt;")}</div>
         <div style="font-size:11px;color:${T.text2};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${String(it.sku || "sem SKU").replace(/</g, "&lt;")}${it.preco != null ? " · R$ " + Number(it.preco).toLocaleString("pt-BR", { minimumFractionDigits: 2 }) : ""} · ${it.id}</div>
+        <div style="font-size:10px;font-weight:600;margin-top:2px;color:${it._conta === "Filial SP" ? "#22c55e" : "#a78bfa"};">${it._conta}</div>
       </div></div>`).join("");
     // escolhe no toque (click): arrastar o dedo pra rolar a lista não seleciona nada
     box.querySelectorAll("[data-n]").forEach(d => d.addEventListener("click", ev => { ev.preventDefault(); inserir(itens[Number(d.dataset.n)]); }));
@@ -1596,7 +1598,10 @@ function _pergLinkPicker(ta, contaLabel) {
     const c = consulta();
     if (!c) return fechar();
     inicio = c.i;
-    const lista = await _pergCarregarCatalogo(contaLabel);
+    // anúncios das duas contas; os da mesma conta da pergunta aparecem primeiro
+    const mesma = contaLabel.includes("Filial") ? "Filial SP" : "Matriz RS", outra = mesma === "Filial SP" ? "Matriz RS" : "Filial SP";
+    const [l1, l2] = await Promise.all([_pergCarregarCatalogo(mesma), _pergCarregarCatalogo(outra)]);
+    const lista = [...l1.map(i => ({ ...i, _conta: mesma })), ...l2.map(i => ({ ...i, _conta: outra }))];
     const c2 = consulta(); if (!c2 || c2.i !== inicio) return; // mudou enquanto carregava
     // cada palavra tem que aparecer no título, SKU ou MLB; hífen, ponto e espaço não importam ("a315-54" = "A315 54" = "a31554")
     const palavras = _pergNorm(c2.q).split(/\s+/).filter(Boolean);
@@ -1622,7 +1627,7 @@ function _pergLinkPicker(ta, contaLabel) {
     else if (ev.key === "Escape") { ev.preventDefault(); fechar(); }
   });
   // pré-carrega o catálogo da conta pra lista aparecer na hora
-  _pergCarregarCatalogo(contaLabel);
+  _pergCarregarCatalogo("Filial SP"); _pergCarregarCatalogo("Matriz RS");
 }
 
 function _pergCriarCard(p) {
