@@ -14494,6 +14494,37 @@ function renderListaPromocoes(container, promocoes, BACKEND, fmtVal, fmtData, to
       <div style="font-size:10px;color:${T.text2};" title="${tooltip}">${vendas} un · ${mediaDia}/dia</div>`;
   }
 
+  // Encerrar a promoção ativa: o anúncio volta ao preço cheio (2 toques pra confirmar)
+  window._encerrarPromo = async function(itemId, idx, btn) {
+    const promo = (window.promState.promocoes[window.promState.conta] || []).find(p => p.item_id === itemId);
+    if (!promo) return;
+    const msg = document.getElementById(`prom-encerrar-msg-${idx}`);
+    if (btn.dataset.confirmar !== "1") {
+      btn.dataset.confirmar = "1";
+      btn.textContent = `Toque de novo para encerrar (volta pra ${fmtVal(promo.preco_original)})`;
+      btn.style.background = T.cVermelho; btn.style.color = "#fff";
+      setTimeout(() => { if (btn.isConnected && btn.dataset.confirmar === "1") { btn.dataset.confirmar = ""; btn.textContent = "Encerrar promoção — voltar ao preço cheio"; btn.style.background = "transparent"; btn.style.color = T.cVermelho; } }, 5000);
+      return;
+    }
+    btn.dataset.confirmar = "";
+    btn.disabled = true; btn.textContent = "Encerrando...";
+    try {
+      const r = await fetch(`${BACKEND}/api/ml-vendas?action=sair-oferta`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, item_id: itemId, promotion_id: promo.promotion_id, tipo: promo.tipo_promo || "PRICE_DISCOUNT", offer_id: promo.offer_id }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!d.ok) throw new Error(d.error || `HTTP ${r.status}`);
+      // tira da lista e redesenha
+      window.promState.promocoes[window.promState.conta] = (window.promState.promocoes[window.promState.conta] || []).filter(p => p.item_id !== itemId);
+      renderListaPromocoes(container, window.promState.promocoes[window.promState.conta], BACKEND, fmtVal, fmtData, token);
+    } catch (e) {
+      btn.disabled = false; btn.textContent = "Encerrar promoção — voltar ao preço cheio";
+      btn.style.background = "transparent"; btn.style.color = T.cVermelho;
+      if (msg) { msg.style.display = "block"; msg.textContent = "Não deu pra encerrar: " + e.message; }
+    }
+  };
+
   // Carregar drawer com análise e botões
   window._loadPromDrawer = async function(itemId, idx) {
     const drawer = document.getElementById(`prom-drawer-${idx}`);
@@ -14537,6 +14568,11 @@ function renderListaPromocoes(container, promocoes, BACKEND, fmtVal, fmtData, to
             Histórico
           </button>
         </div>
+        <button onclick="window._encerrarPromo('${itemId}','${idx}',this)"
+          style="font-size:12px;padding:8px;border-radius:8px;border:0.5px solid ${T.cVermelho}66;background:transparent;color:${T.cVermelho};cursor:pointer;font-weight:500;">
+          Encerrar promoção — voltar ao preço cheio
+        </button>
+        <div id="prom-encerrar-msg-${idx}" style="font-size:11px;color:${T.cVermelho};display:none;"></div>
         <div id="prom-renovar-inline-${idx}" style="display:none;background:${T.bg3};border-radius:8px;padding:12px;">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
             <div>
