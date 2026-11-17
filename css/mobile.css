@@ -131,6 +131,19 @@
   .m-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
   .m-kpi-grid > * > div:nth-child(2) { font-size: 22px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+  /* Perguntas: Excluir · Bloquear · Treinar IA em 3 partes iguais, Enviar em largura total embaixo */
+  .m-perg-acoes { flex-direction: column; align-items: stretch !important; gap: 8px; }
+  .m-perg-acoes > div { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px !important; }
+  .m-perg-acoes button { width: 100% !important; padding: 9px 0 !important; font-size: 13px !important; border-radius: 8px !important; }
+  .m-perg-acoes > button { padding: 11px 0 !important; font-size: 14px !important; }
+
+  /* rótulo de botão nunca quebra em duas linhas (ícone + texto ficam juntos) */
+  .panel button { white-space: nowrap; }
+
+  /* 3 botões de modo dividindo a largura igualmente (Picking) */
+  .m-seg3 { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .m-seg3 > button { padding: 10px 4px !important; font-size: 12px !important; text-align: center; }
+
   /* utilitários */
   .m-nopad { padding-left: 0 !important; padding-right: 0 !important; }
   .m-1col { grid-template-columns: minmax(0, 1fr) !important; }
