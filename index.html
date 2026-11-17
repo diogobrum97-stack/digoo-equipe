@@ -138,6 +138,9 @@
     }
     window.addEventListener("error", function(e) {
       if (!e.message) return; // falha de carregar imagem/script externo
+      // "Script error." é o aviso genérico do Safari para erros dentro de scripts de outros sites
+      // (Firebase, Chart.js); não traz detalhe nenhum e não quebra o OPS — não mostra
+      if (/^Script error\.?$/i.test(e.message)) return;
       mostrar(e.message, (e.filename || "").split("/").pop() + ":" + e.lineno);
     });
     window.addEventListener("unhandledrejection", function(e) {
@@ -150,7 +153,7 @@
     var el = document.getElementById('identity-screen');
     if(el && !window._firebaseOk) {
       el.style.cssText = 'position:fixed;inset:0;background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;font-family:Inter,sans-serif;';
-      el.innerHTML = '<div style="color:#fff;font-size:16px;font-weight:700;margin-bottom:12px;">⚠ Falha na conexão</div><div style="color:#888;font-size:12px;text-align:center;max-width:260px;line-height:1.6;">O sistema não conseguiu conectar ao servidor.<br>Verifique sua internet e tente recarregar.</div><button onclick="location.reload()" style="margin-top:24px;background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:12px 28px;font-size:13px;font-weight:600;cursor:pointer;">↺ Recarregar</button>';
+      el.innerHTML = '<div style="color:#fff;font-size:16px;font-weight:700;margin-bottom:12px;">⚠ Falha na conexão</div><div style="color:#888;font-size:12px;text-align:center;max-width:260px;line-height:1.6;">O sistema não conseguiu conectar ao servidor.<br>Verifique sua internet e tente recarregar.</div>' + '<div style="color:#666;font-size:11px;text-align:center;max-width:300px;line-height:1.5;margin-top:14px;word-break:break-word;">Etapa: ' + (window._bootEtapa || 'carregando o sistema') + (window._bootErro ? '<br>' + String(window._bootErro).replace(/</g, '&lt;') : '') + '</div>' + '<button onclick="location.reload()" style="margin-top:24px;background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:12px 28px;font-size:13px;font-weight:600;cursor:pointer;">↺ Recarregar</button>';
     }
   }, 25000);
 </script>
@@ -181,13 +184,16 @@ await new Promise(resolve => {
   let feito = false;
   const fim = () => { if (!feito) { feito = true; resolve(); } };
   const un = onAuthStateChanged(auth, u => { if (u) { un(); fim(); } });
+  window._bootEtapa = "login no Firebase";
   const tentar = (n) => signInAnonymously(auth).catch(e => {
+    window._bootErro = `login: ${e.code || ""} ${e.message || e}`;
     console.warn(`[Firebase Auth] signInAnonymously falhou (tentativa ${n}):`, e.message);
     if (n < 5) setTimeout(() => tentar(n + 1), 1500 * n);
   });
   tentar(1);
   setTimeout(() => { if (!feito) console.warn("[Firebase Auth] login demorou mais de 20s — seguindo assim mesmo"); fim(); }, 20000);
 });
+window._bootEtapa = auth.currentUser ? "carregando dados da equipe" : "login no Firebase (sem resposta)";
 const PIN = "845278";
 const STORAGE_KEY = "digoo_identity_v1";
 const THEME_KEY = "digoo_theme_v1";

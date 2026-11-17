@@ -1,4 +1,4 @@
-const CACHE = 'digoo-v2';
+const CACHE = 'digoo-v3';
 const SHELL = [
   '/digoo-equipe/',
   '/digoo-equipe/index.html',
@@ -35,8 +35,10 @@ self.addEventListener('fetch', e => {
   if (url.origin !== self.location.origin) return;
   if (e.request.method !== 'GET') return;
 
+  // Navegação (abrir o app) vai direto, sem opções extras — o Safari do iPhone é chato com isso
+  const buscar = e.request.mode === 'navigate' ? fetch(e.request) : fetch(e.request, { cache: 'no-cache' });
   e.respondWith(
-    fetch(e.request, { cache: 'no-cache' })
+    buscar
       .then(res => {
         if (res.ok) {
           const clone = res.clone();
