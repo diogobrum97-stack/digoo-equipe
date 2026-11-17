@@ -7963,6 +7963,7 @@ function render(){
       nameEl.innerHTML = `<span class="m-hdr-saud-1">${_sd}, Diogo</span><span class="m-hdr-saud-2">${_dias[_agora.getDay()]} · ${_agora.getDate()} ${_meses[_agora.getMonth()]}</span>`;
       nameEl.style.color = "";
       avatar.classList.add("m-hdr-av");
+      header.appendChild(avatar); // avatar no canto direito
       avatar.addEventListener("click", ev => {
         ev.stopPropagation();
         document.getElementById("m-hdr-menu")?.remove();
