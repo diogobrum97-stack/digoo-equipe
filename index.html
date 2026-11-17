@@ -3942,6 +3942,7 @@ function renderDashboard(panel, color) {
   const saudacao = hora < 12 ? "Bom dia" : hora < 18 ? "Boa tarde" : "Boa noite";
 
   const header = document.createElement("div");
+  header.className = "m-esconde-cel"; // no celular a saudação fica no cabeçalho do app
   header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;";
   header.innerHTML = `<div><div style="font-size:20px;font-weight:700;color:${T.text};letter-spacing:-0.3px;">${saudacao}, Diogo 👋</div><div style="font-size:11px;color:${T.text3};margin-top:3px;font-family:'Inter',sans-serif;">${dias[now.getDay()]} · ${now.getDate()} ${meses[now.getMonth()]} ${now.getFullYear()}</div></div><div style="display:flex;align-items:center;gap:10px;"><div style="font-size:11px;font-weight:600;color:${T.text};">${dashData.hora}</div><button onclick="this.style.opacity='0.4';dashData=null;dashLoading=false;window._fetchDashboard();" style="background:none;border:none;color:${T.text2};font-size:16px;cursor:pointer;padding:4px;line-height:1;" title="Atualizar">↻</button></div>`;
   wrap.appendChild(header);
@@ -7948,12 +7949,20 @@ function render(){
     header.appendChild(chev);
     // Celular, Diogo em tela cheia: cabeçalho de app — marca DIGOO OPS, ícones soltos, avatar com menu
     const mHdr = window.innerWidth < 768 && member.locked && isOpen && diogoCardFullscreen && currentUser === "Diogo";
+    // Computador: o card do Diogo aberto mostra a marca DIGOO OPS
+    if (!mHdr && member.locked && isOpen && diogoPinOk && currentUser === "Diogo") {
+      nameEl.innerHTML = `DIGOO<span style="color:${T.isLight ? "#9a9a9a" : "#636366"};margin-left:12px;">OPS</span>`;
+    }
     if (mHdr) {
+      // Celular: saudação do dia no lugar da marca
       header.classList.add("m-hdr");
-      nameEl.innerHTML = 'DIGOO<span class="m-ops">OPS</span>';
+      const _agora = new Date(), _h = _agora.getHours();
+      const _sd = _h < 12 ? "Bom dia" : _h < 18 ? "Boa tarde" : "Boa noite";
+      const _dias = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"], _meses = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+      nameEl.className = "m-hdr-saud";
+      nameEl.innerHTML = `<span class="m-hdr-saud-1">${_sd}, Diogo</span><span class="m-hdr-saud-2">${_dias[_agora.getDay()]} · ${_agora.getDate()} ${_meses[_agora.getMonth()]}</span>`;
       nameEl.style.color = "";
       avatar.classList.add("m-hdr-av");
-      header.appendChild(avatar);
       avatar.addEventListener("click", ev => {
         ev.stopPropagation();
         document.getElementById("m-hdr-menu")?.remove();
