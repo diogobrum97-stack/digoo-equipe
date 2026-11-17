@@ -11409,18 +11409,9 @@ document.getElementById("user-label").addEventListener("click",()=>{
   setupIdentityScreen();
 });
 
-// PWA — abre direto no Diogo sem PIN quando vem da tela inicial
-const isPWA = window.matchMedia("(display-mode: standalone)").matches || 
-              window.navigator.standalone === true ||
-              new URLSearchParams(window.location.search).get("pwa") === "1";
-
-if(isPWA && !currentUser) {
-  currentUser = "Diogo";
-  localStorage.setItem(STORAGE_KEY, "Diogo");
-  window._diogotab = "tarefas";
-  document.getElementById("identity-screen").style.display = "none";
-  render();
-} else {
+// App instalado (tela de início do iPhone) usa a mesma entrada do navegador:
+// "Quem está acessando?" + PIN, lembrando o aparelho depois do primeiro acesso.
+{
   // Timeout de segurança: se o Firebase travar, mostra a tela mesmo assim
   const _initTimeout = setTimeout(() => {
     if(!currentUser) setupIdentityScreen();
