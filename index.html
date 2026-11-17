@@ -1589,7 +1589,10 @@ function _pergLinkPicker(ta, contaLabel) {
       <div style="min-width:0;flex:1;">
         <div style="font-size:12px;font-weight:500;color:${T.text};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${String(it.titulo || "").replace(/</g, "&lt;")}</div>
         <div style="font-size:11px;color:${T.text2};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${String(it.sku || "sem SKU").replace(/</g, "&lt;")}${it.preco != null ? " · R$ " + Number(it.preco).toLocaleString("pt-BR", { minimumFractionDigits: 2 }) : ""} · ${it.id}</div>
-        <div style="font-size:10px;font-weight:600;margin-top:2px;color:${it._conta === "Filial SP" ? "#22c55e" : "#a78bfa"};">${it._conta}</div>
+        <div style="display:flex;gap:6px;margin-top:3px;">
+          <span style="font-size:10px;font-weight:600;color:${it._conta === "Filial SP" ? "#22c55e" : "#a78bfa"};">${it._conta}</span>
+          ${"catalogo" in it ? `<span style="font-size:10px;font-weight:600;color:${it.catalogo ? "#f59e0b" : T.text2};">${it.catalogo ? "Catálogo" : "Tradicional"}</span>` : ""}
+        </div>
       </div></div>`).join("");
     // escolhe no toque (click): arrastar o dedo pra rolar a lista não seleciona nada
     box.querySelectorAll("[data-n]").forEach(d => d.addEventListener("click", ev => { ev.preventDefault(); inserir(itens[Number(d.dataset.n)]); }));
