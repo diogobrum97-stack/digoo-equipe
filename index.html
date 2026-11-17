@@ -4237,7 +4237,7 @@ function renderDashboard(panel, color) {
               grid: { color: borderClr, lineWidth: 0.5 },
               ticks: {
                 maxTicksLimit: 4, font: { size: 10 }, color: text3Clr,
-                callback: v => v >= 1000 ? "R$" + (v/1000).toFixed(0) + "k" : "R$" + v
+                callback: v => v >= 1e6 ? "R$" + (v/1e6).toLocaleString("pt-BR",{maximumFractionDigits:1}) + " mi" : v >= 1000 ? "R$" + (v/1000).toFixed(0) + "k" : "R$" + v
               }
             }
           }
@@ -4314,7 +4314,7 @@ function renderDashboard(panel, color) {
               grid: { color: borderClr, lineWidth: 0.5 },
               ticks: {
                 maxTicksLimit: 4, font: { size: 10 }, color: text3Clr,
-                callback: v => v >= 1000 ? "R$" + (v/1000).toFixed(0) + "k" : "R$" + v
+                callback: v => v >= 1e6 ? "R$" + (v/1e6).toLocaleString("pt-BR",{maximumFractionDigits:1}) + " mi" : v >= 1000 ? "R$" + (v/1000).toFixed(0) + "k" : "R$" + v
               }
             }
           }
