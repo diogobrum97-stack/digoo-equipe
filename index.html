@@ -1531,6 +1531,85 @@ async function pergBloquear(qid, btn) {
   }
 }
 
+// ── "#" nas respostas das Perguntas: lista os anúncios da conta e insere o link ──
+// Digite # + parte do título ou do SKU (ex.: "#kit 10 wind", "#windx") e escolha o anúncio.
+window._pergCatalogo = window._pergCatalogo || {};
+function _pergCarregarCatalogo(contaLabel) {
+  const token = contaLabel.includes("Filial") ? state.ml_token_filial?.access_token : state.ml_token?.access_token;
+  const k = contaLabel.includes("Filial") ? "filial" : "matriz";
+  if (!token) return Promise.resolve([]);
+  if (!window._pergCatalogo[k]) {
+    window._pergCatalogo[k] = fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=buscar-catalogo&token=${token}`)
+      .then(r => r.json())
+      .then(d => (d.itens || []).filter(i => i.status === "active" && i.link))
+      .catch(() => { delete window._pergCatalogo[k]; return []; });
+  }
+  return window._pergCatalogo[k];
+}
+const _pergNorm = t => String(t || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+function _pergLinkPicker(ta, contaLabel) {
+  let box = null, itens = [], sel = 0, inicio = -1;
+  const fechar = () => { box?.remove(); box = null; inicio = -1; };
+  const consulta = () => {
+    const ate = ta.selectionStart, txt = ta.value.slice(0, ate);
+    const i = txt.lastIndexOf("#");
+    if (i < 0) return null;
+    const q = txt.slice(i + 1);
+    if (q.includes("\n") || q.length > 40 || /^\s/.test(q)) return null;
+    if (i > 0 && !/\s/.test(txt[i - 1])) return null; // só # no começo de palavra
+    return { i, q };
+  };
+  const inserir = it => {
+    const c = consulta(); if (!c) return fechar();
+    const antes = ta.value.slice(0, c.i), depois = ta.value.slice(ta.selectionStart);
+    const ins = it.link + (depois.startsWith(" ") ? "" : " ");
+    ta.value = antes + ins + depois;
+    const pos = antes.length + ins.length;
+    ta.focus(); ta.setSelectionRange(pos, pos);
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+    fechar();
+  };
+  const desenhar = () => {
+    if (!box) {
+      box = document.createElement("div");
+      // lista logo abaixo da caixa de resposta (empurra os botões pra baixo enquanto aberta)
+      box.style.cssText = `margin-top:6px;background:${T.card};border:1px solid #3b82f655;border-radius:10px;overflow:hidden;max-height:290px;overflow-y:auto;`;
+      ta.insertAdjacentElement("afterend", box);
+    }
+    if (!itens.length) { box.innerHTML = `<div style="padding:10px 12px;font-size:12px;color:${T.text2};">Nenhum anúncio ativo com esse título ou SKU.</div>`; return; }
+    box.innerHTML = itens.map((it, n) => `<div data-n="${n}" style="display:flex;gap:10px;align-items:center;padding:8px 10px;cursor:pointer;border-top:${n ? `1px solid ${T.border}` : "none"};background:${n === sel ? "#3b82f61f" : "transparent"};">
+      ${it.foto ? `<img src="${it.foto}" style="width:32px;height:32px;object-fit:contain;border-radius:6px;background:#fff;flex-shrink:0;">` : `<div style="width:32px;height:32px;border-radius:6px;background:${T.bg3};flex-shrink:0;"></div>`}
+      <div style="min-width:0;flex:1;">
+        <div style="font-size:12px;font-weight:500;color:${T.text};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${String(it.titulo || "").replace(/</g, "&lt;")}</div>
+        <div style="font-size:11px;color:${T.text2};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${String(it.sku || "sem SKU").replace(/</g, "&lt;")}${it.preco != null ? " · R$ " + Number(it.preco).toLocaleString("pt-BR", { minimumFractionDigits: 2 }) : ""} · ${it.id}</div>
+      </div></div>`).join("");
+    box.querySelectorAll("[data-n]").forEach(d => d.addEventListener("pointerdown", ev => { ev.preventDefault(); inserir(itens[Number(d.dataset.n)]); }));
+  };
+  const atualizar = async () => {
+    const c = consulta();
+    if (!c) return fechar();
+    inicio = c.i;
+    const lista = await _pergCarregarCatalogo(contaLabel);
+    const c2 = consulta(); if (!c2 || c2.i !== inicio) return; // mudou enquanto carregava
+    const palavras = _pergNorm(c2.q).split(/\s+/).filter(Boolean);
+    itens = lista.filter(it => { const alvo = _pergNorm(it.titulo + " " + it.sku + " " + it.id); return palavras.every(w => alvo.includes(w)); }).slice(0, 6);
+    sel = 0;
+    desenhar();
+  };
+  ta.addEventListener("input", atualizar);
+  ta.addEventListener("click", atualizar);
+  ta.addEventListener("blur", () => setTimeout(fechar, 150));
+  ta.addEventListener("keydown", ev => {
+    if (!box || !itens.length) { if (ev.key === "Escape") fechar(); return; }
+    if (ev.key === "ArrowDown") { ev.preventDefault(); sel = (sel + 1) % itens.length; desenhar(); }
+    else if (ev.key === "ArrowUp") { ev.preventDefault(); sel = (sel - 1 + itens.length) % itens.length; desenhar(); }
+    else if (ev.key === "Enter" || ev.key === "Tab") { ev.preventDefault(); inserir(itens[sel]); }
+    else if (ev.key === "Escape") { ev.preventDefault(); fechar(); }
+  });
+  // pré-carrega o catálogo da conta pra lista aparecer na hora
+  _pergCarregarCatalogo(contaLabel);
+}
+
 function _pergCriarCard(p) {
   const qid = String(p.question_id);
   const sugestao = p.suggested_answer || "";
@@ -1570,7 +1649,7 @@ function _pergCriarCard(p) {
     "</div>" +
     '<div style="padding:12px 16px 10px;">' +
       '<div style="font-size:13px;color:' + T.text + ';font-weight:500;line-height:1.45;margin-bottom:10px;">' + (p.pergunta || "") + "</div>" +
-      '<textarea id="perg-ta-' + qid + '" style="width:100%;box-sizing:border-box;background:' + T.bg3 + ';border:1px solid ' + T.border + ';border-radius:8px;color:' + T.text + ';font-size:12px;font-family:inherit;padding:10px 12px;resize:vertical;min-height:68px;line-height:1.5;outline:none;" placeholder="Resposta...">' + sugestao + "</textarea>" +
+      '<textarea id="perg-ta-' + qid + '" style="width:100%;box-sizing:border-box;background:' + T.bg3 + ';border:1px solid ' + T.border + ';border-radius:8px;color:' + T.text + ';font-size:12px;font-family:inherit;padding:10px 12px;resize:vertical;min-height:68px;line-height:1.5;outline:none;" placeholder="Resposta… (digite # para inserir o link de um anúncio)">' + sugestao + "</textarea>" +
       '<div class="m-perg-acoes" style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;">' +
         '<div style="display:flex;gap:8px;">' +
           '<button id="perg-btn-del-' + qid + '" style="background:transparent;border:1px solid #e8432d;border-radius:6px;padding:5px 0;color:#e8432d;font-size:11px;cursor:pointer;width:80px;" title="Excluir pergunta no Mercado Livre">Excluir</button>' +
@@ -1603,6 +1682,7 @@ function _pergCriarCard(p) {
       else { btnTreino.textContent = "Erro"; btnTreino.disabled = false; }
     } catch(e) { btnTreino.textContent = "Erro"; btnTreino.disabled = false; }
   });
+  _pergLinkPicker(card.querySelector(`#perg-ta-${qid}`), contaLabel);
   return card;
 }
 
