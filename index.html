@@ -1561,6 +1561,8 @@ function _pergCriarCard(p) {
         '<div style="font-size:11px;color:' + T.text + ';font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + produtoTitle + '">' + (p.produto || "Anúncio") + "</div>" +
         '<div style="display:flex;align-items:center;gap:6px;margin-top:3px;">' +
           '<span style="font-size:10px;font-weight:600;color:' + contaBadgeColor + ';background:' + contaBadgeBg + ';border:1px solid ' + contaBadgeBorder + ';border-radius:99px;padding:1px 7px;">' + contaLabel + "</span>" +
+          // Comprador: apelido no ML + ID (dá pra selecionar e copiar)
+          (p.from_user ? '<span style="font-size:10px;color:' + T.text2 + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;user-select:text;">' + (p.comprador_nick ? String(p.comprador_nick).replace(/</g, "&lt;") + " · " : "") + "ID " + p.from_user + "</span>" : "") +
         "</div>" +
       "</div>" +
       statusBadge +
