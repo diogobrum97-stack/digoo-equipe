@@ -8105,10 +8105,12 @@ function render(){
         m.id = "m-hdr-menu";
         m.innerHTML = `<div class="m-hdr-menu-bg"></div><div class="m-hdr-menu-box">
           <div class="m-hdr-menu-quem">Diogo · Administrador</div>
+          <button data-a="notif">Notificações</button>
           <button data-a="tema">${T.isLight ? "Tema escuro" : "Tema claro"}</button>
           <button data-a="trocar">Trocar usuário</button></div>`;
         m.querySelector(".m-hdr-menu-bg").onclick = () => m.remove();
         m.querySelector('[data-a="tema"]').onclick = () => { m.remove(); toggleTheme(); };
+        m.querySelector('[data-a="notif"]').onclick = () => { m.remove(); window._diogotab = "config"; window._configTab = "notificacoes"; render(); window.scrollTo(0, 0); };
         m.querySelector('[data-a="trocar"]').onclick = () => { m.remove(); document.getElementById("user-label")?.click(); };
         document.body.appendChild(m);
       });
@@ -10786,7 +10788,7 @@ function renderConfig(panel, color) {
   if(!window._configTab) window._configTab = "geral";
   const configTabs = document.createElement("div");
   configTabs.style.cssText = "display:flex;gap:2px;margin-bottom:18px;background:var(--bg3);border-radius:7px;padding:3px;";
-  [["geral","Geral"],["apis","APIs"],["impressao","Impressão"]].forEach(([t, label]) => {
+  [["geral","Geral"],["apis","APIs"],["notificacoes","Notificações"],["impressao","Impressão"]].forEach(([t, label]) => {
     const btn = document.createElement("button");
     btn.textContent = label;
     btn.style.cssText = `flex:1;padding:6px;border:none;border-radius:5px;font-size:11px;letter-spacing:1px;cursor:pointer;font-family:inherit;transition:all .15s;background:${window._configTab===t?"var(--bg2)":"none"};color:${window._configTab===t?"var(--text)":"var(--text3)"};font-weight:${window._configTab===t?"600":"400"};`;
@@ -10794,6 +10796,52 @@ function renderConfig(panel, color) {
     configTabs.appendChild(btn);
   });
   panel.appendChild(configTabs);
+
+  // ── Sub-aba: Notificações ─────────────────────────────────────
+  if(window._configTab === "notificacoes") {
+    const ps = window._pushSt || {};
+    const sup = window._pushSuporte ? window._pushSuporte() : "sem-suporte";
+    const box = document.createElement("div");
+    const cx = (bg, cor, titulo, sub, botoes) => `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:${bg};border-radius:10px;padding:11px 13px;margin-bottom:6px;">
+        <div style="min-width:0;"><div style="font-size:13px;color:${cor};font-weight:600;">${titulo}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${sub}</div></div>
+        <div style="display:flex;gap:6px;">${botoes}</div></div>`;
+    const bt = (id, txt, cheio) => `<button id="${id}" style="font:600 11px Inter,sans-serif;padding:7px 12px;border-radius:7px;cursor:pointer;white-space:nowrap;${cheio ? `border:none;background:${T.cAzul};color:#fff;` : `border:0.5px solid var(--border);background:transparent;color:var(--text2);`}">${txt}</button>`;
+    let topo;
+    if (sup === "abrir-pelo-icone") topo = cx(`${T.cAmarelo}18`, T.cAmarelo, "Abra o OPS pelo ícone na tela de início", "No iPhone, as notificações só funcionam no app instalado (Safari › Compartilhar › Adicionar à Tela de Início).", "");
+    else if (sup === "sem-suporte") topo = cx("var(--bg3)", "var(--text2)", "Este navegador não recebe notificações", "Use o app do OPS no iPhone ou o Chrome no computador.", "");
+    else if (sup === "bloqueado") topo = cx(`${T.cVermelho}18`, T.cVermelho, "Notificações bloqueadas", "Libere em Ajustes › Notificações › Digoo OPS e volte aqui.", "");
+    else if (!ps.vapid) topo = cx("var(--bg3)", "var(--text2)", "Aguardando configuração da VPS", "Assim que a VPS ligar o envio, o botão de ativar aparece aqui.", "");
+    else if (ps.inscrito) topo = cx(`${T.cVerde}18`, T.cVerde, "Ativadas neste aparelho", "Toque em Testar para receber um aviso agora.", bt("push-desativar", "Desativar") + bt("push-testar", "Testar", true));
+    else topo = cx("var(--bg3)", "var(--text)", "Notificações desligadas neste aparelho", "Ative para receber os avisos abaixo, mesmo com o OPS fechado.", bt("push-ativar", "Ativar notificações", true));
+    const grupos = (window._pushAvisos || []).map(g => `
+      <div style="font-size:10px;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;margin:18px 0 6px;">${g.grupo}</div>
+      <div style="background:var(--bg3);border-radius:10px;padding:0 13px;">
+        ${g.itens.map((i, n) => { const on = window._pushPrefValor(i.k); return `
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 0;${n ? "border-top:0.5px solid var(--sep);" : ""}">
+            <div style="min-width:0;"><div style="font-size:13px;color:var(--text);">${i.t}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${i.s}</div></div>
+            <button data-push-pref="${i.k}" data-on="${on ? 1 : 0}" aria-label="${i.t}" style="position:relative;width:40px;height:24px;border-radius:12px;border:none;cursor:pointer;flex-shrink:0;background:${on ? T.cVerde : "#55555580"};transition:background .15s;">
+              <span style="position:absolute;top:3px;left:${on ? 19 : 3}px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .15s;"></span></button>
+          </div>`; }).join("")}
+      </div>`).join("");
+    box.innerHTML = `${topo}<div id="push-msg" style="font-size:11px;min-height:14px;margin:4px 0 0;"></div>${grupos}
+      <div style="font-size:11px;color:var(--text3);margin-top:14px;">As escolhas valem para todos os seus aparelhos. Atendimento, Vendas, Equipe e Financeiro chegam na próxima etapa.</div>`;
+    panel.appendChild(box);
+    const msg = box.querySelector("#push-msg");
+    const acao = (id, fn, ok) => { const b = box.querySelector("#" + id); if (b) b.onclick = async () => {
+      b.disabled = true; msg.style.color = "var(--text3)"; msg.textContent = "Aguarde...";
+      try { await fn(); msg.style.color = T.cVerde; msg.textContent = ok; setTimeout(() => render(), ok ? 1500 : 0); }
+      catch (e) { b.disabled = false; msg.style.color = T.cVermelho; msg.textContent = e.message; } }; };
+    acao("push-ativar", () => window._pushAtivar(), "Notificações ativadas.");
+    acao("push-desativar", () => window._pushDesativar(), "Notificações desativadas neste aparelho.");
+    acao("push-testar", () => window._pushTestar(), "Teste enviado. Deve chegar em alguns segundos.");
+    box.querySelectorAll("[data-push-pref]").forEach(b => b.onclick = () => {
+      const on = b.dataset.on !== "1";
+      b.dataset.on = on ? "1" : "0"; b.style.background = on ? T.cVerde : "#55555580"; b.firstElementChild.style.left = (on ? 19 : 3) + "px";
+      window._pushPref(b.dataset.pushPref, on).catch(e => { msg.style.color = T.cVermelho; msg.textContent = "Não salvou: " + e.message; });
+    });
+    if (window._pushChecar && ps.inscrito == null) window._pushChecar().then(() => render());
+    return;
+  }
 
   // ── Sub-aba: APIs ─────────────────────────────────────────────
   if(window._configTab === "apis") {
@@ -13750,6 +13798,99 @@ window._ofertasLive = { filial: { itens: null, meta: null }, matriz: { itens: nu
   setInterval(() => window._dashPromoDesenhar(), 60 * 1000);   // "há X min" e "vence hoje" se mantêm certos
   // Saída feita pelo OPS não vira alerta de "caiu" (a VPS ignora por 30 min)
   window._promoSaidaManual = (conta, itemId) => set(ref(db, `/promo_alertas/${conta}/saida_manual/${itemId}`), Date.now()).catch(() => {});
+}
+
+// ── Notificações no celular (Web Push). A VPS (processo "avisos") manda; aqui o aparelho se inscreve. ──
+// /push_config/vapid_public (chave pública, gravada pela VPS) · /push_inscricoes/{usuario}/{id} · /push_prefs/{usuario}
+// /push_fila (pedido de teste) — a chave privada fica só na VPS.
+{
+  const PUSH_AVISOS = [
+    { grupo: "Promoções", itens: [
+      { k: "promo_caiu", t: "Promoção caiu", s: "Anúncio ficou sem promoção", def: true },
+      { k: "promo_vence", t: "Promoção vence amanhã", s: "Sem outra programada depois", def: true },
+      { k: "promo_proposta", t: "Propostas com redução de tarifa", s: "Resumo 1x por dia, às 9h", def: false },
+    ] },
+    { grupo: "Sistema", itens: [
+      { k: "token_ml", t: "Token do Mercado Livre expirou", s: "Renovação automática falhou", def: true },
+      { k: "sync_parado", t: "Sincronização parada", s: "Ofertas sem atualizar há 15 min", def: true },
+    ] },
+    { grupo: "Horário", itens: [
+      { k: "nao_perturbe", t: "Não perturbe", s: "22h às 8h · os avisos da noite chegam às 8h", def: true },
+    ] },
+  ];
+  window._pushAvisos = PUSH_AVISOS;
+  const st = window._pushSt = { prefs: null, vapid: null, inscrito: null, usuario: null };
+  const b64ToU8 = b => { const pad = "=".repeat((4 - b.length % 4) % 4); const raw = atob((b + pad).replace(/-/g, "+").replace(/_/g, "/")); return Uint8Array.from([...raw].map(c => c.charCodeAt(0))); };
+  const idDe = endpoint => btoa(endpoint).replace(/[^a-zA-Z0-9]/g, "").slice(-40);
+  const redesenhar = () => { if (window._diogotab === "config" && window._configTab === "notificacoes") window.render?.(); };
+  window._pushSuporte = () => {
+    const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
+    const standalone = window.matchMedia?.("(display-mode: standalone)").matches || navigator.standalone === true;
+    if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) return ios && !standalone ? "abrir-pelo-icone" : "sem-suporte";
+    if (ios && !standalone) return "abrir-pelo-icone";
+    if (Notification.permission === "denied") return "bloqueado";
+    return "ok";
+  };
+  window._pushChecar = async () => {
+    try {
+      if (window._pushSuporte() !== "ok") { st.inscrito = false; return; }
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      st.inscrito = !!sub && Notification.permission === "granted";
+    } catch (_) { st.inscrito = false; }
+  };
+  window._pushAtivar = async () => {
+    if (!st.vapid) throw new Error("A VPS ainda não configurou as notificações.");
+    const perm = await Notification.requestPermission();
+    if (perm !== "granted") throw new Error("Permissão negada. Libere em Ajustes › Notificações › Digoo OPS.");
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToU8(st.vapid) });
+    const j = sub.toJSON();
+    await set(ref(db, `/push_inscricoes/${currentUser}/${idDe(j.endpoint)}`), { endpoint: j.endpoint, keys: j.keys, aparelho: navigator.userAgent.slice(0, 160), criado_em: Date.now() });
+    // grava as escolhas padrão na primeira vez
+    if (!st.prefs) { const d = {}; PUSH_AVISOS.forEach(g => g.itens.forEach(i => d[i.k] = i.def)); await set(ref(db, `/push_prefs/${currentUser}`), d); }
+    st.inscrito = true;
+  };
+  window._pushDesativar = async () => {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (sub) { await remove(ref(db, `/push_inscricoes/${currentUser}/${idDe(sub.endpoint)}`)).catch(() => {}); await sub.unsubscribe().catch(() => {}); }
+    st.inscrito = false;
+  };
+  window._pushTestar = () => push(ref(db, "/push_fila"), { usuario: currentUser, tipo: "teste", em: Date.now() });
+  window._pushPref = (k, v) => set(ref(db, `/push_prefs/${currentUser}/${k}`), !!v);
+  window._pushPrefValor = k => { const p = st.prefs || {}; if (k in p) return !!p[k]; for (const g of PUSH_AVISOS) for (const i of g.itens) if (i.k === k) return i.def; return false; };
+  onValue(ref(db, "/push_config/vapid_public"), snap => { st.vapid = snap.val(); redesenhar(); }, () => {});
+  // escuta as escolhas do usuário logado
+  const ligarPrefs = () => {
+    if (!currentUser || st.usuario === currentUser) return;
+    st.usuario = currentUser;
+    onValue(ref(db, `/push_prefs/${currentUser}`), snap => { st.prefs = snap.val(); redesenhar(); }, () => {});
+    window._pushChecar().then(redesenhar);
+  };
+  setInterval(ligarPrefs, 2000); ligarPrefs();
+
+  // Tocar na notificação: abre o OPS no lugar do aviso (espera o PIN, se precisar)
+  window._abrirDeNotificacao = abrir => {
+    if (!abrir) return;
+    const ate = Date.now() + 120000;
+    const tentar = () => {
+      if (!diogoPinUnlocked) { if (Date.now() < ate) setTimeout(tentar, 700); return; }
+      if (abrir.tela === "ofertas") {
+        Object.assign(window.promState, { aba: "ofertas", conta: abrir.conta || window.promState.conta, ofertasFiltro: abrir.filtro || "todas", ofertasBusca: abrir.item || "", detalhe: null });
+        window._diogotab = "promocoes";
+      } else if (abrir.tela === "apis") { window._diogotab = "config"; window._configTab = "apis"; }
+      else window._diogotab = "dashboard";
+      window.render?.(); window.scrollTo(0, 0);
+    };
+    tentar();
+  };
+  navigator.serviceWorker?.addEventListener("message", e => { if (e.data?.tipo === "abrir-notificacao") window._abrirDeNotificacao(e.data.abrir); });
+  try {
+    const q = new URLSearchParams(location.search).get("abrir");
+    if (q) { history.replaceState(null, "", location.pathname); window._abrirDeNotificacao(JSON.parse(q)); }
+  } catch (_) {}
 }
 
 // ── Email Hostinger ───────────────────────────────────────────────────────
