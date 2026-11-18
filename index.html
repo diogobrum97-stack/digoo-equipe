@@ -4451,6 +4451,14 @@ function renderDashboard(panel, color) {
   }
   // ── fim gráficos ────────────────────────────────────────────────────────────
 
+  // Promoções: prestes a vencer e que caíram (só aparece quando tem algo)
+  {
+    const promoSlot = document.createElement("div");
+    promoSlot.id = "dash-promo-alertas";
+    promoSlot.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-top:3px solid ${T.cAmarelo};border-radius:10px;padding:14px 16px 6px;margin-bottom:12px;display:none;`;
+    vendasCard.appendChild(promoSlot);
+    window._dashPromoDesenhar?.(promoSlot);
+  }
   dashGrid.appendChild(vendasCard);
 
   // Tarefas
@@ -13592,6 +13600,7 @@ window._ofertasLive = { filial: { itens: null, meta: null }, matriz: { itens: nu
   // Redesenha a aba Ofertas (se estiver aberta nessa conta) sem piscar: espera o usuário
   // terminar de digitar na busca ou uma ação em andamento, e mantém a rolagem.
   window._ofertasMudou = (conta, agora) => {
+    window._dashPromoDesenhar?.();
     clearTimeout(timers[conta]);
     const rodar = () => {
       const ctx = window._ofertasCtx, st = window.promState;
@@ -13622,6 +13631,126 @@ window._ofertasLive = { filial: { itens: null, meta: null }, matriz: { itens: nu
   // o "atualizado há X min" e o aviso de atraso se mantêm certos mesmo sem dado novo
   setInterval(() => { window._ofertasMudou(window.promState.conta); }, 60 * 1000);
 })();
+
+// ── Card "Promoções" do Dashboard: prestes a vencer (até 2 dias) e que caíram ──
+// Vencendo: calculado aqui a partir das ofertas ao vivo. Caíram: a VPS grava em /promo_alertas/{conta}/caidas.
+{
+  const alertas = { filial: {}, matriz: {} };
+  const aberto = { vencer: false, caidas: false };
+  const CONTA_NOME = { filial: "Filial", matriz: "Matriz" };
+  const escP = v => String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+  const fmtR = v => v == null ? "—" : "R$ " + Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const listaOf = it => Array.isArray(it?.ofertas) ? it.ofertas : Object.values(it?.ofertas || {});
+  const finalDe = o => o.preco || o.preco_sugerido || 0;
+  // mesma conta da aba Ofertas: % sobre o original; "Impulsione" = 1% do preço final, centavos cortados
+  const meliR = (o, orig) => !(o.meli_pct > 0) ? 0 : /impulsione/i.test(o.nome || "") && finalDe(o) ? Math.floor(Math.round(finalDe(o) * 100) / 100) / 100 : (orig ? orig * o.meli_pct / 100 : 0);
+  const descPct = (o, orig) => orig && finalDe(o) ? Math.ceil((1 - finalDe(o) / orig) * 100 - 1e-9) : null;
+  const resumo = (o, orig) => {
+    const pct = descPct(o, orig), ml = meliR(o, orig);
+    return [o.nome || OFERTA_TIPOS[o.tipo] || o.tipo, pct != null ? pct + "%" : null, ml > 0 ? `ML paga ${fmtR(ml)}` : "você paga tudo"].filter(Boolean).join(" · ");
+  };
+  const haQuanto = ms => { const m = Math.max(1, Math.round((Date.now() - ms) / 60000)); return m < 60 ? `há ${m} min` : m < 1440 ? `há ${Math.round(m / 60)} h` : `há ${Math.round(m / 1440)} ${Math.round(m / 1440) === 1 ? "dia" : "dias"}`; };
+  const quandoVence = ms => {
+    const brt = t => new Date(t - 3 * 3600e3);
+    const d = brt(ms), h = brt(Date.now());
+    const dias = Math.round((Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) - Date.UTC(h.getUTCFullYear(), h.getUTCMonth(), h.getUTCDate())) / 864e5);
+    const hora = `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
+    return dias <= 0 ? `vence hoje ${hora}` : dias === 1 ? `vence amanhã ${hora}` : `vence em ${dias} dias`;
+  };
+
+  const calcular = () => {
+    const vencer = [], caidas = [];
+    const agora = Date.now(), LIM = 48 * 3600e3;
+    for (const conta of ["filial", "matriz"]) {
+      const itens = window._ofertasLive?.[conta]?.itens || {};
+      for (const it of Object.values(itens)) {
+        const ofs = listaOf(it);
+        const ini = ofs.filter(o => o.status === "started" && finalDe(o) > 0);
+        if (!ini.length) continue;
+        const v = ini.reduce((a, b) => finalDe(b) < finalDe(a) ? b : a);
+        const fim = v.fim ? new Date(v.fim).getTime() : null;
+        if (!fim || fim < agora || fim - agora > LIM) continue;
+        // já tem outra promoção que segue depois dessa? então não vai ficar sem
+        if (ofs.some(o => o !== v && (o.status === "started" || o.status === "pending") && (!o.fim || new Date(o.fim).getTime() > fim))) continue;
+        vencer.push({ conta, it, o: v, fim });
+      }
+      for (const a of Object.values(alertas[conta] || {})) {
+        const it = itens[a.item_id];
+        const orig = it?.preco || a.preco || 0;
+        const cands = listaOf(it).filter(o => o.status === "candidate" && finalDe(o) > 0);
+        const melhor = cands.length ? cands.reduce((x, y) => (meliR(y, orig) > meliR(x, orig) || (meliR(y, orig) === meliR(x, orig) && finalDe(y) > finalDe(x))) ? y : x) : null;
+        caidas.push({ conta, a, it, melhor, orig });
+      }
+    }
+    vencer.sort((x, y) => x.fim - y.fim);
+    caidas.sort((x, y) => (x.a.caiu_em || 0) - (y.a.caiu_em || 0));
+    return { vencer, caidas };
+  };
+
+  const badgeTipo = cat => `<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:${T.text3}22;color:${T.text2};">${cat ? "Catálogo" : "Tradicional"}</span>`;
+  const btn = (txt, attrs, cheio) => `<button ${attrs} style="font:600 11px Inter,sans-serif;padding:6px 12px;border-radius:7px;cursor:pointer;white-space:nowrap;${cheio ? `border:none;background:${T.cAzul};color:#fff;` : `border:0.5px solid ${T.border};background:transparent;color:${T.text2};`}">${txt}</button>`;
+  const itemBox = (conta, id, titulo, sku, cat, linhas, rodapeEsq, botoes) => `
+    <div style="background:${T.bg3};border-radius:10px;padding:10px 12px;margin-top:8px;">
+      <div style="font-size:13px;font-weight:600;color:${T.text};overflow-wrap:anywhere;">${escP(titulo || id)}</div>
+      <div style="font-size:11px;color:${T.text2};margin-top:3px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+        <span>${CONTA_NOME[conta]}${sku ? " · " + escP(sku) : ""} · ${id}</span>${badgeTipo(cat)}</div>
+      ${linhas.map(l => `<div style="font-size:11px;color:${l.cor || T.text2};margin-top:3px;">${l.txt}</div>`).join("")}
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap;">
+        <span style="font-size:12px;">${rodapeEsq}</span><span style="display:flex;gap:6px;">${botoes}</span></div>
+    </div>`;
+
+  window._dashPromoDesenhar = (elDireto) => {
+    const el = elDireto || window._dashPromoSlot;
+    if (elDireto) window._dashPromoSlot = elDireto;
+    if (!el || !el.isConnected && !elDireto) return;
+    const { vencer, caidas } = calcular();
+    if (!vencer.length && !caidas.length) { el.style.display = "none"; el.innerHTML = ""; return; }
+    el.style.display = "";
+    const linhaTopo = (chave, titulo, sub, n, cor) => `
+      <div data-promo-toggle="${chave}" style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;cursor:pointer;border-top:0.5px solid ${T.border};user-select:none;">
+        <span style="font-size:13px;color:${T.text};">${titulo} <span style="font-size:11px;color:${T.text3};">· ${sub}</span></span>
+        <span style="display:flex;align-items:center;gap:8px;"><span style="font-size:12px;font-weight:600;padding:2px 9px;border-radius:10px;background:${cor}22;color:${cor};">${n}</span><span style="color:${T.text3};font-size:13px;">${aberto[chave] ? "⌄" : "›"}</span></span>
+      </div>`;
+    const listaVencer = vencer.map(({ conta, it, o, fim }) => itemBox(conta, it.item_id, it.titulo, it.sku, it.catalogo,
+      [{ txt: escP(resumo(o, o.preco_original || it.preco)) + ` · ${fmtR(finalDe(o))}` }],
+      `<span style="color:${T.cAmarelo};">${quandoVence(fim)}</span>`,
+      btn("Ver ofertas", `data-promo-ver="${conta}|${it.item_id}"`, false))).join("");
+    const listaCaidas = caidas.map(({ conta, a, it, melhor, orig }) => {
+      const est = it?.estoque ?? a.estoque;
+      const motivo = a.motivo === "inativo" ? `<span style="color:${T.cVermelho};">anúncio pausado ou inativo</span>`
+        : est === 0 ? `<span style="color:${T.cVermelho};">estoque zerado</span>` : est != null ? `estoque ${est} un` : "";
+      const linhas = [{ txt: `Caiu: ${escP(a.promo_nome || OFERTA_TIPOS[a.promo_tipo] || a.promo_tipo || "promoção")} · ${haQuanto(a.caiu_em)}${motivo ? " · " + motivo : ""}` },
+        melhor ? { txt: "Melhor proposta agora: " + escP(resumo(melhor, orig)), cor: meliR(melhor, orig) > 0 ? T.cVerde : T.text2 }
+               : { txt: "Sem proposta do ML no momento" }];
+      const velho = Date.now() - (a.caiu_em || 0) > 24 * 3600e3;
+      return itemBox(conta, a.item_id, it?.titulo || a.titulo, it?.sku || a.sku, it?.catalogo ?? a.catalogo, linhas,
+        `<span style="color:${velho ? T.cVermelho : T.text3};">sem promoção ${haQuanto(a.caiu_em)}</span>`,
+        btn("Dispensar", `data-promo-dispensar="${conta}|${a.item_id}"`, false) + btn("Ver ofertas", `data-promo-ver="${conta}|${a.item_id}"`, true));
+    }).join("");
+    el.innerHTML = `
+      <div style="font-size:11px;font-weight:600;color:${T.text2};text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Promoções</div>
+      ${vencer.length ? linhaTopo("vencer", "Prestes a vencer", "até 2 dias", vencer.length, T.cAmarelo) + (aberto.vencer ? `<div style="padding-bottom:8px;">${listaVencer}</div>` : "") : ""}
+      ${caidas.length ? linhaTopo("caidas", "Caíram", "sem promoção agora", caidas.length, T.cVermelho) + (aberto.caidas ? `<div style="padding-bottom:8px;">${listaCaidas}</div>` : "") : ""}`;
+    el.querySelectorAll("[data-promo-toggle]").forEach(b => b.onclick = () => { aberto[b.dataset.promoToggle] = !aberto[b.dataset.promoToggle]; window._dashPromoDesenhar(); });
+    el.querySelectorAll("[data-promo-ver]").forEach(b => b.onclick = () => {
+      const [conta, id] = b.dataset.promoVer.split("|");
+      Object.assign(window.promState, { aba: "ofertas", conta, ofertasFiltro: "todas", ofertasBusca: id, detalhe: null });
+      window._diogotab = "promocoes"; window.render(); window.scrollTo(0, 0);
+    });
+    el.querySelectorAll("[data-promo-dispensar]").forEach(b => b.onclick = () => {
+      const [conta, id] = b.dataset.promoDispensar.split("|");
+      delete alertas[conta][id]; window._dashPromoDesenhar();
+      remove(ref(db, `/promo_alertas/${conta}/caidas/${id}`)).catch(e => console.warn("[promo alertas] dispensar:", e.message));
+    });
+  };
+  for (const conta of ["filial", "matriz"]) {
+    onValue(ref(db, `/promo_alertas/${conta}/caidas`), snap => { alertas[conta] = snap.val() || {}; window._dashPromoDesenhar(); },
+      e => console.warn("[promo alertas] listener:", e.message));
+  }
+  setInterval(() => window._dashPromoDesenhar(), 60 * 1000);   // "há X min" e "vence hoje" se mantêm certos
+  // Saída feita pelo OPS não vira alerta de "caiu" (a VPS ignora por 30 min)
+  window._promoSaidaManual = (conta, itemId) => set(ref(db, `/promo_alertas/${conta}/saida_manual/${itemId}`), Date.now()).catch(() => {});
+}
 
 // ── Email Hostinger ───────────────────────────────────────────────────────
 
@@ -14528,6 +14657,7 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
       // O ML aceitou: a linha muda na hora e o OPS confirma com o ML em 3, 8 e 20 s
       const pk = `${conta}|${itemId}|${alvo.promotion_id || ""}|${alvo.tipo}`;
       const futuro = alvo.inicio && new Date(alvo.inicio).getTime() > Date.now();
+      if (acao === "sair") window._promoSaidaManual?.(conta, itemId);
       window._ofertasPend[pk] = { acao, status: acao === "participar" ? (futuro ? "pending" : "started") : "candidate", desde: Date.now() };
       fim();
       (async () => {
@@ -14691,6 +14821,7 @@ function renderListaPromocoes(container, promocoes, BACKEND, fmtVal, fmtData, to
       });
       const d = await r.json().catch(() => ({}));
       if (!d.ok) throw new Error(d.error || `HTTP ${r.status}`);
+      window._promoSaidaManual?.(window.promState.conta, itemId);
       // tira da lista e redesenha
       window.promState.promocoes[window.promState.conta] = (window.promState.promocoes[window.promState.conta] || []).filter(p => p.item_id !== itemId);
       renderListaPromocoes(container, window.promState.promocoes[window.promState.conta], BACKEND, fmtVal, fmtData, token);
