@@ -169,6 +169,9 @@
   .m-kpi-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
   .m-kpi-grid > :first-child { grid-column: 1 / -1; }
   .m-kpi-grid > * { padding: 12px 14px !important; }
+  /* Filial ou Matriz aberto: ocupa a largura toda e o outro some */
+  .m-kpi-grid.m-foco-sp #dash-kpi-rs, .m-kpi-grid.m-foco-rs #dash-kpi-sp { display: none !important; }
+  .m-kpi-grid.m-foco-sp #dash-kpi-sp, .m-kpi-grid.m-foco-rs #dash-kpi-rs { grid-column: 1 / -1; }
 
   /* ── Grades genéricas de 3+ colunas com conteúdo largo ──────────────── */
   .panel [style*="grid-template-columns:repeat(4"],
