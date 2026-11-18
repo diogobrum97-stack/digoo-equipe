@@ -21,5 +21,5 @@ body.light .toggle-thumb { transform: translateX(22px); background: #fff; }
 
 /* Estoque: cada linha leva a cor do status (definida em --estq-bg) */
 tr.estq-linha > td { background: var(--estq-bg); transition: background .12s; }
-tr.estq-linha > td:first-child { border-radius: 8px 0 0 8px; }
+tr.estq-linha > td:first-child { border-radius: 8px 0 0 8px; box-shadow: inset 4px 0 0 var(--estq-cor); }
 tr.estq-linha > td:last-child { border-radius: 0 8px 8px 0; }
