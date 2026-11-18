@@ -1,4 +1,4 @@
-const CACHE = 'digoo-v3';
+const CACHE = 'digoo-v4';
 const SHELL = [
   '/digoo-equipe/',
   '/digoo-equipe/index.html',
@@ -49,4 +49,29 @@ self.addEventListener('fetch', e => {
       .catch(() => caches.match(e.request, { ignoreSearch: true })
         .then(cached => cached || caches.match('/digoo-equipe/index.html')))
   );
+});
+
+// ── Notificações (enviadas pela VPS) ─────────────────────────────────────────
+self.addEventListener('push', e => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (_) { d = { body: e.data ? e.data.text() : '' }; }
+  e.waitUntil(self.registration.showNotification(d.title || 'Digoo OPS', {
+    body: d.body || '',
+    icon: '/digoo-equipe/icon-192.png',
+    badge: '/digoo-equipe/icon-192.png',
+    tag: d.tag || undefined,
+    data: { abrir: d.abrir || null },
+  }));
+});
+
+// Tocar na notificação: abre o OPS (ou traz pra frente) direto no lugar do aviso
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const abrir = e.notification.data?.abrir || null;
+  const url = '/digoo-equipe/' + (abrir ? '?abrir=' + encodeURIComponent(JSON.stringify(abrir)) : '');
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(lista => {
+    const c = lista.find(x => x.url.includes('/digoo-equipe/'));
+    if (c) { if (abrir) c.postMessage({ tipo: 'abrir-notificacao', abrir }); return c.focus(); }
+    return self.clients.openWindow(url);
+  }));
 });
