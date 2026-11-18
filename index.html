@@ -11068,6 +11068,70 @@ function renderConfig(panel, color) {
 
   // ── Sub-aba: Geral ────────────────────────────────────────────
 
+  // ── Seção: Tarefa por voz (atalho da Siri) ────────────────────
+  {
+    const URL_VOZ = `${VERCEL_BACKEND}/api/recorrentes?action=tarefa-voz`;
+    if (!window._vozLigado) { window._vozLigado = true; onValue(ref(db, "/config_voz"), sn => { window._vozCfg = sn.val() || {}; if (window._diogotab === "config" && (window._configTab || "geral") === "geral") render(); }, () => {}); }
+    const cfg = window._vozCfg;
+    const secVoz = criarSecaoConfig("Tarefa por voz (Siri)", color);
+    const quando = t => { if (!t) return "nenhuma ainda"; const d = new Date(t); const hoje = new Date().toDateString() === d.toDateString(); return (hoje ? "hoje " : d.toLocaleDateString("pt-BR") + " ") + d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }); };
+    const mascara = k => k ? k.slice(0, 4) + "••••••••••••" + k.slice(-3) : "";
+    const btnCss = (cheio) => `font:600 11px Inter,sans-serif;padding:7px 12px;border-radius:7px;cursor:pointer;white-space:nowrap;${cheio ? `border:none;background:${T.cAzul};color:#fff;` : `border:0.5px solid var(--border);background:transparent;color:var(--text2);`}`;
+    const campo = (rotulo, valor, id, mostrar) => `
+      <div style="font-size:11px;color:var(--text3);margin:10px 0 4px;">${rotulo}</div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <code id="${id}" data-valor="${valor}" style="flex:1;min-width:0;background:var(--bg3);border-radius:7px;padding:8px 10px;font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;user-select:all;">${mostrar}</code>
+        <button data-copiar="${id}" style="${btnCss(true)}">Copiar</button></div>`;
+    if (cfg === undefined) secVoz.body.innerHTML = `<div style="font-size:11px;color:var(--text3);">Carregando...</div>`;
+    else if (!cfg.chave) secVoz.body.innerHTML = `
+      <div style="font-size:12px;color:var(--text2);line-height:1.6;">Crie tarefas falando com a Siri, sem abrir o OPS: <em>"E aí Siri, tarefa no OPS"</em>. Primeiro, gere a chave que o atalho vai usar.</div>
+      <button id="voz-gerar" style="${btnCss(true)};margin-top:10px;">Gerar chave</button>`;
+    else secVoz.body.innerHTML = `
+      <div style="font-size:12px;color:var(--text2);line-height:1.6;">Fale <em>"E aí Siri, tarefa no OPS"</em> e dite, por exemplo: <em>"Bruno, separar os pedidos do Full, urgente, até amanhã"</em>.</div>
+      ${campo("Chave do atalho", cfg.chave, "voz-chave", mascara(cfg.chave))}
+      ${campo("Endereço (URL)", URL_VOZ, "voz-url", URL_VOZ)}
+      <div id="voz-msg" style="font-size:11px;min-height:14px;margin-top:6px;"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px;font-size:11px;color:var(--text3);">
+        <span>Última tarefa por voz: ${quando(cfg.ultima)}</span>
+        <span style="display:flex;gap:6px;"><button id="voz-passos" style="${btnCss(false)}">Como montar o atalho</button><button id="voz-trocar" style="${btnCss(false)};color:${T.cVermelho};">Trocar chave</button></span>
+      </div>
+      <div id="voz-guia" style="display:${window._vozGuia ? "block" : "none"};margin-top:12px;background:var(--bg3);border-radius:8px;padding:12px 14px;font-size:12px;color:var(--text2);line-height:1.7;">
+        <div style="font-weight:600;color:var(--text);margin-bottom:6px;">No iPhone, app Atalhos › toque em + (novo atalho)</div>
+        <ol style="margin:0;padding-left:18px;">
+          <li>Toque em <b>Adicionar Ação</b>, busque <b>Ditar Texto</b> e adicione. Em "Idioma", escolha Português (Brasil).</li>
+          <li>Adicione <b>Obter Conteúdo do URL</b>. No lugar do URL, cole o <b>Endereço</b> acima.</li>
+          <li>Ainda nela, toque em <b>Mostrar Mais</b>: Método <b>POST</b> · Corpo da Solicitação <b>JSON</b>.</li>
+          <li>Em JSON, toque em <b>Adicionar novo campo › Texto</b>: chave <b>chave</b>, valor: cole a <b>Chave do atalho</b> acima.</li>
+          <li>Adicione outro campo <b>Texto</b>: chave <b>texto</b>, valor: toque e escolha a variável <b>Texto Ditado</b>.</li>
+          <li>Adicione <b>Obter Valor do Dicionário</b>: obter <b>Valor</b> para a chave <b>fala</b> em <b>Conteúdo do URL</b>.</li>
+          <li>Adicione <b>Falar Texto</b> com <b>Valor do Dicionário</b>.</li>
+          <li>Toque no nome lá em cima e chame de <b>Tarefa no OPS</b>. Pronto.</li>
+        </ol>
+        <div style="margin-top:8px;color:var(--text3);">Teste: "E aí Siri, tarefa no OPS" → "Pra mim, testar tarefa por voz". A Siri deve responder "Tarefa criada pra você · Importante".</div>
+      </div>`;
+    panel.appendChild(secVoz.wrap);
+    const gerar = async () => {
+      const b = crypto.getRandomValues(new Uint8Array(24));
+      const chave = btoa(String.fromCharCode(...b)).replace(/[^a-zA-Z0-9]/g, "").slice(0, 32);
+      await set(ref(db, "/config_voz/chave"), chave);
+    };
+    const bGerar = secVoz.body.querySelector("#voz-gerar"); if (bGerar) bGerar.onclick = () => gerar().catch(e => alert("Não gerou: " + e.message));
+    const msgV = secVoz.body.querySelector("#voz-msg");
+    const bTrocar = secVoz.body.querySelector("#voz-trocar");
+    if (bTrocar) bTrocar.onclick = () => {
+      if (bTrocar.dataset.conf !== "1") { bTrocar.dataset.conf = "1"; bTrocar.textContent = "Confirmar troca"; msgV.style.color = T.cAmarelo; msgV.textContent = "A chave antiga para de funcionar. Depois cole a nova no atalho."; return; }
+      gerar().catch(e => { msgV.style.color = T.cVermelho; msgV.textContent = "Não trocou: " + e.message; });
+    };
+    const bPassos = secVoz.body.querySelector("#voz-passos");
+    if (bPassos) bPassos.onclick = () => { window._vozGuia = !window._vozGuia; secVoz.body.querySelector("#voz-guia").style.display = window._vozGuia ? "block" : "none"; };
+    secVoz.body.querySelectorAll("[data-copiar]").forEach(b => b.onclick = async () => {
+      const el = secVoz.body.querySelector("#" + b.dataset.copiar); const v = el.dataset.valor;
+      try { await navigator.clipboard.writeText(v); b.textContent = "Copiado"; }
+      catch (_) { el.textContent = v; const r = document.createRange(); r.selectNodeContents(el); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); b.textContent = "Selecionado"; }
+      setTimeout(() => { b.textContent = "Copiar"; }, 1500);
+    });
+  }
+
   // ── Seção: Planilha de Atributos ──────────────────────────────
   const secAtrib = criarSecaoConfig("Planilha de Atributos (Custos ML)", color);
   const descAtrib = document.createElement("div");
