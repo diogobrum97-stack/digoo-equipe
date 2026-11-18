@@ -4105,7 +4105,15 @@ function renderDashboard(panel, color) {
         d.dataset.open = "0";
         d.style.boxShadow = "";
         d.style.transform = "";
+        d.parentElement?.classList.remove("m-foco-sp", "m-foco-rs");
       } else {
+        // No celular: Filial ou Matriz aberto ocupa a largura toda e o outro some (CSS em mobile.css)
+        if (id === "dash-kpi-sp" || id === "dash-kpi-rs") {
+          const g = d.parentElement;
+          const outro = g?.querySelector(id === "dash-kpi-sp" ? "#dash-kpi-rs" : "#dash-kpi-sp");
+          if (outro?.dataset.open === "1") outro.click();
+          g?.classList.add(id === "dash-kpi-sp" ? "m-foco-sp" : "m-foco-rs");
+        }
         drawer.style.maxHeight = "400px";
         drawer.style.opacity  = "1";
         d.dataset.open = "1";
