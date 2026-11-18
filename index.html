@@ -9886,8 +9886,8 @@ function renderFilialSP(panel, color) {
     const tableWrap = document.createElement("div");
     tableWrap.style.cssText = "overflow-x:auto;";
     const table = document.createElement("table");
-    table.style.cssText = "width:100%;border-collapse:collapse;";
-    table.innerHTML = `<thead><tr style="border-bottom:1px solid var(--sep);">
+    table.style.cssText = "width:100%;border-collapse:separate;border-spacing:0 4px;";
+    table.innerHTML = `<thead><tr>
       <th style="text-align:left;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">SKU</th>
       <th style="text-align:left;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">PRODUTO</th>
       <th style="text-align:center;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">APTAS</th>
@@ -9902,31 +9902,30 @@ function renderFilialSP(panel, color) {
     const tbody = table.querySelector("#estoque-tbody");
     enriched.forEach(r => {
       const v30 = r.vendas30 || 0;
-      const statusInfo = v30 === 0
-        ? { label: "Parado",      bg: "#ff3d3d22", color: "#e8432d", border: "#ff3d3d44" }
-        : v30 <= 10
-        ? { label: "Lento",       bg: "#f0b40022", color: "#f0b400", border: "#f0b40044" }
-        : v30 <= 30
-        ? { label: "Médio",       bg: "#f0b40011", color: "#c8960a", border: "#f0b40033" }
-        : v30 <= 60
-        ? { label: "Saudável",    bg: "#10b98118", color: "#10b981", border: "#10b98144" }
-        : { label: "Subir preço", bg: "#3b82f622", color: "#3b82f6", border: "#3b82f644" };
+      // Cores do Dashboard; a linha inteira leva a cor do status, transparente
+      const statusInfo = v30 === 0 ? { label: "Parado", cor: T.cVermelho }
+        : v30 <= 10 ? { label: "Lento", cor: T.cLaranja }
+        : v30 <= 30 ? { label: "Médio", cor: T.cAmarelo }
+        : v30 <= 60 ? { label: "Saudável", cor: T.cVerde }
+        : { label: "Subir preço", cor: T.cAzul };
+      const fundoLinha = statusInfo.cor + (T.isLight ? "30" : "40"), fundoHover = statusInfo.cor + (T.isLight ? "48" : "5c");
       const semCusto = !r.custo;
-      const custoStr = r.custo > 0 ? `R$ ${r.custo.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : `<span style="color:#e8432d;font-size:11px;">sem custo</span>`;
+      const custoStr = r.custo > 0 ? `R$ ${r.custo.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : `<span style="color:${T.cVermelho};font-size:11px;">sem custo</span>`;
       const valorStr = r.valor > 0 ? `R$ ${r.valor.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : "—";
       const tr = document.createElement("tr");
-      tr.style.cssText = "border-bottom:1px solid var(--sep);transition:background .1s;";
-      tr.onmouseover = () => tr.style.background = "var(--bg3)";
-      tr.onmouseout  = () => tr.style.background = "";
+      tr.className = "estq-linha";
+      tr.style.cssText = `--estq-bg:${fundoLinha};`;
+      tr.onmouseover = () => tr.style.setProperty("--estq-bg", fundoHover);
+      tr.onmouseout  = () => tr.style.setProperty("--estq-bg", fundoLinha);
       tr.innerHTML = `
         <td style="padding:12px 10px;color:var(--text);font-size:11px;white-space:nowrap;font-weight:700;max-width:140px;overflow:hidden;text-overflow:ellipsis;">${r.sku}</td>
         <td style="padding:12px 10px;color:var(--text2);max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;">${r.produto}</td>
         <td style="padding:12px 10px;text-align:center;color:${r.aptas>0?"var(--text)":"var(--text3)"};font-weight:${r.aptas>0?"600":"400"};">${r.aptas||"—"}</td>
         <td style="padding:12px 10px;text-align:center;color:var(--text3);">${r.transf||"—"}</td>
-        <td style="padding:12px 10px;text-align:center;color:${semCusto?"#e8432d":"var(--text2)"};">${custoStr}</td>
-        <td style="padding:12px 10px;text-align:center;color:${semCusto?"var(--text3)":r.valor>1000?"#10b981":"var(--text2)"};font-weight:500;">${valorStr}</td>
+        <td style="padding:12px 10px;text-align:center;color:${semCusto?T.cVermelho:"var(--text2)"};">${custoStr}</td>
+        <td style="padding:12px 10px;text-align:center;color:${semCusto?"var(--text3)":"var(--text)"};font-weight:500;">${valorStr}</td>
         <td style="padding:12px 10px;text-align:center;">
-          <span style="font-size:10px;font-weight:600;padding:3px 10px;border-radius:20px;white-space:nowrap;background:${statusInfo.bg};color:${statusInfo.color};border:0.5px solid ${statusInfo.border};">${statusInfo.label}</span>
+          <span style="font-size:10px;font-weight:600;padding:3px 10px;border-radius:20px;white-space:nowrap;background:${statusInfo.cor};color:${T.isLight ? "#ffffff" : "#0b0b0b"};">${statusInfo.label}</span>
           ${v30 > 0 ? `<div style="font-size:9px;color:var(--text3);margin-top:3px;">${v30}/mês</div>` : ""}
         </td>`;
       tbody.appendChild(tr);
