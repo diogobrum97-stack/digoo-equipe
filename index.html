@@ -10818,13 +10818,13 @@ function renderConfig(panel, color) {
       <div style="background:var(--bg3);border-radius:10px;padding:0 13px;">
         ${g.itens.map((i, n) => { const on = window._pushPrefValor(i.k); return `
           <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 0;${n ? "border-top:0.5px solid var(--sep);" : ""}">
-            <div style="min-width:0;"><div style="font-size:13px;color:var(--text);">${i.t}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${i.s}</div></div>
+            <div style="min-width:0;"><div style="font-size:13px;color:var(--text);">${i.t}</div>${i.s ? `<div style="font-size:11px;color:var(--text3);margin-top:2px;">${i.s}</div>` : ""}</div>
             <button data-push-pref="${i.k}" data-on="${on ? 1 : 0}" aria-label="${i.t}" style="position:relative;width:40px;height:24px;border-radius:12px;border:none;cursor:pointer;flex-shrink:0;background:${on ? T.cVerde : "#55555580"};transition:background .15s;">
               <span style="position:absolute;top:3px;left:${on ? 19 : 3}px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .15s;"></span></button>
           </div>`; }).join("")}
       </div>`).join("");
     box.innerHTML = `${topo}<div id="push-msg" style="font-size:11px;min-height:14px;margin:4px 0 0;"></div>${grupos}
-      <div style="font-size:11px;color:var(--text3);margin-top:14px;">As escolhas valem para todos os seus aparelhos. Atendimento, Vendas, Equipe e Financeiro chegam na próxima etapa.</div>`;
+      <div style="font-size:11px;color:var(--text3);margin-top:14px;">As escolhas valem para todos os seus aparelhos.</div>`;
     panel.appendChild(box);
     const msg = box.querySelector("#push-msg");
     const acao = (id, fn, ok) => { const b = box.querySelector("#" + id); if (b) b.onclick = async () => {
@@ -13810,8 +13810,25 @@ window._ofertasLive = { filial: { itens: null, meta: null }, matriz: { itens: nu
       { k: "promo_vence", t: "Promoção vence amanhã", s: "Sem outra programada depois", def: true },
       { k: "promo_proposta", t: "Propostas com redução de tarifa", s: "Resumo 1x por dia, às 9h", def: false },
     ] },
+    { grupo: "Atendimento", itens: [
+      { k: "pergunta_nova", t: "Pergunta nova", s: "Filial e Matriz · na hora", def: false },
+      { k: "pergunta_1h", t: "Pergunta sem resposta há 1 h", s: "Das 8h às 20h", def: true },
+      { k: "reclamacao", t: "Reclamação ou mediação nova", s: "Na hora", def: true },
+      { k: "experiencia", t: "Problema na experiência de compra", s: "Conferido a cada 6 h", def: true },
+    ] },
+    { grupo: "Vendas", itens: [
+      { k: "vendas_baixo", t: "Dia abaixo do normal", s: "Às 14h e 18h, comparando com as últimas semanas", def: true },
+      { k: "resumo_dia", t: "Resumo do dia", s: "Às 22h · total, contas e mais vendidos", def: true },
+      { k: "sem_estoque", t: "Anúncio pausado sem estoque", s: "Quando o ML pausa por estoque zerado", def: true },
+    ] },
+    { grupo: "Equipe e financeiro", itens: [
+      { k: "tarefa_nova", t: "Tarefa nova para mim", s: "", def: true },
+      { k: "tarefa_concluida", t: "Tarefa que passei foi concluída", s: "", def: true },
+      { k: "conta_vence", t: "Conta vence amanhã", s: "Às 9h, com o valor", def: true },
+    ] },
     { grupo: "Sistema", itens: [
       { k: "token_ml", t: "Token do Mercado Livre expirou", s: "Renovação automática falhou", def: true },
+      { k: "bling", t: "Bling desconectado", s: "Testado a cada 30 min · avisa após 2 falhas", def: true },
       { k: "sync_parado", t: "Sincronização parada", s: "Ofertas sem atualizar há 15 min", def: true },
     ] },
     { grupo: "Horário", itens: [
@@ -13876,11 +13893,13 @@ window._ofertasLive = { filial: { itens: null, meta: null }, matriz: { itens: nu
     if (!abrir) return;
     const ate = Date.now() + 120000;
     const tentar = () => {
+      if (currentUser && currentUser !== "Diogo") { window.render?.(); return; }   // equipe: o card já abre nas tarefas
       if (!diogoPinUnlocked) { if (Date.now() < ate) setTimeout(tentar, 700); return; }
       if (abrir.tela === "ofertas") {
         Object.assign(window.promState, { aba: "ofertas", conta: abrir.conta || window.promState.conta, ofertasFiltro: abrir.filtro || "todas", ofertasBusca: abrir.item || "", detalhe: null });
         window._diogotab = "promocoes";
       } else if (abrir.tela === "apis") { window._diogotab = "config"; window._configTab = "apis"; }
+      else if (["perguntas", "reclamacoes-ml", "experiencia", "tarefas", "contas-pagar", "estoque"].includes(abrir.tela)) window._diogotab = abrir.tela;
       else window._diogotab = "dashboard";
       window.render?.(); window.scrollTo(0, 0);
     };
