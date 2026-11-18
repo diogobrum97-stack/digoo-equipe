@@ -14297,7 +14297,18 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
   const idadeMin = live.meta?.gerado_em ? (Date.now() - live.meta.gerado_em) / 60000 : Infinity;
   const velho = idadeMin > 10;
   if (velho) window._ofertasPlanoB(conta, BACKEND);
-  st.ofertas[conta] = Object.values(live.itens || {}).map(i => ({ ...i, ofertas: Array.isArray(i.ofertas) ? i.ofertas : Object.values(i.ofertas || {}) }));
+  // Participar/Sair mudam a linha na hora (window._ofertasPend) até o ML confirmar o novo status
+  const pend = window._ofertasPend || (window._ofertasPend = {});
+  const avisos = window._ofertasAviso || (window._ofertasAviso = {});
+  for (const k of Object.keys(avisos)) if (avisos[k].ate < Date.now()) delete avisos[k];
+  st.ofertas[conta] = Object.values(live.itens || {}).map(i => ({ ...i, ofertas: (Array.isArray(i.ofertas) ? i.ofertas : Object.values(i.ofertas || {})).map(o => {
+    const k = `${conta}|${i.item_id}|${o.promotion_id || ""}|${o.tipo}`;
+    const p = pend[k];
+    if (!p) return o;
+    const confirmou = p.acao === "participar" ? o.status !== "candidate" : o.status === "candidate";
+    if (confirmou) { delete pend[k]; return o; }
+    return { ...o, status: p.status, _confirmando: true };
+  }) }));
   st.ofertasMeta[conta] = { gerado_em: live.meta?.gerado_em || null, falhas: live.meta?.falhas || {}, total_anuncios: live.meta?.total_anuncios || 0 };
   const meta = st.ofertasMeta[conta] || {};
   const minAtras = meta.gerado_em ? Math.max(0, Math.round((Date.now() - meta.gerado_em) / 60000)) : null;
@@ -14385,7 +14396,9 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
     const nome = o.nome || OFERTA_TIPOS[o.tipo] || o.tipo;
     const isBF = /black\s*friday/i.test(nome);
     const nomeLinha = isBF ? (OFERTA_TIPOS[o.tipo] || o.tipo) : nome;
-    const statusPill = o.status === "candidate" ? pill("Nova proposta", amarelo) : o._programada ? pill("Programada", azul) : pill("Ativa", verde);
+    const statusPill = (o.status === "candidate" ? pill("Nova proposta", amarelo) : o._programada ? pill("Programada", azul) : pill("Ativa", verde))
+      + (o._confirmando ? `<span style="font-size:10px;color:${T.text2};">confirmando com o ML…</span>` : "");
+    const avisoLinha = avisos[`${conta}|${it.item_id}|${o.promotion_id || ""}|${o.tipo}`]?.msg || "";
     const periodo = o.inicio || o.fim ? `${fmtD(o.inicio)}${o.fim ? " a " + fmtD(o.fim) : ""}` : (o.tipo === "LIGHTNING" || o.tipo === "DOD" ? "Data definida pelo ML" : "");
     // Valor em R$ por venda: a % do ML incide sobre o preço original (confere com o "Reduzimos R$ X" do site)
     // Exceção: "Impulsione suas vendas" — o ML reduz 1% do preço final (centavos cortados), confere com o site em 5 de 5 anúncios
@@ -14409,7 +14422,7 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
       <div class="of-desc" data-lbl="Desconto" style="font:600 13px Inter,sans-serif;color:${T.text};">${descPct != null ? (o._ate ? "até " : "") + descPct + "%" : "—"}${descR != null ? `<div style="font:400 11px Inter,sans-serif;color:${T.text2};">${fmtR(descR)}</div>` : ""}</div>
       <div class="of-final" data-lbl="Preço final" style="font:600 13px Inter,sans-serif;color:${T.text};">${o._ate && final ? "até " : ""}${fmtR(final)}${o._ate && o.preco_sugerido ? `<div style="font:400 11px Inter,sans-serif;color:${T.text2};">sugerido ${fmtR(o.preco_sugerido)}</div>` : ""}</div>
       <div class="of-quem" data-lbl="Quem paga" style="font-size:11px;min-width:0;">${quem}</div>
-      <div class="of-acao" style="text-align:right;">${btn}<div data-of-msg="${key}" style="font-size:11px;margin-top:4px;"></div></div>
+      <div class="of-acao" style="text-align:right;">${btn}<div data-of-msg="${key}" style="font-size:11px;margin-top:4px;${avisoLinha ? `color:${amarelo};` : ""}">${avisoLinha ? esc(avisoLinha) : ""}</div></div>
     </div>`;
   };
 
@@ -14512,8 +14525,24 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
       });
       const d = await r.json();
       if (!d.ok) throw new Error((d.error || "Erro") + (d.causa ? " — " + d.causa : ""));
-      try { await buscarAtual(); } catch (_) {}
+      // O ML aceitou: a linha muda na hora e o OPS confirma com o ML em 3, 8 e 20 s
+      const pk = `${conta}|${itemId}|${alvo.promotion_id || ""}|${alvo.tipo}`;
+      const futuro = alvo.inicio && new Date(alvo.inicio).getTime() > Date.now();
+      window._ofertasPend[pk] = { acao, status: acao === "participar" ? (futuro ? "pending" : "started") : "candidate", desde: Date.now() };
       fim();
+      (async () => {
+        for (const s of [3, 5, 12]) {
+          await new Promise(r => setTimeout(r, s * 1000));
+          if (!window._ofertasPend[pk]) return;            // já confirmado
+          try { await buscarAtual(); } catch (_) {}
+          window._ofertasMudou(conta, true);                // o render confere e tira o "confirmando"
+        }
+        if (window._ofertasPend[pk]) {
+          delete window._ofertasPend[pk];
+          window._ofertasAviso[pk] = { msg: acao === "participar" ? "O ML ainda não mostra essa promoção como ativa — confira no ML." : "O ML ainda mostra essa promoção — confira no ML.", ate: Date.now() + 60000 };
+          window._ofertasMudou(conta, true);
+        }
+      })();
     } catch (e) {
       b.disabled = false; delete b.dataset.ocupado; b.textContent = acao === "participar" ? "Participar" : "Sair";
       if (msg) { msg.style.color = vermelho; msg.textContent = e.message; }
