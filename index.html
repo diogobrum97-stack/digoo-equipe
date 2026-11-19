@@ -13618,6 +13618,9 @@ function renderNfFullEmitirModal(itens) {
 
     <div id="nf-full-status"></div>
 
+    <button id="nf-full-previa-comp" style="width:100%;padding:10px;border-radius:6px;background:none;border:1px solid ${T.border2};color:${T.text2};font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:8px;">
+      Prévia da complementar de IPI (só conferir, não emite nada)
+    </button>
     <button id="nf-full-emitir" style="width:100%;padding:12px;border-radius:6px;background:#10b981;border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
       Emitir NF de Transferência no Bling
     </button>
@@ -13628,6 +13631,53 @@ function renderNfFullEmitirModal(itens) {
 
 
   document.getElementById("nf-full-modal-fechar")?.addEventListener("click", () => overlay.remove());
+
+  // Prévia da complementar de IPI: mesma calculadora das NFs Emitidas, com os itens desta transferência, sem emitir nada
+  document.getElementById("nf-full-previa-comp")?.addEventListener("click", async () => {
+    const taskPrev = { id: "nf-previa-" + Date.now(), text: "Prévia da complementar", subtarefas: [] };
+    const avisos = [];
+    const produtos = (itens || []).map(it => {
+      const sku = it.sku || it.codigo;
+      const ncm = String(it.ncm || it.classificacaoFiscal || "").replace(/\D/g, "");
+      const precoSalvo = state.precos_venda_manual?.[normSku(sku)];
+      const precoRef = PRECOS_VENDA_REFERENCIA_NORM[normSku(sku)];
+      const freteManual = state.frete_ml_manual?.[normSku(sku)];
+      const sug = getAliquotaIPI(ncm, sku);
+      if (!ncm) avisos.push(`${sku}: sem NCM`);
+      if (!Number(it.custo || 0)) avisos.push(`${sku}: custo zerado`);
+      if (!sug.conhecido) avisos.push(`${sku}: alíquota de IPI desconhecida`);
+      return { sku, produto: it.descricao || it.produto || "", qtd: Number(it.quantidade) || 0, valorNf: Number(it.custo || 0), ncm,
+        precoVenda: precoSalvo != null ? precoSalvo : (precoRef != null ? precoRef : null), automatico: true,
+        aliquotaValor: sug.conhecido ? sug.valor : null, freteML: freteManual != null ? freteManual : null };
+    });
+    calcIpiState[taskPrev.id] = { produtos, frete: 0, ipiOriginal: 0, ipiOriginalAuto: false, chaveAcesso: null, erro: null, nfUsada: null, freteComponentes: null };
+    try { const fr = (await get(ref(db, "/frete_medio_componentes"))).val(); if (fr?.dados) { calcIpiState[taskPrev.id].freteComponentes = fr.dados; calcIpiState[taskPrev.id].freteAtualizadoEm = fr.atualizadoEm; } } catch (_) {}
+    const ov = document.createElement("div");
+    ov.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10001;overflow-y:auto;display:flex;align-items:flex-start;justify-content:center;padding:20px;";
+    const bx = document.createElement("div");
+    bx.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:14px;padding:28px;width:900px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,.4);margin:auto;`;
+    const hd = document.createElement("div");
+    hd.style.cssText = "display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;";
+    hd.innerHTML = `<div><div style="font-size:15px;font-weight:600;color:${T.text};">Prévia da complementar de IPI</div>
+      <div style="font-size:11px;color:${T.text2};margin-top:2px;">Só para conferir — nada é emitido. O IPI da transferência é calculado pelo Bling na emissão; aqui aparece o IPI devido pela base de venda.</div></div>`;
+    const fechar = document.createElement("button");
+    fechar.textContent = "✕"; fechar.style.cssText = "background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;";
+    fechar.onclick = () => { ov.remove(); delete calcIpiState[taskPrev.id]; };
+    hd.appendChild(fechar);
+    bx.appendChild(hd);
+    if (avisos.length) {
+      const av = document.createElement("div");
+      av.style.cssText = `background:${T.errBg};border:1px solid ${T.errBor};border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:11px;color:${T.errText};line-height:1.6;`;
+      av.innerHTML = `<b>Confira antes de emitir:</b><br>${avisos.slice(0, 12).join("<br>")}${avisos.length > 12 ? `<br>… e mais ${avisos.length - 12}` : ""}`;
+      bx.appendChild(av);
+    }
+    const corpo = document.createElement("div");
+    bx.appendChild(corpo);
+    renderCalcIpiPanel(corpo, taskPrev);
+    ov.appendChild(bx);
+    ov.addEventListener("click", e => { if (e.target === ov) fechar.onclick(); });
+    document.body.appendChild(ov);
+  });
   overlay.addEventListener("click", e => { if (e.target === overlay) overlay.remove(); });
 
   document.getElementById("nf-full-emitir")?.addEventListener("click", async () => {
@@ -13668,7 +13718,8 @@ function renderNfFullEmitirModal(itens) {
       nfFullState.nfEmitida = { numero: data.numero, chave: data.chaveAcesso, status: data.status };
 
       // Salvar dados completos no Firebase para aparecer corretamente em NFs Emitidas
-      if (data.numero && data.chaveAcesso) {
+      // Salva sempre que vier o número (a chave de acesso, se ainda não veio, é buscada no Bling quando abrir a complementar)
+      if (data.numero) {
         const chaveFirebase = String(data.numero).replace(/[.#$\[\]\/]/g, "_");
         const itensParaSalvar = (nfFullState.itens || []).map(it => ({
           sku: it.sku || it.codigo || null,
@@ -13678,7 +13729,9 @@ function renderNfFullEmitirModal(itens) {
           valorUnit: Number(it.custo || it.valorUnit || 0),
         })).filter(it => it.sku);
         update(ref(db, `/nfes_processadas/${chaveFirebase}`), {
-          chaveAcesso: data.chaveAcesso,
+          ...(data.chaveAcesso ? { chaveAcesso: data.chaveAcesso } : {}),
+          envios: (nfFullState.envios || []).map(e => ({ envio: e.envio || null, nome: e.nome || null, skus: e.skus || 0, unidades: e.unidades || 0 })),
+          enviosDetalhe: nfFullState.enviosDetalhe || null,
           natureza: "Transferência de Mercadorias p/ Filial",
           processedAt: Date.now(),
           dataEmissao: new Date().toISOString().slice(0,10),
@@ -16513,6 +16566,7 @@ async function renderNfsEmitidas(panel) {
       <div style="display:flex;align-items:center;gap:8px;">
         <span style="font-size:12px;color:${T.text2};">${data} · ${hora}</span>
         <span style="font-size:11px;color:${T.text3};">${itens} ${itens === 1 ? "item" : "itens"}</span>
+        ${(nf.envios || []).some(e => e.envio) ? `<span style="font-size:11px;color:${T.text3};">· Envio${nf.envios.filter(e => e.envio).length > 1 ? "s" : ""} Full ${nf.envios.filter(e => e.envio).map(e => e.envio).join(", ")}</span>` : ""}
       </div>`;
 
     // Direita
