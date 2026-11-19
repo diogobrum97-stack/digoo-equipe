@@ -999,9 +999,10 @@ async function fetchYtd() {
     const r = await fetch(url);
     const d = await r.json();
     if (d.ok) {
+      const mudou = JSON.stringify(d) !== JSON.stringify(ytdData);
       ytdData = d;
       ytdFetchedAt = Date.now();
-      render();
+      if (mudou) render();             // igual ao que já está na tela: não redesenha
     }
   } catch (e) { console.warn("YTD fetch:", e.message); }
   ytdLoading = false;
@@ -1022,7 +1023,7 @@ window._fetchDashboard = async function fetchDashboard() {
   if(dashLoading) return;
   dashLoading = true;
   const loadingTimeout = setTimeout(() => { dashLoading = false; }, 30000);
-  render();
+  if (!dashData) render();          // com números na tela, atualiza em segundo plano (sem piscar)
   try {
     const tokenFilial = state.ml_token_filial?.access_token;
     const tokenMatriz = state.ml_token?.access_token;
@@ -1050,6 +1051,7 @@ window._fetchDashboard = async function fetchDashboard() {
     const fatHojeMatriz = resHojeMatriz?.summary?.totalRevenue || 0;
     const projecaoMatriz = percDia > 0 ? fatHojeMatriz / percDia : 0;
 
+    const _dashAnterior = dashData;
     dashData = {
       fatHoje, projecaoDia,
       fatMes: resMes?.summary?.totalRevenue || 0,
@@ -1068,6 +1070,8 @@ window._fetchDashboard = async function fetchDashboard() {
       } : null,
       _fetchedAt: Date.now(),
     };
+    // mantém o histórico já carregado (ele é recalculado logo abaixo, em segundo plano)
+    if (_dashAnterior && !_dashAnterior.erro) for (const k of ["historico5m", "dailyMesAtual", "dailyMesAnt", "mesAntDias"]) if (_dashAnterior[k] != null) dashData[k] = _dashAnterior[k];
 
     // Buscar histórico em background: 5 meses por mês calendário + daily dos 2 últimos meses
     (async () => {
@@ -1138,7 +1142,7 @@ window._fetchDashboard = async function fetchDashboard() {
           dashData.dailyMesAnt   = dailyMesAnt;
           dashData.mesAntDias    = mesAntDias;
           window._dashData = dashData;
-          render();
+          window._dashRenderSeMudou();
         }
       } catch(e) { /* histórico não é crítico */ }
     })();
@@ -1152,8 +1156,23 @@ window._fetchDashboard = async function fetchDashboard() {
   }
   clearTimeout(loadingTimeout);
   dashLoading = false;
-  render();
+  window._dashRenderSeMudou();
 }
+
+// Só redesenha o Dashboard se algum número mudou (hora e projeções mudam todo minuto e não contam)
+let _dashAssinatura = null;
+window._dashRenderSeMudou = () => {
+  let sig;
+  try { sig = JSON.stringify(dashData, (k, v) => (k === "hora" || k === "_fetchedAt" || k === "percDia" || /^projecao/.test(k)) ? undefined : v); }
+  catch (_) { sig = String(Math.random()); }
+  const naTela = window._diogotab === "dashboard" && document.getElementById("dash-kpi-total");
+  if (sig === _dashAssinatura && naTela) {
+    const h = document.getElementById("dash-hora"); if (h && dashData?.hora) h.textContent = dashData.hora;
+    return;
+  }
+  _dashAssinatura = sig;
+  render();
+};
 
 let expPageFiltro = "todos"; // todos | ruim | regular
 
@@ -4052,7 +4071,7 @@ function renderDashboard(panel, color) {
   const header = document.createElement("div");
   header.className = "m-esconde-cel"; // no celular a saudação fica no cabeçalho do app
   header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;";
-  header.innerHTML = `<div><div style="font-size:20px;font-weight:700;color:${T.text};letter-spacing:-0.3px;">${saudacao}, Diogo 👋</div><div style="font-size:11px;color:${T.text3};margin-top:3px;font-family:'Inter',sans-serif;">${dias[now.getDay()]} · ${now.getDate()} ${meses[now.getMonth()]} ${now.getFullYear()}</div></div><div style="display:flex;align-items:center;gap:10px;"><div style="font-size:11px;font-weight:600;color:${T.text};">${dashData.hora}</div><button onclick="this.style.opacity='0.4';dashData=null;dashLoading=false;window._fetchDashboard();" style="background:none;border:none;color:${T.text2};font-size:16px;cursor:pointer;padding:4px;line-height:1;" title="Atualizar">↻</button></div>`;
+  header.innerHTML = `<div><div style="font-size:20px;font-weight:700;color:${T.text};letter-spacing:-0.3px;">${saudacao}, Diogo 👋</div><div style="font-size:11px;color:${T.text3};margin-top:3px;font-family:'Inter',sans-serif;">${dias[now.getDay()]} · ${now.getDate()} ${meses[now.getMonth()]} ${now.getFullYear()}</div></div><div style="display:flex;align-items:center;gap:10px;"><div id="dash-hora" style="font-size:11px;font-weight:600;color:${T.text};">${dashData.hora}</div><button onclick="this.style.opacity='0.4';dashData=null;dashLoading=false;window._fetchDashboard();" style="background:none;border:none;color:${T.text2};font-size:16px;cursor:pointer;padding:4px;line-height:1;" title="Atualizar">↻</button></div>`;
   wrap.appendChild(header);
 
   const dashGrid = document.createElement("div");
@@ -4106,6 +4125,7 @@ function renderDashboard(panel, color) {
         d.style.boxShadow = "";
         d.style.transform = "";
         d.parentElement?.classList.remove("m-foco-sp", "m-foco-rs");
+        if (window._dashKpiAberto === id) window._dashKpiAberto = null;
       } else {
         // No celular: Filial ou Matriz aberto ocupa a largura toda e o outro some (CSS em mobile.css)
         if (id === "dash-kpi-sp" || id === "dash-kpi-rs") {
@@ -4119,8 +4139,17 @@ function renderDashboard(panel, color) {
         d.dataset.open = "1";
         d.style.boxShadow = "0 4px 16px #0002";
         d.style.transform = "translateY(-1px)";
+        window._dashKpiAberto = id;
       }
     });
+    // Estava aberto antes da atualização? volta aberto, sem animação
+    if (window._dashKpiAberto === id) {
+      const drawer = d.querySelector(".dash-kpi-drawer");
+      drawer.style.transition = "none";
+      drawer.style.maxHeight = "400px"; drawer.style.opacity = "1";
+      d.dataset.open = "1"; d.style.boxShadow = "0 4px 16px #0002"; d.style.transform = "translateY(-1px)";
+      requestAnimationFrame(() => requestAnimationFrame(() => { drawer.style.transition = ""; }));
+    }
     return d;
   }
 
@@ -4190,6 +4219,8 @@ function renderDashboard(panel, color) {
     "↑ Em tempo real", "#8b5cf618", "#8b5cf6", "#8b5cf6",
     top5RS, "Mais vendidos hoje · RS"
   ));
+  if (window._dashKpiAberto === "dash-kpi-sp") vendasGrid.classList.add("m-foco-sp");
+  if (window._dashKpiAberto === "dash-kpi-rs") vendasGrid.classList.add("m-foco-rs");
 
   function mkTopCard(titulo, lista) {
     const c = document.createElement("div");
@@ -4308,6 +4339,8 @@ function renderDashboard(panel, color) {
 
       const _nomeMesAtualChart = mesesNomesArr[hoje2.getMonth()];
       const _nomeMesAntChart   = mesesNomesArr[(hoje2.getMonth() + 11) % 12];
+      if (window._dashChartsDesenhados) Chart.defaults.animation = false;   // atualização: sem animação
+      window._dashChartsDesenhados = true;
       new Chart(cv1, {
         type: "line",
         data: {
@@ -7921,6 +7954,8 @@ function renderChatModal(memberName, color) {
 function render(){
   window._renderTab = render;
   if(!currentUser) return;
+  // Dashboard: redesenho não pode mexer na rolagem
+  if (window._diogotab === "dashboard") { const _sy = window.scrollY, _aba = window._diogotab; queueMicrotask(() => { if (window._diogotab === _aba && Math.abs(window.scrollY - _sy) > 2) window.scrollTo(0, _sy); }); }
   // ── Perguntas congeladas: enquanto a aba está aberta, nada redesenha a tela sozinho
   // (senão o scroll volta pro topo e atrapalha quem está escrevendo). Só passa render
   // disparado por clique do usuário fora da área das perguntas (menu, abas, tema).
