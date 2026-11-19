@@ -9902,13 +9902,13 @@ function renderFilialSP(panel, color) {
     const tbody = table.querySelector("#estoque-tbody");
     enriched.forEach(r => {
       const v30 = r.vendas30 || 0;
-      // Cores do Dashboard; a linha inteira leva a cor do status, transparente
+      // Cores do Dashboard; a linha inteira leva a cor do status (cor cheia, texto branco)
       const statusInfo = v30 === 0 ? { label: "Parado", cor: T.cVermelho }
         : v30 <= 10 ? { label: "Lento", cor: T.cLaranja }
         : v30 <= 30 ? { label: "Médio", cor: T.cAmarelo }
         : v30 <= 60 ? { label: "Saudável", cor: "#34c759" }      // mesmo verde dos cards do Dashboard
         : { label: "Subir preço", cor: "#3b82f6" };              // mesmo azul dos cards do Dashboard
-      const fundoLinha = statusInfo.cor + (T.isLight ? "42" : "70"), fundoHover = statusInfo.cor + (T.isLight ? "5c" : "96");
+      const fundoLinha = `color-mix(in srgb, ${statusInfo.cor} 85%, #000)`, fundoHover = `color-mix(in srgb, ${statusInfo.cor} 95%, #000)`;
       const semCusto = !r.custo;
       const custoStr = r.custo > 0 ? `R$ ${r.custo.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : `<span style="color:${T.cVermelho};font-size:11px;">sem custo</span>`;
       const valorStr = r.valor > 0 ? `R$ ${r.valor.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : "—";
@@ -9925,7 +9925,7 @@ function renderFilialSP(panel, color) {
         <td style="padding:12px 10px;text-align:center;color:${semCusto?T.cVermelho:"var(--text2)"};">${custoStr}</td>
         <td style="padding:12px 10px;text-align:center;color:${semCusto?"var(--text3)":"var(--text)"};font-weight:500;">${valorStr}</td>
         <td style="padding:12px 10px;text-align:center;">
-          <span style="font-size:10px;font-weight:600;padding:3px 10px;border-radius:20px;white-space:nowrap;background:${statusInfo.cor};color:${T.isLight ? "#ffffff" : "#0b0b0b"};">${statusInfo.label}</span>
+          <span class="estq-badge" style="font-size:10px;font-weight:700;padding:4px 11px;border-radius:20px;white-space:nowrap;background:color-mix(in srgb, ${statusInfo.cor} 45%, #fff);">${statusInfo.label}</span>
           ${v30 > 0 ? `<div style="font-size:9px;color:var(--text3);margin-top:3px;">${v30}/mês</div>` : ""}
         </td>`;
       tbody.appendChild(tr);
