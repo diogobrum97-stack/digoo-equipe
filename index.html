@@ -9917,51 +9917,107 @@ function renderFilialSP(panel, color) {
   panel.appendChild(subTabWrap);
 
   if (window._estoqueSubTab !== "saude") {
-    // ── Tabela estoque ───────────────────────────────────────────
+    // ── Tabela estoque: quanto tempo dura, quanto repor, o que está parado ──
+    const DIAS_REPOR = 45, DIAS_ALERTA = 15;
+    const COR_EST = { acabando: T.cVermelho, subir: "#3b82f6", saudavel: "#34c759", medio: T.cAmarelo, lento: T.cLaranja, parado: "#7a7a7a" };
+    const NOME_EST = { acabando: "Acabando", subir: "Subir preço", saudavel: "Saudável", medio: "Médio", lento: "Lento", parado: "Parado" };
+    const linhasE = enriched.map(r => {
+      const v30 = r.vendas30 || 0, porDia = v30 / 30;
+      const temTotal = (r.aptas || 0) + (r.transf || 0);              // transferência = chegando, conta na cobertura
+      const dias = porDia > 0 ? temTotal / porDia : Infinity;
+      const est = v30 === 0 ? "parado" : dias < DIAS_ALERTA ? "acabando" : v30 <= 10 ? "lento" : v30 <= 30 ? "medio" : v30 <= 60 ? "saudavel" : "subir";
+      const repor = porDia > 0 ? Math.max(0, Math.ceil(porDia * DIAS_REPOR - temTotal)) : 0;
+      const sobra = porDia > 0 ? Math.max(0, Math.floor(temTotal - porDia * 90)) : temTotal;   // acima de 90 dias de estoque
+      return { ...r, v30, porDia, dias, est, repor, sobra };
+    });
+    // Resumo do estoque
+    const valorDe = r => (r.custo || 0) * ((r.aptas || 0));
+    const nRepor = linhasE.filter(r => r.est === "acabando").length;
+    const parados = linhasE.filter(r => r.est === "parado" || r.est === "lento");
+    const capParado = parados.reduce((s, r) => s + valorDe(r), 0);
+    const comVenda = linhasE.filter(r => isFinite(r.dias));
+    const pesoTot = comVenda.reduce((s, r) => s + (valorDe(r) || 1), 0);
+    const cobMedia = pesoTot ? comVenda.reduce((s, r) => s + Math.min(r.dias, 365) * (valorDe(r) || 1), 0) / pesoTot : 0;
+    const saem30 = linhasE.reduce((s, r) => s + Math.min(r.v30, (r.aptas || 0) + (r.transf || 0)), 0);
+    const fmtR0 = v => "R$ " + Math.round(v).toLocaleString("pt-BR");
+    const cardsE = document.createElement("div");
+    cardsE.style.cssText = "display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin-bottom:12px;";
+    [
+      { l: "Repor agora", v: `${nRepor} ${nRepor === 1 ? "SKU" : "SKUs"}`, s: `acabam em menos de ${DIAS_ALERTA} dias`, c: T.cVermelho, f: "acabando" },
+      { l: "Capital parado", v: estoqueBlingData ? fmtR0(capParado) : "—", s: `Parado + Lento · ${parados.length} ${parados.length === 1 ? "SKU" : "SKUs"}`, c: T.cLaranja, f: "parados" },
+      { l: "Cobertura média", v: `${Math.round(cobMedia)} dias`, s: "ponderada pelo valor em estoque", c: "#3b82f6" },
+      { l: "Saem em 30 dias", v: `${saem30.toLocaleString("pt-BR")} un`, s: "pelo ritmo de venda atual", c: "#34c759" },
+    ].forEach(k => {
+      const c = document.createElement("div");
+      c.style.cssText = `background:${T.card};border:0.5px solid ${T.border};border-radius:10px;padding:12px 14px;border-top:3px solid ${k.c};${k.f ? "cursor:pointer;" : ""}`;
+      c.innerHTML = `<div style="font-size:10px;color:${T.text2};letter-spacing:1px;text-transform:uppercase;">${k.l}</div><div style="font-size:20px;font-weight:700;color:${T.text};margin-top:4px;">${k.v}</div><div style="font-size:11px;color:${T.text3};margin-top:2px;">${k.s}</div>`;
+      if (k.f) c.onclick = () => { window._estqFiltro = window._estqFiltro === k.f ? "todos" : k.f; render(); };
+      cardsE.appendChild(c);
+    });
+    panel.appendChild(cardsE);
+
+    // Filtros rápidos
+    const filtro = window._estqFiltro || "todos";
+    const FILTROS = [["todos", "Todos", () => true], ["acabando", "Repor", r => r.est === "acabando"], ["subir", "Subir preço", r => r.est === "subir"],
+      ["saudavel", "Saudável", r => r.est === "saudavel"], ["medio", "Médio", r => r.est === "medio"], ["parados", "Parado / Lento", r => r.est === "parado" || r.est === "lento"]];
+    const fWrap = document.createElement("div");
+    fWrap.style.cssText = "display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;";
+    FILTROS.forEach(([k, nome, fn]) => {
+      const n = linhasE.filter(fn).length, on = filtro === k;
+      const b = document.createElement("button");
+      b.style.cssText = `font:500 11px Inter,sans-serif;padding:5px 12px;border-radius:14px;cursor:pointer;border:0.5px solid ${on ? T.text : T.border};background:${on ? T.text : "transparent"};color:${on ? T.bg : T.text2};`;
+      b.textContent = `${nome} ${n}`;
+      b.onclick = () => { window._estqFiltro = k; render(); };
+      fWrap.appendChild(b);
+    });
+    panel.appendChild(fWrap);
+
+    // Ordenação (clique no título da coluna); padrão: mais urgente primeiro
+    const ORD = window._estqOrdem || { col: "dias", asc: true };
+    const valOrd = { sku: r => r.sku, aptas: r => r.aptas || 0, vende: r => r.v30, dias: r => r.dias, repor: r => r.repor, custo: r => r.custo || 0, valor: r => r.valor || 0 };
+    const filtrada = linhasE.filter(FILTROS.find(f => f[0] === filtro)?.[2] || (() => true))
+      .sort((a, b) => { const x = valOrd[ORD.col](a), y = valOrd[ORD.col](b); const d = typeof x === "string" ? x.localeCompare(y) : (x === y ? 0 : x > y ? 1 : -1); return ORD.asc ? d : -d; });
+
     const tableWrap = document.createElement("div");
     tableWrap.style.cssText = "overflow-x:auto;";
     const table = document.createElement("table");
     table.style.cssText = "width:100%;border-collapse:separate;border-spacing:0 4px;";
-    table.innerHTML = `<thead><tr>
-      <th style="text-align:left;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">SKU</th>
-      <th style="text-align:left;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">PRODUTO</th>
-      <th style="text-align:center;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">APTAS</th>
-      <th style="text-align:center;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">TRANSF</th>
-      <th style="text-align:center;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">CUSTO</th>
-      <th style="text-align:center;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">VALOR</th>
-      <th style="text-align:center;padding:6px 8px;font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1.5px;">STATUS</th>
-    </tr></thead><tbody id="estoque-tbody"></tbody>`;
+    const th = (col, txt, al = "center") => `<th data-ord="${col || ""}" style="text-align:${al};padding:6px 8px;font-size:11px;color:${ORD.col === col ? "var(--text)" : "var(--text3)"};font-weight:400;letter-spacing:1.5px;${col ? "cursor:pointer;user-select:none;" : ""}white-space:nowrap;">${txt}${ORD.col === col ? (ORD.asc ? " ↑" : " ↓") : ""}</th>`;
+    table.innerHTML = `<thead><tr>${th("sku", "SKU", "left")}${th("", "PRODUTO", "left")}${th("aptas", "APTAS")}${th("", "TRANSF")}${th("vende", "VENDE")}${th("dias", "DURA")}${th("repor", "REPOR")}${th("custo", "CUSTO")}${th("valor", "VALOR")}${th("", "STATUS")}</tr></thead><tbody id="estoque-tbody"></tbody>`;
+    table.querySelectorAll("th[data-ord]").forEach(h => { const col = h.dataset.ord; if (!col) return; h.onclick = () => { window._estqOrdem = { col, asc: ORD.col === col ? !ORD.asc : col === "dias" }; render(); }; });
     tableWrap.appendChild(table);
     panel.appendChild(tableWrap);
 
     const tbody = table.querySelector("#estoque-tbody");
-    enriched.forEach(r => {
-      const v30 = r.vendas30 || 0;
-      // Cores do Dashboard; a linha inteira leva a cor do status (cor cheia, texto branco)
-      const statusInfo = v30 === 0 ? { label: "Parado", cor: T.cVermelho }
-        : v30 <= 10 ? { label: "Lento", cor: T.cLaranja }
-        : v30 <= 30 ? { label: "Médio", cor: T.cAmarelo }
-        : v30 <= 60 ? { label: "Saudável", cor: "#34c759" }      // mesmo verde dos cards do Dashboard
-        : { label: "Subir preço", cor: "#3b82f6" };              // mesmo azul dos cards do Dashboard
-      const fundoLinha = `color-mix(in srgb, ${statusInfo.cor} 85%, #000)`, fundoHover = `color-mix(in srgb, ${statusInfo.cor} 95%, #000)`;
+    if (!filtrada.length) tbody.innerHTML = `<tr><td colspan="10" style="padding:20px;text-align:center;color:var(--text3);font-size:12px;">Nenhum SKU nesse filtro.</td></tr>`;
+    filtrada.forEach(r => {
+      const cor = COR_EST[r.est];
+      const fundoLinha = `color-mix(in srgb, ${cor} 85%, #000)`, fundoHover = `color-mix(in srgb, ${cor} 95%, #000)`;
       const semCusto = !r.custo;
-      const custoStr = r.custo > 0 ? `R$ ${r.custo.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : `<span style="color:${T.cVermelho};font-size:11px;">sem custo</span>`;
+      const custoStr = r.custo > 0 ? `R$ ${r.custo.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : `<span style="font-size:11px;">sem custo</span>`;
       const valorStr = r.valor > 0 ? `R$ ${r.valor.toLocaleString("pt-BR",{minimumFractionDigits:2})}` : "—";
+      const diasTxt = !isFinite(r.dias) ? "sem venda" : r.dias > 365 ? "+1 ano" : `${Math.floor(r.dias)} ${Math.floor(r.dias) === 1 ? "dia" : "dias"}`;
+      const barra = isFinite(r.dias) ? Math.max(2, Math.min(100, r.dias / DIAS_REPOR * 100)) : 100;
+      const reporTxt = r.repor > 0 ? `<b>+${r.repor} un</b><div style="font-size:10px;opacity:.85;">p/ ${DIAS_REPOR} dias</div>`
+        : r.est === "parado" || r.est === "lento" ? `<span style="font-size:11px;">${r.custo ? fmtR0(valorDe(r)) + " parado" : "parado"}</span>`
+        : r.sobra > 0 ? `<span style="font-size:11px;">sobrando ~${r.sobra} un</span>` : `<span style="font-size:11px;opacity:.85;">ok</span>`;
       const tr = document.createElement("tr");
       tr.className = "estq-linha";
-      tr.style.cssText = `--estq-bg:${fundoLinha};--estq-cor:${statusInfo.cor};`;
+      tr.style.cssText = `--estq-bg:${fundoLinha};--estq-cor:${cor};`;
       tr.onmouseover = () => tr.style.setProperty("--estq-bg", fundoHover);
       tr.onmouseout  = () => tr.style.setProperty("--estq-bg", fundoLinha);
       tr.innerHTML = `
-        <td style="padding:12px 10px;color:var(--text);font-size:11px;white-space:nowrap;font-weight:700;max-width:140px;overflow:hidden;text-overflow:ellipsis;">${r.sku}</td>
-        <td style="padding:12px 10px;color:var(--text2);max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;">${r.produto}</td>
-        <td style="padding:12px 10px;text-align:center;color:${r.aptas>0?"var(--text)":"var(--text3)"};font-weight:${r.aptas>0?"600":"400"};">${r.aptas||"—"}</td>
-        <td style="padding:12px 10px;text-align:center;color:var(--text3);">${r.transf||"—"}</td>
-        <td style="padding:12px 10px;text-align:center;color:${semCusto?T.cVermelho:"var(--text2)"};">${custoStr}</td>
-        <td style="padding:12px 10px;text-align:center;color:${semCusto?"var(--text3)":"var(--text)"};font-weight:500;">${valorStr}</td>
-        <td style="padding:12px 10px;text-align:center;">
-          <span class="estq-badge" style="font-size:10px;font-weight:700;padding:4px 11px;border-radius:20px;white-space:nowrap;background:color-mix(in srgb, ${statusInfo.cor} 45%, #fff);">${statusInfo.label}</span>
-          ${v30 > 0 ? `<div style="font-size:9px;color:var(--text3);margin-top:3px;">${v30}/mês</div>` : ""}
+        <td style="padding:11px 10px;font-size:11px;white-space:nowrap;font-weight:700;max-width:160px;overflow:hidden;text-overflow:ellipsis;">${r.sku}</td>
+        <td style="padding:11px 10px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;">${r.produto}</td>
+        <td style="padding:11px 10px;text-align:center;font-weight:600;">${r.aptas||"—"}</td>
+        <td style="padding:11px 10px;text-align:center;">${r.transf||"—"}</td>
+        <td style="padding:11px 10px;text-align:center;white-space:nowrap;">${r.v30}/mês</td>
+        <td style="padding:11px 10px;text-align:center;min-width:80px;"><b>${diasTxt}</b><div style="height:5px;border-radius:3px;background:rgba(0,0,0,.3);margin:4px auto 0;max-width:90px;overflow:hidden;"><div style="height:100%;width:${barra}%;background:#fff;"></div></div></td>
+        <td style="padding:11px 10px;text-align:center;white-space:nowrap;">${reporTxt}</td>
+        <td style="padding:11px 10px;text-align:center;">${custoStr}</td>
+        <td style="padding:11px 10px;text-align:center;font-weight:500;">${valorStr}</td>
+        <td style="padding:11px 10px;text-align:center;">
+          <span class="estq-badge" style="font-size:10px;font-weight:700;padding:4px 11px;border-radius:20px;white-space:nowrap;background:color-mix(in srgb, ${cor} 45%, #fff);">${NOME_EST[r.est]}</span>
         </td>`;
       tbody.appendChild(tr);
     });
