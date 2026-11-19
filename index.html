@@ -13193,18 +13193,24 @@ async function renderNfTransferenciaFull(container, color) {
     <div style="font-size:15px;font-weight:700;color:${T.text};margin-bottom:4px;">NF Transferência Full</div>
     <div style="font-size:11px;color:${T.text3};margin-bottom:20px;">Importa o PDF do ML Full, desmembra os kits e monta a NF de transferência.</div>
 
-    <div style="font-size:11px;color:${T.text3};margin-bottom:8px;">1. Sobe o PDF de instruções do envio Full (ML)</div>
-    <label id="nf-full-label" style="display:block;border:2px dashed ${T.border2};border-radius:8px;padding:20px;text-align:center;cursor:pointer;margin-bottom:16px;transition:border-color .2s;">
-      <input type="file" id="nf-full-pdf" accept="application/pdf" style="display:none;">
-      <div style="font-size:12px;color:${T.text3};">📄 Clique para selecionar o PDF</div>
+    <div style="font-size:11px;color:${T.text3};margin-bottom:8px;">1. Sobe os PDFs de instruções dos envios Full (ML) — pode ser mais de um</div>
+    ${(nfFullState.pdfs || []).length ? `<div style="border:2px dashed ${T.border2};border-radius:8px;padding:10px;margin-bottom:16px;">
+      ${nfFullState.pdfs.map((f, i) => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;background:${T.bg3};border-radius:6px;padding:7px 10px;margin-bottom:6px;font-size:11px;color:${T.text};">
+        <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📄 ${f.nome}${f.envio ? ` <span style="color:${T.text3};">· envio ${f.envio}</span>` : ""}</span>
+        <button data-nf-pdf-tirar="${i}" title="Tirar este PDF" style="background:none;border:none;color:${T.text3};font-size:15px;cursor:pointer;line-height:1;">×</button></div>`).join("")}
+      <label id="nf-full-label" style="display:block;text-align:center;cursor:pointer;font-size:11px;color:${T.text3};padding:4px;">
+        <input type="file" id="nf-full-pdf" accept="application/pdf" multiple style="display:none;">+ adicionar outro PDF</label>
+    </div>` : `<label id="nf-full-label" style="display:block;border:2px dashed ${T.border2};border-radius:8px;padding:20px;text-align:center;cursor:pointer;margin-bottom:16px;transition:border-color .2s;">
+      <input type="file" id="nf-full-pdf" accept="application/pdf" multiple style="display:none;">
+      <div style="font-size:12px;color:${T.text3};">📄 Clique para selecionar os PDFs (um ou mais envios)</div>
       <div style="font-size:10px;color:${T.text3};margin-top:4px;">Inbound-XXXXXXXX-preparation-instructions.pdf</div>
-    </label>
+    </label>`}
 
     <div style="font-size:11px;color:${T.text3};margin-bottom:8px;">2. Ou cole os itens manualmente (SKU · Quantidade)</div>
     <textarea id="nf-full-manual" rows="6" placeholder="COSMIQ-REV-PRETO · 72\nWINDX-REV-KIT10-PRETO · 50\nWC-HDC-PRETO · 38" style="width:100%;background:${T.bg3};border:1px solid ${T.border};border-radius:6px;padding:10px 12px;color:${T.text};font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;resize:vertical;margin-bottom:16px;"></textarea>
 
     <button id="nf-full-processar" style="width:100%;padding:11px;border-radius:6px;background:#3b82f6;border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">
-      ${nfFullState.processando ? "⏳ Buscando no Bling..." : "Processar e desmembrar kits"}
+      ${nfFullState.processando ? "⏳ Buscando no Bling..." : (nfFullState.pdfs || []).length > 1 ? `Processar ${nfFullState.pdfs.length} envios e desmembrar kits` : "Processar e desmembrar kits"}
     </button>
 
     ${nfFullState.erro ? `<div style="background:${T.errBg};border:1px solid ${T.errBor};border-radius:6px;padding:10px;margin-top:12px;font-size:11px;color:${T.errText};">${nfFullState.erro}</div>` : ""}
@@ -13219,7 +13225,7 @@ async function renderNfTransferenciaFull(container, color) {
         <span style="color:${T.text3};">Chave</span>
         <span style="color:${T.text};font-family:Inter,sans-serif;font-size:10px;word-break:break-all;">${nfFullState.nfEmitida.chave || "—"}</span>
       </div>
-      <button onclick="window._nfFullState.fase='upload';window._nfFullState.itens=[];window._nfFullState.nfEmitida=null;window._nfFullState.cmpAplicado=false;" style="margin-top:12px;width:100%;padding:8px;background:none;border:1px solid ${T.okBor};border-radius:6px;font-size:11px;color:${T.okTxt};cursor:pointer;font-family:inherit;">Nova transferência</button>
+      <button onclick="window._nfFullState.fase='upload';window._nfFullState.itens=[];window._nfFullState.nfEmitida=null;window._nfFullState.cmpAplicado=false;window._nfFullState.pdfs=[];window._nfFullState.envios=[];window._nfFullState.enviosDetalhe=null;" style="margin-top:12px;width:100%;padding:8px;background:none;border:1px solid ${T.okBor};border-radius:6px;font-size:11px;color:${T.okTxt};cursor:pointer;font-family:inherit;">Nova transferência</button>
     </div>` : ""}
     <div style="margin-top:14px;padding-top:14px;border-top:1px solid ${T.sep};">
       ${nfFullState.cmpData && !nfFullState.cmpMostrarUpload && !nfFullState.cmpAplicado ? `
@@ -13261,7 +13267,21 @@ async function renderNfTransferenciaFull(container, color) {
     const totalUnidades = nfFullState.itens.reduce((s,i) => s + i.quantidade, 0);
     const totalCusto = nfFullState.itens.reduce((s,i) => s + (Number(i.custo||0) * Number(i.quantidade||0)), 0);
 
-    cardDir.innerHTML = `
+    // Resumo por envio (quando a NF junta mais de um envio)
+    const envs = nfFullState.envios || [];
+    const coresEnv = ["#3b82f6", "#8b5cf6", "#34c759", "#f97316"];
+    const det = nfFullState.enviosDetalhe;
+    const resumoEnvios = envs.length > 1 ? `
+      <div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid ${T.sep};">
+        <div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:${T.text3};margin-bottom:6px;">Itens dos envios (antes de desmembrar)</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">${envs.map((e, i) => `<span style="font-size:11px;padding:3px 9px;border-radius:10px;background:${coresEnv[i % 4]}22;color:${coresEnv[i % 4]};">${e.envio ? "Envio " + e.envio : e.nome} · ${e.skus} SKUs · ${e.unidades} un</span>`).join("")}</div>
+        ${det ? `<div style="max-height:180px;overflow-y:auto;"><table style="width:100%;border-collapse:collapse;font-size:11px;color:${T.text2};">
+          <tr style="color:${T.text3};font-size:10px;"><td style="padding:3px 0;">SKU</td>${envs.map((_, i) => `<td style="text-align:center;">ENV ${i + 1}</td>`).join("")}<td style="text-align:right;">TOTAL</td></tr>
+          ${det.map(d => `<tr style="border-top:0.5px solid ${T.sep};"><td style="padding:5px 0;color:${T.text};">${d.sku}</td>${d.porEnvio.map(q => `<td style="text-align:center;">${q || "—"}</td>`).join("")}<td style="text-align:right;font-weight:600;color:${T.text};">${d.total}</td></tr>`).join("")}
+        </table></div>` : ""}
+      </div>` : "";
+
+    cardDir.innerHTML = `${resumoEnvios}
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid ${T.sep};">
         <div style="font-size:12px;font-weight:600;color:${T.text};">${totalItens} produtos · ${totalUnidades} un</div>
         <div style="display:flex;align-items:center;gap:10px;">
@@ -13334,61 +13354,76 @@ async function renderNfTransferenciaFull(container, color) {
   const btnProcessar = container.querySelector("#nf-full-processar");
 
   // Upload PDF — extrai via Claude API
+  // Um ou mais PDFs (um por envio Full). O número do envio vem do nome do arquivo (Inbound-XXXXXXXX-...).
   pdfInput?.addEventListener("change", async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    label.innerHTML = `<div style="font-size:12px;color:${T.text};">📄 ${file.name}</div>`;
-
-    // Lê PDF como base64 e envia pra Claude extrair SKUs
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const b64 = ev.target.result.split(",")[1];
-      container.querySelector("#nf-full-manual").value = ""; // limpa manual
-      container.querySelector("#nf-full-manual").dataset.pdfB64 = b64;
-      container.querySelector("#nf-full-manual").placeholder = `PDF carregado: ${file.name}\nClique em "Processar" para extrair os SKUs.`;
-    };
-    reader.readAsDataURL(file);
+    const files = [...(e.target.files || [])];
+    if (!files.length) return;
+    const lidos = await Promise.all(files.map(file => new Promise(ok => {
+      const reader = new FileReader();
+      reader.onload = ev => ok({ nome: file.name, b64: String(ev.target.result).split(",")[1], envio: (file.name.match(/inbound[-_ ]?(\d{5,})/i) || [])[1] || null });
+      reader.onerror = () => ok(null);
+      reader.readAsDataURL(file);
+    })));
+    nfFullState.pdfs = [...(nfFullState.pdfs || [])];
+    for (const f of lidos) if (f && !nfFullState.pdfs.some(x => x.nome === f.nome)) nfFullState.pdfs.push(f);
+    renderNfTransferenciaFull(container, color);
+  });
+  container.querySelectorAll("[data-nf-pdf-tirar]").forEach(b => b.onclick = ev => {
+    ev.preventDefault(); ev.stopPropagation();
+    nfFullState.pdfs.splice(Number(b.dataset.nfPdfTirar), 1);
+    renderNfTransferenciaFull(container, color);
   });
 
   // Processar
   btnProcessar?.addEventListener("click", async () => {
     const manual = container.querySelector("#nf-full-manual");
-    const pdfB64 = manual?.dataset.pdfB64;
-    let itensParaProcessar = [];
+    const pdfs = nfFullState.pdfs || [];
+    const envios = [];   // [{ envio, nome, itens }] — um por PDF (e um "Manual", se colou itens)
 
-    if (pdfB64) {
-      // Extrai SKUs do PDF via Claude
+    // 1) Extrai os SKUs de cada PDF (um por vez)
+    for (let i = 0; i < pdfs.length; i++) {
       nfFullState.processando = true;
       nfFullState.erro = null;
-      btnProcessar.textContent = "⏳ Extraindo SKUs do PDF...";
+      btnProcessar.textContent = pdfs.length > 1 ? `⏳ Lendo envio ${i + 1} de ${pdfs.length}...` : "⏳ Extraindo SKUs do PDF...";
       btnProcessar.disabled = true;
-
       try {
         const resp = await fetch(`${BLING_PROXY}/api/bling-produtos?action=extrair-pdf-full`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ pdfBase64: pdfB64 })
+          body: JSON.stringify({ pdfBase64: pdfs[i].b64 })
         });
         const data = await resp.json();
         if (!resp.ok || !data.ok) throw new Error(data.erro || "Erro ao extrair PDF");
-        itensParaProcessar = data.itens || [];
+        envios.push({ envio: pdfs[i].envio, nome: pdfs[i].nome, itens: data.itens || [] });
       } catch(e) {
         nfFullState.processando = false;
-        nfFullState.erro = "Erro ao extrair PDF: " + e.message;
+        nfFullState.erro = `Erro ao ler ${pdfs[i].nome}: ${e.message}`;
         renderNfTransferenciaFull(container, color);
         return;
       }
-    } else {
-      // Parse manual
-      const texto = manual?.value || "";
-      const linhas = texto.split("\n").filter(l => l.trim());
-      console.log("Linhas para parse:", linhas);
-      for (const linha of linhas) {
-        const match = linha.match(/^(.+?)\s+(\d+)\s*$/);
-        console.log("Linha:", JSON.stringify(linha), "->", match ? [match[1], match[2]] : "no match");
-        if (match) itensParaProcessar.push({ sku: match[1].trim(), descricao: match[1].trim(), quantidade: Number(match[2]) });
-      }
     }
+    // 2) Itens colados à mão somam junto
+    {
+      const linhas = (manual?.value || "").split("\n").filter(l => l.trim());
+      const itensManual = [];
+      for (const linha of linhas) {
+        const match = linha.replace(/[·;]/g, " ").match(/^(.+?)\s+(\d+)\s*$/);
+        if (match) itensManual.push({ sku: match[1].trim(), descricao: match[1].trim(), quantidade: Number(match[2]) });
+      }
+      if (itensManual.length) envios.push({ envio: null, nome: "Manual", itens: itensManual });
+    }
+    // 3) Junta tudo: mesmo SKU em mais de um envio → soma as quantidades
+    const porSku = new Map();
+    envios.forEach((ev, ei) => (ev.itens || []).forEach(it => {
+      const k = String(it.sku || "").trim().toUpperCase(); if (!k) return;
+      const atual = porSku.get(k) || { ...it, sku: String(it.sku).trim(), quantidade: 0, _porEnvio: {} };
+      atual.quantidade += Number(it.quantidade || 0);
+      atual._porEnvio[ei] = (atual._porEnvio[ei] || 0) + Number(it.quantidade || 0);
+      porSku.set(k, atual);
+    }));
+    let itensParaProcessar = [...porSku.values()].map(({ _porEnvio, ...it }) => it);
+    nfFullState.envios = envios.map((ev, ei) => ({ envio: ev.envio, nome: ev.nome, skus: (ev.itens || []).length, unidades: (ev.itens || []).reduce((s, x) => s + Number(x.quantidade || 0), 0) }));
+    nfFullState.enviosDetalhe = envios.length > 1 ? [...porSku.values()].map(it => ({ sku: it.sku, total: it.quantidade, porEnvio: envios.map((_, ei) => it._porEnvio[ei] || 0) })) : null;
 
     if (!itensParaProcessar.length) {
       nfFullState.processando = false;
@@ -13606,7 +13641,7 @@ function renderNfFullEmitirModal(itens) {
       const r = await fetch(`${BLING_PROXY}/api/bling-produtos?action=emitir-nf-transferencia`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ itens, naturezaId: 15109130797 }),
+        body: JSON.stringify({ itens, naturezaId: 15109130797, envios: (nfFullState.envios || []).map(e => e.envio).filter(Boolean) }),
       });
       const data = await r.json();
 
