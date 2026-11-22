@@ -11199,6 +11199,32 @@ function renderConfig(panel, color) {
 
   // ── Sub-aba: Geral ────────────────────────────────────────────
 
+  // ── Seção: Uso da IA no mês (contado pelo backend em /uso_ia/{AAAA-MM}/{função}) ──
+  {
+    const mesUso = new Date(Date.now() - 3 * 3600e3).toISOString().slice(0, 7);
+    if (window._usoIaMes !== mesUso) { window._usoIaMes = mesUso; onValue(ref(db, `/uso_ia/${mesUso}`), sn => { window._usoIa = sn.val() || {}; if (window._diogotab === "config" && (window._configTab || "geral") === "geral") render(); }, () => {}); }
+    const uso = window._usoIa;
+    const NOMES = { "perguntas-sugestoes": "Sugestões nas Perguntas", "perguntas-auto-resposta": "Auto-resposta de perguntas", "perguntas-teste": "Testar sugestão (Config)",
+      "reclamacoes-webhook": "Reclamações (na hora)", "reclamacoes-sync": "Reclamações (sincronizar)", "promocao-analise": "Análise da promoção",
+      "nf-extrair-pdf": "Leitura de NF / contas a pagar", "full-extrair-pdf": "Leitura do PDF do envio Full", "email-pdf": "PDF de e-mail",
+      "assistente-chat": "Assistente ✦", "tarefa-voz": "Tarefa por voz", "outros": "Outros" };
+    const secUso = criarSecaoConfig("Uso da IA neste mês", color);
+    const linhas = Object.entries(uso || {}).sort((a, b) => (b[1].usd || 0) - (a[1].usd || 0));
+    const total = linhas.reduce((t, [, v]) => t + (v.usd || 0), 0);
+    const fUsd = v => "US$ " + Number(v || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    secUso.body.innerHTML = uso === undefined ? `<div style="font-size:11px;color:var(--text3);">Carregando...</div>`
+      : !linhas.length ? `<div style="font-size:12px;color:var(--text2);">Nenhum uso registrado ainda neste mês. A contagem começou agora — os números aparecem conforme as funções forem usadas.</div>`
+      : `<div style="font-size:12px;color:var(--text2);margin-bottom:8px;">Total estimado: <b style="color:var(--text);">${fUsd(total)}</b> · ${linhas.reduce((t, [, v]) => t + (v.chamadas || 0), 0)} chamadas</div>
+        <div style="display:flex;flex-direction:column;gap:4px;">${linhas.map(([k, v]) => `
+          <div style="display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;font-size:12px;padding:6px 0;border-top:0.5px solid var(--sep);">
+            <span style="color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${NOMES[k] || k} <span style="color:var(--text3);font-size:10px;">${v.modelo || ""}</span></span>
+            <span style="color:var(--text3);">${v.chamadas || 0}×</span>
+            <span style="color:var(--text);font-weight:600;min-width:64px;text-align:right;">${fUsd(v.usd)}</span>
+          </div>`).join("")}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:8px;">Estimativa pela tabela de preços da Anthropic; o valor exato fica no painel da Anthropic.</div>`;
+    panel.appendChild(secUso.wrap);
+  }
+
   // ── Seção: Tarefa por voz (atalho da Siri) ────────────────────
   {
     const URL_VOZ = `${VERCEL_BACKEND}/api/recorrentes?action=tarefa-voz`;
