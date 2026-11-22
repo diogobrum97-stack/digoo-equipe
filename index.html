@@ -1322,8 +1322,13 @@ const _pergShell = document.createElement("div");
 document.addEventListener("pointerdown", e => { if (!_pergShell.contains(e.target)) window._ultimoCliqueFora = Date.now(); }, true);
 document.addEventListener("click", e => { if (!_pergShell.contains(e.target)) window._ultimoCliqueFora = Date.now(); }, true);
 // cliques fora da lista de promoções (abas, menu, conta) liberam o redesenho da aba Promoções
-const _marcaCliqueProm = e => { const l = document.querySelector("#prom-lista"); if (!l || !l.contains(e.target)) window._ultimoCliqueForaProm = Date.now(); };
-document.addEventListener("pointerdown", _marcaCliqueProm, true);
+// Só conta toque de verdade num botão/aba/link — rolar a tela com o dedo (pointerdown) não libera nada.
+const _marcaCliqueProm = e => {
+  const l = document.querySelector("#prom-lista");
+  if (l && l.contains(e.target)) return;
+  if (!e.target.closest?.("button, a, input, select, label, [onclick], [role=button], [data-tab]")) return;
+  window._ultimoCliqueForaProm = Date.now();
+};
 document.addEventListener("click", _marcaCliqueProm, true);
 _pergShell.style.cssText = "max-width:760px;";
 _pergShell.innerHTML = `
