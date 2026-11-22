@@ -1321,6 +1321,10 @@ let _perg = {
 const _pergShell = document.createElement("div");
 document.addEventListener("pointerdown", e => { if (!_pergShell.contains(e.target)) window._ultimoCliqueFora = Date.now(); }, true);
 document.addEventListener("click", e => { if (!_pergShell.contains(e.target)) window._ultimoCliqueFora = Date.now(); }, true);
+// cliques fora da lista de promoções (abas, menu, conta) liberam o redesenho da aba Promoções
+const _marcaCliqueProm = e => { const l = document.querySelector("#prom-lista"); if (!l || !l.contains(e.target)) window._ultimoCliqueForaProm = Date.now(); };
+document.addEventListener("pointerdown", _marcaCliqueProm, true);
+document.addEventListener("click", _marcaCliqueProm, true);
 _pergShell.style.cssText = "max-width:760px;";
 _pergShell.innerHTML = `
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
@@ -7978,6 +7982,15 @@ function render(){
       [60, 250, 600, 1200].forEach(t => setTimeout(voltar, t));
       setTimeout(() => ["wheel", "touchstart", "keydown"].forEach(ev => window.removeEventListener(ev, parar)), 1300);
     }
+  }
+  // ── Promoções congeladas: a lista se atualiza sozinha por dentro (só os números); redesenho geral automático
+  // (venda nova, tarefa, etc.) não remonta a aba — só passa o que vem de clique fora da lista.
+  {
+    const naProm = window._diogotab === "promocoes" && !window._showEquipe;
+    const jaEstavaProm = window._promUltimaAba === "promocoes";
+    const cliqueRecenteUI = Date.now() - (window._ultimoCliqueForaProm || 0) < 1500;
+    if (naProm && jaEstavaProm && !cliqueRecenteUI && document.querySelector("#prom-lista")) return;
+    window._promUltimaAba = naProm ? "promocoes" : (window._diogotab || "");
   }
   // ── Perguntas congeladas: enquanto a aba está aberta, nada redesenha a tela sozinho
   // (senão o scroll volta pro topo e atrapalha quem está escrevendo). Só passa render
@@ -14873,6 +14886,30 @@ const OFERTA_TIPOS = {
   VOLUME: "Desconto por quantidade", PRE_NEGOTIATED: "Desconto pré-acordado", UNHEALTHY_STOCK: "Liquidação Full",
   SELLER_COUPON_CAMPAIGN: "Cupom",
 };
+// Troca só o que mudou dentro de um elemento (números, selos, botões), sem recriar o resto:
+// nada pisca, imagens não recarregam, rolagem e campo em edição ficam como estão.
+function morphHTML(alvo, html) {
+  const novo = document.createElement(alvo.tagName);
+  novo.innerHTML = html;
+  const sync = (a, b) => {
+    if (a.nodeType === 1) {
+      for (const at of [...a.attributes]) if (!b.hasAttribute(at.name)) a.removeAttribute(at.name);
+      for (const at of [...b.attributes]) if (a.getAttribute(at.name) !== at.value) a.setAttribute(at.name, at.value);
+      if (a.tagName === "INPUT" && document.activeElement !== a && a.value !== (b.getAttribute("value") || "")) a.value = b.getAttribute("value") || "";
+    }
+    const ac = [...a.childNodes], bc = [...b.childNodes];
+    bc.forEach((y, i) => {
+      const x = ac[i];
+      if (!x) { a.appendChild(y); return; }
+      if (x.nodeType !== y.nodeType || x.nodeName !== y.nodeName) { a.replaceChild(y, x); return; }
+      if (x.nodeType === 3 || x.nodeType === 8) { if (x.nodeValue !== y.nodeValue) x.nodeValue = y.nodeValue; return; }
+      sync(x, y);
+    });
+    for (let i = ac.length - 1; i >= bc.length; i--) a.removeChild(ac[i]);
+  };
+  sync(alvo, novo);
+}
+
 window._renderOfertasML = async function(container, token, BACKEND, forcar) {
   const st = window.promState;
   const conta = st.conta;
@@ -15122,7 +15159,8 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
     </div>`;
   };
 
-  container.innerHTML = `
+  const _visaoOf = `${conta}|${st.ofertasFiltro}|${st.ofertasBusca || ""}|${celular ? "m" : "d"}`;
+  const _htmlOf = `
     <div style="font-size:11px;color:${T.text2};margin-bottom:8px;">${atualizadoTxt}${meta.total_anuncios ? ` · ${meta.total_anuncios} anúncios verificados` : ""}</div>
     ${velho ? `<div style="background:${amarelo}18;border:0.5px solid ${amarelo}66;color:${amarelo};border-radius:8px;padding:9px 12px;font-size:12px;margin-bottom:12px;">A atualização automática está atrasada (${meta.gerado_em ? atualizadoTxt : "sem dados"}). Buscando direto do ML — os números trocam sozinhos em até 1 minuto.</div>` : ""}
     ${nFalhas && !velho ? `<div style="font-size:11px;color:${T.text2};margin-bottom:8px;">${nFalhas} ${nFalhas === 1 ? "anúncio não respondeu" : "anúncios não responderam"} na última volta — entram na próxima, em 1-2 min.</div>` : ""}
@@ -15163,6 +15201,9 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
           </div>
         </div>`; }).join("") : `<div style="font-size:13px;color:${T.text2};padding:20px 0;text-align:center;">Nenhuma oferta com esse filtro.</div>`}
     </div>`;
+  if (container.dataset.ofVisao === _visaoOf && container.querySelector("[data-of-grupo], .of-row")) morphHTML(container, _htmlOf);
+  else container.innerHTML = _htmlOf;
+  container.dataset.ofVisao = _visaoOf;
 
   container.querySelectorAll("[data-of-filtro]").forEach(b => b.onclick = () => { st.ofertasFiltro = b.dataset.ofFiltro; window._renderOfertasML(container, token, BACKEND); });
   container.querySelectorAll("[data-of-aba]").forEach(b => b.onclick = () => {
