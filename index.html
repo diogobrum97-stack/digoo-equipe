@@ -14979,15 +14979,16 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
     let html = atual ? ln(k("Agora", verde), desc(atual))
       : prog ? ln(k("Programada", azul), desc(prog))
       : ln(k("Agora", vermelho), `<span style="color:${vermelho};">Sem promoção</span>`);
-    const cands = a._of.filter(o => o.status === "candidate" && meliDe(a, o) > 0);
+    // Melhor = a que mais sobra por venda: preço final + o que o ML paga (empate: o ML pagando mais)
+    const sobra = o => (o._final || 0) + meliDe(a, o);
+    const cands = a._of.filter(o => o.status === "candidate" && o._final > 0 && o.tipo !== "DEAL");
     if (cands.length) {
-      const melhor = cands.reduce((m, o) => meliDe(a, o) > meliDe(a, m) || (meliDe(a, o) === meliDe(a, m) && o._final > m._final) ? o : m);
-      const base = atual ? meliDe(a, atual) : 0;
-      const ganho = meliDe(a, melhor) - base;
-      html += ganho > 0.005
-        ? ln(k("Melhor", azul), `${desc(melhor)}${atual ? ` <span style="color:${T.text2};">(+${fmtR(ganho)})</span>` : ""}`)
+      const melhor = cands.reduce((m, o) => sobra(o) > sobra(m) + 0.005 || (Math.abs(sobra(o) - sobra(m)) <= 0.005 && meliDe(a, o) > meliDe(a, m)) ? o : m);
+      const melhorQueAtual = !atual || sobra(melhor) > sobra(atual) + 0.005;
+      html += melhorQueAtual
+        ? ln(k("Melhor", azul), desc(melhor))
         : ln(k("Melhor", T.text3), `<span style="color:${T.text2};">Já está na melhor opção</span>`);
-    } else if (atual && meliDe(a, atual) > 0) html += ln(k("Melhor", T.text3), `<span style="color:${T.text2};">Já está na melhor opção</span>`);
+    } else if (atual) html += ln(k("Melhor", T.text3), `<span style="color:${T.text2};">Já está na melhor opção</span>`);
     return `<div style="margin-top:8px;padding-top:7px;border-top:0.5px solid ${T.border};">${rotulo ? `<div style="font-size:10px;letter-spacing:.06em;color:${T.text2};text-transform:uppercase;">${rotulo}</div>` : ""}${html}</div>`;
   };
 
