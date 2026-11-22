@@ -14154,6 +14154,44 @@ window._ofertasLive = { filial: { itens: null, meta: null }, matriz: { itens: nu
   } catch (_) {}
 }
 
+// ── Confirmação embaixo da tela (Participar/Sair nas Ofertas do ML) ──
+// window._ofToast({ ok, titulo, l1, l2, onVer }) — some em 6 s; arrastar pra baixo fecha
+window._ofToast = ({ ok = true, titulo, l1 = "", l2 = "", onVer = null }) => {
+  document.getElementById("of-toast")?.remove();
+  const celular = window.innerWidth <= 768;
+  const tabbar = document.getElementById("m-tabbar");
+  const alturaTab = celular && tabbar && tabbar.offsetHeight ? tabbar.offsetHeight : 0;
+  const cor = ok ? "#34c759" : T.cVermelho;
+  const el = document.createElement("div");
+  el.id = "of-toast";
+  el.setAttribute("role", "status");
+  el.style.cssText = `position:fixed;z-index:10050;${celular ? `left:12px;right:12px;bottom:calc(${alturaTab + 12}px + ${alturaTab ? "0px" : "env(safe-area-inset-bottom, 0px)"});` : "right:24px;bottom:24px;width:380px;"}
+    background:color-mix(in srgb, ${cor} 12%, ${T.card});border:1px solid ${cor}66;border-radius:14px;padding:12px 14px;box-shadow:0 10px 28px rgba(0,0,0,.45);
+    transform:translateY(20px);opacity:0;transition:transform .2s ease, opacity .2s ease;touch-action:pan-x;`;
+  el.innerHTML = `<div style="display:flex;gap:10px;align-items:flex-start;">
+      <div style="width:22px;height:22px;border-radius:50%;background:${cor};color:${ok ? "#04210d" : "#fff"};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;">${ok ? "✓" : "!"}</div>
+      <div style="min-width:0;flex:1;">
+        <div style="font-size:13px;font-weight:600;color:${T.text};">${titulo}</div>
+        ${l1 ? `<div style="font-size:12px;color:${T.text2};margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${l1}</div>` : ""}
+        ${l2 ? `<div style="font-size:12px;color:${T.text};margin-top:2px;">${l2}</div>` : ""}
+      </div>
+      ${onVer ? `<button data-t="ver" style="background:none;border:none;color:${T.cAzul};font:600 12px Inter,sans-serif;cursor:pointer;padding:2px 4px;white-space:nowrap;">Ver</button>` : ""}
+      <button data-t="x" aria-label="Fechar" style="background:none;border:none;color:${T.text3};font-size:15px;cursor:pointer;line-height:1;padding:2px;">×</button>
+    </div>
+    <div style="height:3px;background:${cor}33;border-radius:2px;margin-top:10px;overflow:hidden;"><div data-t="barra" style="width:100%;height:100%;background:${cor};transition:width 6s linear;"></div></div>`;
+  document.body.appendChild(el);
+  let fechado = false;
+  const fechar = () => { if (fechado) return; fechado = true; el.style.transform = "translateY(20px)"; el.style.opacity = "0"; setTimeout(() => el.remove(), 220); };
+  requestAnimationFrame(() => { el.style.transform = "translateY(0)"; el.style.opacity = "1"; el.querySelector('[data-t="barra"]').style.width = "0%"; });
+  const timer = setTimeout(fechar, 6000);
+  el.querySelector('[data-t="x"]').onclick = () => { clearTimeout(timer); fechar(); };
+  const ver = el.querySelector('[data-t="ver"]');
+  if (ver) ver.onclick = () => { clearTimeout(timer); fechar(); onVer(); };
+  let y0 = null;
+  el.addEventListener("touchstart", e => { y0 = e.touches[0].clientY; }, { passive: true });
+  el.addEventListener("touchmove", e => { if (y0 != null && e.touches[0].clientY - y0 > 40) { y0 = null; clearTimeout(timer); fechar(); } }, { passive: true });
+};
+
 // ── Email Hostinger ───────────────────────────────────────────────────────
 
 const EMAIL_BACKEND = "https://digoo-backend.vercel.app";
@@ -15106,6 +15144,20 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
       if (acao === "sair") window._promoSaidaManual?.(conta, itemId);
       window._ofertasPend[pk] = { acao, status: acao === "participar" ? (futuro ? "pending" : "started") : "candidate", desde: Date.now() };
       fim();
+      {
+        const orig = alvo.preco_original || it.preco || 0, final = alvo.preco || alvo.preco_sugerido || 0;
+        const pct = orig && final ? Math.ceil((1 - final / orig) * 100 - 1e-9) : null;
+        const ml = meliDe(it, { ...alvo, _final: final });
+        const nomeP = alvo.nome || OFERTA_TIPOS[alvo.tipo] || alvo.tipo || "promoção";
+        const gk = `${conta}|${it.sku || itemId}`;
+        window._ofToast({
+          ok: true,
+          titulo: acao === "participar" ? (futuro ? "Promoção programada" : "Entrou na promoção") : "Saiu da promoção",
+          l1: `${esc(it.titulo || itemId)}${tipoAnuncio(it) ? " · " + tipoAnuncio(it) : ""}`,
+          l2: `${esc(nomeP)}${pct != null ? ` · ${pct}%` : ""}${final ? ` · ${fmtR(final)}` : ""}${acao === "participar" ? ` · ${ml > 0 ? `<span style="color:#34c759;font-weight:600;">ML paga ${fmtR(ml)}</span>` : "você paga tudo"}` : ""}`,
+          onVer: () => { st.ofertasFiltro = "todas"; st.ofertasBusca = it.sku || itemId; abertos[gk] = true; window._renderOfertasML(container, token, BACKEND); },
+        });
+      }
       (async () => {
         for (const s of [3, 5, 12]) {
           await new Promise(r => setTimeout(r, s * 1000));
@@ -15122,6 +15174,7 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
     } catch (e) {
       b.disabled = false; delete b.dataset.ocupado; b.textContent = acao === "participar" ? "Participar" : "Sair";
       if (msg) { msg.style.color = vermelho; msg.textContent = e.message; }
+      window._ofToast({ ok: false, titulo: acao === "participar" ? "O ML não aceitou a promoção" : "Não deu pra sair da promoção", l1: esc(it?.titulo || itemId), l2: esc(e.message) });
     }
   });
 };
