@@ -14979,6 +14979,22 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
     if (/impulsione/i.test(o.nome || "") && final > 0) return Math.floor(Math.round(final * 100) / 100) / 100;
     return orig ? orig * o.meli_pct / 100 : 0;
   };
+  // Para cada anúncio: a promoção que vale agora e a compartilhada que mais sobra por venda (preço final + ML paga)
+  const _melhorCache = new Map();
+  const analiseAnuncio = a => {
+    if (_melhorCache.has(a.item_id)) return _melhorCache.get(a.item_id);
+    const sobra = o => (o._final || 0) + meliDe(a, o);
+    const todas = prep.get(a.item_id) || a._of || [];
+    const valendo = todas.filter(o => o.status !== "candidate" && !o._programada);
+    const atual = valendo.length ? valendo.reduce((m, o) => (o._final || Infinity) < (m._final || Infinity) ? o : m) : null;
+    const cands = todas.filter(o => o.status === "candidate" && o._final > 0 && o.tipo !== "DEAL" && meliDe(a, o) > 0);
+    const melhorCand = cands.length ? cands.reduce((m, o) => sobra(o) > sobra(m) + 0.005 || (Math.abs(sobra(o) - sobra(m)) <= 0.005 && meliDe(a, o) > meliDe(a, m)) ? o : m) : null;
+    const ganho = melhorCand && atual ? sobra(melhorCand) - sobra(atual) : null;
+    const sugerida = melhorCand && (!atual || ganho > 0.005) ? melhorCand : null;
+    const r = { atual, sugerida, ganho: sugerida && atual ? ganho : null, atualEhMelhor: !!atual && !sugerida && (cands.length > 0 || meliDe(a, atual) > 0) };
+    _melhorCache.set(a.item_id, r);
+    return r;
+  };
   // Resumo de um anúncio no card fechado: a promoção que vale agora e a proposta em que o ML paga mais
   const resumoAnuncio = (a, rotulo) => {
     const pctDe = o => { const orig = o.preco_original || a.preco || 0; return orig && o._final ? Math.ceil((1 - o._final / orig) * 100 - 1e-9) : null; };
@@ -14993,17 +15009,10 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
     let html = atual ? ln(k("Agora", verde), desc(atual))
       : prog ? ln(k("Programada", azul), desc(prog))
       : ln(k("Agora", vermelho), `<span style="color:${vermelho};">Sem promoção</span>`);
-    // Melhor = a que mais sobra por venda: preço final + o que o ML paga (empate: o ML pagando mais)
-    const sobra = o => (o._final || 0) + meliDe(a, o);
-    // Só sugere promoções compartilhadas (em que o ML paga parte); as que você paga sozinho não entram
-    const cands = a._of.filter(o => o.status === "candidate" && o._final > 0 && o.tipo !== "DEAL" && meliDe(a, o) > 0);
-    if (cands.length) {
-      const melhor = cands.reduce((m, o) => sobra(o) > sobra(m) + 0.005 || (Math.abs(sobra(o) - sobra(m)) <= 0.005 && meliDe(a, o) > meliDe(a, m)) ? o : m);
-      const ganho = atual ? sobra(melhor) - sobra(atual) : null;
-      html += !atual || ganho > 0.005
-        ? ln(k("Melhor", azul), `${desc(melhor)}${ganho != null ? ` <span style="color:${verde};font-weight:600;white-space:nowrap;">· +${fmtR(ganho)} por venda</span>` : ""}`)
-        : ln(k("Melhor", T.text3), `<span style="color:${T.text2};">Já está na melhor opção</span>`);
-    } else if (atual) html += ln(k("Melhor", T.text3), `<span style="color:${T.text2};">${meliDe(a, atual) > 0 ? "Já está na melhor opção" : "Nenhuma compartilhada disponível"}</span>`);
+    // Melhor = compartilhada que mais sobra por venda (mesma análise que marca as linhas do card aberto)
+    const an = analiseAnuncio(a);
+    if (an.sugerida) html += ln(k("Melhor", azul), `${desc(an.sugerida)}${an.ganho != null ? ` <span style="color:${verde};font-weight:600;white-space:nowrap;">· +${fmtR(an.ganho)} por venda</span>` : ""}`);
+    else if (an.atual) html += ln(k("Melhor", T.text3), `<span style="color:${T.text2};">${an.atualEhMelhor ? "Já está na melhor opção" : "Nenhuma compartilhada disponível"}</span>`);
     return `<div style="margin-top:8px;padding-top:7px;border-top:0.5px solid ${T.border};">${rotulo ? `<div style="font-size:10px;letter-spacing:.06em;color:${T.text2};text-transform:uppercase;">${rotulo}</div>` : ""}${html}</div>`;
   };
 
@@ -15016,7 +15025,12 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
     const nome = o.nome || OFERTA_TIPOS[o.tipo] || o.tipo;
     const isBF = /black\s*friday/i.test(nome);
     const nomeLinha = isBF ? (OFERTA_TIPOS[o.tipo] || o.tipo) : nome;
+    const an = analiseAnuncio(it);
+    const marcaMelhor = an.sugerida && (an.sugerida === o || (an.sugerida.promotion_id === o.promotion_id && an.sugerida.tipo === o.tipo))
+      ? pill(`Sugestão do OPS${an.ganho != null ? ` · +${fmtR(an.ganho)} por venda` : ""}`, azul, true)
+      : an.atualEhMelhor && an.atual && (an.atual === o || (an.atual.promotion_id === o.promotion_id && an.atual.tipo === o.tipo)) ? pill("✓ Já é a melhor opção", verde, true) : "";
     const statusPill = (o.status === "candidate" ? pill("Nova proposta", amarelo) : o._programada ? pill("Programada", azul) : pill("Ativa", verde))
+      + marcaMelhor
       + (o._confirmando ? `<span style="font-size:10px;color:${T.text2};">confirmando com o ML…</span>` : "");
     const avisoLinha = avisos[`${conta}|${it.item_id}|${o.promotion_id || ""}|${o.tipo}`]?.msg || "";
     const periodo = o.inicio || o.fim ? `${fmtD(o.inicio)}${o.fim ? " a " + fmtD(o.fim) : ""}` : (o.tipo === "LIGHTNING" || o.tipo === "DOD" ? "Data definida pelo ML" : "");
