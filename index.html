@@ -1166,6 +1166,7 @@ window._dashRenderSeMudou = () => {
   try { sig = JSON.stringify(dashData, (k, v) => (k === "hora" || k === "_fetchedAt" || k === "percDia" || /^projecao/.test(k)) ? undefined : v); }
   catch (_) { sig = String(Math.random()); }
   const naTela = window._diogotab === "dashboard" && document.getElementById("dash-kpi-total");
+  if (!window._diogotab || (window._diogotab !== "dashboard" && dashData && !dashData.erro)) { _dashAssinatura = sig; return; }   // fora do Dashboard: só guarda, não redesenha a tela atual
   if (sig === _dashAssinatura && naTela) {
     const h = document.getElementById("dash-hora"); if (h && dashData?.hora) h.textContent = dashData.hora;
     return;
@@ -7954,8 +7955,30 @@ function renderChatModal(memberName, color) {
 function render(){
   window._renderTab = render;
   if(!currentUser) return;
-  // Dashboard: redesenho não pode mexer na rolagem
-  if (window._diogotab === "dashboard") { const _sy = window.scrollY, _aba = window._diogotab; queueMicrotask(() => { if (window._diogotab === _aba && Math.abs(window.scrollY - _sy) > 2) window.scrollTo(0, _sy); }); }
+  // Redesenho automático não pode mexer na rolagem (qualquer aba): guarda onde estava e volta pra lá
+  // assim que o conteúdo (inclusive o que carrega depois, como as Ofertas) estiver de volta. Se a pessoa rolar, desiste.
+  {
+    // no celular quem rola é o painel (.panel.open); no computador, a página
+    const _pan = document.querySelector(".panel.open");
+    const _pt = _pan ? _pan.scrollTop : 0;
+    const _sy = window.scrollY, _aba = `${window._diogotab}|${window.promState?.aba || ""}|${window._configTab || ""}`;
+    if (_sy > 0 || _pt > 0) {
+      const tok = (window._rolagemTok = (window._rolagemTok || 0) + 1);
+      let mexeu = false;
+      const parar = () => { mexeu = true; };
+      ["wheel", "touchstart", "keydown"].forEach(ev => window.addEventListener(ev, parar, { once: true, passive: true }));
+      const voltar = () => {
+        if (mexeu || window._rolagemTok !== tok) return;
+        if (`${window._diogotab}|${window.promState?.aba || ""}|${window._configTab || ""}` !== _aba) return;
+        if (_sy > 0 && Math.abs(window.scrollY - _sy) > 2 && document.documentElement.scrollHeight - window.innerHeight >= _sy - 2) window.scrollTo(0, _sy);
+        const np = document.querySelector(".panel.open");
+        if (_pt > 0 && np && Math.abs(np.scrollTop - _pt) > 2 && np.scrollHeight - np.clientHeight >= _pt - 2) np.scrollTop = _pt;
+      };
+      queueMicrotask(voltar);
+      [60, 250, 600, 1200].forEach(t => setTimeout(voltar, t));
+      setTimeout(() => ["wheel", "touchstart", "keydown"].forEach(ev => window.removeEventListener(ev, parar)), 1300);
+    }
+  }
   // ── Perguntas congeladas: enquanto a aba está aberta, nada redesenha a tela sozinho
   // (senão o scroll volta pro topo e atrapalha quem está escrevendo). Só passa render
   // disparado por clique do usuário fora da área das perguntas (menu, abas, tema).
@@ -13899,8 +13922,11 @@ window._ofertasLive = { filial: { itens: null, meta: null }, matriz: { itens: nu
       const ocupado = (document.activeElement && c.contains(document.activeElement) && document.activeElement.tagName === "INPUT")
         || c.querySelector('[data-ocupado="1"], [data-confirmar="1"], [data-confirmado="1"]');
       if (ocupado && !agora) { timers[conta] = setTimeout(() => window._ofertasMudou(conta), 3000); return; }
-      const y = window.scrollY;
-      window._renderOfertasML(c, ctx.token, ctx.BACKEND).then(() => { if (Math.abs(window.scrollY - y) > 2) window.scrollTo(0, y); });
+      const y = window.scrollY, pan = c.closest(".panel") || document.querySelector(".panel.open"), py = pan ? pan.scrollTop : 0;
+      window._renderOfertasML(c, ctx.token, ctx.BACKEND).then(() => {
+        if (Math.abs(window.scrollY - y) > 2) window.scrollTo(0, y);
+        if (pan && pan.isConnected && Math.abs(pan.scrollTop - py) > 2) pan.scrollTop = py;
+      });
     };
     if (agora) rodar(); else timers[conta] = setTimeout(rodar, 400);
   };
