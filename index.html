@@ -15016,6 +15016,32 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
     return `<div style="margin-top:8px;padding-top:7px;border-top:0.5px solid ${T.border};">${rotulo ? `<div style="font-size:10px;letter-spacing:.06em;color:${T.text2};text-transform:uppercase;">${rotulo}</div>` : ""}${html}</div>`;
   };
 
+  // Celular, card aberto: abas por anúncio (Catálogo | Tradicional) e no máximo 3 promoções à vista
+  const abaSel = window._ofAba || (window._ofAba = {});
+  const verMais = window._ofMais || (window._ofMais = {});
+  const corpoCelular = (g, gk) => {
+    const anuncios = g.filter(a => !a.sem_dados || a._of.length);
+    const padrao = (anuncios.find(a => analiseAnuncio(a).sugerida) || anuncios[0])?.item_id;
+    const ativo = anuncios.some(a => a.item_id === abaSel[gk]) ? abaSel[gk] : padrao;
+    const nomeAba = a => `${tipoAnuncio(a)} · ${fmtR(a.preco)}`;
+    const abas = anuncios.length > 1 ? `<div style="display:flex;gap:6px;margin:0 0 8px;">${anuncios.map(a => `<button data-of-aba="${esc(gk)}|${a.item_id}" style="flex:1;min-width:0;font:${a.item_id === ativo ? 600 : 500} 12px Inter,sans-serif;padding:8px 6px;border-radius:8px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:0.5px solid ${a.item_id === ativo ? T.text : T.border};background:${a.item_id === ativo ? T.text : "transparent"};color:${a.item_id === ativo ? T.bg : T.text2};">${nomeAba(a)}</button>`).join("")}</div>` : "";
+    const paineis = anuncios.map(a => {
+      const an = analiseAnuncio(a);
+      const ordem = a._of.slice().sort((x, y) => {
+        const peso = o => o === an.atual ? 0 : (an.sugerida && o === an.sugerida) ? 1 : o.status !== "candidate" ? 2 : 3;
+        return peso(x) - peso(y);
+      });
+      const mk = `${gk}|${a.item_id}`, todos = !!verMais[mk];
+      const vis = todos ? ordem : ordem.slice(0, 3), resto = ordem.length - vis.length;
+      return `<div data-of-painel="${esc(gk)}|${a.item_id}" style="${a.item_id === ativo ? "" : "display:none;"}">
+        <div style="font-size:11px;color:${T.text2};">${a.item_id}${a.estoque != null ? ` · ${a.estoque} un` : ""}${anuncios.length === 1 ? ` · ${nomeAba(a)}` : ""}</div>
+        ${vis.map(o => linha(a, o, o._idx)).join("")}
+        ${resto > 0 ? `<button data-of-mais="${esc(mk)}" style="display:block;width:100%;margin-top:8px;background:none;border:none;color:${T.text2};font:500 12px Inter,sans-serif;cursor:pointer;padding:6px;">+ ${resto} ${resto === 1 ? "proposta" : "propostas"}</button>` : ""}
+      </div>`;
+    }).join("");
+    return `<div style="padding:4px 14px 14px;border-top:0.5px solid ${T.border};padding-top:12px;">${abas}${paineis}</div>`;
+  };
+
   const linha = (it, o, idx) => {
     const orig = o.preco_original || it.preco || 0;
     const final = o._final;
@@ -15047,6 +15073,16 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
     const btn = o.status === "candidate"
       ? `<button data-of-acao="participar" data-of-key="${key}" style="font:600 11px Inter,sans-serif;padding:6px 12px;border-radius:7px;border:none;background:${azul};color:#fff;cursor:pointer;white-space:nowrap;">Participar</button>`
       : `<button data-of-acao="sair" data-of-key="${key}" style="font:600 11px Inter,sans-serif;padding:6px 12px;border-radius:7px;border:0.5px solid ${vermelho}66;background:transparent;color:${vermelho};cursor:pointer;white-space:nowrap;">Sair</button>`;
+    if (celular) {
+      // Celular: promoção compacta — selos, uma linha com nome · % · preço · quem paga, botão embaixo
+      const btnCel = btn.replace("padding:6px 12px;", "padding:9px 12px;width:100%;margin-top:8px;font-size:12px;");
+      return `<div class="of-row" style="background:${o.status === "candidate" ? azul + "0d" : T.bg3};border-radius:10px;padding:10px 12px;margin-top:6px;">
+        <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;">${statusPill}${isBF ? pill("Black Friday", T.isLight ? "#111" : "#000", true) : ""}</div>
+        <div style="font-size:12px;color:${T.text};margin-top:6px;line-height:1.5;">${esc(nomeLinha)} · ${descPct != null ? (o._ate ? "até " : "") + descPct + "%" : "—"} · ${o._ate && final ? "até " : ""}${fmtR(final)} · ${o.meli_pct > 0 ? `<span style="color:${verde};font-weight:600;">ML paga ${fmtR(meliR)}</span>` : `<span style="color:${T.text2};">você paga tudo</span>`}</div>
+        ${periodo ? `<div style="font-size:11px;color:${T.text2};margin-top:2px;">${periodo}</div>` : ""}
+        ${btnCel}<div data-of-msg="${key}" style="font-size:11px;margin-top:4px;${avisoLinha ? `color:${amarelo};` : ""}">${avisoLinha ? esc(avisoLinha) : ""}</div>
+      </div>`;
+    }
     return `<div class="of-row" style="display:grid;grid-template-columns:minmax(0,1.7fr) 80px 100px minmax(0,1.2fr) 96px;gap:10px;align-items:center;padding:10px 14px;border-top:0.5px solid ${T.border};${o.status==='candidate'?`background:${azul}0d;`:''}">
       <div style="min-width:0;">
         <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;">${statusPill}${isBF ? pill("Black Friday", T.isLight ? "#111" : "#000", true) : ""}</div>
@@ -15091,17 +15127,28 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
             ${celular ? `<span style="color:${T.text3};font-size:18px;line-height:48px;transition:transform .15s;${aberto ? "transform:rotate(90deg);" : ""}">›</span>` : (nNov ? pill(`${nNov} ${nNov === 1 ? "nova" : "novas"}`, amarelo) : "")}
           </div>
           <div class="of-corpo" style="${aberto ? "" : "display:none;"}">
+          ${celular ? corpoCelular(g, gk) : `
           <div class="of-head" style="display:grid;grid-template-columns:minmax(0,1.7fr) 80px 100px minmax(0,1.2fr) 96px;gap:10px;padding:6px 14px;border-top:0.5px solid ${T.border};font-size:11px;color:${T.text2};">
             <span>Promoção</span><span>Desconto</span><span>Preço final</span><span>Quem paga</span><span></span>
           </div>
           ${g.map(a => `${varios ? `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:7px 14px;border-top:0.5px solid ${T.border};background:${T.bg3};font-size:11px;color:${T.text2};">
               <span style="font-weight:600;color:${T.text};">${a.item_id}</span>${tipoAnuncio(a) ? `<span>${tipoAnuncio(a)}</span>` : ""}<span>${fmtR(a.preco)}</span>${a.estoque != null ? `<span>${a.estoque} un</span>` : ""}
-            </div>` : ""}${a._of.map(o => linha(a, o, o._idx)).join("")}`).join("")}
+            </div>` : ""}${a._of.map(o => linha(a, o, o._idx)).join("")}`).join("")}`}
           </div>
         </div>`; }).join("") : `<div style="font-size:13px;color:${T.text2};padding:20px 0;text-align:center;">Nenhuma oferta com esse filtro.</div>`}
     </div>`;
 
   container.querySelectorAll("[data-of-filtro]").forEach(b => b.onclick = () => { st.ofertasFiltro = b.dataset.ofFiltro; window._renderOfertasML(container, token, BACKEND); });
+  container.querySelectorAll("[data-of-aba]").forEach(b => b.onclick = () => {
+    const partes = b.dataset.ofAba.split("|"); const id = partes.pop(); const gk = partes.join("|");
+    abaSel[gk] = id;
+    // troca de aba sem redesenhar a lista (não perde a rolagem)
+    const caixa = b.parentElement.parentElement;
+    caixa.querySelectorAll("[data-of-painel]").forEach(p => { p.style.display = p.dataset.ofPainel === `${gk}|${id}` ? "" : "none"; });
+    b.parentElement.querySelectorAll("[data-of-aba]").forEach(x => { const on = x === b;
+      x.style.background = on ? T.text : "transparent"; x.style.color = on ? T.bg : T.text2; x.style.borderColor = on ? T.text : T.border; x.style.fontWeight = on ? "600" : "500"; });
+  });
+  container.querySelectorAll("[data-of-mais]").forEach(b => b.onclick = () => { verMais[b.dataset.ofMais] = true; window._renderOfertasML(container, token, BACKEND); });
   container.querySelectorAll("[data-of-grupo]").forEach(h => h.onclick = () => {
     const k = h.dataset.ofGrupo; abertos[k] = !abertos[k];
     const corpo = h.nextElementSibling; if (corpo) corpo.style.display = abertos[k] ? "" : "none";
