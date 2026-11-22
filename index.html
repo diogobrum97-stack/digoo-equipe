@@ -14927,16 +14927,30 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
     if (/impulsione/i.test(o.nome || "") && final > 0) return Math.floor(Math.round(final * 100) / 100) / 100;
     return orig ? orig * o.meli_pct / 100 : 0;
   };
-  const resumoGrupo = g => {
-    const ativas = g.flatMap(a => a._of.filter(o => o.status !== "candidate").map(o => ({ a, o })));
-    const pctDe = ({ a, o }) => { const orig = o.preco_original || a.preco || 0; return orig && o._final ? Math.ceil((1 - o._final / orig) * 100 - 1e-9) : null; };
-    let sit;
-    const valendo = ativas.filter(x => !x.o._programada);
-    if (valendo.length) { const v = valendo.reduce((m, x) => (x.o._final || Infinity) < (m.o._final || Infinity) ? x : m); const p = pctDe(v); sit = pill(`Ativa${p != null ? " " + p + "%" : ""}`, verde); }
-    else if (ativas.length) { const p = pctDe(ativas[0]); sit = pill(`Programada${p != null ? " " + p + "%" : ""}`, azul); }
-    else sit = pill("Sem promoção", vermelho);
-    const maxMl = Math.max(0, ...g.flatMap(a => a._of.filter(o => o.status === "candidate").map(o => meliDe(a, o))));
-    return sit + (maxMl > 0 ? pill(`ML paga até ${fmtR(maxMl)}`, verde) : "");
+  // Resumo de um anúncio no card fechado: a promoção que vale agora e a proposta em que o ML paga mais
+  const resumoAnuncio = (a, rotulo) => {
+    const pctDe = o => { const orig = o.preco_original || a.preco || 0; return orig && o._final ? Math.ceil((1 - o._final / orig) * 100 - 1e-9) : null; };
+    const nomeDe = o => { const n = o.nome || OFERTA_TIPOS[o.tipo] || o.tipo || ""; return n.length > 30 ? n.slice(0, 29) + "…" : n; };
+    const desc = o => { const p = pctDe(o), ml = meliDe(a, o); return `${esc(nomeDe(o))}${p != null ? ` · ${p}%` : ""} · ${ml > 0 ? `<span style="color:${verde};font-weight:600;">ML paga ${fmtR(ml)}</span>` : `você paga tudo`}`; };
+    const k = (txt, cor) => `<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px;flex-shrink:0;background:${cor}22;color:${cor};">${txt}</span>`;
+    const ln = (tag, txt) => `<div style="display:flex;gap:6px;align-items:baseline;font-size:12px;margin-top:4px;color:${T.text};line-height:1.4;">${tag}<span style="min-width:0;">${txt}</span></div>`;
+    const naoCand = a._of.filter(o => o.status !== "candidate");
+    const valendo = naoCand.filter(o => !o._programada);
+    const atual = valendo.length ? valendo.reduce((m, o) => (o._final || Infinity) < (m._final || Infinity) ? o : m) : null;
+    const prog = !atual && naoCand.length ? naoCand[0] : null;
+    let html = atual ? ln(k("Agora", verde), desc(atual))
+      : prog ? ln(k("Programada", azul), desc(prog))
+      : ln(k("Agora", vermelho), `<span style="color:${vermelho};">Sem promoção</span>`);
+    const cands = a._of.filter(o => o.status === "candidate" && meliDe(a, o) > 0);
+    if (cands.length) {
+      const melhor = cands.reduce((m, o) => meliDe(a, o) > meliDe(a, m) || (meliDe(a, o) === meliDe(a, m) && o._final > m._final) ? o : m);
+      const base = atual ? meliDe(a, atual) : 0;
+      const ganho = meliDe(a, melhor) - base;
+      html += ganho > 0.005
+        ? ln(k("Melhor", azul), `${desc(melhor)}${atual ? ` <span style="color:${T.text2};">(+${fmtR(ganho)})</span>` : ""}`)
+        : ln(k("Melhor", T.text3), `<span style="color:${T.text2};">Já está na melhor opção</span>`);
+    } else if (atual && meliDe(a, atual) > 0) html += ln(k("Melhor", T.text3), `<span style="color:${T.text2};">Já está na melhor opção</span>`);
+    return `<div style="margin-top:8px;padding-top:7px;border-top:0.5px solid ${T.border};">${rotulo ? `<div style="font-size:10px;letter-spacing:.06em;color:${T.text2};text-transform:uppercase;">${rotulo}</div>` : ""}${html}</div>`;
   };
 
   const linha = (it, o, idx) => {
@@ -15003,8 +15017,8 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
                 : `<div style="font-size:13px;font-weight:600;color:${T.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(it.titulo)}</div>
                    <div style="font-size:11px;color:${T.text2};margin-top:2px;">${esc(it.sku || "sem SKU")} · ${varios
                      ? `${g.length} anúncios`
-                     : `${it.item_id} · ${fmtR(it.preco)}${it.estoque != null ? ` · ${it.estoque} un` : ""}${tipoAnuncio(it) ? " · " + tipoAnuncio(it) : ""}`}</div>`}
-              ${celular && !it.sem_dados ? `<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;">${resumoGrupo(g)}${nNov ? pill(`${nNov} ${nNov === 1 ? "nova" : "novas"}`, amarelo) : ""}</div>` : ""}
+                     : `${it.item_id} · ${fmtR(it.preco)}${it.estoque != null ? ` · ${it.estoque} un` : ""}${tipoAnuncio(it) ? " · " + tipoAnuncio(it) : ""}`}${celular && nNov ? ` · <span style="color:${amarelo};font-weight:600;">${nNov} ${nNov === 1 ? "nova" : "novas"}</span>` : ""}</div>`}
+              ${celular && !it.sem_dados ? g.filter(a => !a.sem_dados).map(a => resumoAnuncio(a, varios ? `${tipoAnuncio(a) || a.item_id} · ${fmtR(a.preco)}` : "")).join("") : ""}
             </div>
             ${celular ? `<span style="color:${T.text3};font-size:18px;transition:transform .15s;${aberto ? "transform:rotate(90deg);" : ""}">›</span>` : (nNov ? pill(`${nNov} ${nNov === 1 ? "nova" : "novas"}`, amarelo) : "")}
           </div>
