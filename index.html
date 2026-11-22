@@ -14995,14 +14995,15 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
       : ln(k("Agora", vermelho), `<span style="color:${vermelho};">Sem promoção</span>`);
     // Melhor = a que mais sobra por venda: preço final + o que o ML paga (empate: o ML pagando mais)
     const sobra = o => (o._final || 0) + meliDe(a, o);
-    const cands = a._of.filter(o => o.status === "candidate" && o._final > 0 && o.tipo !== "DEAL");
+    // Só sugere promoções compartilhadas (em que o ML paga parte); as que você paga sozinho não entram
+    const cands = a._of.filter(o => o.status === "candidate" && o._final > 0 && o.tipo !== "DEAL" && meliDe(a, o) > 0);
     if (cands.length) {
       const melhor = cands.reduce((m, o) => sobra(o) > sobra(m) + 0.005 || (Math.abs(sobra(o) - sobra(m)) <= 0.005 && meliDe(a, o) > meliDe(a, m)) ? o : m);
-      const melhorQueAtual = !atual || sobra(melhor) > sobra(atual) + 0.005;
-      html += melhorQueAtual
-        ? ln(k("Melhor", azul), desc(melhor))
+      const ganho = atual ? sobra(melhor) - sobra(atual) : null;
+      html += !atual || ganho > 0.005
+        ? ln(k("Melhor", azul), `${desc(melhor)}${ganho != null ? ` <span style="color:${verde};font-weight:600;white-space:nowrap;">· +${fmtR(ganho)} por venda</span>` : ""}`)
         : ln(k("Melhor", T.text3), `<span style="color:${T.text2};">Já está na melhor opção</span>`);
-    } else if (atual) html += ln(k("Melhor", T.text3), `<span style="color:${T.text2};">Já está na melhor opção</span>`);
+    } else if (atual) html += ln(k("Melhor", T.text3), `<span style="color:${T.text2};">${meliDe(a, atual) > 0 ? "Já está na melhor opção" : "Nenhuma compartilhada disponível"}</span>`);
     return `<div style="margin-top:8px;padding-top:7px;border-top:0.5px solid ${T.border};">${rotulo ? `<div style="font-size:10px;letter-spacing:.06em;color:${T.text2};text-transform:uppercase;">${rotulo}</div>` : ""}${html}</div>`;
   };
 
