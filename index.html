@@ -8224,7 +8224,7 @@ function render(){
             { label: "Dashboard", tab: "dashboard", subs: [] },
             { label: "Tarefas", tab: "tarefas", subs: [] },
             { label: "Equipe", tab: null, subs: [{label:"Concluídas",tab:"concluidas"},{label:"Conversas",tab:"conversas"}] },
-            { label: "Mercado Livre", tab: null, subs: [{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência de Compra",tab:"experiencia"},{label:"Clonar Anúncio",tab:"clonar"},{label:"Perguntas",tab:"perguntas"},{label:"Reclamações",tab:"reclamacoes-ml"},{label:"Picking & Packing",tab:"picking"},{label:"Promoções",tab:"promocoes"},{label:"Kits Full",tab:"kits-full"},{label:"⚠ Ajuste Filial",tab:"ajuste-filial"}] },
+            { label: "Mercado Livre", tab: null, subs: [{label:"Vendas",tab:"vendas"},{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência de Compra",tab:"experiencia"},{label:"Clonar Anúncio",tab:"clonar"},{label:"Perguntas",tab:"perguntas"},{label:"Reclamações",tab:"reclamacoes-ml"},{label:"Picking & Packing",tab:"picking"},{label:"Promoções",tab:"promocoes"},{label:"Kits Full",tab:"kits-full"},{label:"⚠ Ajuste Filial",tab:"ajuste-filial"}] },
             { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"},{label:"NF Transferência Full",tab:"nf-full"},{label:"NF Importação",tab:"nf-importacao"},{label:"Contas a Pagar",tab:"contas-pagar"},{label:"NFs Emitidas",tab:"nfs-emitidas"},{label:"Painel Fiscal",tab:"painel-fiscal"}] },
             { label: "Email", tab: "email", subs: [] },
           ].filter(g => {
@@ -8957,6 +8957,11 @@ function render(){
             let afContainer = panel.querySelector(".ajuste-filial-container");
             if(!afContainer){ afContainer=document.createElement("div"); afContainer.className="ajuste-filial-container"; panel.appendChild(afContainer); }
             renderAjusteFilial(afContainer, color);
+          }else if(window._diogotab==="vendas"){
+            panel.style.maxHeight="none"; panel.style.overflowY="auto";
+            let vmlContainer = panel.querySelector(".vendas-ml-container");
+            if(!vmlContainer){ vmlContainer=document.createElement("div"); vmlContainer.className="vendas-ml-container"; vmlContainer.style.cssText=`background:${T.card};border:1px solid ${T.border};border-radius:12px;padding:16px;box-shadow:${T.cardShadow};`; panel.appendChild(vmlContainer); }
+            renderVendasML(vmlContainer);
           }else if(window._diogotab==="kits-full"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
             let kfContainer = panel.querySelector(".kits-full-container");
@@ -13158,6 +13163,216 @@ window.kitsFullCopiar = function() {
     const b = document.getElementById("kf-copiar"); if (b) { b.textContent = "Copiado ✓"; setTimeout(() => b.textContent = "Copiar envio (SKU + qtd)", 1500); }
   });
 };
+
+// ── VENDAS (Mercado Livre → Vendas) ─────────────────────────
+// Extrato do dia: vendido, tarifa, frete, líquido do Mercado Pago, custo (Bling) e margem.
+// Dados: backend ?action=painel-vendas (cache por pedido em /vendas_painel). Margem antes dos impostos.
+window._vendasState = window._vendasState || {
+  conta: "filial",
+  data: new Date(Date.now() - 3 * 3600e3).toISOString().slice(0, 10),
+  visao: "venda", aberto: null, dados: {}, carregando: false, erro: null,
+};
+async function vendasCarregar(forcar) {
+  const st = window._vendasState;
+  const k = `${st.conta}|${st.data}`;
+  if (st.carregando) return;
+  st.carregando = true; st.erro = null; vendasDesenhar();
+  try {
+    for (let volta = 0; volta < 8; volta++) {
+      const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=painel-vendas&conta=${st.conta}&data=${st.data}`);
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.error || `HTTP ${r.status}`);
+      st.dados[k] = d;
+      vendasDesenhar();
+      if (!d.parcial || `${st.conta}|${st.data}` !== k) break;
+    }
+  } catch (e) { st.erro = e.message; }
+  st.carregando = false;
+  vendasDesenhar();
+}
+function vendasDesenhar() {
+  const c = document.querySelector(".vendas-ml-container");
+  if (c && window._diogotab === "vendas") renderVendasML(c);
+}
+function renderVendasML(container) {
+  const st = window._vendasState;
+  const k = `${st.conta}|${st.data}`;
+  const d = st.dados[k];
+  if (!d && !st.carregando && !st.erro) { setTimeout(() => vendasCarregar(), 0); }
+  else if (d && !st.carregando && !st.erro && Date.now() - (d.atualizado_em || 0) > 5 * 60e3 && st.data === new Date(Date.now() - 3 * 3600e3).toISOString().slice(0, 10)) { setTimeout(() => vendasCarregar(), 0); }
+  // Custo do Bling (SKU → precoCusto)
+  if (!estoqueBlingData && !estoqueBlingLoading && !window._blingTokenInvalido && !window._fetchBlingProdutosRunning && tokenValido(state.bling_token)) fetchBlingProdutos().then(vendasDesenhar);
+  const custos = estoqueBlingData || {};
+  const esc = v => String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+  const n2 = v => v == null ? "—" : Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const rs = v => v == null ? "—" : "R$ " + n2(v);
+  const pct = (a, b) => b ? (Math.round(a / b * 1000) / 10).toLocaleString("pt-BR") + "%" : "—";
+  const hora = iso => iso ? new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" }) : "";
+  const diaSem = s => { const [y, m, dd] = s.split("-").map(Number); const dt = new Date(Date.UTC(y, m - 1, dd, 12)); return dt.toLocaleDateString("pt-BR", { weekday: "short", timeZone: "UTC" }).replace(".", "") + " " + String(dd).padStart(2, "0") + "/" + String(m).padStart(2, "0"); };
+  const verde = T.cVerde, verm = T.cVermelho;
+
+  // Linhas com custo e margem
+  const vendas = (d?.vendas || []).map(v => {
+    let custo = 0, semCusto = false;
+    for (const i of v.itens) { const cu = custos[normSku(i.sku)]; if (!cu) { semCusto = true; break; } custo += cu * i.qtd; }
+    custo = semCusto ? null : Math.round(custo * 100) / 100;
+    const margem = custo != null && v.liquido != null ? Math.round((v.liquido - custo) * 100) / 100 : null;
+    return { ...v, custo, margem };
+  });
+  const soma = f => vendas.reduce((s, v) => s + (Number(v[f]) || 0), 0);
+  const tot = { bruto: soma("bruto"), tarifa: soma("tarifa"), frete: soma("frete"), liquido: soma("liquido") };
+  const comCusto = vendas.filter(v => v.margem != null);
+  tot.custo = comCusto.reduce((s, v) => s + v.custo, 0);
+  tot.margem = comCusto.reduce((s, v) => s + v.margem, 0);
+  const brutoComCusto = comCusto.reduce((s, v) => s + v.bruto, 0);
+  const semCustoN = vendas.length - comCusto.length;
+  const difN = (d?.excecoes || []).filter(e => e.motivos.some(m => m.startsWith("diferença"))).length;
+  const corMargem = (m, b) => m == null ? T.text3 : (b && m / b < 0.25 ? verm : verde);
+
+  const card = (rot, val, sub, cor) => `<div class="vml-c"><small>${rot}</small><b style="${cor ? `color:${cor}` : ""}">${val}</b><div class="vml-sk">${sub}</div></div>`;
+  const tituloLinha = v => v.itens.length > 1 ? v.itens.map(i => i.titulo).join(" + ") : (v.itens[0]?.titulo || "—");
+  const skuLinha = v => (v.itens.length > 1 ? `${v.itens.length} itens${v.envios <= 1 ? " · 1 frete" : ""}` : (v.itens[0]?.sku || "sem SKU") + (v.itens[0]?.qtd > 1 ? ` · ${v.itens[0].qtd} un` : "")) + " · " + hora(v.criado);
+
+  const linhaVenda = v => {
+    const aberto = st.aberto === v.id;
+    const pc = v.margem != null && v.bruto ? Math.round(v.margem / v.bruto * 100) + "%" : "—";
+    const cm = corMargem(v.margem, v.bruto);
+    let h = `<tr class="vml-lin" data-vml-abrir="${esc(v.id)}"><td><span class="vml-ttl">${esc(tituloLinha(v))}</span><span class="vml-sk">${esc(skuLinha(v))}</span></td>
+      <td>${n2(v.bruto)}</td><td>${n2(v.tarifa)}</td><td>${n2(v.frete)}</td><td>${n2(v.liquido)}</td><td>${n2(v.custo)}</td>
+      <td style="color:${cm};font-weight:600">${n2(v.margem)}</td><td style="color:${cm}">${pc}</td></tr>`;
+    if (aberto) {
+      const conf = v.diferenca == null ? "sem dado do MP" : Math.abs(v.diferenca) <= 0.10 ? `<span style="color:${verde}">✓ bate com o MP</span>` : `<span style="color:${verm}">diferença R$ ${n2(v.diferenca)}</span>`;
+      h += `<tr class="vml-det"><td colspan="8"><div class="vml-detbox">
+        ${v.itens.map(i => `<div>${i.qtd}× ${esc(i.titulo)} <span class="vml-sk" style="display:inline">${esc(i.sku || "")} · R$ ${n2(i.preco_unit)} · custo ${custos[normSku(i.sku)] ? "R$ " + n2(custos[normSku(i.sku)]) : "não encontrado no Bling"}</span></div>`).join("")}
+        <div style="margin-top:6px">Líquido ${conf} · ${v.liberacao ? "libera " + new Date(v.liberacao).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }) : "sem data de liberação"}</div>
+        <div class="vml-sk" style="margin-top:4px">Pedido${v.pedidos.length > 1 ? "s" : ""} ${v.pedidos.map(p => `<a href="https://www.mercadolivre.com.br/vendas/${p}/detalhe" target="_blank" rel="noopener" style="color:${T.cAzul}">#${p}</a>`).join(", ")}</div>
+      </div></td></tr>`;
+    }
+    return h;
+  };
+  const cab = `<tr><th>Produto</th><th>Venda</th><th>Tarifa</th><th>Frete</th><th>Líquido</th><th>Custo</th><th>Margem</th><th>%</th></tr>`;
+  const linhaTotal = (rot) => `<tr class="vml-tot"><td>${rot}</td><td>${n2(tot.bruto)}</td><td>${n2(tot.tarifa)}</td><td>${n2(tot.frete)}</td><td>${n2(tot.liquido)}</td><td>${n2(tot.custo)}</td><td style="color:${verde}">${n2(tot.margem)}</td><td>${pct(tot.margem, brutoComCusto)}</td></tr>`;
+
+  let corpo = "";
+  if (st.visao === "venda") {
+    corpo = vendas.length ? `<div class="vml-sc"><table class="vml-t">${cab}${vendas.map(linhaVenda).join("")}${linhaTotal(`${vendas.length} venda${vendas.length > 1 ? "s" : ""}`)}</table></div>` : "";
+  } else if (st.visao === "prod") {
+    const g = {};
+    for (const v of vendas) for (const i of v.itens) {
+      const key = normSku(i.sku) || i.item_id || i.titulo;
+      const x = g[key] = g[key] || { titulo: i.titulo, sku: i.sku, vendas: 0, un: 0, bruto: 0, tarifa: 0, frete: 0, liquido: 0, custo: 0, margem: 0, semCusto: false };
+      // rateia tarifa/frete/líquido do pedido pelo valor de cada item
+      const peso = v.bruto ? (i.preco_unit * i.qtd) / v.bruto : 1 / v.itens.length;
+      x.vendas++; x.un += i.qtd; x.bruto += i.preco_unit * i.qtd;
+      x.tarifa += (v.tarifa || 0) * peso; x.frete += (v.frete || 0) * peso; x.liquido += (v.liquido || 0) * peso;
+      const cu = custos[normSku(i.sku)];
+      if (cu) { x.custo += cu * i.qtd; x.margem += (v.liquido || 0) * peso - cu * i.qtd; } else x.semCusto = true;
+    }
+    const lista = Object.values(g).sort((a, b) => b.bruto - a.bruto);
+    corpo = lista.length ? `<div class="vml-sc"><table class="vml-t"><tr><th>Produto</th><th>Un</th><th>Venda</th><th>Tarifa</th><th>Frete</th><th>Líquido</th><th>Custo</th><th>Margem</th><th>%</th></tr>
+      ${lista.map(x => { const m = x.semCusto ? null : x.margem; const cm = corMargem(m, x.bruto); return `<tr><td><span class="vml-ttl">${esc(x.titulo)}</span><span class="vml-sk">${esc(x.sku || "sem SKU")} · ${x.vendas} venda${x.vendas > 1 ? "s" : ""}</span></td>
+        <td>${x.un}</td><td>${n2(x.bruto)}</td><td>${n2(x.tarifa)}</td><td>${n2(x.frete)}</td><td>${n2(x.liquido)}</td><td>${x.semCusto ? "—" : n2(x.custo)}</td>
+        <td style="color:${cm};font-weight:600">${n2(m)}</td><td style="color:${cm}">${m == null ? "—" : Math.round(m / x.bruto * 100) + "%"}</td></tr>`; }).join("")}</table></div>` : "";
+  } else {
+    const ex = d?.excecoes || [];
+    corpo = ex.length ? `<div class="vml-sc"><table class="vml-t"><tr><th>Produto</th><th>Motivo</th><th>Venda</th><th>Líquido</th></tr>
+      ${ex.map(e => `<tr><td><span class="vml-ttl">${esc(tituloLinha(e))}</span><span class="vml-sk">${esc(skuLinha(e))} · ${e.pedidos.map(p => `<a href="https://www.mercadolivre.com.br/vendas/${p}/detalhe" target="_blank" rel="noopener" style="color:${T.cAzul}">#${p}</a>`).join(", ")}</span></td>
+        <td style="text-align:left;color:${verm}">${esc(e.motivos.join(" · "))}</td><td>${n2(e.bruto)}</td><td>${n2(e.liquido)}</td></tr>`).join("")}</table></div>`
+      : `<div class="vml-vazio" style="color:${verde}">✓ Nenhuma exceção no dia<div class="vml-sk" style="margin-top:4px">Cancelamentos, reembolsos e valores que não batem com o Mercado Pago aparecem aqui</div></div>`;
+  }
+  if (!corpo && st.visao !== "exc") corpo = `<div class="vml-vazio">${st.carregando ? "Buscando vendas do dia..." : st.erro ? "" : "Nenhuma venda neste dia"}</div>`;
+
+  const lib = d?.liberacoes || [];
+  const libTot = lib.reduce((s, l) => s + l.valor, 0), libN = lib.reduce((s, l) => s + l.vendas, 0);
+  const html = `
+  <style>
+    .vml{font-variant-numeric:tabular-nums;color:${T.text};font-size:12px;max-width:1100px;margin:0 auto}
+    .vml-top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+    .vml-top h2{font-size:17px;font-weight:600;margin:0}
+    .vml-ctl{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+    .vml-ctl select,.vml-ctl input,.vml-ctl button{background:${T.bg3};color:${T.text};border:0.5px solid ${T.border2};border-radius:8px;padding:6px 8px;font-size:12px;font-family:inherit}
+    .vml-ctl button{cursor:pointer}
+    .vml-k{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:12px}
+    @media (max-width:820px){.vml-k{grid-template-columns:1fr 1fr}}
+    .vml-c{background:${T.bg3};border:0.5px solid ${T.border};border-radius:10px;padding:10px 11px;min-width:0}
+    .vml-c small{display:block;font-size:10px;color:${T.text3};margin-bottom:3px}
+    .vml-c b{font-size:16px;white-space:nowrap}
+    .vml-sk{display:block;font-size:10px;color:${T.text3};margin-top:1px}
+    .vml-h{font-size:10px;letter-spacing:1px;color:${T.text3};margin:16px 0 6px}
+    .vml-t{width:100%;border-collapse:collapse}
+    .vml-t td,.vml-t th{padding:7px 6px;text-align:right;white-space:nowrap;color:${T.text};font-size:12px}
+    .vml-t th{font-size:10px !important;color:${T.text3} !important;font-weight:500;border-bottom:0.5px solid ${T.border2}}
+    .vml-t td{border-bottom:0.5px solid ${T.border}}
+    .vml-t td:first-child,.vml-t th:first-child{text-align:left}
+    .vml-ttl{font-weight:600;max-width:260px;overflow:hidden;text-overflow:ellipsis;display:block}
+    @media (max-width:600px){.vml-ttl{max-width:150px}}
+    .vml-lin{cursor:pointer}
+    .vml-lin:hover td{background:${T.bg3}}
+    .vml-det td{white-space:normal;text-align:left;background:${T.bg3}}
+    .vml-detbox{font-size:11px;line-height:1.6;position:sticky;left:6px;max-width:min(620px,calc(100vw - 80px))}
+    .vml-tot td{font-weight:700;border-top:0.5px solid ${T.border2};border-bottom:0}
+    .vml-sc{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .vml-seg{display:flex;background:${T.bg3};border-radius:10px;padding:3px;margin:16px 0 6px;max-width:420px}
+    .vml-seg button{flex:1;text-align:center;font-size:12px;padding:6px;border-radius:8px;color:${T.text3};font-weight:500;background:none;border:0;cursor:pointer;font-family:inherit}
+    .vml-seg button.on{background:${T.text};color:${T.bg};font-weight:600}
+    .vml-vazio{text-align:center;padding:24px 12px;color:${T.text3}}
+    .vml-lib{max-width:420px}
+  </style>
+  <div class="vml">
+    <div class="vml-top"><h2>Vendas</h2>
+      <div class="vml-ctl">
+        <select data-vml="conta"><option value="filial"${st.conta === "filial" ? " selected" : ""}>Filial SP</option><option value="matriz"${st.conta === "matriz" ? " selected" : ""}>Matriz RS</option></select>
+        <input type="date" data-vml="data" value="${st.data}" max="${new Date(Date.now() - 3 * 3600e3).toISOString().slice(0, 10)}">
+        <button data-vml="atualizar">${st.carregando ? "Buscando..." : "↻"}</button>
+      </div>
+    </div>
+    ${st.erro ? `<div style="margin-top:10px;padding:10px;border-radius:8px;background:${T.errBg};border:0.5px solid ${T.errBor};color:${T.errText}">Erro ao buscar vendas: ${esc(st.erro)}</div>` : ""}
+    ${d?.parcial ? `<div class="vml-sk" style="margin-top:8px">Carregando o resto do dia... faltam ${d.faltam} pedidos</div>` : ""}
+    <div class="vml-k">
+      ${card("Vendido", rs(tot.bruto), `${vendas.length} venda${vendas.length === 1 ? "" : "s"} · tíquete ${rs(vendas.length ? tot.bruto / vendas.length : null)}`)}
+      ${card("Margem", comCusto.length ? rs(tot.margem) : "—", comCusto.length ? `${pct(tot.margem, brutoComCusto)} do vendido${semCustoN ? ` · ${semCustoN} sem custo` : ""}` : (semCustoN ? "sem custo no Bling" : "antes dos impostos"), verde)}
+      ${card("Tarifa ML", rs(tot.tarifa), pct(tot.tarifa, tot.bruto))}
+      ${card("Frete", rs(tot.frete), pct(tot.frete, tot.bruto))}
+      ${card("Líquido (MP)", rs(tot.liquido), `${pct(tot.liquido, tot.bruto)}${vendas.length ? (difN ? ` · <span style="color:${verm}">${difN} não batem</span>` : " · ✓ bate") : ""}`)}
+      ${card("Custo (Bling)", comCusto.length ? rs(tot.custo) : "—", comCusto.length ? pct(tot.custo, brutoComCusto) : (estoqueBlingLoading ? "carregando..." : "—"))}
+    </div>
+    ${lib.length ? `<div class="vml-h">VAI CAIR NA CONTA</div>
+      <div class="vml-lib"><table class="vml-t"><tr><th>Data</th><th>Vendas</th><th>Valor</th></tr>
+      ${lib.map(l => `<tr><td>${diaSem(l.data)}${l.liberado ? ` <span class="vml-sk" style="display:inline">· liberado</span>` : ""}</td><td>${l.vendas}</td><td>R$ ${n2(l.valor)}</td></tr>`).join("")}
+      <tr class="vml-tot"><td>Total</td><td>${libN}</td><td>R$ ${n2(libTot)}</td></tr></table></div>` : ""}
+    <div class="vml-seg">
+      <button data-vml-visao="venda" class="${st.visao === "venda" ? "on" : ""}">Por venda</button>
+      <button data-vml-visao="prod" class="${st.visao === "prod" ? "on" : ""}">Por produto</button>
+      <button data-vml-visao="exc" class="${st.visao === "exc" ? "on" : ""}">Exceções ${(d?.excecoes || []).length}</button>
+    </div>
+    ${corpo}
+    ${vendas.length && st.visao !== "exc" ? `<div class="vml-sk" style="margin-top:6px">Margem antes dos impostos · ${window.innerWidth < 768 ? "arraste a tabela para o lado para ver todas as colunas · " : ""}toque na venda para ver o detalhe</div>` : ""}
+  </div>`;
+  // morph num miolo próprio (o morph sincroniza os atributos do alvo — não pode ser o container)
+  let raiz = container._vmlRaiz;
+  if (!raiz || raiz.parentNode !== container) { container.innerHTML = "<div></div>"; raiz = container._vmlRaiz = container.firstChild; raiz.innerHTML = html; }
+  else morphHTML(raiz, html);
+
+  if (!container.dataset.vmlPronto) {
+    container.dataset.vmlPronto = "1";
+    container.addEventListener("click", e => {
+      if (e.target.closest("a")) return;
+      const vis = e.target.closest("[data-vml-visao]");
+      if (vis) { st.visao = vis.dataset.vmlVisao; st.aberto = null; renderVendasML(container); return; }
+      if (e.target.closest('[data-vml="atualizar"]')) { vendasCarregar(true); return; }
+      const lin = e.target.closest("[data-vml-abrir]");
+      if (lin) { st.aberto = st.aberto === lin.dataset.vmlAbrir ? null : lin.dataset.vmlAbrir; renderVendasML(container); }
+    });
+    container.addEventListener("change", e => {
+      const el = e.target.closest("[data-vml]");
+      if (!el) return;
+      if (el.dataset.vml === "conta") st.conta = el.value;
+      if (el.dataset.vml === "data" && /^\d{4}-\d{2}-\d{2}$/.test(el.value)) st.data = el.value;
+      st.aberto = null; st.erro = null;
+      renderVendasML(container);
+    });
+  }
+}
 
 function renderKitsFull(container, color) {
   if (!container) return;
