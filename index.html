@@ -14035,11 +14035,19 @@ window._ofertasLive = { filial: { itens: null, meta: null }, matriz: { itens: nu
         vencer.push({ conta, it, o: v, fim });
       }
       for (const a of Object.values(alertas[conta] || {})) {
+        if (a.motivo === "inativo") continue;                         // anúncio pausado/fora do ar não conta
         const it = itens[a.item_id];
+        const ofs = listaOf(it);
+        // pelos dados ao vivo: já voltou a ter promoção valendo? sai da lista na hora, sem esperar a VPS
+        const pendOk = Object.entries(window._ofertasPend || {}).some(([k, p]) => k.startsWith(`${conta}|${a.item_id}|`) && p.acao === "participar" && p.status === "started");
+        if (pendOk || ofs.some(o => o.status === "started" && !(o.inicio && new Date(o.inicio).getTime() > Date.now()))) continue;
+        const programada = ofs.find(o => o.status === "pending" || (o.status === "started" && o.inicio && new Date(o.inicio).getTime() > Date.now()))
+          || (Object.entries(window._ofertasPend || {}).some(([k, p]) => k.startsWith(`${conta}|${a.item_id}|`) && p.status === "pending") ? {} : null);
         const orig = it?.preco || a.preco || 0;
-        const cands = listaOf(it).filter(o => o.status === "candidate" && finalDe(o) > 0);
-        const melhor = cands.length ? cands.reduce((x, y) => (meliR(y, orig) > meliR(x, orig) || (meliR(y, orig) === meliR(x, orig) && finalDe(y) > finalDe(x))) ? y : x) : null;
-        caidas.push({ conta, a, it, melhor, orig });
+        // melhor proposta: só compartilhadas (o ML paga parte), a que mais sobra por venda
+        const cands = ofs.filter(o => o.status === "candidate" && finalDe(o) > 0 && o.tipo !== "DEAL" && meliR(o, orig) > 0);
+        const melhor = cands.length ? cands.reduce((x, y) => (finalDe(y) + meliR(y, orig) > finalDe(x) + meliR(x, orig) + 0.005) ? y : x) : null;
+        caidas.push({ conta, a, it, melhor, orig, programada });
       }
     }
     vencer.sort((x, y) => x.fim - y.fim);
@@ -14075,16 +14083,19 @@ window._ofertasLive = { filial: { itens: null, meta: null }, matriz: { itens: nu
       [{ txt: escP(resumo(o, o.preco_original || it.preco)) + ` · ${fmtR(finalDe(o))}` }],
       `<span style="color:${T.cAmarelo};">${quandoVence(fim)}</span>`,
       btn("Ver ofertas", `data-promo-ver="${conta}|${it.item_id}"`, false))).join("");
-    const listaCaidas = caidas.map(({ conta, a, it, melhor, orig }) => {
+    const listaCaidas = caidas.map(({ conta, a, it, melhor, orig, programada }) => {
       const est = it?.estoque ?? a.estoque;
       const motivo = a.motivo === "inativo" ? `<span style="color:${T.cVermelho};">anúncio pausado ou inativo</span>`
         : est === 0 ? `<span style="color:${T.cVermelho};">estoque zerado</span>` : est != null ? `estoque ${est} un` : "";
+      const quandoProg = programada?.inicio ? new Date(programada.inicio).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "America/Sao_Paulo" }) : null;
       const linhas = [{ txt: `Caiu: ${escP(a.promo_nome || OFERTA_TIPOS[a.promo_tipo] || a.promo_tipo || "promoção")} · ${haQuanto(a.caiu_em)}${motivo ? " · " + motivo : ""}` },
-        melhor ? { txt: "Melhor proposta agora: " + escP(resumo(melhor, orig)), cor: meliR(melhor, orig) > 0 ? T.cVerde : T.text2 }
-               : { txt: "Sem proposta do ML no momento" }];
+        ...(programada ? [{ txt: `<b>Programada:</b> ${escP(programada.nome || OFERTA_TIPOS[programada.tipo] || "promoção")}${quandoProg ? ` · começa ${quandoProg}` : ""} — até lá, sem promoção`, cor: T.cAzul }] : []),
+        melhor ? { txt: `${programada ? "Tem compartilhada pra agora" : "Compartilhada disponível"}: ` + escP(resumo(melhor, orig)), cor: T.cVerde }
+               : { txt: "Nenhuma compartilhada disponível no momento" }];
       const velho = Date.now() - (a.caiu_em || 0) > 24 * 3600e3;
       return itemBox(conta, a.item_id, it?.titulo || a.titulo, it?.sku || a.sku, it?.catalogo ?? a.catalogo, linhas,
-        `<span style="color:${velho ? T.cVermelho : T.text3};">sem promoção ${haQuanto(a.caiu_em)}</span>`,
+        programada ? `<span style="color:${T.cAzul};font-weight:600;">Programada${quandoProg ? " p/ " + quandoProg : ""}</span>`
+          : `<span style="color:${velho ? T.cVermelho : T.text3};">sem promoção ${haQuanto(a.caiu_em)}</span>`,
         btn("Dispensar", `data-promo-dispensar="${conta}|${a.item_id}"`, false) + btn("Ver ofertas", `data-promo-ver="${conta}|${a.item_id}"`, true));
     }).join("");
     el.innerHTML = `
@@ -15317,6 +15328,7 @@ window._renderOfertasML = async function(container, token, BACKEND, forcar) {
       const pk = `${conta}|${itemId}|${alvo.promotion_id || ""}|${alvo.tipo}`;
       const futuro = alvo.inicio && new Date(alvo.inicio).getTime() > Date.now();
       if (acao === "sair") window._promoSaidaManual?.(conta, itemId);
+      if (acao === "participar" && !futuro) remove(ref(db, `/promo_alertas/${conta}/caidas/${itemId}`)).catch(() => {});
       (window._ofFixos || (window._ofFixos = {}))[itemId] = { ...it };
       window._ofertasPend[pk] = { acao, status: acao === "participar" ? (futuro ? "pending" : "started") : "candidate", desde: Date.now() };
       fim();
