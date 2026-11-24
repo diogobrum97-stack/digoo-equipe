@@ -13315,14 +13315,25 @@ function renderVendasML(container) {
   const tituloLinha = v => v.itens.length > 1 ? v.itens.map(i => i.titulo).join(" + ") : (v.itens[0]?.titulo || "—");
   const skuLinha = v => (v.itens.length > 1 ? `${v.itens.length} itens${v.envios <= 1 ? " · 1 frete" : ""}` : (v.itens[0]?.sku || "sem SKU") + (v.itens[0]?.qtd > 1 ? ` · ${v.itens[0].qtd} un` : "")) + " · " + hora(v.criado);
 
+  // Celular: cada venda em 2 linhas (produto em cima, números embaixo) — sem rolar pro lado e com títulos fixos no topo
+  const mob = window.innerWidth < 768;
+  const nm = v => v == null ? "—" : (mob && Math.abs(v) >= 1000 ? Math.round(v).toLocaleString("pt-BR") : n2(v));
+  const COLS = ["Venda", "Tarifa", "Frete", "Líquido", "Custo", "Margem", "%"];
+  const cabec = (cols, primeira = "Produto") => `<thead><tr>${mob ? "" : `<th>${primeira}</th>`}${cols.map(c => `<th>${mob && c === "Líquido" ? "Líq." : c}</th>`).join("")}</tr></thead>`;
+  // monta a(s) linha(s): prod = célula do produto, nums = células dos números
+  const linha = (prod, nums, attrs = "", cls = "") => mob
+    ? `<tr class="vml-m1 ${cls}" ${attrs}><td colspan="${nums.length}">${prod}</td></tr><tr class="vml-m2 ${cls}" ${attrs}>${nums.join("")}</tr>`
+    : `<tr class="${cls}" ${attrs}><td>${prod}</td>${nums.join("")}</tr>`;
+  const numsVenda = (bruto, tarifa, frete, liq, custo, margem, base, seloHtml) => [
+    `<td>${nm(bruto)}</td>`, `<td>${nm(tarifa)}</td>`, `<td>${nm(frete)}</td>`, `<td>${nm(liq)}</td>`, `<td>${nm(custo)}</td>`,
+    `<td style="${corValorMargem(margem)}font-weight:700">${nm(margem)}</td>`, `<td>${seloHtml ?? selo(margem, base)}</td>`];
+
   const linhaVenda = v => {
     const aberto = st.aberto === v.id;
-    let h = `<tr class="vml-lin" data-vml-abrir="${esc(v.id)}"><td>${prodCel(v.itens, tituloLinha(v), esc(skuLinha(v)))}</td>
-      <td>${n2(v.bruto)}</td><td>${n2(v.tarifa)}</td><td>${n2(v.frete)}</td><td>${n2(v.liquido)}</td><td>${n2(v.custo)}</td>
-      <td style="${corValorMargem(v.margem)}font-weight:700">${n2(v.margem)}</td><td>${selo(v.margem, v.bruto)}</td></tr>`;
+    let h = linha(prodCel(v.itens, tituloLinha(v), esc(skuLinha(v))), numsVenda(v.bruto, v.tarifa, v.frete, v.liquido, v.custo, v.margem, v.bruto), `data-vml-abrir="${esc(v.id)}"`, "vml-lin");
     if (aberto) {
       const conf = v.diferenca == null ? "sem dado do MP" : Math.abs(v.diferenca) <= 0.10 ? `<span style="color:${verde}">✓ bate com o MP</span>` : `<span style="color:${verm}">diferença R$ ${n2(v.diferenca)}</span>`;
-      h += `<tr class="vml-det"><td colspan="8"><div class="vml-detbox">
+      h += `<tr class="vml-det"><td colspan="${mob ? 7 : 8}"><div class="vml-detbox">
         ${v.itens.map(i => `<div>${i.qtd}× ${esc(i.titulo)} <span class="vml-sk" style="display:inline">${esc(i.sku || "")} · R$ ${n2(i.preco_unit)} · custo ${custos[normSku(i.sku)] ? "R$ " + n2(custos[normSku(i.sku)]) : "não encontrado no Bling"}</span></div>`).join("")}
         <div style="margin-top:6px">Líquido ${conf} · ${v.liberacao ? "libera " + new Date(v.liberacao).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }) : "sem data de liberação"}</div>
         <div class="vml-sk" style="margin-top:4px">Pedido${v.pedidos.length > 1 ? "s" : ""} ${v.pedidos.map(p => `<a href="https://www.mercadolivre.com.br/vendas/${p}/detalhe" target="_blank" rel="noopener" style="color:${T.cAzul}">#${p}</a>`).join(", ")}</div>
@@ -13330,12 +13341,13 @@ function renderVendasML(container) {
     }
     return h;
   };
-  const cab = `<tr><th>Produto</th><th>Venda</th><th>Tarifa</th><th>Frete</th><th>Líquido</th><th>Custo</th><th>Margem</th><th>%</th></tr>`;
-  const linhaTotal = rot => `<tr class="vml-tot"><td>${rot}</td><td>${n2(tot.bruto)}</td><td>${n2(tot.tarifa)}</td><td>${n2(tot.frete)}</td><td>${n2(tot.liquido)}</td><td>${n2(tot.custo)}</td><td style="color:${tot.margem < 0 ? verm : verde}">${n2(tot.margem)}</td><td>${comCusto.length ? selo(tot.margem, brutoComCusto) : ""}</td></tr>`;
+  const linhaTotal = rot => linha(`<b>${rot}</b>`, [
+    `<td>${nm(tot.bruto)}</td>`, `<td>${nm(tot.tarifa)}</td>`, `<td>${nm(tot.frete)}</td>`, `<td>${nm(tot.liquido)}</td>`, `<td>${nm(tot.custo)}</td>`,
+    `<td style="color:${tot.margem < 0 ? verm : verde}">${nm(tot.margem)}</td>`, `<td>${comCusto.length ? selo(tot.margem, brutoComCusto) : ""}</td>`], "", "vml-tot");
 
   let corpo = "";
   if (st.visao === "venda") {
-    corpo = vendas.length ? `<div class="vml-sc"><table class="vml-t"><thead>${cab}</thead><tbody>${vendas.map(linhaVenda).join("")}${linhaTotal(`${vendas.length} venda${vendas.length > 1 ? "s" : ""}`)}</tbody></table></div>` : "";
+    corpo = vendas.length ? `<div class="vml-sc"><table class="vml-t">${cabec(COLS)}<tbody>${vendas.map(linhaVenda).join("")}${linhaTotal(`${vendas.length} venda${vendas.length > 1 ? "s" : ""}`)}</tbody></table></div>` : "";
   } else if (st.visao === "prod") {
     const g = {};
     for (const v of vendas) for (const i of v.itens) {
@@ -13350,15 +13362,14 @@ function renderVendasML(container) {
       if (cu) { x.custo += cu * i.qtd; x.margem += (v.liquido || 0) * peso - cu * i.qtd; } else x.semCusto = true;
     }
     const lista = Object.values(g).sort((a, b) => b.bruto - a.bruto);
-    corpo = lista.length ? `<div class="vml-sc"><table class="vml-t"><thead><tr><th>Produto</th><th>Un</th><th>Venda</th><th>Tarifa</th><th>Frete</th><th>Líquido</th><th>Custo</th><th>Margem</th><th>%</th></tr></thead><tbody>
-      ${lista.map(x => { const m = x.semCusto ? null : x.margem; return `<tr><td>${prodCel(x.itens, x.titulo, `${esc(x.sku || "sem SKU")} · ${x.vendas} venda${x.vendas > 1 ? "s" : ""}`)}</td>
-        <td>${x.un}</td><td>${n2(x.bruto)}</td><td>${n2(x.tarifa)}</td><td>${n2(x.frete)}</td><td>${n2(x.liquido)}</td><td>${x.semCusto ? "—" : n2(x.custo)}</td>
-        <td style="${corValorMargem(m)}font-weight:700">${n2(m)}</td><td>${selo(m, x.bruto)}</td></tr>`; }).join("")}</tbody></table></div>` : "";
+    corpo = lista.length ? `<div class="vml-sc"><table class="vml-t">${cabec(COLS)}<tbody>
+      ${lista.map(x => { const m = x.semCusto ? null : x.margem;
+        return linha(prodCel(x.itens, x.titulo, `${esc(x.sku || "sem SKU")} · ${x.un} un · ${x.vendas} venda${x.vendas > 1 ? "s" : ""}`), numsVenda(x.bruto, x.tarifa, x.frete, x.liquido, x.semCusto ? null : x.custo, m, x.bruto)); }).join("")}</tbody></table></div>` : "";
   } else {
     const ex = d.excecoes;
-    corpo = ex.length ? `<div class="vml-sc"><table class="vml-t"><thead><tr><th>Produto</th><th>Motivo</th><th>Venda</th><th>Líquido</th></tr></thead><tbody>
-      ${ex.map(e => `<tr><td>${prodCel(e.itens, tituloLinha(e), `${esc(skuLinha(e))} · ${e.pedidos.map(p => `<a href="https://www.mercadolivre.com.br/vendas/${p}/detalhe" target="_blank" rel="noopener" style="color:${T.cAzul}">#${p}</a>`).join(", ")}`)}</td>
-        <td style="text-align:left;color:${verm}">${esc(e.motivos.join(" · "))}</td><td>${n2(e.bruto)}</td><td>${n2(e.liquido)}</td></tr>`).join("")}</tbody></table></div>`
+    corpo = ex.length ? `<div class="vml-sc"><table class="vml-t">${cabec(["Motivo", "Venda", "Líquido"])}<tbody>
+      ${ex.map(e => linha(prodCel(e.itens, tituloLinha(e), `${esc(skuLinha(e))} · ${e.pedidos.map(p => `<a href="https://www.mercadolivre.com.br/vendas/${p}/detalhe" target="_blank" rel="noopener" style="color:${T.cAzul}">#${p}</a>`).join(", ")}`),
+        [`<td style="text-align:left;white-space:normal;color:${verm}">${esc(e.motivos.join(" · "))}</td>`, `<td>${nm(e.bruto)}</td>`, `<td>${nm(e.liquido)}</td>`])).join("")}</tbody></table></div>`
       : `<div class="vml-vazio" style="color:${verde}">✓ Nenhuma exceção no período<div class="vml-sk" style="margin-top:4px">Cancelamentos, reembolsos e valores que não batem com o Mercado Pago aparecem aqui</div></div>`;
   }
   if (!corpo && st.visao !== "exc") corpo = `<div class="vml-vazio">${st.carregando ? "Buscando vendas..." : st.erro ? "" : "Nenhuma venda no período"}</div>`;
@@ -13410,7 +13421,18 @@ function renderVendasML(container) {
     .vml-detbox{font-size:11px;line-height:1.6;position:sticky;left:6px;max-width:min(620px,calc(100vw - 80px))}
     .vml-tot td{font-weight:700;border-top:0.5px solid ${T.border2};border-bottom:0}
     .vml-sc{overflow:auto;max-height:calc(100vh - 150px);max-height:calc(100dvh - 150px)}
-    @media (max-width:767px){.vml-sc{max-height:calc(100dvh - 190px)}}
+    @media (max-width:767px){
+      .vml-sc{overflow:visible;max-height:none}
+      .vml-sc .vml-t{table-layout:fixed}
+      .vml-sc .vml-t td,.vml-sc .vml-t th{padding:5px 2px;font-size:11px}
+      .vml-sc .vml-t th{font-size:9.5px !important}
+      .vml-sc .vml-t th:first-child,.vml-sc .vml-t td:first-child{text-align:right}
+      .vml-m1 td{border-bottom:0 !important;padding:9px 2px 2px !important;text-align:left !important}
+      .vml-m2 td{padding:2px 2px 9px !important}
+      .vml-m1 .vml-ttl{max-width:none}
+      .vml-sc .vml-pill{min-width:0;padding:2px 5px;font-size:10px}
+      .vml-sc .vml-t th:last-child,.vml-sc .vml-t td:last-child{width:62px}
+    }
     .vml-seg{display:flex;background:${T.bg3};border-radius:10px;padding:3px;margin:16px 0 6px;max-width:420px}
     .vml-seg button{flex:1;text-align:center;font-size:12px;padding:6px;border-radius:8px;color:${T.text3};font-weight:500;background:none;border:0;cursor:pointer;font-family:inherit}
     .vml-seg button.on{background:${T.text};color:${T.bg};font-weight:600}
@@ -13447,7 +13469,7 @@ function renderVendasML(container) {
       <button data-vml-visao="exc" class="${st.visao === "exc" ? "on" : ""}">Exceções ${d.excecoes.length}</button>
     </div>
     ${corpo}
-    ${vendas.length && st.visao !== "exc" ? `<div class="vml-sk" style="margin-top:6px">Margem antes dos impostos · selo verde a partir de 25% · ${window.innerWidth < 768 ? "arraste a tabela para o lado para ver todas as colunas · " : ""}toque na venda para ver o detalhe</div>` : ""}
+    ${vendas.length && st.visao !== "exc" ? `<div class="vml-sk" style="margin-top:6px">Margem antes dos impostos · selo verde a partir de 25% · toque na venda para ver o detalhe</div>` : ""}
   </div>`;
   // morph num miolo próprio (o morph sincroniza os atributos do alvo — não pode ser o container)
   let raiz = container._vmlRaiz;
