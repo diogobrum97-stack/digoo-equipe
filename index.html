@@ -13362,13 +13362,19 @@ function renderVendasML(container) {
   // compra com vários pedidos/itens do mesmo produto aparece como um produto só, com a quantidade somada
   const mesmoProduto = v => v.itens.length > 1 && v.itens.every(i => (i.sku || i.titulo) === (v.itens[0].sku || v.itens[0].titulo));
   const tituloLinha = v => v.itens.length > 1 && !mesmoProduto(v) ? v.itens.map(i => i.titulo).join(" + ") : (v.itens[0]?.titulo || "—");
+  // linha de baixo da venda em etiquetas: SKU · quantidade · pedidos/pacotes · comprador · hora (HTML já escapado)
   const skuLinha = v => {
     const un = v.itens.reduce((s, i) => s + (i.qtd || 1), 0);
-    const base = v.itens.length > 1 && !mesmoProduto(v) ? `${v.itens.length} itens` : (v.itens[0]?.sku || "sem SKU") + (un > 1 ? ` · ${un} un` : "");
+    const varios = v.itens.length > 1 && !mesmoProduto(v);
     const ped = (v.pedidos || []).length;
-    const fretes = ped > 1 || v.itens.length > 1 ? (v.envios > 1 ? ` · ${v.envios} pacotes` : " · 1 frete") : "";
-    return base + (ped > 1 ? ` · ${ped} pedidos` : "") + fretes + " · " + hora(v.criado);
-  };
+    const b = [];
+    b.push(varios ? `<span class="vml-b">${v.itens.length} itens</span>` : `<span class="vml-b vml-b-sku">${esc(v.itens[0]?.sku || "sem SKU")}</span>`);
+    if (un > 1) b.push(`<span class="vml-b vml-b-un">${un} un</span>`);
+    if (ped > 1 || v.itens.length > 1) b.push(`<span class="vml-b vml-b-pd">${ped > 1 ? `${ped} pedidos · ` : ""}${v.envios > 1 ? `${v.envios} pacotes` : "1 frete"}</span>`);
+    if (v.comprador?.apelido) b.push(`<span class="vml-b vml-b-cp" title="${esc(v.comprador.nome || "")}">${esc(v.comprador.apelido)}</span>`);
+    b.push(`<span class="vml-b-hr">${hora(v.criado)}</span>`);
+    return `<span class="vml-bs">${b.join("")}</span>`;
+  };;
 
   // Celular: cada venda em 2 linhas (produto em cima, números embaixo) — sem rolar pro lado e com títulos fixos no topo
   const mob = window.innerWidth < 768;
@@ -13385,7 +13391,7 @@ function renderVendasML(container) {
 
   const linhaVenda = v => {
     const aberto = st.aberto === v.id;
-    let h = linha(prodCel(v.itens, tituloLinha(v), esc(skuLinha(v))), numsVenda(v.bruto, v.tarifa, v.frete, v.liquido, v.custo, v.margem, v.bruto), `data-vml-abrir="${esc(v.id)}"`, "vml-lin");
+    let h = linha(prodCel(v.itens, tituloLinha(v), skuLinha(v)), numsVenda(v.bruto, v.tarifa, v.frete, v.liquido, v.custo, v.margem, v.bruto), `data-vml-abrir="${esc(v.id)}"`, "vml-lin");
     if (aberto) {
       const conf = v.diferenca == null ? `<span class="vml-sk2">sem dado do MP</span>` : Math.abs(v.diferenca) <= 0.10 ? `<span style="color:${verde};font-size:12px">✓ bate com o MP</span>` : `<span style="color:${verm};font-size:12px">diferença R$ ${n2(v.diferenca)}</span>`;
       const dataBR = iso => new Date(iso).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
@@ -13406,6 +13412,7 @@ function renderVendasML(container) {
         </div>
         <div class="vml-db"><div class="vml-dh">PAGAMENTO E PEDIDO</div>
           <div class="vml-kv" style="margin-top:0">
+            ${v.comprador ? `<span>Comprador</span><span>${esc(v.comprador.nome || "")}${v.comprador.apelido ? `<br><span class="vml-sk2">${esc(v.comprador.apelido)}</span>` : ""}</span>` : ""}
             <span>Libera em</span><span>${v.liberacao ? dataBR(v.liberacao) : "—"}</span>
             <span>Status</span><span>${v.liberacao ? (liberado ? `<span style="color:${verde}">liberado</span>` : "a liberar") : "—"}</span>
             ${(v.por_pedido || []).length > 1 ? "" : `<span>Pedido${v.pedidos.length > 1 ? "s" : ""}</span><span>${v.pedidos.map(p => "#" + p).join("<br>")}</span>`}
@@ -13451,7 +13458,7 @@ function renderVendasML(container) {
   } else {
     const ex = d.excecoes;
     corpo = ex.length ? `<div class="vml-sc"><table class="vml-t">${cabec(["Motivo", "Venda", "Líquido"])}<tbody>
-      ${ex.map(e => linha(prodCel(e.itens, tituloLinha(e), `${esc(skuLinha(e))} · ${e.pedidos.map(p => `<a href="https://www.mercadolivre.com.br/vendas/${p}/detalhe" target="_blank" rel="noopener" style="color:${T.cAzul}">#${p}</a>`).join(", ")}`),
+      ${ex.map(e => linha(prodCel(e.itens, tituloLinha(e), `${skuLinha(e)} ${e.pedidos.map(p => `<a href="https://www.mercadolivre.com.br/vendas/${p}/detalhe" target="_blank" rel="noopener" style="color:${T.cAzul}">#${p}</a>`).join(", ")}`),
         [`<td style="text-align:left;white-space:normal;color:${verm}">${esc(e.motivos.join(" · "))}</td>`, `<td>${nm(e.bruto)}</td>`, `<td>${nm(e.liquido)}</td>`])).join("")}</tbody></table></div>`
       : `<div class="vml-vazio" style="color:${verde}">✓ Nenhuma exceção no período<div class="vml-sk" style="margin-top:4px">Cancelamentos, reembolsos e valores que não batem com o Mercado Pago aparecem aqui</div></div>`;
   }
@@ -13482,6 +13489,13 @@ function renderVendasML(container) {
     .vml-c b{font-size:16px;white-space:nowrap}
     .vml-sk{display:block;font-size:10px;color:${T.isLight ? "#55555c" : "#a8a8b0"};margin-top:1px}
 
+    .vml-bs{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;align-items:center}
+    .vml-b{font-size:11px;line-height:1.5;padding:0 7px;border-radius:6px;background:${T.isLight ? "#f0f0f2" : "#1b1b1f"};border:0.5px solid ${T.border2};color:${T.isLight ? "#3a3a40" : "#c8c8ce"};white-space:nowrap}
+    .vml-b-sku{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10.5px}
+    .vml-b-un{background:rgba(59,130,246,.14);border-color:rgba(59,130,246,.3);color:${T.isLight ? "#1d5fd1" : "#7fb0ff"}}
+    .vml-b-pd{background:rgba(240,180,0,.12);border-color:rgba(240,180,0,.3);color:${T.isLight ? "#8a6400" : "#f0c14a"}}
+    .vml-b-cp{background:rgba(139,92,246,.14);border-color:rgba(139,92,246,.3);color:${T.isLight ? "#6435d6" : "#b9a3ff"}}
+    .vml-b-hr{font-size:11px;color:${T.isLight ? "#55555c" : "#a8a8b0"};padding-left:2px}
     .vml-sk2{font-size:12px;color:${T.isLight ? "#55555c" : "#a8a8b0"}}
     .vml-h{font-size:10px;letter-spacing:1px;color:${T.text3};margin:16px 0 6px}
     .vml-t{width:100%;border-collapse:collapse}
