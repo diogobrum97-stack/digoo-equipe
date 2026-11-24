@@ -8959,9 +8959,14 @@ function render(){
             renderAjusteFilial(afContainer, color);
           }else if(window._diogotab==="vendas"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
-            let vmlContainer = panel.querySelector(".vendas-ml-container");
-            if(!vmlContainer){ vmlContainer=document.createElement("div"); vmlContainer.className="vendas-ml-container"; vmlContainer.style.cssText=`background:${T.card};border:1px solid ${T.border};border-radius:12px;padding:16px;box-shadow:${T.cardShadow};`; panel.appendChild(vmlContainer); }
+            // a tela de Vendas é uma só (não recria a cada render geral — senão a rolagem volta pro topo)
+            if(!window._vmlShell){ window._vmlShell=document.createElement("div"); window._vmlShell.className="vendas-ml-container"; }
+            const vmlContainer = window._vmlShell;
+            vmlContainer.style.cssText=`background:${T.card};border:1px solid ${T.border};border-radius:12px;padding:16px;box-shadow:${T.cardShadow};`;
+            if(vmlContainer.parentNode !== panel) panel.appendChild(vmlContainer);
             renderVendasML(vmlContainer);
+            const vmlSc = vmlContainer.querySelector(".vml-sc");
+            if(vmlSc && window._vmlScroll && Math.abs(vmlSc.scrollTop - window._vmlScroll) > 2) vmlSc.scrollTop = window._vmlScroll;
           }else if(window._diogotab==="kits-full"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
             let kfContainer = panel.querySelector(".kits-full-container");
@@ -13413,7 +13418,7 @@ function renderVendasML(container) {
             <div class="vml-dl"><span>Esperado (venda − tarifa − frete)</span><span>${rs(v.esperado)}</span></div>
             <div class="vml-dl"><span>Caiu no Mercado Pago</span><span>${rs(v.liquido)}</span></div>
             <div class="vml-dl" style="font-weight:700;color:${verm}"><span>Diferença</span><span>${v.diferenca > 0 ? "+" : "−"} R$ ${n2(Math.abs(v.diferenca))}</span></div>
-            <div class="vml-sk2" style="margin-top:4px">${Math.abs(Math.abs(v.diferenca) - (v.frete || 0)) < 1 ? "Parece o frete: o ML cobrou/devolveu um frete diferente do informado." : v.diferenca > 0 ? "Caiu mais do que o previsto: costuma ser bônus de frete ou campanha do ML." : "Caiu menos do que o previsto: costuma ser ajuste de frete, cupom ou taxa extra."} A margem usa o valor que caiu no MP.</div>
+            <div class="vml-sk2" style="margin-top:4px">${Math.abs(Math.abs(v.diferenca) - (v.tarifa || 0)) < 0.05 ? (v.diferenca > 0 ? "É exatamente a tarifa: o ML não descontou a tarifa dessa venda (campanha ou ressarcimento)." : "É exatamente a tarifa: o ML cobrou a tarifa de novo.") : Math.abs(Math.abs(v.diferenca) - (v.frete || 0)) < 1 ? "Parece o frete: o ML cobrou/devolveu um frete diferente do informado." : v.diferenca > 0 ? "Caiu mais do que o previsto: costuma ser bônus de frete ou campanha do ML." : "Caiu menos do que o previsto: costuma ser ajuste de frete, cupom ou taxa extra."} A margem usa o valor que caiu no MP.</div>
           </div>` : ""}${lnD("− Custo", v.custo == null ? "sem custo no Bling" : rs(v.custo))}
           <div class="vml-dsep"></div>${lnD("= Margem", v.margem == null ? "—" : `${rs(v.margem)}${v.bruto ? " · " + Math.round(v.margem / v.bruto * 100) + "%" : ""}`, ` style="font-weight:700;font-size:15px;color:${cm}"`)}
         </div>
@@ -13643,6 +13648,7 @@ function renderVendasML(container) {
 
   if (!container.dataset.vmlPronto) {
     container.dataset.vmlPronto = "1";
+    container.addEventListener("scroll", e => { if (e.target.classList?.contains("vml-sc")) window._vmlScroll = e.target.scrollTop; }, true);
     container.addEventListener("click", e => {
       if (e.target.closest("a")) return;
       const cop = e.target.closest("[data-vml-copiar]");
@@ -13655,10 +13661,10 @@ function renderVendasML(container) {
         return;
       }
       const per = e.target.closest("[data-vml-per]");
-      if (per) { st.periodo = per.dataset.vmlPer; st.aberto = null; st.erro = null; st.limite = 100; renderVendasML(container); return; }
+      if (per) { window._vmlScroll = 0; st.periodo = per.dataset.vmlPer; st.aberto = null; st.erro = null; st.limite = 100; renderVendasML(container); return; }
       if (e.target.closest("[data-vml-mais]")) { st.limite = (st.limite || 100) + 100; renderVendasML(container); return; }
       const vis = e.target.closest("[data-vml-visao]");
-      if (vis) { st.visao = vis.dataset.vmlVisao; st.aberto = null; st.filtroExc = null; renderVendasML(container); return; }
+      if (vis) { window._vmlScroll = 0; st.visao = vis.dataset.vmlVisao; st.aberto = null; st.filtroExc = null; renderVendasML(container); return; }
       if (e.target.closest("[data-vml-naobatem]")) { st.visao = "exc"; st.filtroExc = "dif"; st.aberto = null; renderVendasML(container); return; }
       if (e.target.closest("[data-vml-limpafiltro]")) { st.filtroExc = null; renderVendasML(container); return; }
       const irv = e.target.closest("[data-vml-irvenda]");
