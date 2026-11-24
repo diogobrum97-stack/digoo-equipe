@@ -13165,29 +13165,53 @@ window.kitsFullCopiar = function() {
 };
 
 // ── VENDAS (Mercado Livre → Vendas) ─────────────────────────
-// Extrato do dia: vendido, tarifa, frete, líquido do Mercado Pago, custo (Bling) e margem.
-// Dados: backend ?action=painel-vendas (cache por pedido em /vendas_painel). Margem antes dos impostos.
+// Extrato por período: vendido, tarifa, frete, líquido do Mercado Pago, custo (Bling) e margem.
+// Dados: backend ?action=painel-vendas, um dia por chamada (cache por pedido em /vendas_painel). Margem antes dos impostos.
+const _vmlHoje = () => new Date(Date.now() - 3 * 3600e3).toISOString().slice(0, 10);
+const _vmlSomaDias = (s, n) => { const [y, m, d] = s.split("-").map(Number); return new Date(Date.UTC(y, m - 1, d + n, 12)).toISOString().slice(0, 10); };
 window._vendasState = window._vendasState || {
-  conta: "filial",
-  data: new Date(Date.now() - 3 * 3600e3).toISOString().slice(0, 10),
-  visao: "venda", aberto: null, dados: {}, carregando: false, erro: null,
+  conta: "filial", periodo: "hoje", data: _vmlHoje(),
+  visao: "venda", aberto: null, dados: {}, carregando: false, erro: null, progresso: null,
 };
+// Dias do período escolhido + o dia usado na comparação (só nos períodos de um dia)
+function vendasDias() {
+  const st = window._vendasState, hoje = _vmlHoje();
+  if (st.periodo === "hoje") return { dias: [hoje], comp: _vmlSomaDias(hoje, -1), compAteAgora: true, nomeComp: "ontem" };
+  if (st.periodo === "ontem") { const o = _vmlSomaDias(hoje, -1); return { dias: [o], comp: _vmlSomaDias(o, -1), nomeComp: "anteontem" }; }
+  if (st.periodo === "7d") return { dias: Array.from({ length: 7 }, (_, i) => _vmlSomaDias(hoje, -i)) };
+  if (st.periodo === "mes") { const n = Number(hoje.slice(8, 10)); return { dias: Array.from({ length: n }, (_, i) => _vmlSomaDias(hoje, -i)) }; }
+  return { dias: [st.data], comp: _vmlSomaDias(st.data, -1), nomeComp: "o dia anterior" };
+}
+async function vendasCarregarDia(conta, dia, forcar) {
+  const st = window._vendasState, k = `${conta}|${dia}`;
+  const atual = st.dados[k];
+  if (!forcar && atual && !atual.parcial && (dia !== _vmlHoje() || Date.now() - (atual.atualizado_em || 0) < 5 * 60e3)) return;
+  for (let volta = 0; volta < 8; volta++) {
+    const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=painel-vendas&conta=${conta}&data=${dia}`);
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.error || `HTTP ${r.status}`);
+    st.dados[k] = d;
+    if (!d.parcial) break;
+  }
+}
 async function vendasCarregar(forcar) {
   const st = window._vendasState;
-  const k = `${st.conta}|${st.data}`;
   if (st.carregando) return;
-  st.carregando = true; st.erro = null; vendasDesenhar();
+  const conta = st.conta, { dias, comp } = vendasDias();
+  const fila = comp ? [...dias, comp] : [...dias];
+  st.carregando = true; st.erro = null; st.progresso = fila.length > 2 ? { feitos: 0, total: fila.length } : null; vendasDesenhar();
   try {
-    for (let volta = 0; volta < 8; volta++) {
-      const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=painel-vendas&conta=${st.conta}&data=${st.data}`);
-      const d = await r.json();
-      if (!d.ok) throw new Error(d.error || `HTTP ${r.status}`);
-      st.dados[k] = d;
-      vendasDesenhar();
-      if (!d.parcial || `${st.conta}|${st.data}` !== k) break;
-    }
+    let i = 0;
+    await Promise.all(Array.from({ length: Math.min(3, fila.length) }, async () => {
+      while (i < fila.length) {
+        const dia = fila[i++];
+        await vendasCarregarDia(conta, dia, forcar && (dia === _vmlHoje() || (dias.length === 1 && dia === dias[0])));
+        if (st.progresso) st.progresso.feitos++;
+        vendasDesenhar();
+      }
+    }));
   } catch (e) { st.erro = e.message; }
-  st.carregando = false;
+  st.carregando = false; st.progresso = null;
   vendasDesenhar();
 }
 function vendasDesenhar() {
@@ -13196,10 +13220,11 @@ function vendasDesenhar() {
 }
 function renderVendasML(container) {
   const st = window._vendasState;
-  const k = `${st.conta}|${st.data}`;
-  const d = st.dados[k];
-  if (!d && !st.carregando && !st.erro) { setTimeout(() => vendasCarregar(), 0); }
-  else if (d && !st.carregando && !st.erro && Date.now() - (d.atualizado_em || 0) > 5 * 60e3 && st.data === new Date(Date.now() - 3 * 3600e3).toISOString().slice(0, 10)) { setTimeout(() => vendasCarregar(), 0); }
+  const hoje = _vmlHoje();
+  const { dias, comp, compAteAgora, nomeComp } = vendasDias();
+  const multi = dias.length > 1;
+  const falta = [...dias, ...(comp ? [comp] : [])].some(dia => { const x = st.dados[`${st.conta}|${dia}`]; return !x || x.parcial || (dia === hoje && Date.now() - (x.atualizado_em || 0) > 5 * 60e3); });
+  if (falta && !st.carregando && !st.erro) setTimeout(() => vendasCarregar(), 0);
   // Custo do Bling (SKU → precoCusto)
   if (!estoqueBlingData && !estoqueBlingLoading && !window._blingTokenInvalido && !window._fetchBlingProdutosRunning && tokenValido(state.bling_token)) fetchBlingProdutos().then(vendasDesenhar);
   const custos = estoqueBlingData || {};
@@ -13207,18 +13232,43 @@ function renderVendasML(container) {
   const n2 = v => v == null ? "—" : Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const rs = v => v == null ? "—" : "R$ " + n2(v);
   const pct = (a, b) => b ? (Math.round(a / b * 1000) / 10).toLocaleString("pt-BR") + "%" : "—";
-  const hora = iso => iso ? new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" }) : "";
+  const hora = iso => {
+    if (!iso) return "";
+    const dt = new Date(iso);
+    const h = dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
+    return multi ? dt.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "America/Sao_Paulo" }) + " " + h : h;
+  };
   const diaSem = s => { const [y, m, dd] = s.split("-").map(Number); const dt = new Date(Date.UTC(y, m - 1, dd, 12)); return dt.toLocaleDateString("pt-BR", { weekday: "short", timeZone: "UTC" }).replace(".", "") + " " + String(dd).padStart(2, "0") + "/" + String(m).padStart(2, "0"); };
   const verde = T.cVerde, verm = T.cVermelho;
 
-  // Linhas com custo e margem
-  const vendas = (d?.vendas || []).map(v => {
+  // Junta os dias do período
+  const juntar = lista => {
+    const out = { vendas: [], excecoes: [], liberacoes: {}, fotos: {}, parcial: false, faltam: 0, algum: false };
+    for (const dia of lista) {
+      const x = st.dados[`${st.conta}|${dia}`]; if (!x) continue;
+      out.algum = true;
+      out.vendas.push(...(x.vendas || [])); out.excecoes.push(...(x.excecoes || []));
+      Object.assign(out.fotos, x.fotos || {});
+      if (x.parcial) { out.parcial = true; out.faltam += x.faltam || 0; }
+      for (const l of x.liberacoes || []) {
+        const y = out.liberacoes[l.data] = out.liberacoes[l.data] || { data: l.data, vendas: 0, valor: 0, liberado: true };
+        y.vendas += l.vendas; y.valor += l.valor; if (!l.liberado) y.liberado = false;
+      }
+    }
+    out.vendas.sort((a, b) => String(b.criado).localeCompare(String(a.criado)));
+    return out;
+  };
+  const d = juntar(dias);
+  const fotos = d.fotos;
+
+  const comCustoEMargem = lista => lista.map(v => {
     let custo = 0, semCusto = false;
     for (const i of v.itens) { const cu = custos[normSku(i.sku)]; if (!cu) { semCusto = true; break; } custo += cu * i.qtd; }
     custo = semCusto ? null : Math.round(custo * 100) / 100;
     const margem = custo != null && v.liquido != null ? Math.round((v.liquido - custo) * 100) / 100 : null;
     return { ...v, custo, margem };
   });
+  const vendas = comCustoEMargem(d.vendas);
   const soma = f => vendas.reduce((s, v) => s + (Number(v[f]) || 0), 0);
   const tot = { bruto: soma("bruto"), tarifa: soma("tarifa"), frete: soma("frete"), liquido: soma("liquido") };
   const comCusto = vendas.filter(v => v.margem != null);
@@ -13226,8 +13276,40 @@ function renderVendasML(container) {
   tot.margem = comCusto.reduce((s, v) => s + v.margem, 0);
   const brutoComCusto = comCusto.reduce((s, v) => s + v.bruto, 0);
   const semCustoN = vendas.length - comCusto.length;
-  const difN = (d?.excecoes || []).filter(e => e.motivos.some(m => m.startsWith("diferença"))).length;
-  const corMargem = (m, b) => m == null ? T.text3 : (b && m / b < 0.25 ? verm : verde);
+  const difN = d.excecoes.filter(e => e.motivos.some(m => m.startsWith("diferença"))).length;
+
+  // Comparação da margem com o dia anterior (hoje: ontem até a mesma hora)
+  let compTxt = "";
+  const dc = comp && st.dados[`${st.conta}|${comp}`];
+  if (dc && !dc.parcial && comCusto.length) {
+    let vc = dc.vendas || [];
+    let rotulo = `vs ${nomeComp}`;
+    if (compAteAgora) {
+      const agoraMin = (() => { const t = new Date(Date.now() - 3 * 3600e3); return t.getUTCHours() * 60 + t.getUTCMinutes(); })();
+      vc = vc.filter(v => { const t = new Date(new Date(v.criado).getTime() - 3 * 3600e3); return t.getUTCHours() * 60 + t.getUTCMinutes() <= agoraMin; });
+      rotulo = `vs ontem até ${new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" })}`;
+    }
+    const mc = comCustoEMargem(vc).filter(v => v.margem != null).reduce((s, v) => s + v.margem, 0);
+    if (mc > 0) {
+      const var_ = Math.round((tot.margem - mc) / mc * 100);
+      const cor = var_ >= 0 ? verde : verm;
+      compTxt = `<div class="vml-sk" style="margin-top:3px"><span style="color:${cor};font-weight:600">${var_ >= 0 ? "▲" : "▼"} ${Math.abs(var_)}%</span> ${rotulo}</div>`;
+    }
+  }
+
+  // Selo da porcentagem de margem
+  const selo = (m, b) => {
+    if (m == null) return `<span class="vml-pill vml-p-n">sem custo</span>`;
+    if (m < 0) return `<span class="vml-pill vml-p-r">prejuízo</span>`;
+    const p = b ? m / b : 0;
+    return `<span class="vml-pill ${p >= 0.25 ? "vml-p-g" : "vml-p-o"}">${Math.round(p * 100)}%</span>`;
+  };
+  const corValorMargem = m => m != null && m < 0 ? `color:${verm};` : "";
+  const foto = itens => {
+    const url = itens.map(i => fotos[i.item_id]).find(Boolean);
+    return url ? `<img class="vml-foto" src="${esc(url)}" alt="" loading="lazy">` : `<span class="vml-foto"></span>`;
+  };
+  const prodCel = (itens, titulo, sub) => `<div class="vml-prod">${foto(itens)}<div style="min-width:0"><span class="vml-ttl">${esc(titulo)}</span><span class="vml-sk">${sub}</span></div></div>`;
 
   const card = (rot, val, sub, cor) => `<div class="vml-c"><small>${rot}</small><b style="${cor ? `color:${cor}` : ""}">${val}</b><div class="vml-sk">${sub}</div></div>`;
   const tituloLinha = v => v.itens.length > 1 ? v.itens.map(i => i.titulo).join(" + ") : (v.itens[0]?.titulo || "—");
@@ -13235,11 +13317,9 @@ function renderVendasML(container) {
 
   const linhaVenda = v => {
     const aberto = st.aberto === v.id;
-    const pc = v.margem != null && v.bruto ? Math.round(v.margem / v.bruto * 100) + "%" : "—";
-    const cm = corMargem(v.margem, v.bruto);
-    let h = `<tr class="vml-lin" data-vml-abrir="${esc(v.id)}"><td><span class="vml-ttl">${esc(tituloLinha(v))}</span><span class="vml-sk">${esc(skuLinha(v))}</span></td>
+    let h = `<tr class="vml-lin" data-vml-abrir="${esc(v.id)}"><td>${prodCel(v.itens, tituloLinha(v), esc(skuLinha(v)))}</td>
       <td>${n2(v.bruto)}</td><td>${n2(v.tarifa)}</td><td>${n2(v.frete)}</td><td>${n2(v.liquido)}</td><td>${n2(v.custo)}</td>
-      <td style="color:${cm};font-weight:600">${n2(v.margem)}</td><td style="color:${cm}">${pc}</td></tr>`;
+      <td style="${corValorMargem(v.margem)}font-weight:700">${n2(v.margem)}</td><td>${selo(v.margem, v.bruto)}</td></tr>`;
     if (aberto) {
       const conf = v.diferenca == null ? "sem dado do MP" : Math.abs(v.diferenca) <= 0.10 ? `<span style="color:${verde}">✓ bate com o MP</span>` : `<span style="color:${verm}">diferença R$ ${n2(v.diferenca)}</span>`;
       h += `<tr class="vml-det"><td colspan="8"><div class="vml-detbox">
@@ -13251,7 +13331,7 @@ function renderVendasML(container) {
     return h;
   };
   const cab = `<tr><th>Produto</th><th>Venda</th><th>Tarifa</th><th>Frete</th><th>Líquido</th><th>Custo</th><th>Margem</th><th>%</th></tr>`;
-  const linhaTotal = (rot) => `<tr class="vml-tot"><td>${rot}</td><td>${n2(tot.bruto)}</td><td>${n2(tot.tarifa)}</td><td>${n2(tot.frete)}</td><td>${n2(tot.liquido)}</td><td>${n2(tot.custo)}</td><td style="color:${verde}">${n2(tot.margem)}</td><td>${pct(tot.margem, brutoComCusto)}</td></tr>`;
+  const linhaTotal = rot => `<tr class="vml-tot"><td>${rot}</td><td>${n2(tot.bruto)}</td><td>${n2(tot.tarifa)}</td><td>${n2(tot.frete)}</td><td>${n2(tot.liquido)}</td><td>${n2(tot.custo)}</td><td style="color:${tot.margem < 0 ? verm : verde}">${n2(tot.margem)}</td><td>${comCusto.length ? selo(tot.margem, brutoComCusto) : ""}</td></tr>`;
 
   let corpo = "";
   if (st.visao === "venda") {
@@ -13260,7 +13340,8 @@ function renderVendasML(container) {
     const g = {};
     for (const v of vendas) for (const i of v.itens) {
       const key = normSku(i.sku) || i.item_id || i.titulo;
-      const x = g[key] = g[key] || { titulo: i.titulo, sku: i.sku, vendas: 0, un: 0, bruto: 0, tarifa: 0, frete: 0, liquido: 0, custo: 0, margem: 0, semCusto: false };
+      const x = g[key] = g[key] || { titulo: i.titulo, sku: i.sku, itens: [], vendas: 0, un: 0, bruto: 0, tarifa: 0, frete: 0, liquido: 0, custo: 0, margem: 0, semCusto: false };
+      if (i.item_id && !x.itens.some(y => y.item_id === i.item_id)) x.itens.push(i);
       // rateia tarifa/frete/líquido do pedido pelo valor de cada item
       const peso = v.bruto ? (i.preco_unit * i.qtd) / v.bruto : 1 / v.itens.length;
       x.vendas++; x.un += i.qtd; x.bruto += i.preco_unit * i.qtd;
@@ -13270,28 +13351,36 @@ function renderVendasML(container) {
     }
     const lista = Object.values(g).sort((a, b) => b.bruto - a.bruto);
     corpo = lista.length ? `<div class="vml-sc"><table class="vml-t"><tr><th>Produto</th><th>Un</th><th>Venda</th><th>Tarifa</th><th>Frete</th><th>Líquido</th><th>Custo</th><th>Margem</th><th>%</th></tr>
-      ${lista.map(x => { const m = x.semCusto ? null : x.margem; const cm = corMargem(m, x.bruto); return `<tr><td><span class="vml-ttl">${esc(x.titulo)}</span><span class="vml-sk">${esc(x.sku || "sem SKU")} · ${x.vendas} venda${x.vendas > 1 ? "s" : ""}</span></td>
+      ${lista.map(x => { const m = x.semCusto ? null : x.margem; return `<tr><td>${prodCel(x.itens, x.titulo, `${esc(x.sku || "sem SKU")} · ${x.vendas} venda${x.vendas > 1 ? "s" : ""}`)}</td>
         <td>${x.un}</td><td>${n2(x.bruto)}</td><td>${n2(x.tarifa)}</td><td>${n2(x.frete)}</td><td>${n2(x.liquido)}</td><td>${x.semCusto ? "—" : n2(x.custo)}</td>
-        <td style="color:${cm};font-weight:600">${n2(m)}</td><td style="color:${cm}">${m == null ? "—" : Math.round(m / x.bruto * 100) + "%"}</td></tr>`; }).join("")}</table></div>` : "";
+        <td style="${corValorMargem(m)}font-weight:700">${n2(m)}</td><td>${selo(m, x.bruto)}</td></tr>`; }).join("")}</table></div>` : "";
   } else {
-    const ex = d?.excecoes || [];
+    const ex = d.excecoes;
     corpo = ex.length ? `<div class="vml-sc"><table class="vml-t"><tr><th>Produto</th><th>Motivo</th><th>Venda</th><th>Líquido</th></tr>
-      ${ex.map(e => `<tr><td><span class="vml-ttl">${esc(tituloLinha(e))}</span><span class="vml-sk">${esc(skuLinha(e))} · ${e.pedidos.map(p => `<a href="https://www.mercadolivre.com.br/vendas/${p}/detalhe" target="_blank" rel="noopener" style="color:${T.cAzul}">#${p}</a>`).join(", ")}</span></td>
+      ${ex.map(e => `<tr><td>${prodCel(e.itens, tituloLinha(e), `${esc(skuLinha(e))} · ${e.pedidos.map(p => `<a href="https://www.mercadolivre.com.br/vendas/${p}/detalhe" target="_blank" rel="noopener" style="color:${T.cAzul}">#${p}</a>`).join(", ")}`)}</td>
         <td style="text-align:left;color:${verm}">${esc(e.motivos.join(" · "))}</td><td>${n2(e.bruto)}</td><td>${n2(e.liquido)}</td></tr>`).join("")}</table></div>`
-      : `<div class="vml-vazio" style="color:${verde}">✓ Nenhuma exceção no dia<div class="vml-sk" style="margin-top:4px">Cancelamentos, reembolsos e valores que não batem com o Mercado Pago aparecem aqui</div></div>`;
+      : `<div class="vml-vazio" style="color:${verde}">✓ Nenhuma exceção no período<div class="vml-sk" style="margin-top:4px">Cancelamentos, reembolsos e valores que não batem com o Mercado Pago aparecem aqui</div></div>`;
   }
-  if (!corpo && st.visao !== "exc") corpo = `<div class="vml-vazio">${st.carregando ? "Buscando vendas do dia..." : st.erro ? "" : "Nenhuma venda neste dia"}</div>`;
+  if (!corpo && st.visao !== "exc") corpo = `<div class="vml-vazio">${st.carregando ? "Buscando vendas..." : st.erro ? "" : "Nenhuma venda no período"}</div>`;
 
-  const lib = d?.liberacoes || [];
-  const libTot = lib.reduce((s, l) => s + l.valor, 0), libN = lib.reduce((s, l) => s + l.vendas, 0);
+  // Vai cair na conta: o que ainda não foi liberado, por data; o já liberado numa linha só
+  const libs = Object.values(d.liberacoes).sort((a, b) => a.data.localeCompare(b.data));
+  const aLiberar = libs.filter(l => !l.liberado), jaLib = libs.filter(l => l.liberado);
+  const jaLibV = jaLib.reduce((s, l) => s + l.valor, 0), jaLibN = jaLib.reduce((s, l) => s + l.vendas, 0);
+  const libTot = libs.reduce((s, l) => s + l.valor, 0), libN = libs.reduce((s, l) => s + l.vendas, 0);
+
+  const PER = [["hoje", "Hoje"], ["ontem", "Ontem"], ["7d", "7 dias"], ["mes", "Mês"]];
   const html = `
   <style>
     .vml{font-variant-numeric:tabular-nums;color:${T.text};font-size:12px;max-width:1100px;margin:0 auto}
     .vml-top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
     .vml-top h2{font-size:17px;font-weight:600;margin:0}
     .vml-ctl{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-    .vml-ctl select,.vml-ctl input,.vml-ctl button{background:${T.bg3};color:${T.text};border:0.5px solid ${T.border2};border-radius:8px;padding:6px 8px;font-size:12px;font-family:inherit}
-    .vml-ctl button{cursor:pointer}
+    .vml-ctl select,.vml-ctl input,.vml-ctl button{background:${T.bg3};color:${T.text};border:0.5px solid ${T.border2};border-radius:99px;padding:6px 12px;font-size:12px;font-family:inherit}
+    .vml-ctl button{cursor:pointer;font-weight:500;color:${T.text3}}
+    .vml-ctl button.on{background:${T.text};color:${T.bg};border-color:${T.text};font-weight:600}
+    .vml-ctl input{color:${T.text3}}
+    .vml-ctl input.on{background:${T.text};color:${T.bg};border-color:${T.text}}
     .vml-k{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:12px}
     @media (max-width:820px){.vml-k{grid-template-columns:1fr 1fr}}
     .vml-c{background:${T.bg3};border:0.5px solid ${T.border};border-radius:10px;padding:10px 11px;min-width:0}
@@ -13304,8 +13393,15 @@ function renderVendasML(container) {
     .vml-t th{font-size:10px !important;color:${T.text3} !important;font-weight:500;border-bottom:0.5px solid ${T.border2}}
     .vml-t td{border-bottom:0.5px solid ${T.border}}
     .vml-t td:first-child,.vml-t th:first-child{text-align:left}
+    .vml-prod{display:flex;align-items:center;gap:10px}
+    .vml-foto{width:34px;height:34px;border-radius:8px;object-fit:cover;flex-shrink:0;background:${T.isLight ? "#f0f0f0" : "#1d1d22"};display:block}
     .vml-ttl{font-weight:600;max-width:260px;overflow:hidden;text-overflow:ellipsis;display:block}
-    @media (max-width:600px){.vml-ttl{max-width:150px}}
+    @media (max-width:600px){.vml-ttl{max-width:140px}}
+    .vml-pill{display:inline-block;min-width:44px;text-align:center;font-size:11px;font-weight:700;padding:3px 8px;border-radius:99px}
+    .vml-p-g{background:rgba(52,199,89,.15);color:${verde}}
+    .vml-p-o{background:rgba(255,159,10,.16);color:${T.isLight ? "#c26a00" : "#ff9f0a"}}
+    .vml-p-r{background:rgba(255,69,58,.15);color:${verm}}
+    .vml-p-n{background:${T.isLight ? "#f0f0f0" : "#1d1d22"};color:${T.text3};font-weight:600}
     .vml-lin{cursor:pointer}
     .vml-lin:hover td{background:${T.bg3}}
     .vml-det td{white-space:normal;text-align:left;background:${T.bg3}}
@@ -13321,32 +13417,34 @@ function renderVendasML(container) {
   <div class="vml">
     <div class="vml-top"><h2>Vendas</h2>
       <div class="vml-ctl">
+        ${PER.map(([p, rot]) => `<button data-vml-per="${p}" class="${st.periodo === p ? "on" : ""}">${rot}</button>`).join("")}
+        <input type="date" data-vml="data" class="${st.periodo === "dia" ? "on" : ""}" value="${st.periodo === "dia" ? st.data : ""}" max="${hoje}" title="Outro dia">
         <select data-vml="conta"><option value="filial"${st.conta === "filial" ? " selected" : ""}>Filial SP</option><option value="matriz"${st.conta === "matriz" ? " selected" : ""}>Matriz RS</option></select>
-        <input type="date" data-vml="data" value="${st.data}" max="${new Date(Date.now() - 3 * 3600e3).toISOString().slice(0, 10)}">
-        <button data-vml="atualizar">${st.carregando ? "Buscando..." : "↻"}</button>
+        <button data-vml="atualizar" title="Atualizar">${st.carregando ? "Buscando..." : "↻"}</button>
       </div>
     </div>
     ${st.erro ? `<div style="margin-top:10px;padding:10px;border-radius:8px;background:${T.errBg};border:0.5px solid ${T.errBor};color:${T.errText}">Erro ao buscar vendas: ${esc(st.erro)}</div>` : ""}
-    ${d?.parcial ? `<div class="vml-sk" style="margin-top:8px">Carregando o resto do dia... faltam ${d.faltam} pedidos</div>` : ""}
+    ${st.progresso ? `<div class="vml-sk" style="margin-top:8px">Carregando o período... ${st.progresso.feitos} de ${st.progresso.total} dias</div>` : d.parcial ? `<div class="vml-sk" style="margin-top:8px">Carregando o resto... faltam ${d.faltam} pedidos</div>` : ""}
     <div class="vml-k">
       ${card("Vendido", rs(tot.bruto), `${vendas.length} venda${vendas.length === 1 ? "" : "s"} · tíquete ${rs(vendas.length ? tot.bruto / vendas.length : null)}`)}
-      ${card("Margem", comCusto.length ? rs(tot.margem) : "—", comCusto.length ? `${pct(tot.margem, brutoComCusto)} do vendido${semCustoN ? ` · ${semCustoN} sem custo` : ""}` : (semCustoN ? "sem custo no Bling" : "antes dos impostos"), verde)}
+      ${card("Margem", comCusto.length ? rs(tot.margem) : "—", (comCusto.length ? `${pct(tot.margem, brutoComCusto)} do vendido${semCustoN ? ` · ${semCustoN} sem custo` : ""}` : (semCustoN ? "sem custo no Bling" : "antes dos impostos")) + compTxt, tot.margem < 0 ? verm : verde)}
       ${card("Tarifa ML", rs(tot.tarifa), pct(tot.tarifa, tot.bruto))}
       ${card("Frete", rs(tot.frete), pct(tot.frete, tot.bruto))}
       ${card("Líquido (MP)", rs(tot.liquido), `${pct(tot.liquido, tot.bruto)}${vendas.length ? (difN ? ` · <span style="color:${verm}">${difN} não batem</span>` : " · ✓ bate") : ""}`)}
       ${card("Custo (Bling)", comCusto.length ? rs(tot.custo) : "—", comCusto.length ? pct(tot.custo, brutoComCusto) : (estoqueBlingLoading ? "carregando..." : "—"))}
     </div>
-    ${lib.length ? `<div class="vml-h">VAI CAIR NA CONTA</div>
+    ${libs.length ? `<div class="vml-h">VAI CAIR NA CONTA</div>
       <div class="vml-lib"><table class="vml-t"><tr><th>Data</th><th>Vendas</th><th>Valor</th></tr>
-      ${lib.map(l => `<tr><td>${diaSem(l.data)}${l.liberado ? ` <span class="vml-sk" style="display:inline">· liberado</span>` : ""}</td><td>${l.vendas}</td><td>R$ ${n2(l.valor)}</td></tr>`).join("")}
+      ${jaLib.length ? `<tr><td style="color:${T.text3}">Já liberado</td><td style="color:${T.text3}">${jaLibN}</td><td style="color:${T.text3}">R$ ${n2(jaLibV)}</td></tr>` : ""}
+      ${aLiberar.map(l => `<tr><td>${diaSem(l.data)}</td><td>${l.vendas}</td><td>R$ ${n2(l.valor)}</td></tr>`).join("")}
       <tr class="vml-tot"><td>Total</td><td>${libN}</td><td>R$ ${n2(libTot)}</td></tr></table></div>` : ""}
     <div class="vml-seg">
       <button data-vml-visao="venda" class="${st.visao === "venda" ? "on" : ""}">Por venda</button>
       <button data-vml-visao="prod" class="${st.visao === "prod" ? "on" : ""}">Por produto</button>
-      <button data-vml-visao="exc" class="${st.visao === "exc" ? "on" : ""}">Exceções ${(d?.excecoes || []).length}</button>
+      <button data-vml-visao="exc" class="${st.visao === "exc" ? "on" : ""}">Exceções ${d.excecoes.length}</button>
     </div>
     ${corpo}
-    ${vendas.length && st.visao !== "exc" ? `<div class="vml-sk" style="margin-top:6px">Margem antes dos impostos · ${window.innerWidth < 768 ? "arraste a tabela para o lado para ver todas as colunas · " : ""}toque na venda para ver o detalhe</div>` : ""}
+    ${vendas.length && st.visao !== "exc" ? `<div class="vml-sk" style="margin-top:6px">Margem antes dos impostos · selo verde a partir de 25% · ${window.innerWidth < 768 ? "arraste a tabela para o lado para ver todas as colunas · " : ""}toque na venda para ver o detalhe</div>` : ""}
   </div>`;
   // morph num miolo próprio (o morph sincroniza os atributos do alvo — não pode ser o container)
   let raiz = container._vmlRaiz;
@@ -13357,6 +13455,8 @@ function renderVendasML(container) {
     container.dataset.vmlPronto = "1";
     container.addEventListener("click", e => {
       if (e.target.closest("a")) return;
+      const per = e.target.closest("[data-vml-per]");
+      if (per) { st.periodo = per.dataset.vmlPer; st.aberto = null; st.erro = null; renderVendasML(container); return; }
       const vis = e.target.closest("[data-vml-visao]");
       if (vis) { st.visao = vis.dataset.vmlVisao; st.aberto = null; renderVendasML(container); return; }
       if (e.target.closest('[data-vml="atualizar"]')) { vendasCarregar(true); return; }
@@ -13367,7 +13467,7 @@ function renderVendasML(container) {
       const el = e.target.closest("[data-vml]");
       if (!el) return;
       if (el.dataset.vml === "conta") st.conta = el.value;
-      if (el.dataset.vml === "data" && /^\d{4}-\d{2}-\d{2}$/.test(el.value)) st.data = el.value;
+      if (el.dataset.vml === "data" && /^\d{4}-\d{2}-\d{2}$/.test(el.value)) { st.data = el.value; st.periodo = el.value === hoje ? "hoje" : "dia"; }
       st.aberto = null; st.erro = null;
       renderVendasML(container);
     });
