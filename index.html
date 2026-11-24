@@ -13368,10 +13368,12 @@ function renderVendasML(container) {
     const varios = v.itens.length > 1 && !mesmoProduto(v);
     const ped = (v.pedidos || []).length;
     const b = [];
-    b.push(varios ? `<span class="vml-b">${v.itens.length} itens</span>` : `<span class="vml-b vml-b-sku">${esc(v.itens[0]?.sku || "sem SKU")}</span>`);
+    const cp = t => `data-vml-copiar="${esc(t)}" title="Clique para copiar"`;
+    b.push(varios ? `<span class="vml-b">${v.itens.length} itens</span>` : (v.itens[0]?.sku ? `<span class="vml-b vml-b-sku" ${cp(v.itens[0].sku)}>${esc(v.itens[0].sku)}</span>` : `<span class="vml-b">sem SKU</span>`));
     if (un > 1) b.push(`<span class="vml-b vml-b-un">${un} un</span>`);
     if (ped > 1 || v.itens.length > 1) b.push(`<span class="vml-b vml-b-pd">${ped > 1 ? `${ped} pedidos · ` : ""}${v.envios > 1 ? `${v.envios} pacotes` : "1 frete"}</span>`);
-    if (v.comprador?.apelido) b.push(`<span class="vml-b vml-b-cp" title="${esc(v.comprador.nome || "")}">${esc(v.comprador.apelido)}</span>`);
+    if (v.comprador?.apelido) b.push(`<span class="vml-b vml-b-cp" data-vml-copiar="${esc(v.comprador.apelido)}" title="${esc(v.comprador.nome || "")} · clique para copiar">${esc(v.comprador.apelido)}</span>`);
+    for (const pid of (v.pedidos || []).slice(0, 3)) b.push(`<span class="vml-b vml-b-ped" ${cp(String(pid))}>#${pid}</span>`);
     b.push(`<span class="vml-b-hr">${hora(v.criado)}</span>`);
     return `<span class="vml-bs">${b.join("")}</span>`;
   };;
@@ -13412,10 +13414,10 @@ function renderVendasML(container) {
         </div>
         <div class="vml-db"><div class="vml-dh">PAGAMENTO E PEDIDO</div>
           <div class="vml-kv" style="margin-top:0">
-            ${v.comprador ? `<span>Comprador</span><span>${esc(v.comprador.nome || "")}${v.comprador.apelido ? `<br><span class="vml-sk2">${esc(v.comprador.apelido)}</span>` : ""}</span>` : ""}
+            ${v.comprador ? `<span>Comprador</span><span>${esc(v.comprador.nome || "")}${v.comprador.apelido ? `<br><span class="vml-b vml-b-cp" style="display:inline-block;margin-top:3px" data-vml-copiar="${esc(v.comprador.apelido)}" title="Clique para copiar">${esc(v.comprador.apelido)}</span>` : ""}</span>` : ""}
             <span>Libera em</span><span>${v.liberacao ? dataBR(v.liberacao) : "—"}</span>
             <span>Status</span><span>${v.liberacao ? (liberado ? `<span style="color:${verde}">liberado</span>` : "a liberar") : "—"}</span>
-            ${(v.por_pedido || []).length > 1 ? "" : `<span>Pedido${v.pedidos.length > 1 ? "s" : ""}</span><span>${v.pedidos.map(p => "#" + p).join("<br>")}</span>`}
+            ${(v.por_pedido || []).length > 1 ? "" : `<span>Pedido${v.pedidos.length > 1 ? "s" : ""}</span><span>${v.pedidos.map(p => `<span class="vml-b vml-b-ped" style="display:inline-block" data-vml-copiar="${p}" title="Clique para copiar">#${p}</span>`).join("<br>")}</span>`}
             <span>Envio</span><span>${v.envios > 1 ? v.envios + " pacotes" : "1 pacote"}</span>
           </div>
           ${(v.por_pedido || []).length > 1 ? `<div class="vml-dh" style="margin:14px 0 6px">CADA PEDIDO (COMO NO ML)</div>
@@ -13491,8 +13493,12 @@ function renderVendasML(container) {
 
     .vml-bs{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;align-items:center}
     .vml-b{font-size:11px;line-height:1.5;padding:0 7px;border-radius:6px;background:${T.isLight ? "#f0f0f2" : "#1b1b1f"};border:0.5px solid ${T.border2};color:${T.isLight ? "#3a3a40" : "#c8c8ce"};white-space:nowrap}
-    .vml-b-sku{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10.5px}
-    .vml-b-un{background:rgba(59,130,246,.14);border-color:rgba(59,130,246,.3);color:${T.isLight ? "#1d5fd1" : "#7fb0ff"}}
+    .vml-b-sku{background:rgba(59,130,246,.14);border-color:rgba(59,130,246,.3);color:${T.isLight ? "#1d5fd1" : "#7fb0ff"}}
+    .vml-b-un{background:rgba(20,184,166,.14);border-color:rgba(20,184,166,.32);color:${T.isLight ? "#0f766e" : "#5eead4"}}
+    .vml-b-ped{font-variant-numeric:tabular-nums}
+    [data-vml-copiar]{cursor:copy}
+    [data-vml-copiar]:hover{filter:brightness(1.25)}
+    .vml-b.vml-copiado{background:rgba(52,199,89,.2) !important;border-color:rgba(52,199,89,.4) !important;color:${verde} !important}
     .vml-b-pd{background:rgba(240,180,0,.12);border-color:rgba(240,180,0,.3);color:${T.isLight ? "#8a6400" : "#f0c14a"}}
     .vml-b-cp{background:rgba(139,92,246,.14);border-color:rgba(139,92,246,.3);color:${T.isLight ? "#6435d6" : "#b9a3ff"}}
     .vml-b-hr{font-size:11px;color:${T.isLight ? "#55555c" : "#a8a8b0"};padding-left:2px}
@@ -13507,8 +13513,9 @@ function renderVendasML(container) {
     .vml-prod{display:flex;align-items:center;gap:10px}
     .vml-foto{width:34px;height:34px;border-radius:8px;flex-shrink:0;background:${T.isLight ? "#f0f0f0" : "#1d1d22"};display:block}
     img.vml-foto{object-fit:contain;background:#fff;padding:2px;box-sizing:border-box}
-    .vml-ttl{font-weight:600;max-width:260px;overflow:hidden;text-overflow:ellipsis;display:block}
-    @media (max-width:600px){.vml-ttl{max-width:140px}}
+    .vml-ttl{font-weight:600;display:block;white-space:normal;line-height:1.35}
+    .vml-t td:first-child{white-space:normal;min-width:280px}
+    @media (max-width:767px){.vml-t td:first-child{min-width:0}}
     .vml-pill{display:inline-block;min-width:44px;text-align:center;font-size:11px;font-weight:700;padding:3px 8px;border-radius:99px}
     .vml-p-g{background:rgba(52,199,89,.15);color:${verde}}
     .vml-p-o{background:rgba(255,159,10,.16);color:${T.isLight ? "#c26a00" : "#ff9f0a"}}
@@ -13559,7 +13566,7 @@ function renderVendasML(container) {
       .vml-c .vml-sk{font-size:12px;margin-top:3px}
       .vml-t td{font-size:14px !important;padding:10px 12px}
       .vml-t th{font-size:12px !important;padding:11px 12px}
-      .vml-ttl{font-size:14px;max-width:min(520px,38vw)}
+      .vml-ttl{font-size:14px}
       .vml-foto{width:40px;height:40px}
       .vml-pill{font-size:12px;min-width:48px}
       .vml-seg{max-width:none}
@@ -13629,6 +13636,15 @@ function renderVendasML(container) {
     container.dataset.vmlPronto = "1";
     container.addEventListener("click", e => {
       if (e.target.closest("a")) return;
+      const cop = e.target.closest("[data-vml-copiar]");
+      if (cop) {
+        e.stopPropagation();
+        const txt = cop.dataset.vmlCopiar, orig = cop.innerHTML;
+        const ok = () => { cop.classList.add("vml-copiado"); cop.textContent = "copiado ✓"; setTimeout(() => { cop.classList.remove("vml-copiado"); cop.innerHTML = orig; }, 1100); };
+        const reserva = () => { const t = document.createElement("textarea"); t.value = txt; t.style.position = "fixed"; t.style.opacity = "0"; document.body.appendChild(t); t.select(); try { document.execCommand("copy"); ok(); } catch (_) {} t.remove(); };
+        if (navigator.clipboard?.writeText) navigator.clipboard.writeText(txt).then(ok, reserva); else reserva();
+        return;
+      }
       const per = e.target.closest("[data-vml-per]");
       if (per) { st.periodo = per.dataset.vmlPer; st.aberto = null; st.erro = null; st.limite = 100; renderVendasML(container); return; }
       if (e.target.closest("[data-vml-mais]")) { st.limite = (st.limite || 100) + 100; renderVendasML(container); return; }
