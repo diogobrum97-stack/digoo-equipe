@@ -13301,7 +13301,7 @@ async function vendasAbrirNF(conta, pedido) {
     const base = `${VERCEL_BACKEND}/api/ml-vendas?action=nf-doc&conta=${conta}&id=${encodeURIComponent(nf.id || "")}`;
     ov.innerHTML = caixa(`
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
-        <div><b style="font-size:17px">NF-e <span data-nf-copiar="${esc(nf.numero)}" title="Clique para copiar o número" style="cursor:copy;border-bottom:1px dashed ${G}">${esc(nf.numero)}</span></b> <span data-nf-copiar="${esc(nf.numero)}" title="Copiar o número" style="cursor:pointer;font-size:11px;color:${T.cAzul};margin-right:6px">copiar</span><span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:${cancelada ? "rgba(255,69,58,.15)" : "rgba(52,199,89,.15)"};color:${corSit}">${esc(cancelada ? "Cancelada" : autorizada ? "Autorizada" : (nf.situacao || nf.status || "—"))}</span>
+        <div><b style="font-size:17px">NF-e <span data-nf-copiar="${esc(nf.numero)}" title="Clique para copiar o número" style="cursor:copy;border-bottom:1px dashed ${G}">${esc(nf.numero)}</span></b> <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:${cancelada ? "rgba(255,69,58,.15)" : "rgba(52,199,89,.15)"};color:${corSit}">${esc(cancelada ? "Cancelada" : autorizada ? "Autorizada" : (nf.situacao || nf.status || "—"))}</span>
           <div style="font-size:12px;color:${G};margin-top:3px">Série ${esc(nf.serie)} · emitida ${dt(nf.emitida)}${nf.protocolo ? ` · protocolo ${esc(nf.protocolo)}` : ""}</div></div>
         <span data-nf-fechar style="cursor:pointer;color:${G};font-size:18px">✕</span>
       </div>
