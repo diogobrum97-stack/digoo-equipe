@@ -13316,6 +13316,7 @@ function renderVendasML(container) {
     return { ...v, custo, margem };
   });
   const vendas = comCustoEMargem(d.vendas);
+  window._vmlUltimasVendas = vendas;
   const soma = f => vendas.reduce((s, v) => s + (Number(v[f]) || 0), 0);
   const tot = { bruto: soma("bruto"), tarifa: soma("tarifa"), frete: soma("frete"), liquido: soma("liquido") };
   const comCusto = vendas.filter(v => v.margem != null);
@@ -13407,7 +13408,13 @@ function renderVendasML(container) {
         </div>
         <div class="vml-db"><div class="vml-dh">DE ONDE VEM A MARGEM</div>
           ${lnD("Venda", rs(v.bruto))}${lnD("− Tarifa ML", rs(v.tarifa))}${lnD("− Frete", rs(v.frete))}
-          <div class="vml-dsep"></div>${lnD(`= Líquido ${conf}`, rs(v.liquido))}${lnD("− Custo", v.custo == null ? "sem custo no Bling" : rs(v.custo))}
+          <div class="vml-dsep"></div>${lnD(`= Líquido ${conf}`, rs(v.liquido))}
+          ${v.diferenca != null && Math.abs(v.diferenca) > 0.10 ? `<div class="vml-difbox">
+            <div class="vml-dl"><span>Esperado (venda − tarifa − frete)</span><span>${rs(v.esperado)}</span></div>
+            <div class="vml-dl"><span>Caiu no Mercado Pago</span><span>${rs(v.liquido)}</span></div>
+            <div class="vml-dl" style="font-weight:700;color:${verm}"><span>Diferença</span><span>${v.diferenca > 0 ? "+" : "−"} R$ ${n2(Math.abs(v.diferenca))}</span></div>
+            <div class="vml-sk2" style="margin-top:4px">${Math.abs(Math.abs(v.diferenca) - (v.frete || 0)) < 1 ? "Parece o frete: o ML cobrou/devolveu um frete diferente do informado." : v.diferenca > 0 ? "Caiu mais do que o previsto: costuma ser bônus de frete ou campanha do ML." : "Caiu menos do que o previsto: costuma ser ajuste de frete, cupom ou taxa extra."} A margem usa o valor que caiu no MP.</div>
+          </div>` : ""}${lnD("− Custo", v.custo == null ? "sem custo no Bling" : rs(v.custo))}
           <div class="vml-dsep"></div>${lnD("= Margem", v.margem == null ? "—" : `${rs(v.margem)}${v.bruto ? " · " + Math.round(v.margem / v.bruto * 100) + "%" : ""}`, ` style="font-weight:700;font-size:15px;color:${cm}"`)}
         </div>
         <div class="vml-db"><div class="vml-dh">PAGAMENTO E PEDIDO</div>
@@ -13456,10 +13463,14 @@ function renderVendasML(container) {
       ${lista.map(x => { const m = x.semCusto ? null : x.margem;
         return linha(prodCel(x.itens, x.titulo, `${esc(x.sku || "sem SKU")} · ${x.un} un · ${x.vendas} venda${x.vendas > 1 ? "s" : ""}`), numsVenda(x.bruto, x.tarifa, x.frete, x.liquido, x.semCusto ? null : x.custo, m, x.bruto)); }).join("")}</tbody></table></div>` : "";
   } else {
-    const ex = d.excecoes;
-    corpo = ex.length ? `<div class="vml-sc"><table class="vml-t">${cabec(["Motivo", "Venda", "Líquido"])}<tbody>
+    const soDif = st.filtroExc === "dif";
+    const ex = soDif ? d.excecoes.filter(e => e.motivos.some(m => m.startsWith("diferença"))) : d.excecoes;
+    const idsVenda = new Set(vendas.map(v => v.id));
+    const avisoFiltro = soDif ? `<div class="vml-filtro">Mostrando só as ${ex.length} que não batem com o Mercado Pago <button data-vml-limpafiltro>ver todas as exceções</button></div>` : "";
+    corpo = ex.length ? `${avisoFiltro}<div class="vml-sc"><table class="vml-t">${cabec(["Motivo", "Venda", "Líquido"])}<tbody>
       ${ex.map(e => linha(prodCel(e.itens, tituloLinha(e), `${skuLinha(e)} ${e.pedidos.map(p => `<a href="https://www.mercadolivre.com.br/vendas/${p}/detalhe" target="_blank" rel="noopener" style="color:${T.cAzul}">#${p}</a>`).join(", ")}`),
-        [`<td style="text-align:left;white-space:normal;color:${verm}">${esc(e.motivos.join(" · "))}</td>`, `<td>${nm(e.bruto)}</td>`, `<td>${nm(e.liquido)}</td>`])).join("")}</tbody></table></div>`
+        [`<td style="text-align:left;white-space:normal;color:${verm}">${esc(e.motivos.join(" · "))}${idsVenda.has(e.id) ? `<div class="vml-sk2" style="margin-top:2px">toque para ver o detalhe</div>` : ""}</td>`, `<td>${nm(e.bruto)}</td>`, `<td>${nm(e.liquido)}</td>`],
+        idsVenda.has(e.id) ? `data-vml-irvenda="${esc(e.id)}" style="cursor:pointer"` : "")).join("")}</tbody></table></div>`
       : `<div class="vml-vazio" style="color:${verde}">✓ Nenhuma exceção no período<div class="vml-sk" style="margin-top:4px">Cancelamentos, reembolsos e valores que não batem com o Mercado Pago aparecem aqui</div></div>`;
   }
   if (!corpo && st.visao !== "exc") corpo = `<div class="vml-vazio">${st.carregando || esperandoFb ? "Buscando vendas..." : st.erro ? "" : "Nenhuma venda no período"}</div>`;
@@ -13533,6 +13544,9 @@ function renderVendasML(container) {
     .vml-dl{display:flex;justify-content:space-between;gap:10px;padding:4px 0;font-size:13px}
     .vml-dl span:first-child{color:${T.isLight ? "#55555c" : "#a8a8b0"}}
     .vml-dsep{border-top:0.5px solid ${T.border2};margin:4px 0}
+    .vml-difbox{margin:6px 0 4px;padding:8px 10px;border-radius:8px;background:rgba(255,69,58,.08);border:0.5px solid rgba(255,69,58,.25)}
+    .vml-filtro{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12px;margin:0 0 8px;color:${T.text}}
+    .vml-filtro button{background:none;border:0;color:${T.cAzul};cursor:pointer;font-size:12px;font-family:inherit;padding:0;text-decoration:underline}
     .vml-pp{width:100%;border-collapse:collapse;font-size:12px}
     .vml .vml-pp th,.vml .vml-pp td{font-size:12px !important;padding:5px 6px !important;text-align:right !important;background:none !important;position:static !important;box-shadow:none !important}
     .vml .vml-pp th{font-weight:500;color:${T.isLight ? "#55555c" : "#a8a8b0"} !important;border-bottom:0.5px solid ${T.border2}}
@@ -13605,7 +13619,7 @@ function renderVendasML(container) {
       ${card("Margem", comCusto.length ? rs(tot.margem) : "—", (comCusto.length ? `${pct(tot.margem, brutoComCusto)} do vendido${semCustoN ? ` · ${semCustoN} sem custo` : ""}` : (semCustoN ? "sem custo no Bling" : "antes dos impostos")) + compTxt, tot.margem < 0 ? verm : verde)}
       ${card("Tarifa ML", rs(tot.tarifa), pct(tot.tarifa, tot.bruto))}
       ${card("Frete", rs(tot.frete), pct(tot.frete, tot.bruto))}
-      ${card("Líquido (MP)", rs(tot.liquido), `${pct(tot.liquido, tot.bruto)}${vendas.length ? (difN ? ` · <span style="color:${verm}">${difN} não batem</span>` : " · ✓ bate") : ""}`)}
+      ${card("Líquido (MP)", rs(tot.liquido), `${pct(tot.liquido, tot.bruto)}${vendas.length ? (difN ? ` · <span data-vml-naobatem style="color:${verm};cursor:pointer;text-decoration:underline;text-underline-offset:2px" title="Ver quais são">${difN} não batem</span>` : " · ✓ bate") : ""}`)}
       ${card("Custo (Bling)", comCusto.length ? rs(tot.custo) : "—", comCusto.length ? pct(tot.custo, brutoComCusto) : (estoqueBlingLoading ? "carregando..." : "—"))}
     </div>
     <div class="vml-mid">
@@ -13644,7 +13658,19 @@ function renderVendasML(container) {
       if (per) { st.periodo = per.dataset.vmlPer; st.aberto = null; st.erro = null; st.limite = 100; renderVendasML(container); return; }
       if (e.target.closest("[data-vml-mais]")) { st.limite = (st.limite || 100) + 100; renderVendasML(container); return; }
       const vis = e.target.closest("[data-vml-visao]");
-      if (vis) { st.visao = vis.dataset.vmlVisao; st.aberto = null; renderVendasML(container); return; }
+      if (vis) { st.visao = vis.dataset.vmlVisao; st.aberto = null; st.filtroExc = null; renderVendasML(container); return; }
+      if (e.target.closest("[data-vml-naobatem]")) { st.visao = "exc"; st.filtroExc = "dif"; st.aberto = null; renderVendasML(container); return; }
+      if (e.target.closest("[data-vml-limpafiltro]")) { st.filtroExc = null; renderVendasML(container); return; }
+      const irv = e.target.closest("[data-vml-irvenda]");
+      if (irv) {
+        const id = irv.dataset.vmlIrvenda;
+        st.visao = "venda"; st.filtroExc = null; st.aberto = id;
+        const pos = (window._vmlUltimasVendas || []).findIndex(v => v.id === id);
+        if (pos >= (st.limite || 100)) st.limite = Math.ceil((pos + 1) / 100) * 100;
+        renderVendasML(container);
+        setTimeout(() => container.querySelector(`[data-vml-abrir="${CSS.escape(id)}"]`)?.scrollIntoView({ block: "center", behavior: "smooth" }), 50);
+        return;
+      }
       if (e.target.closest('[data-vml="atualizar"]')) { vendasCarregar(true); return; }
       const lin = e.target.closest("[data-vml-abrir]");
       if (lin) { st.aberto = st.aberto === lin.dataset.vmlAbrir ? null : lin.dataset.vmlAbrir; renderVendasML(container); }
