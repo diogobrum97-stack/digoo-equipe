@@ -8224,7 +8224,7 @@ function render(){
             { label: "Dashboard", tab: "dashboard", subs: [] },
             { label: "Tarefas", tab: "tarefas", subs: [] },
             { label: "Equipe", tab: null, subs: [{label:"Concluídas",tab:"concluidas"},{label:"Conversas",tab:"conversas"}] },
-            { label: "Mercado Livre", tab: null, subs: [{label:"Vendas",tab:"vendas"},{label:"Saldo MP",tab:"saldo-mp"},{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência de Compra",tab:"experiencia"},{label:"Clonar Anúncio",tab:"clonar"},{label:"Perguntas",tab:"perguntas"},{label:"Reclamações",tab:"reclamacoes-ml"},{label:"Picking & Packing",tab:"picking"},{label:"Promoções",tab:"promocoes"},{label:"Kits Full",tab:"kits-full"},{label:"⚠ Ajuste Filial",tab:"ajuste-filial"}] },
+            { label: "Mercado Livre", tab: null, subs: [{label:"Vendas",tab:"vendas"},{label:"Saldo MP",tab:"saldo-mp"},{label:"ICMS (temp)",tab:"conf-icms"},{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência de Compra",tab:"experiencia"},{label:"Clonar Anúncio",tab:"clonar"},{label:"Perguntas",tab:"perguntas"},{label:"Reclamações",tab:"reclamacoes-ml"},{label:"Picking & Packing",tab:"picking"},{label:"Promoções",tab:"promocoes"},{label:"Kits Full",tab:"kits-full"},{label:"⚠ Ajuste Filial",tab:"ajuste-filial"}] },
             { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"},{label:"NF Transferência Full",tab:"nf-full"},{label:"NF Importação",tab:"nf-importacao"},{label:"Contas a Pagar",tab:"contas-pagar"},{label:"NFs Emitidas",tab:"nfs-emitidas"},{label:"Painel Fiscal",tab:"painel-fiscal"}] },
             { label: "Email", tab: "email", subs: [] },
           ].filter(g => {
@@ -8957,6 +8957,13 @@ function render(){
             let afContainer = panel.querySelector(".ajuste-filial-container");
             if(!afContainer){ afContainer=document.createElement("div"); afContainer.className="ajuste-filial-container"; panel.appendChild(afContainer); }
             renderAjusteFilial(afContainer, color);
+          }else if(window._diogotab==="conf-icms"){
+            panel.style.maxHeight="none"; panel.style.overflowY="auto";
+            if(!window._icmsShell){ window._icmsShell=document.createElement("div"); window._icmsShell.className="conf-icms-container"; }
+            const icC = window._icmsShell;
+            icC.style.cssText=`background:${T.card};border:1px solid ${T.border};border-radius:12px;padding:16px;box-shadow:${T.cardShadow};`;
+            if(icC.parentNode !== panel) panel.appendChild(icC);
+            renderConfICMS(icC);
           }else if(window._diogotab==="saldo-mp"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
             if(!window._smpShell){ window._smpShell=document.createElement("div"); window._smpShell.className="saldo-mp-container"; }
@@ -13820,6 +13827,109 @@ function renderVendasML(container) {
       if (el.dataset.vml === "data" && /^\d{4}-\d{2}-\d{2}$/.test(el.value)) { st.data = el.value; st.periodo = el.value === hoje ? "hoje" : "dia"; }
       st.aberto = null; st.erro = null; st.limite = 100;
       renderVendasML(container);
+    });
+  }
+}
+
+// ── ICMS (temp) — conferência TEMPORÁRIA de alíquota por SKU. Remover depois. ──
+window._icmsState = window._icmsState || { dados: null, carregando: false, erro: null, dias: 30, filtro: "todos" };
+async function confIcmsCarregar() {
+  const st = window._icmsState;
+  if (st.carregando) return;
+  st.carregando = true; st.erro = null; confIcmsDesenhar();
+  try {
+    const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=conf-icms&dias=${st.dias}`);
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.error || "erro na conferência");
+    st.dados = d;
+  } catch (e) { st.erro = e.message; }
+  st.carregando = false; confIcmsDesenhar();
+}
+function confIcmsDesenhar() { const c = window._icmsShell; if (c && window._diogotab === "conf-icms") renderConfICMS(c); }
+function renderConfICMS(container) {
+  const st = window._icmsState, d = st.dados;
+  if (!d && !st.carregando && !st.erro && !st._pediu) { st._pediu = true; confIcmsCarregar(); }
+  const G = T.text2 || T.textMuted || "#888";
+  const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const COR = { "18%": "#b45309", "12%": "#15803d", "4%": "#1d4ed8", "7%": "#7c3aed", "0%": "#6b7280", "outra": "#b91c1c" };
+  const internas = g => Object.keys(g.faixas).filter(f => f === "12%" || f === "18%");
+  const misto = g => internas(g).length > 1;
+  let grupos = d?.grupos || [];
+  const nMisto = grupos.filter(misto).length, n12 = grupos.filter(g => g.faixas["12%"]).length, n18 = grupos.filter(g => g.faixas["18%"]).length, nOutra = grupos.filter(g => g.faixas["outra"]).length;
+  if (st.filtro === "misto") grupos = grupos.filter(misto);
+  else if (st.filtro === "12") grupos = grupos.filter(g => g.faixas["12%"]);
+  else if (st.filtro === "18") grupos = grupos.filter(g => g.faixas["18%"]);
+  else if (st.filtro === "outra") grupos = grupos.filter(g => g.faixas["outra"]);
+  // resumo por NCM (dentro de SP: 12% x 18%)
+  const porNcm = {};
+  for (const g of d?.grupos || []) for (const [fx, f] of Object.entries(g.faixas)) {
+    const ncm = f.exemplo?.ncm; if (!ncm) continue;
+    const x = porNcm[ncm] = porNcm[ncm] || { skus: new Set(), faixas: {} };
+    x.skus.add(g.sku); x.faixas[fx] = (x.faixas[fx] || 0) + f.n;
+  }
+  const chip = (fx, f) => `<span class="ic-chip" style="background:${COR[fx] || "#6b7280"}" title="${esc((f.pcts || []).join("% · "))}%">${fx} · ${f.n} ${f.n === 1 ? "nota" : "notas"}${f.difal ? ` (${f.difal} c/ DIFAL)` : ""}</span>`;
+  const linhas = grupos.map(g => {
+    const fxs = Object.entries(g.faixas).sort((a, b) => b[1].n - a[1].n);
+    const ncms = [...new Set(fxs.map(([, f]) => f.exemplo?.ncm).filter(Boolean))].join(", ");
+    const det = fxs.map(([fx, f]) => { const e = f.exemplo || {}; return `<div class="ic-ex">${fx}: ex. pedido ${esc(e.pedido)}${e.nf ? ` · NF ${esc(e.nf)}` : ""} · ${esc(e.uf_emitente || "?")}→${esc(e.uf_destino || "?")}${e.cfop ? ` · CFOP ${esc(e.cfop)}` : ""}${e.aliq_item != null ? ` · alíquota no item ${esc(e.aliq_item)}%` : ""} · ICMS÷valor ${esc((f.pcts || []).join("%, "))}%</div>`; }).join("");
+    return `<div class="ic-row${misto(g) ? " ic-alerta" : ""}">
+      <div class="ic-top"><span class="ic-conta">${g.conta === "filial" ? "Filial SP" : "Matriz RS"}</span><b>${esc(g.sku)}</b>${ncms ? `<span class="ic-ncm">NCM ${esc(ncms)}</span>` : ""}${misto(g) ? `<span class="ic-warn">⚠ 12% e 18% em SP</span>` : ""}</div>
+      <div class="ic-tit">${esc(g.titulo || "")}</div>
+      <div class="ic-chips">${fxs.map(([fx, f]) => chip(fx, f)).join("")}</div>
+      ${det}
+    </div>`;
+  }).join("");
+  const ncmLinhas = Object.entries(porNcm).sort().map(([ncm, x]) => {
+    const tem12 = x.faixas["12%"], tem18 = x.faixas["18%"];
+    return `<tr class="${tem12 && tem18 ? "ic-alerta" : ""}"><td><b>${esc(ncm)}</b></td><td>${x.skus.size}</td><td>${Object.entries(x.faixas).sort((a, b) => b[1] - a[1]).map(([fx, n]) => `<span class="ic-chip" style="background:${COR[fx] || "#6b7280"}">${fx} · ${n}</span>`).join(" ")}</td></tr>`;
+  }).join("");
+  const F = [["todos", `Todos (${(d?.grupos || []).length})`], ["misto", `⚠ 12% e 18% (${nMisto})`], ["12", `Com 12% (${n12})`], ["18", `Com 18% (${n18})`], ["outra", `Fora do padrão (${nOutra})`]];
+  container.innerHTML = `<style>
+    .ic{font-size:14px;color:${T.text}}
+    .ic-top{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .ic h2{margin:0;font-size:18px}
+    .ic-btn{padding:7px 12px;border-radius:9px;background:${T.bg3};border:0.5px solid ${T.border2};color:${T.text};font-family:inherit;cursor:pointer;font-size:13px}
+    .ic-btn.on{background:${T.text};color:${T.card}}
+    .ic-aviso{margin:12px 0;padding:12px 14px;border-radius:10px;background:${T.bg3};border:0.5px solid ${T.border2};line-height:1.5;font-size:13px;color:${G}}
+    .ic-filtros{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}
+    .ic-row{padding:12px;border:0.5px solid ${T.border2};border-radius:10px;margin-bottom:8px}
+    .ic-row.ic-alerta,tr.ic-alerta td{background:rgba(185,28,28,.07)}
+    .ic-conta{font-size:11px;padding:2px 7px;border-radius:99px;background:${T.bg3};border:0.5px solid ${T.border2};color:${G}}
+    .ic-ncm{font-size:12px;color:${G}}
+    .ic-warn{font-size:12px;font-weight:700;color:#b91c1c}
+    .ic-tit{font-size:13px;color:${G};margin:4px 0 8px}
+    .ic-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+    .ic-chip{display:inline-block;color:#fff;font-weight:700;font-size:12px;padding:3px 9px;border-radius:99px}
+    .ic-ex{font-size:12px;color:${G};margin-top:3px}
+    .ic table{width:100%;border-collapse:collapse;font-size:13px}
+    .ic td,.ic th{text-align:left;padding:8px;border-bottom:0.5px solid ${T.border2}}
+    .ic h3{font-size:15px;margin:20px 0 8px}
+  </style>
+  <div class="ic">
+    <div class="ic-top" style="justify-content:space-between"><h2>Conferência de ICMS <span style="font-size:12px;color:${G};font-weight:400">(temporária)</span></h2>
+      <div class="ic-top">
+        <select data-ic="dias" class="ic-btn">${[7, 15, 30, 60].map(n => `<option value="${n}"${st.dias === n ? " selected" : ""}>${n} dias</option>`).join("")}</select>
+        <button data-ic="ir" class="ic-btn">${st.carregando ? "Conferindo…" : "↻ Conferir"}</button>
+      </div>
+    </div>
+    <div class="ic-aviso">Alíquota calculada em cada nota: <b>ICMS ÷ valor da nota</b>. Dentro de SP deve dar 12% ou 18%; para outro estado, 4% (com DIFAL). Linha em vermelho = o mesmo SKU saiu com 12% <b>e</b> 18% dentro de SP.
+      ${d ? `<br>${d.notas} notas conferidas em ${d.dias_com_nota} dias com nota salva${d.varios_skus ? ` · ${d.varios_skus} notas com mais de um SKU ficaram de fora` : ""}${d.sem_imposto ? ` · ${d.sem_imposto} sem os impostos` : ""} · ${d.notas_abertas}/${d.de_amostras} notas abertas para pegar o NCM.` : ""}</div>
+    ${st.erro ? `<div class="ic-aviso" style="color:#b91c1c">Erro: ${esc(st.erro)}</div>` : ""}
+    ${!d ? (st.carregando ? `<div class="ic-aviso">Conferindo as notas… (pode levar até 1 minuto)</div>` : "") : `
+      <div class="ic-filtros">${F.map(([k, r]) => `<button class="ic-btn${st.filtro === k ? " on" : ""}" data-ic-f="${k}">${r}</button>`).join("")}</div>
+      ${linhas || `<div class="ic-aviso">Nada nesse filtro.</div>`}
+      <h3>Por NCM</h3>
+      <div style="overflow-x:auto"><table><thead><tr><th>NCM</th><th>SKUs</th><th>Alíquotas (notas)</th></tr></thead><tbody>${ncmLinhas || `<tr><td colspan="3">Sem NCM nas notas abertas.</td></tr>`}</tbody></table></div>`}
+  </div>`;
+  if (!container.dataset.icPronto) {
+    container.dataset.icPronto = "1";
+    container.addEventListener("click", e => {
+      if (e.target.closest('[data-ic="ir"]')) { confIcmsCarregar(); return; }
+      const f = e.target.closest("[data-ic-f]");
+      if (f) { st.filtro = f.dataset.icF; renderConfICMS(container); }
+    });
+    container.addEventListener("change", e => {
+      if (e.target.matches('[data-ic="dias"]')) { st.dias = Number(e.target.value); confIcmsCarregar(); }
     });
   }
 }
