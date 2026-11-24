@@ -13371,9 +13371,7 @@ function renderVendasML(container) {
     const cp = t => `data-vml-copiar="${esc(t)}" title="Clique para copiar"`;
     b.push(varios ? `<span class="vml-b">${v.itens.length} itens</span>` : (v.itens[0]?.sku ? `<span class="vml-b vml-b-sku" ${cp(v.itens[0].sku)}>${esc(v.itens[0].sku)}</span>` : `<span class="vml-b">sem SKU</span>`));
     if (un > 1) b.push(`<span class="vml-b vml-b-un">${un} un</span>`);
-    if (ped > 1 || v.itens.length > 1) b.push(`<span class="vml-b vml-b-pd">${ped > 1 ? `${ped} pedidos · ` : ""}${v.envios > 1 ? `${v.envios} pacotes` : "1 frete"}</span>`);
-    if (v.comprador?.apelido) b.push(`<span class="vml-b vml-b-cp" data-vml-copiar="${esc(v.comprador.apelido)}" title="${esc(v.comprador.nome || "")} · clique para copiar">${esc(v.comprador.apelido)}</span>`);
-    for (const pid of (v.pedidos || []).slice(0, 3)) b.push(`<span class="vml-b vml-b-ped" ${cp(String(pid))}>#${pid}</span>`);
+    if (ped > 1) b.push(`<span class="vml-b">${ped} pedidos</span>`);
     b.push(`<span class="vml-b-hr">${hora(v.criado)}</span>`);
     return `<span class="vml-bs">${b.join("")}</span>`;
   };;
@@ -13414,10 +13412,10 @@ function renderVendasML(container) {
         </div>
         <div class="vml-db"><div class="vml-dh">PAGAMENTO E PEDIDO</div>
           <div class="vml-kv" style="margin-top:0">
-            ${v.comprador ? `<span>Comprador</span><span>${esc(v.comprador.nome || "")}${v.comprador.apelido ? `<br><span class="vml-b vml-b-cp" style="display:inline-block;margin-top:3px" data-vml-copiar="${esc(v.comprador.apelido)}" title="Clique para copiar">${esc(v.comprador.apelido)}</span>` : ""}</span>` : ""}
+            ${v.comprador ? `<span>Comprador</span><span>${v.comprador.nome ? esc(v.comprador.nome) + (v.comprador.apelido ? "<br>" : "") : ""}${v.comprador.apelido ? `<span class="vml-b" style="display:inline-block;margin-top:${v.comprador.nome ? 3 : 0}px" data-vml-copiar="${esc(v.comprador.apelido)}" title="Clique para copiar">${esc(v.comprador.apelido)}</span>` : ""}</span>` : ""}
             <span>Libera em</span><span>${v.liberacao ? dataBR(v.liberacao) : "—"}</span>
             <span>Status</span><span>${v.liberacao ? (liberado ? `<span style="color:${verde}">liberado</span>` : "a liberar") : "—"}</span>
-            ${(v.por_pedido || []).length > 1 ? "" : `<span>Pedido${v.pedidos.length > 1 ? "s" : ""}</span><span>${v.pedidos.map(p => `<span class="vml-b vml-b-ped" style="display:inline-block" data-vml-copiar="${p}" title="Clique para copiar">#${p}</span>`).join("<br>")}</span>`}
+            ${(v.por_pedido || []).length > 1 ? "" : `<span>Pedido${v.pedidos.length > 1 ? "s" : ""}</span><span>${v.pedidos.map(p => `<span class="vml-b" style="display:inline-block;margin-bottom:3px" data-vml-copiar="${p}" title="Clique para copiar">#${p}</span>`).join("<br>")}</span>`}
             <span>Envio</span><span>${v.envios > 1 ? v.envios + " pacotes" : "1 pacote"}</span>
           </div>
           ${(v.por_pedido || []).length > 1 ? `<div class="vml-dh" style="margin:14px 0 6px">CADA PEDIDO (COMO NO ML)</div>
@@ -13492,15 +13490,12 @@ function renderVendasML(container) {
     .vml-sk{display:block;font-size:10px;color:${T.isLight ? "#55555c" : "#a8a8b0"};margin-top:1px}
 
     .vml-bs{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;align-items:center}
-    .vml-b{font-size:11px;line-height:1.5;padding:0 7px;border-radius:6px;background:${T.isLight ? "#f0f0f2" : "#1b1b1f"};border:0.5px solid ${T.border2};color:${T.isLight ? "#3a3a40" : "#c8c8ce"};white-space:nowrap}
-    .vml-b-sku{background:rgba(59,130,246,.14);border-color:rgba(59,130,246,.3);color:${T.isLight ? "#1d5fd1" : "#7fb0ff"}}
-    .vml-b-un{background:rgba(20,184,166,.14);border-color:rgba(20,184,166,.32);color:${T.isLight ? "#0f766e" : "#5eead4"}}
-    .vml-b-ped{font-variant-numeric:tabular-nums}
+    .vml .vml-b{font-size:11px !important;font-weight:500;font-family:inherit;letter-spacing:0;line-height:1.5;padding:0 7px;border-radius:6px;background:${T.isLight ? "#f0f0f2" : "#1b1b1f"};border:0.5px solid ${T.border2};color:${T.isLight ? "#3a3a40" : "#c8c8ce"};white-space:nowrap}
+
     [data-vml-copiar]{cursor:copy}
     [data-vml-copiar]:hover{filter:brightness(1.25)}
     .vml-b.vml-copiado{background:rgba(52,199,89,.2) !important;border-color:rgba(52,199,89,.4) !important;color:${verde} !important}
-    .vml-b-pd{background:rgba(240,180,0,.12);border-color:rgba(240,180,0,.3);color:${T.isLight ? "#8a6400" : "#f0c14a"}}
-    .vml-b-cp{background:rgba(139,92,246,.14);border-color:rgba(139,92,246,.3);color:${T.isLight ? "#6435d6" : "#b9a3ff"}}
+
     .vml-b-hr{font-size:11px;color:${T.isLight ? "#55555c" : "#a8a8b0"};padding-left:2px}
     .vml-sk2{font-size:12px;color:${T.isLight ? "#55555c" : "#a8a8b0"}}
     .vml-h{font-size:10px;letter-spacing:1px;color:${T.text3};margin:16px 0 6px}
@@ -13533,8 +13528,8 @@ function renderVendasML(container) {
     .vml-foto-g{width:52px !important;height:52px !important}
     .vml-dn{font-weight:600;font-size:13px;line-height:1.35}
     .vml-kv{display:grid;grid-template-columns:auto 1fr;gap:5px 12px;margin-top:8px;font-size:13px;max-width:340px}
-    .vml-kv span:nth-child(odd){color:${T.isLight ? "#55555c" : "#a8a8b0"}}
-    .vml-kv span:nth-child(even){text-align:right}
+    .vml-kv > span:nth-child(odd){color:${T.isLight ? "#55555c" : "#a8a8b0"}}
+    .vml-kv > span:nth-child(even){text-align:right}
     .vml-dl{display:flex;justify-content:space-between;gap:10px;padding:4px 0;font-size:13px}
     .vml-dl span:first-child{color:${T.isLight ? "#55555c" : "#a8a8b0"}}
     .vml-dsep{border-top:0.5px solid ${T.border2};margin:4px 0}
