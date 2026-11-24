@@ -13301,7 +13301,7 @@ async function vendasAbrirNF(conta, pedido) {
     const base = `${VERCEL_BACKEND}/api/ml-vendas?action=nf-doc&conta=${conta}&id=${encodeURIComponent(nf.id || "")}`;
     ov.innerHTML = caixa(`
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
-        <div><b style="font-size:17px">NF-e ${esc(nf.numero)}</b> <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:${cancelada ? "rgba(255,69,58,.15)" : "rgba(52,199,89,.15)"};color:${corSit}">${esc(cancelada ? "Cancelada" : autorizada ? "Autorizada" : (nf.situacao || nf.status || "—"))}</span>
+        <div><b style="font-size:17px">NF-e <span data-nf-copiar="${esc(nf.numero)}" title="Clique para copiar o número" style="cursor:copy;border-bottom:1px dashed ${G}">${esc(nf.numero)}</span></b> <span data-nf-copiar="${esc(nf.numero)}" title="Copiar o número" style="cursor:pointer;font-size:11px;color:${T.cAzul};margin-right:6px">copiar</span><span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:${cancelada ? "rgba(255,69,58,.15)" : "rgba(52,199,89,.15)"};color:${corSit}">${esc(cancelada ? "Cancelada" : autorizada ? "Autorizada" : (nf.situacao || nf.status || "—"))}</span>
           <div style="font-size:12px;color:${G};margin-top:3px">Série ${esc(nf.serie)} · emitida ${dt(nf.emitida)}${nf.protocolo ? ` · protocolo ${esc(nf.protocolo)}` : ""}</div></div>
         <span data-nf-fechar style="cursor:pointer;color:${G};font-size:18px">✕</span>
       </div>
@@ -13456,7 +13456,8 @@ function renderVendasML(container) {
     b.push(varios ? `<span class="vml-b">${v.itens.length} itens</span>` : (v.itens[0]?.sku ? `<span class="vml-b vml-b-sku" ${cp(v.itens[0].sku)}>${esc(v.itens[0].sku)}</span>` : `<span class="vml-b">sem SKU</span>`));
     if (un > 1) b.push(`<span class="vml-b vml-b-un">${un} un</span>`);
     if (ped > 1) b.push(`<span class="vml-b">${ped} pedidos</span>`);
-    if ((v.nfs || []).length) for (const n of v.nfs.slice(0, 2)) b.push(`<span class="vml-b vml-b-nf" data-vml-nf="${esc(String(n.pedido))}" title="Ver a nota fiscal">NF ${esc(String(n.numero))}</span>`);
+    if (!mob) { /* computador: a nota tem coluna própria */ }
+    else if ((v.nfs || []).length) for (const n of v.nfs.slice(0, 2)) b.push(`<span class="vml-b vml-b-nf" data-vml-nf="${esc(String(n.pedido))}" title="Ver a nota fiscal">NF ${esc(String(n.numero))}</span>`);
     else if (v.status !== "cancelada" && Date.now() - new Date(v.criado).getTime() < 5 * 864e5) b.push(`<span class="vml-b vml-b-snf" title="O Mercado Livre ainda não emitiu a nota — o sistema confere de novo a cada ~30 min">sem NF ainda</span>`);
     b.push(`<span class="vml-b-hr">${hora(v.criado)}</span>`);
     return `<span class="vml-bs">${b.join("")}</span>`;
@@ -13466,7 +13467,7 @@ function renderVendasML(container) {
   const mob = window.innerWidth < 768;
   const nm = v => v == null ? "—" : (mob && Math.abs(v) >= 1000 ? Math.round(v).toLocaleString("pt-BR") : n2(v));
   const COLS = ["Venda", "Tarifa", "Frete", "Líquido", "Custo", "Margem", "%"];
-  const cabec = (cols, primeira = "Produto") => `<thead><tr>${mob ? "" : `<th>${primeira}</th>`}${cols.map(c => `<th>${mob && c === "Líquido" ? "Líq." : c}</th>`).join("")}</tr></thead>`;
+  const cabec = (cols, primeira = "Produto") => `<thead><tr>${mob ? "" : `<th>${primeira}</th>`}${cols.map(c => c === "Nota fiscal" ? `<th class="vml-nfcol">${c}</th>` : `<th>${mob && c === "Líquido" ? "Líq." : c}</th>`).join("")}</tr></thead>`;
   // monta a(s) linha(s): prod = célula do produto, nums = células dos números
   const linha = (prod, nums, attrs = "", cls = "") => mob
     ? `<tr class="vml-m1 ${cls}" ${attrs}><td colspan="${nums.length}">${prod}</td></tr><tr class="vml-m2 ${cls}" ${attrs}>${nums.join("")}</tr>`
@@ -13517,10 +13518,18 @@ function renderVendasML(container) {
         </div>
       </div>      </div>`;
   };
+  const celulaNF = v => {
+    const nfs = v.nfs || [];
+    if (nfs.length) return `<td class="vml-nfcol">${nfs.slice(0, 3).map(n => `<span class="vml-nfb" data-vml-nf="${esc(String(n.pedido))}" title="Ver a nota fiscal">NF ${esc(String(n.numero))}</span>`).join("")}</td>`;
+    if (v.status !== "cancelada" && Date.now() - new Date(v.criado).getTime() < 5 * 864e5) return `<td class="vml-nfcol"><span class="vml-nfa" title="O Mercado Livre ainda não emitiu a nota — o sistema confere de novo a cada ~30 min">aguardando NF</span></td>`;
+    return `<td class="vml-nfcol" style="color:${T.isLight ? "#6e6e77" : "#a1a1aa"}">—</td>`;
+  };
   const linhaVenda = v => {
-    let h = linha(prodCel(v.itens, tituloLinha(v), skuLinha(v)), numsVenda(v.bruto, v.tarifa, v.frete, v.liquido, v.custo, v.margem, v.bruto), `data-vml-abrir="${esc(v.id)}"`, "vml-lin");
+    const nums = numsVenda(v.bruto, v.tarifa, v.frete, v.liquido, v.custo, v.margem, v.bruto);
+    if (!mob) nums.unshift(celulaNF(v));
+    let h = linha(prodCel(v.itens, tituloLinha(v), skuLinha(v)), nums, `data-vml-abrir="${esc(v.id)}"`, "vml-lin");
     const det = detalheVenda(v);
-    if (det) h += `<tr class="vml-det"><td colspan="${mob ? 7 : 8}">${det}</td></tr>`;
+    if (det) h += `<tr class="vml-det"><td colspan="${mob ? 7 : 9}">${det}</td></tr>`;
     return h;
   };
   // celular: cada venda é um cartão com a conta explicada (Venda − Tarifa − Frete − Custo = Sobra)
@@ -13546,7 +13555,7 @@ function renderVendasML(container) {
     const mais = vendas.length > lim ? `<button data-vml-mais class="vml-mais">Mostrar mais ${Math.min(100, vendas.length - lim)} (${lim} de ${vendas.length})</button>` : "";
     corpo = !vendas.length ? "" : mob
       ? `<div class="vml-cds">${vendas.slice(0, lim).map(v => cartao(v.itens, tituloLinha(v), skuLinha(v), v, `data-vml-abrir="${esc(v.id)}"`, detalheVenda(v))).join("")}</div>${mais}`
-      : `<div class="vml-sc"><table class="vml-t">${cabec(COLS)}<tbody>${vendas.slice(0, lim).map(linhaVenda).join("")}</tbody></table></div>${mais}`;
+      : `<div class="vml-sc"><table class="vml-t">${cabec(["Nota fiscal", ...COLS])}<tbody>${vendas.slice(0, lim).map(linhaVenda).join("")}</tbody></table></div>${mais}`;
   } else if (st.visao === "prod") {
     const g = {};
     for (const v of vendas) for (const i of v.itens) {
@@ -13611,7 +13620,11 @@ function renderVendasML(container) {
     [data-vml-copiar]:hover{filter:brightness(1.25)}
     .vml-b.vml-copiado{background:rgba(52,199,89,.2) !important;border-color:rgba(52,199,89,.4) !important;color:${verde} !important}
 
-    .vml .vml-b-nf{background:rgba(59,130,246,.12);border-color:rgba(59,130,246,.35);color:${T.isLight ? "#1d5fd1" : "#8fb8ff"};cursor:pointer}
+    .vml-t th.vml-nfcol,.vml-t td.vml-nfcol{text-align:left !important;width:1%;white-space:nowrap}
+    .vml-nfb{display:inline-block;margin:1px 4px 1px 0;padding:4px 10px;border-radius:8px;background:rgba(52,199,89,.12);border:0.5px solid rgba(52,199,89,.38);color:${T.isLight ? "#1a7f37" : "#4cd471"};font-size:12px;font-weight:600;cursor:pointer}
+    .vml-nfb:hover{background:rgba(52,199,89,.2)}
+    .vml-nfa{display:inline-block;padding:4px 10px;border-radius:8px;border:0.5px dashed ${T.border2};color:${T.isLight ? "#6e6e77" : "#a1a1aa"};font-size:11px}
+    .vml .vml-b-nf{background:rgba(52,199,89,.12);border-color:rgba(52,199,89,.38);color:${T.isLight ? "#1a7f37" : "#4cd471"};cursor:pointer}
     .vml .vml-b-snf{border-style:dashed;color:${T.isLight ? "#6e6e77" : "#a1a1aa"}}
     .vml-b-hr{font-size:11px;color:${T.isLight ? "#55555c" : "#a8a8b0"};padding-left:2px}
     .vml-sk2{font-size:12px;color:${T.isLight ? "#55555c" : "#a8a8b0"}}
