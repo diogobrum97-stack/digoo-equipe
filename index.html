@@ -13391,6 +13391,7 @@ function renderVendasML(container) {
     .vml-t{width:100%;border-collapse:collapse}
     .vml-t td,.vml-t th{padding:7px 6px;text-align:right;white-space:nowrap;color:${T.text};font-size:12px}
     .vml-t th{font-size:10px !important;color:${T.text3} !important;font-weight:500;border-bottom:0.5px solid ${T.border2}}
+    .vml-sc .vml-t th{position:sticky;top:0;z-index:2;background:${T.card};box-shadow:0 0.5px 0 ${T.border2}}
     .vml-t td{border-bottom:0.5px solid ${T.border}}
     .vml-t td:first-child,.vml-t th:first-child{text-align:left}
     .vml-prod{display:flex;align-items:center;gap:10px}
@@ -13407,7 +13408,8 @@ function renderVendasML(container) {
     .vml-det td{white-space:normal;text-align:left;background:${T.bg3}}
     .vml-detbox{font-size:11px;line-height:1.6;position:sticky;left:6px;max-width:min(620px,calc(100vw - 80px))}
     .vml-tot td{font-weight:700;border-top:0.5px solid ${T.border2};border-bottom:0}
-    .vml-sc{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .vml-sc{overflow:auto;-webkit-overflow-scrolling:touch;max-height:calc(100vh - 150px);max-height:calc(100dvh - 150px)}
+    @media (max-width:767px){.vml-sc{max-height:calc(100dvh - 190px)}}
     .vml-seg{display:flex;background:${T.bg3};border-radius:10px;padding:3px;margin:16px 0 6px;max-width:420px}
     .vml-seg button{flex:1;text-align:center;font-size:12px;padding:6px;border-radius:8px;color:${T.text3};font-weight:500;background:none;border:0;cursor:pointer;font-family:inherit}
     .vml-seg button.on{background:${T.text};color:${T.bg};font-weight:600}
