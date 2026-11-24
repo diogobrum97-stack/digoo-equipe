@@ -13263,6 +13263,77 @@ async function vendasCarregar(forcar) {
   st.carregando = false; st.progresso = null;
   vendasDesenhar();
 }
+// Janela da nota fiscal (etiqueta NF na venda) — dados ao vivo do Mercado Livre
+async function vendasAbrirNF(conta, pedido) {
+  const G = T.isLight ? "#55555c" : "#a8a8b0";
+  const esc = v => String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+  const n2 = v => v == null ? "—" : Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  let ov = document.getElementById("vml-nf-ov");
+  if (!ov) {
+    ov = document.createElement("div"); ov.id = "vml-nf-ov";
+    ov.addEventListener("click", e => {
+      if (e.target === ov || e.target.closest("[data-nf-fechar]")) { ov.remove(); return; }
+      const cp = e.target.closest("[data-nf-copiar]");
+      if (cp) {
+        const txt = cp.dataset.nfCopiar, orig = cp.textContent;
+        const ok = () => { cp.textContent = "copiado ✓"; setTimeout(() => { cp.textContent = orig; }, 1200); };
+        (navigator.clipboard?.writeText(txt) || Promise.reject()).then(ok, () => { const t = document.createElement("textarea"); t.value = txt; document.body.appendChild(t); t.select(); try { document.execCommand("copy"); ok(); } catch (_) {} t.remove(); });
+      }
+    });
+    document.addEventListener("keydown", e => { if (e.key === "Escape") document.getElementById("vml-nf-ov")?.remove(); });
+  }
+  ov.style.cssText = "position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.6);display:flex;align-items:flex-start;justify-content:center;padding:max(16px,env(safe-area-inset-top)) 12px 16px;overflow:auto";
+  const caixa = conteudo => `<div style="width:100%;max-width:560px;margin-top:6vh;background:${T.card};color:${T.text};border:0.5px solid ${T.border2};border-radius:16px;padding:18px;font-size:13px;font-variant-numeric:tabular-nums;box-shadow:0 20px 60px rgba(0,0,0,.5)">${conteudo}</div>`;
+  ov.innerHTML = caixa(`<div style="display:flex;justify-content:space-between"><b style="font-size:16px">Nota fiscal</b><span data-nf-fechar style="cursor:pointer;color:${G};font-size:18px">✕</span></div><div style="margin-top:14px;color:${G}">Buscando a nota no Mercado Livre…</div>`);
+  if (!ov.parentNode) document.body.appendChild(ov);
+  try {
+    const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=nf-venda&conta=${conta}&pedido=${encodeURIComponent(pedido)}`);
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.error || "não consegui buscar a nota");
+    const nf = d.nf, imp = nf.impostos || {};
+    const dt = iso => iso ? new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" }) : "—";
+    const autorizada = /autoriz/i.test(nf.situacao || "") || nf.status === "authorized";
+    const cancelada = !!nf.cancelada || /cancel/i.test(nf.situacao || nf.status || "");
+    const corSit = cancelada ? T.cVermelho : autorizada ? T.cVerde : G;
+    const kv = (k, v) => `<span style="color:${G}">${k}</span><span style="text-align:right">${v}</span>`;
+    const li = (k, v, extra = "") => `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid ${T.border}${extra}"><span style="color:${G}">${k}</span><span style="white-space:nowrap;padding-left:10px">${v}</span></div>`;
+    const btn = (rot, attrs) => `<a ${attrs} style="display:inline-block;margin:12px 6px 0 0;padding:8px 12px;border-radius:9px;background:${T.bg3};border:0.5px solid ${T.border2};font-size:12px;color:${T.cAzul};text-decoration:none;cursor:pointer">${rot}</a>`;
+    const base = `${VERCEL_BACKEND}/api/ml-vendas?action=nf-doc&conta=${conta}&id=${encodeURIComponent(nf.id || "")}`;
+    ov.innerHTML = caixa(`
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+        <div><b style="font-size:17px">NF-e ${esc(nf.numero)}</b> <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:${cancelada ? "rgba(255,69,58,.15)" : "rgba(52,199,89,.15)"};color:${corSit}">${esc(cancelada ? "Cancelada" : autorizada ? "Autorizada" : (nf.situacao || nf.status || "—"))}</span>
+          <div style="font-size:12px;color:${G};margin-top:3px">Série ${esc(nf.serie)} · emitida ${dt(nf.emitida)}${nf.protocolo ? ` · protocolo ${esc(nf.protocolo)}` : ""}</div></div>
+        <span data-nf-fechar style="cursor:pointer;color:${G};font-size:18px">✕</span>
+      </div>
+      <div style="display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin-top:14px">
+        ${nf.destinatario ? kv("Destinatário", `${esc(nf.destinatario.nome || "—")} · ${esc(nf.destinatario.uf || "")}${nf.destinatario.cidade ? " · " + esc(nf.destinatario.cidade) : ""}`) : ""}
+        ${kv("Valor da nota", "R$ " + n2(nf.valor))}
+        ${nf.natureza ? kv("Natureza", esc(nf.natureza)) : ""}
+        ${nf.cfop ? kv("CFOP", esc(nf.cfop)) : ""}
+        ${nf.emitente ? kv("Emitente", `${esc(nf.emitente.uf || "")} · CNPJ ${esc(nf.emitente.cnpj || "")}`) : ""}
+      </div>
+      ${(nf.itens || []).length ? `<div style="font-size:11px;font-weight:700;letter-spacing:.6px;color:${G};margin:16px 0 6px">ITENS</div>${nf.itens.map(i => li(`${i.qtd}× ${esc(i.nome)}${i.ncm ? ` <span style="font-size:11px">· NCM ${esc(i.ncm)}</span>` : ""}`, "R$ " + n2(i.valor))).join("")}` : ""}
+      <div style="font-size:11px;font-weight:700;letter-spacing:.6px;color:${G};margin:16px 0 6px">IMPOSTOS DESTACADOS</div>
+      ${li("ICMS", "R$ " + n2(imp.icms))}
+      ${li("DIFAL (ICMS do destino)", "R$ " + n2(imp.difal))}
+      ${imp.fcp ? li("FCP", "R$ " + n2(imp.fcp)) : ""}${imp.st ? li("ICMS ST", "R$ " + n2(imp.st)) : ""}
+      ${li("PIS", "R$ " + n2(imp.pis))}
+      ${li("COFINS", "R$ " + n2(imp.cofins))}
+      ${li("IPI", "R$ " + n2(imp.ipi))}
+      ${(imp.cbs || imp.ibs) ? li("CBS + IBS (teste da reforma)", "R$ " + n2((imp.cbs || 0) + (imp.ibs || 0))) : ""}
+      <div style="display:flex;justify-content:space-between;padding:7px 0;font-weight:700"><span>Total de impostos</span><span>R$ ${n2(imp.total)}</span></div>
+      ${nf.chave ? `<div style="font-size:11px;font-weight:700;letter-spacing:.6px;color:${G};margin:10px 0 6px">CHAVE DE ACESSO</div><div style="font-size:12px;word-break:break-all;background:${T.bg3};border:0.5px solid ${T.border2};border-radius:8px;padding:7px 9px">${esc(nf.chave.replace(/(\d{4})(?=\d)/g, "$1 "))}</div>` : ""}
+      ${cancelada && nf.motivo_cancelamento ? `<div style="margin-top:10px;color:${T.cVermelho}">Motivo do cancelamento: ${esc(nf.motivo_cancelamento)}</div>` : ""}
+      <div>
+        ${nf.id && nf.tem_danfe ? btn("Abrir DANFE (PDF) ↗", `href="${base}&tipo=pdf" target="_blank" rel="noopener"`) : ""}
+        ${nf.id && nf.tem_xml ? btn("Baixar XML ↓", `href="${base}&tipo=xml" target="_blank" rel="noopener"`) : ""}
+        ${nf.chave ? btn("Copiar chave", `data-nf-copiar="${esc(nf.chave)}"`) : ""}
+      </div>`);
+  } catch (e) {
+    ov.innerHTML = caixa(`<div style="display:flex;justify-content:space-between"><b style="font-size:16px">Nota fiscal</b><span data-nf-fechar style="cursor:pointer;color:${G};font-size:18px">✕</span></div><div style="margin-top:14px;color:${T.cVermelho}">${esc(e.message)}</div>`);
+  }
+}
+
 // Redesenha no máximo a cada 700ms (carregar 7 dias/mês não pode remontar a tabela a cada dia que chega)
 function vendasDesenhar() {
   const st = window._vendasState;
@@ -13385,6 +13456,8 @@ function renderVendasML(container) {
     b.push(varios ? `<span class="vml-b">${v.itens.length} itens</span>` : (v.itens[0]?.sku ? `<span class="vml-b vml-b-sku" ${cp(v.itens[0].sku)}>${esc(v.itens[0].sku)}</span>` : `<span class="vml-b">sem SKU</span>`));
     if (un > 1) b.push(`<span class="vml-b vml-b-un">${un} un</span>`);
     if (ped > 1) b.push(`<span class="vml-b">${ped} pedidos</span>`);
+    if ((v.nfs || []).length) for (const n of v.nfs.slice(0, 2)) b.push(`<span class="vml-b vml-b-nf" data-vml-nf="${esc(String(n.pedido))}" title="Ver a nota fiscal">NF ${esc(String(n.numero))}</span>`);
+    else if (v.status !== "cancelada" && Date.now() - new Date(v.criado).getTime() < 5 * 864e5) b.push(`<span class="vml-b vml-b-snf" title="O Mercado Livre ainda não emitiu a nota — o sistema confere de novo a cada ~30 min">sem NF ainda</span>`);
     b.push(`<span class="vml-b-hr">${hora(v.criado)}</span>`);
     return `<span class="vml-bs">${b.join("")}</span>`;
   };;
@@ -13538,6 +13611,8 @@ function renderVendasML(container) {
     [data-vml-copiar]:hover{filter:brightness(1.25)}
     .vml-b.vml-copiado{background:rgba(52,199,89,.2) !important;border-color:rgba(52,199,89,.4) !important;color:${verde} !important}
 
+    .vml .vml-b-nf{background:rgba(59,130,246,.12);border-color:rgba(59,130,246,.35);color:${T.isLight ? "#1d5fd1" : "#8fb8ff"};cursor:pointer}
+    .vml .vml-b-snf{border-style:dashed;color:${T.isLight ? "#6e6e77" : "#a1a1aa"}}
     .vml-b-hr{font-size:11px;color:${T.isLight ? "#55555c" : "#a8a8b0"};padding-left:2px}
     .vml-sk2{font-size:12px;color:${T.isLight ? "#55555c" : "#a8a8b0"}}
     .vml-h{font-size:10px;letter-spacing:1px;color:${T.text3};margin:16px 0 6px}
@@ -13691,6 +13766,8 @@ function renderVendasML(container) {
     container.addEventListener("scroll", e => { if (e.target.classList?.contains("vml-sc")) window._vmlScroll = e.target.scrollTop; }, true);
     container.addEventListener("click", e => {
       if (e.target.closest("a")) return;
+      const nfb = e.target.closest("[data-vml-nf]");
+      if (nfb) { e.stopPropagation(); vendasAbrirNF(st.conta, nfb.dataset.vmlNf); return; }
       const cop = e.target.closest("[data-vml-copiar]");
       if (cop) {
         e.stopPropagation();
