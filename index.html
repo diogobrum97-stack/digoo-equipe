@@ -13182,15 +13182,48 @@ function vendasDias() {
   if (st.periodo === "mes") { const n = Number(hoje.slice(8, 10)); return { dias: Array.from({ length: n }, (_, i) => _vmlSomaDias(hoje, -i)) }; }
   return { dias: [st.data], comp: _vmlSomaDias(st.data, -1), nomeComp: "o dia anterior" };
 }
+// Fonte principal: resumo pronto em /vendas_dia/{conta}/{data} (a VPS mantém atualizado; ao vivo pelo Firebase).
+// O backend só é chamado quando o dia ainda não tem resumo ou ele está velho (VPS parada).
+st_vmlInit();
+function st_vmlInit() { const st = window._vendasState; st.fbChegou = st.fbChegou || {}; st._ouvindo = st._ouvindo || {}; }
+function vendasOuvir(chaves) {
+  const st = window._vendasState;
+  for (const k of chaves) {
+    if (st._ouvindo[k]) continue;
+    const [conta, dia] = k.split("|");
+    st._ouvindo[k] = onValue(ref(db, `/vendas_dia/${conta}/${dia}`), snap => {
+      const v = snap.val();
+      st.fbChegou[k] = true;
+      const atual = st.dados[k];
+      // não troca um resultado parcial mais novo do backend por um resumo mais velho
+      if (v && !(atual && (atual.atualizado_em || 0) > (v.atualizado_em || 0))) {
+        st.dados[k] = { ...v, vendas: v.vendas || [], excecoes: (v.excecoes || []).map(e => ({ ...e, motivos: e.motivos || [] })), liberacoes: v.liberacoes || [], fotos: v.fotos || {}, parcial: false };
+      }
+      vendasDesenhar();
+    }, () => { st.fbChegou[k] = true; vendasDesenhar(); });
+  }
+  // para de ouvir o que saiu da tela (mantém o que já carregou na memória)
+  for (const k of Object.keys(st._ouvindo)) if (!chaves.includes(k)) { try { st._ouvindo[k](); } catch (_) {} delete st._ouvindo[k]; delete st.fbChegou[k]; }
+}
+function vendasPrecisaBackend(k, dia) {
+  const st = window._vendasState, x = st.dados[k];
+  if (!st.fbChegou[k]) return false;                       // espera o Firebase responder primeiro
+  if (!x || x.parcial) return true;
+  const idade = Date.now() - (x.atualizado_em || 0);
+  const hoje = _vmlHoje();
+  if (dia === hoje) return idade > 15 * 60e3;               // VPS atualiza a cada 10 min
+  if (dia === _vmlSomaDias(hoje, -1)) return idade > 3 * 3600e3;
+  return false;
+}
 async function vendasCarregarDia(conta, dia, forcar) {
   const st = window._vendasState, k = `${conta}|${dia}`;
-  const atual = st.dados[k];
-  if (!forcar && atual && !atual.parcial && (dia !== _vmlHoje() || Date.now() - (atual.atualizado_em || 0) < 5 * 60e3)) return;
+  if (!forcar && !vendasPrecisaBackend(k, dia)) return;
   for (let volta = 0; volta < 8; volta++) {
     const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=painel-vendas&conta=${conta}&data=${dia}`);
     const d = await r.json();
     if (!d.ok) throw new Error(d.error || `HTTP ${r.status}`);
     st.dados[k] = d;
+    vendasDesenhar();
     if (!d.parcial) break;
   }
 }
@@ -13198,14 +13231,18 @@ async function vendasCarregar(forcar) {
   const st = window._vendasState;
   if (st.carregando) return;
   const conta = st.conta, { dias, comp } = vendasDias();
-  const fila = comp ? [...dias, comp] : [...dias];
+  const todos = comp ? [...dias, comp] : [...dias];
+  const hoje = _vmlHoje();
+  // ↻ força hoje (ou o dia escolhido); o resto só se não tiver resumo
+  const fila = todos.filter(dia => (forcar && (dia === hoje || (dias.length === 1 && dia === dias[0]))) || vendasPrecisaBackend(`${conta}|${dia}`, dia));
+  if (!fila.length) return;
   st.carregando = true; st.erro = null; st.progresso = fila.length > 2 ? { feitos: 0, total: fila.length } : null; vendasDesenhar();
   try {
     let i = 0;
     await Promise.all(Array.from({ length: Math.min(3, fila.length) }, async () => {
       while (i < fila.length) {
         const dia = fila[i++];
-        await vendasCarregarDia(conta, dia, forcar && (dia === _vmlHoje() || (dias.length === 1 && dia === dias[0])));
+        await vendasCarregarDia(conta, dia, forcar && (dia === hoje || (dias.length === 1 && dia === dias[0])));
         if (st.progresso) st.progresso.feitos++;
         vendasDesenhar();
       }
@@ -13230,7 +13267,10 @@ function renderVendasML(container) {
   const hoje = _vmlHoje();
   const { dias, comp, compAteAgora, nomeComp } = vendasDias();
   const multi = dias.length > 1;
-  const falta = [...dias, ...(comp ? [comp] : [])].some(dia => { const x = st.dados[`${st.conta}|${dia}`]; return !x || x.parcial || (dia === hoje && Date.now() - (x.atualizado_em || 0) > 5 * 60e3); });
+  const chaves = [...dias, ...(comp ? [comp] : [])].map(dia => `${st.conta}|${dia}`);
+  vendasOuvir(chaves);
+  const esperandoFb = chaves.some(k => !st.fbChegou[k]);
+  const falta = chaves.some(k => vendasPrecisaBackend(k, k.split("|")[1]));
   if (falta && !st.carregando && !st.erro) setTimeout(() => vendasCarregar(), 0);
   // Custo do Bling (SKU → precoCusto)
   if (!estoqueBlingData && !estoqueBlingLoading && !window._blingTokenInvalido && !window._fetchBlingProdutosRunning && tokenValido(state.bling_token)) fetchBlingProdutos().then(vendasDesenhar);
@@ -13382,7 +13422,7 @@ function renderVendasML(container) {
         [`<td style="text-align:left;white-space:normal;color:${verm}">${esc(e.motivos.join(" · "))}</td>`, `<td>${nm(e.bruto)}</td>`, `<td>${nm(e.liquido)}</td>`])).join("")}</tbody></table></div>`
       : `<div class="vml-vazio" style="color:${verde}">✓ Nenhuma exceção no período<div class="vml-sk" style="margin-top:4px">Cancelamentos, reembolsos e valores que não batem com o Mercado Pago aparecem aqui</div></div>`;
   }
-  if (!corpo && st.visao !== "exc") corpo = `<div class="vml-vazio">${st.carregando ? "Buscando vendas..." : st.erro ? "" : "Nenhuma venda no período"}</div>`;
+  if (!corpo && st.visao !== "exc") corpo = `<div class="vml-vazio">${st.carregando || esperandoFb ? "Buscando vendas..." : st.erro ? "" : "Nenhuma venda no período"}</div>`;
 
   // Vai cair na conta: o que ainda não foi liberado, por data; o já liberado numa linha só
   const libs = Object.values(d.liberacoes).sort((a, b) => a.data.localeCompare(b.data));
