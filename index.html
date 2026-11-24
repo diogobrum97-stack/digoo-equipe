@@ -13620,7 +13620,8 @@ function renderVendasML(container) {
     [data-vml-copiar]:hover{filter:brightness(1.25)}
     .vml-b.vml-copiado{background:rgba(52,199,89,.2) !important;border-color:rgba(52,199,89,.4) !important;color:${verde} !important}
 
-    .vml-t th.vml-nfcol,.vml-t td.vml-nfcol{text-align:left !important;width:1%;white-space:nowrap}
+    .vml-t th.vml-nfcol,.vml-t td.vml-nfcol{text-align:center !important;width:20%;white-space:nowrap}
+    @media (min-width:768px){.vml-sc .vml-t td:first-child,.vml-sc .vml-t th:first-child{width:40%}}
     .vml-nfb{display:inline-block;margin:1px 4px 1px 0;padding:4px 10px;border-radius:8px;background:rgba(52,199,89,.12);border:0.5px solid rgba(52,199,89,.38);color:${T.isLight ? "#1a7f37" : "#4cd471"};font-size:12px;font-weight:600;cursor:pointer}
     .vml-nfb:hover{background:rgba(52,199,89,.2)}
     .vml-nfa{display:inline-block;padding:4px 10px;border-radius:8px;border:0.5px dashed ${T.border2};color:${T.isLight ? "#6e6e77" : "#a1a1aa"};font-size:11px}
