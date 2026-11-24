@@ -13784,7 +13784,7 @@ function renderSaldoMP(container) {
 
   let corpo;
   if (st.erro) corpo = `<div class="smp-aviso" style="color:${T.errText};background:${T.errBg};border-color:${T.errBor}">Erro: ${esc(st.erro)}</div>`;
-  else if (!R) corpo = `<div class="smp-aviso">${d?.status === "gerando" ? `O Mercado Pago está gerando o extrato desse período… costuma levar de 1 a 5 minutos. Pode sair da aba que ele continua.${d.desde ? ` <span style="color:${G}">(pedido às ${new Date(d.desde).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })})</span>` : ""}` : "Buscando o extrato no Mercado Pago…"}</div>`;
+  else if (!R) corpo = `<div class="smp-aviso">${d?.status === "gerando" ? `O Mercado Pago está gerando o extrato desse período… costuma levar de 1 a 5 minutos. Pode sair da aba que ele continua.${d.desde ? ` <span style="color:${G}">(pedido às ${new Date(d.desde).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })})</span>` : ""}${d.lista ? `<div style="margin-top:8px;font-size:12px;color:${G}">Lista de relatórios no Mercado Pago (${d.total_lista ?? 0}): ${d.lista.length ? d.lista.map(x => `${esc(x.status || "?")} · ${esc(String(x.de || "").slice(0, 10))} a ${esc(String(x.ate || "").slice(0, 10))} · criado ${x.criado ? new Date(x.criado).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "?"}`).join(" | ") : "vazia"}</div>` : ""}` : "Buscando o extrato no Mercado Pago…"}</div>`;
   else {
     const linhasFluxo = [
       `<div class="smp-l"><span>Saldo disponível em ${dBR(de)}</span><span>${rs(R.inicial)}</span></div>`,
