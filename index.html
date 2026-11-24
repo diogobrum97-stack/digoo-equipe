@@ -13214,9 +13214,16 @@ async function vendasCarregar(forcar) {
   st.carregando = false; st.progresso = null;
   vendasDesenhar();
 }
+// Redesenha no máximo a cada 700ms (carregar 7 dias/mês não pode remontar a tabela a cada dia que chega)
 function vendasDesenhar() {
-  const c = document.querySelector(".vendas-ml-container");
-  if (c && window._diogotab === "vendas") renderVendasML(c);
+  const st = window._vendasState;
+  if (st._timer) return;
+  const espera = Math.max(0, 700 - (Date.now() - (st._ultimoDesenho || 0)));
+  st._timer = setTimeout(() => {
+    st._timer = null; st._ultimoDesenho = Date.now();
+    const c = document.querySelector(".vendas-ml-container");
+    if (c && window._diogotab === "vendas") renderVendasML(c);
+  }, espera);
 }
 function renderVendasML(container) {
   const st = window._vendasState;
@@ -13347,7 +13354,10 @@ function renderVendasML(container) {
 
   let corpo = "";
   if (st.visao === "venda") {
-    corpo = vendas.length ? `<div class="vml-sc"><table class="vml-t">${cabec(COLS)}<tbody>${vendas.map(linhaVenda).join("")}${linhaTotal(`${vendas.length} venda${vendas.length > 1 ? "s" : ""}`)}</tbody></table></div>` : "";
+    // mostra 100 por vez (milhares de linhas com foto travavam o iPhone)
+    const lim = st.limite || 100;
+    const mais = vendas.length > lim ? `<button data-vml-mais class="vml-mais">Mostrar mais ${Math.min(100, vendas.length - lim)} (${lim} de ${vendas.length})</button>` : "";
+    corpo = vendas.length ? `<div class="vml-sc"><table class="vml-t">${cabec(COLS)}<tbody>${linhaTotal(`${vendas.length} venda${vendas.length > 1 ? "s" : ""}`)}${vendas.slice(0, lim).map(linhaVenda).join("")}</tbody></table></div>${mais}` : "";
   } else if (st.visao === "prod") {
     const g = {};
     for (const v of vendas) for (const i of v.itens) {
@@ -13361,7 +13371,7 @@ function renderVendasML(container) {
       const cu = custos[normSku(i.sku)];
       if (cu) { x.custo += cu * i.qtd; x.margem += (v.liquido || 0) * peso - cu * i.qtd; } else x.semCusto = true;
     }
-    const lista = Object.values(g).sort((a, b) => b.bruto - a.bruto);
+    const lista = Object.values(g).sort((a, b) => b.bruto - a.bruto).slice(0, 150);
     corpo = lista.length ? `<div class="vml-sc"><table class="vml-t">${cabec(COLS)}<tbody>
       ${lista.map(x => { const m = x.semCusto ? null : x.margem;
         return linha(prodCel(x.itens, x.titulo, `${esc(x.sku || "sem SKU")} · ${x.un} un · ${x.vendas} venda${x.vendas > 1 ? "s" : ""}`), numsVenda(x.bruto, x.tarifa, x.frete, x.liquido, x.semCusto ? null : x.custo, m, x.bruto)); }).join("")}</tbody></table></div>` : "";
@@ -13437,6 +13447,7 @@ function renderVendasML(container) {
     .vml-seg button{flex:1;text-align:center;font-size:12px;padding:6px;border-radius:8px;color:${T.text3};font-weight:500;background:none;border:0;cursor:pointer;font-family:inherit}
     .vml-seg button.on{background:${T.text};color:${T.bg};font-weight:600}
     .vml-vazio{text-align:center;padding:24px 12px;color:${T.text3}}
+    .vml-mais{display:block;width:100%;margin-top:8px;padding:10px;border-radius:10px;background:${T.bg3};border:0.5px solid ${T.border2};color:${T.text};font-size:12px;font-family:inherit;cursor:pointer}
     .vml-lib{max-width:420px}
   </style>
   <div class="vml">
@@ -13481,7 +13492,8 @@ function renderVendasML(container) {
     container.addEventListener("click", e => {
       if (e.target.closest("a")) return;
       const per = e.target.closest("[data-vml-per]");
-      if (per) { st.periodo = per.dataset.vmlPer; st.aberto = null; st.erro = null; renderVendasML(container); return; }
+      if (per) { st.periodo = per.dataset.vmlPer; st.aberto = null; st.erro = null; st.limite = 100; renderVendasML(container); return; }
+      if (e.target.closest("[data-vml-mais]")) { st.limite = (st.limite || 100) + 100; renderVendasML(container); return; }
       const vis = e.target.closest("[data-vml-visao]");
       if (vis) { st.visao = vis.dataset.vmlVisao; st.aberto = null; renderVendasML(container); return; }
       if (e.target.closest('[data-vml="atualizar"]')) { vendasCarregar(true); return; }
@@ -13493,7 +13505,7 @@ function renderVendasML(container) {
       if (!el) return;
       if (el.dataset.vml === "conta") st.conta = el.value;
       if (el.dataset.vml === "data" && /^\d{4}-\d{2}-\d{2}$/.test(el.value)) { st.data = el.value; st.periodo = el.value === hoje ? "hoje" : "dia"; }
-      st.aberto = null; st.erro = null;
+      st.aberto = null; st.erro = null; st.limite = 100;
       renderVendasML(container);
     });
   }
