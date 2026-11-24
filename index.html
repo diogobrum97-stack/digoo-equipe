@@ -13335,7 +13335,7 @@ function renderVendasML(container) {
 
   let corpo = "";
   if (st.visao === "venda") {
-    corpo = vendas.length ? `<div class="vml-sc"><table class="vml-t">${cab}${vendas.map(linhaVenda).join("")}${linhaTotal(`${vendas.length} venda${vendas.length > 1 ? "s" : ""}`)}</table></div>` : "";
+    corpo = vendas.length ? `<div class="vml-sc"><table class="vml-t"><thead>${cab}</thead><tbody>${vendas.map(linhaVenda).join("")}${linhaTotal(`${vendas.length} venda${vendas.length > 1 ? "s" : ""}`)}</tbody></table></div>` : "";
   } else if (st.visao === "prod") {
     const g = {};
     for (const v of vendas) for (const i of v.itens) {
@@ -13350,15 +13350,15 @@ function renderVendasML(container) {
       if (cu) { x.custo += cu * i.qtd; x.margem += (v.liquido || 0) * peso - cu * i.qtd; } else x.semCusto = true;
     }
     const lista = Object.values(g).sort((a, b) => b.bruto - a.bruto);
-    corpo = lista.length ? `<div class="vml-sc"><table class="vml-t"><tr><th>Produto</th><th>Un</th><th>Venda</th><th>Tarifa</th><th>Frete</th><th>Líquido</th><th>Custo</th><th>Margem</th><th>%</th></tr>
+    corpo = lista.length ? `<div class="vml-sc"><table class="vml-t"><thead><tr><th>Produto</th><th>Un</th><th>Venda</th><th>Tarifa</th><th>Frete</th><th>Líquido</th><th>Custo</th><th>Margem</th><th>%</th></tr></thead><tbody>
       ${lista.map(x => { const m = x.semCusto ? null : x.margem; return `<tr><td>${prodCel(x.itens, x.titulo, `${esc(x.sku || "sem SKU")} · ${x.vendas} venda${x.vendas > 1 ? "s" : ""}`)}</td>
         <td>${x.un}</td><td>${n2(x.bruto)}</td><td>${n2(x.tarifa)}</td><td>${n2(x.frete)}</td><td>${n2(x.liquido)}</td><td>${x.semCusto ? "—" : n2(x.custo)}</td>
-        <td style="${corValorMargem(m)}font-weight:700">${n2(m)}</td><td>${selo(m, x.bruto)}</td></tr>`; }).join("")}</table></div>` : "";
+        <td style="${corValorMargem(m)}font-weight:700">${n2(m)}</td><td>${selo(m, x.bruto)}</td></tr>`; }).join("")}</tbody></table></div>` : "";
   } else {
     const ex = d.excecoes;
-    corpo = ex.length ? `<div class="vml-sc"><table class="vml-t"><tr><th>Produto</th><th>Motivo</th><th>Venda</th><th>Líquido</th></tr>
+    corpo = ex.length ? `<div class="vml-sc"><table class="vml-t"><thead><tr><th>Produto</th><th>Motivo</th><th>Venda</th><th>Líquido</th></tr></thead><tbody>
       ${ex.map(e => `<tr><td>${prodCel(e.itens, tituloLinha(e), `${esc(skuLinha(e))} · ${e.pedidos.map(p => `<a href="https://www.mercadolivre.com.br/vendas/${p}/detalhe" target="_blank" rel="noopener" style="color:${T.cAzul}">#${p}</a>`).join(", ")}`)}</td>
-        <td style="text-align:left;color:${verm}">${esc(e.motivos.join(" · "))}</td><td>${n2(e.bruto)}</td><td>${n2(e.liquido)}</td></tr>`).join("")}</table></div>`
+        <td style="text-align:left;color:${verm}">${esc(e.motivos.join(" · "))}</td><td>${n2(e.bruto)}</td><td>${n2(e.liquido)}</td></tr>`).join("")}</tbody></table></div>`
       : `<div class="vml-vazio" style="color:${verde}">✓ Nenhuma exceção no período<div class="vml-sk" style="margin-top:4px">Cancelamentos, reembolsos e valores que não batem com o Mercado Pago aparecem aqui</div></div>`;
   }
   if (!corpo && st.visao !== "exc") corpo = `<div class="vml-vazio">${st.carregando ? "Buscando vendas..." : st.erro ? "" : "Nenhuma venda no período"}</div>`;
@@ -13391,11 +13391,12 @@ function renderVendasML(container) {
     .vml-t{width:100%;border-collapse:collapse}
     .vml-t td,.vml-t th{padding:7px 6px;text-align:right;white-space:nowrap;color:${T.text};font-size:12px}
     .vml-t th{font-size:10px !important;color:${T.text3} !important;font-weight:500;border-bottom:0.5px solid ${T.border2}}
-    .vml-sc .vml-t th{position:sticky;top:0;z-index:2;background:${T.card};box-shadow:0 0.5px 0 ${T.border2}}
+    .vml-sc .vml-t thead th{position:-webkit-sticky;position:sticky;top:0;z-index:3;background:${T.card};box-shadow:0 0.5px 0 ${T.border2}}
     .vml-t td{border-bottom:0.5px solid ${T.border}}
     .vml-t td:first-child,.vml-t th:first-child{text-align:left}
     .vml-prod{display:flex;align-items:center;gap:10px}
-    .vml-foto{width:34px;height:34px;border-radius:8px;object-fit:cover;flex-shrink:0;background:${T.isLight ? "#f0f0f0" : "#1d1d22"};display:block}
+    .vml-foto{width:34px;height:34px;border-radius:8px;flex-shrink:0;background:${T.isLight ? "#f0f0f0" : "#1d1d22"};display:block}
+    img.vml-foto{object-fit:contain;background:#fff;padding:2px;box-sizing:border-box}
     .vml-ttl{font-weight:600;max-width:260px;overflow:hidden;text-overflow:ellipsis;display:block}
     @media (max-width:600px){.vml-ttl{max-width:140px}}
     .vml-pill{display:inline-block;min-width:44px;text-align:center;font-size:11px;font-weight:700;padding:3px 8px;border-radius:99px}
@@ -13408,7 +13409,7 @@ function renderVendasML(container) {
     .vml-det td{white-space:normal;text-align:left;background:${T.bg3}}
     .vml-detbox{font-size:11px;line-height:1.6;position:sticky;left:6px;max-width:min(620px,calc(100vw - 80px))}
     .vml-tot td{font-weight:700;border-top:0.5px solid ${T.border2};border-bottom:0}
-    .vml-sc{overflow:auto;-webkit-overflow-scrolling:touch;max-height:calc(100vh - 150px);max-height:calc(100dvh - 150px)}
+    .vml-sc{overflow:auto;max-height:calc(100vh - 150px);max-height:calc(100dvh - 150px)}
     @media (max-width:767px){.vml-sc{max-height:calc(100dvh - 190px)}}
     .vml-seg{display:flex;background:${T.bg3};border-radius:10px;padding:3px;margin:16px 0 6px;max-width:420px}
     .vml-seg button{flex:1;text-align:center;font-size:12px;padding:6px;border-radius:8px;color:${T.text3};font-weight:500;background:none;border:0;cursor:pointer;font-family:inherit}
