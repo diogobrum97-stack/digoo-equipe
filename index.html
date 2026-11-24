@@ -8224,7 +8224,7 @@ function render(){
             { label: "Dashboard", tab: "dashboard", subs: [] },
             { label: "Tarefas", tab: "tarefas", subs: [] },
             { label: "Equipe", tab: null, subs: [{label:"Concluídas",tab:"concluidas"},{label:"Conversas",tab:"conversas"}] },
-            { label: "Mercado Livre", tab: null, subs: [{label:"Vendas",tab:"vendas"},{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência de Compra",tab:"experiencia"},{label:"Clonar Anúncio",tab:"clonar"},{label:"Perguntas",tab:"perguntas"},{label:"Reclamações",tab:"reclamacoes-ml"},{label:"Picking & Packing",tab:"picking"},{label:"Promoções",tab:"promocoes"},{label:"Kits Full",tab:"kits-full"},{label:"⚠ Ajuste Filial",tab:"ajuste-filial"}] },
+            { label: "Mercado Livre", tab: null, subs: [{label:"Vendas",tab:"vendas"},{label:"Saldo MP",tab:"saldo-mp"},{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência de Compra",tab:"experiencia"},{label:"Clonar Anúncio",tab:"clonar"},{label:"Perguntas",tab:"perguntas"},{label:"Reclamações",tab:"reclamacoes-ml"},{label:"Picking & Packing",tab:"picking"},{label:"Promoções",tab:"promocoes"},{label:"Kits Full",tab:"kits-full"},{label:"⚠ Ajuste Filial",tab:"ajuste-filial"}] },
             { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"},{label:"NF Transferência Full",tab:"nf-full"},{label:"NF Importação",tab:"nf-importacao"},{label:"Contas a Pagar",tab:"contas-pagar"},{label:"NFs Emitidas",tab:"nfs-emitidas"},{label:"Painel Fiscal",tab:"painel-fiscal"}] },
             { label: "Email", tab: "email", subs: [] },
           ].filter(g => {
@@ -8957,6 +8957,13 @@ function render(){
             let afContainer = panel.querySelector(".ajuste-filial-container");
             if(!afContainer){ afContainer=document.createElement("div"); afContainer.className="ajuste-filial-container"; panel.appendChild(afContainer); }
             renderAjusteFilial(afContainer, color);
+          }else if(window._diogotab==="saldo-mp"){
+            panel.style.maxHeight="none"; panel.style.overflowY="auto";
+            if(!window._smpShell){ window._smpShell=document.createElement("div"); window._smpShell.className="saldo-mp-container"; }
+            const smpC = window._smpShell;
+            smpC.style.cssText=`background:${T.card};border:1px solid ${T.border};border-radius:12px;padding:16px;box-shadow:${T.cardShadow};`;
+            if(smpC.parentNode !== panel) panel.appendChild(smpC);
+            renderSaldoMP(smpC);
           }else if(window._diogotab==="vendas"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
             // a tela de Vendas é uma só (não recria a cada render geral — senão a rolagem volta pro topo)
@@ -13688,6 +13695,206 @@ function renderVendasML(container) {
       if (el.dataset.vml === "data" && /^\d{4}-\d{2}-\d{2}$/.test(el.value)) { st.data = el.value; st.periodo = el.value === hoje ? "hoje" : "dia"; }
       st.aberto = null; st.erro = null; st.limite = 100;
       renderVendasML(container);
+    });
+  }
+}
+
+// ── SALDO MP (Mercado Livre → Saldo MP) ─────────────────────
+// Conferência do saldo do Mercado Pago: extrato oficial (relatório de liberações, via backend ?action=saldo-mp)
+// + "a liberar" somado das vendas do painel (/vendas_dia). O Mercado Pago não libera o saldo direto pela API.
+window._saldoState = window._saldoState || { conta: "filial", periodo: "7d", de: null, ate: null, dados: {}, carregando: false, erro: null, aberto: false, limite: 100, aLiberar: {} };
+function saldoPeriodo() {
+  const st = window._saldoState, hoje = _vmlHoje();
+  if (st.periodo === "ontem") { const o = _vmlSomaDias(hoje, -1); return { de: o, ate: o }; }
+  if (st.periodo === "mes") return { de: hoje.slice(0, 8) + "01", ate: hoje };
+  if (st.periodo === "custom" && st.de && st.ate) return { de: st.de, ate: st.ate };
+  return { de: _vmlSomaDias(hoje, -7), ate: hoje };
+}
+async function saldoCarregar(novo) {
+  const st = window._saldoState;
+  if (st.carregando) return;
+  const { de, ate } = saldoPeriodo(), k = `${st.conta}|${de}|${ate}`;
+  st.carregando = true; st.erro = null; st._ultimaPerg = Date.now(); saldoDesenhar();
+  try {
+    const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=saldo-mp&conta=${st.conta}&de=${de}&ate=${ate}${novo ? "&novo=1" : ""}`);
+    const d = await r.json();
+    if (d.status === "erro" || (!d.ok && d.error)) throw new Error(d.error || "erro ao buscar o extrato");
+    st.dados[k] = d;
+    // ainda gerando: pergunta de novo em 15s enquanto a aba estiver aberta
+    if (d.status === "gerando") setTimeout(() => { if (window._diogotab === "saldo-mp" && `${window._saldoState.conta}|${saldoPeriodo().de}|${saldoPeriodo().ate}` === k) saldoCarregar(); }, 15000);
+  } catch (e) { st.erro = e.message; }
+  st.carregando = false;
+  saldoDesenhar();
+}
+// "A liberar": soma das liberações futuras das vendas dos últimos 35 dias (resumos em /vendas_dia)
+function saldoOuvirALiberar(conta) {
+  const st = window._saldoState;
+  if (st._ouvindoConta === conta) return;
+  (st._unsubs || []).forEach(u => { try { u(); } catch (_) {} });
+  st._unsubs = []; st._ouvindoConta = conta; st.aLiberar = {};
+  const hoje = _vmlHoje();
+  for (let i = 0; i <= 35; i++) {
+    const dia = _vmlSomaDias(hoje, -i);
+    st._unsubs.push(onValue(ref(db, `/vendas_dia/${conta}/${dia}`), snap => {
+      const v = snap.val();
+      st.aLiberar[dia] = v ? { liberacoes: v.liberacoes || [], liquido: (v.vendas || []).reduce((s, x) => s + (Number(x.liquido) || 0), 0), n: (v.vendas || []).length } : null;
+      saldoDesenhar();
+    }, () => {}));
+  }
+}
+function saldoDesenhar() {
+  const c = document.querySelector(".saldo-mp-container");
+  if (c && window._diogotab === "saldo-mp") {
+    clearTimeout(window._saldoState._t);
+    window._saldoState._t = setTimeout(() => renderSaldoMP(c), 150);
+  }
+}
+function renderSaldoMP(container) {
+  const st = window._saldoState, hoje = _vmlHoje();
+  const { de, ate } = saldoPeriodo(), k = `${st.conta}|${de}|${ate}`;
+  const d = st.dados[k];
+  if (!d && !st.carregando && !st.erro) setTimeout(() => saldoCarregar(), 0);
+  else if (d?.status === "gerando" && !st.carregando && Date.now() - (st._ultimaPerg || 0) > 14000) setTimeout(() => saldoCarregar(), 0);
+  saldoOuvirALiberar(st.conta);
+  const esc = v => String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+  const n2 = v => v == null ? "—" : Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const rs = v => v == null ? "—" : "R$ " + n2(v);
+  const dBR = s => s ? s.slice(8, 10) + "/" + s.slice(5, 7) : "";
+  const quando = iso => { if (!iso) return ""; const t = new Date(iso); return isNaN(t) ? String(iso).slice(0, 16) : t.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" }); };
+  const verde = T.cVerde, verm = T.cVermelho, G = T.isLight ? "#55555c" : "#a8a8b0";
+  const R = d?.status === "pronto" ? d.resultado : null;
+
+  // a liberar (vendas)
+  const dias = Object.values(st.aLiberar);
+  const carregadosAL = Object.keys(st.aLiberar).length;
+  const semResumo = Object.entries(st.aLiberar).filter(([, v]) => v === null).length;
+  const porData = {};
+  for (const v of dias) for (const l of (v?.liberacoes || [])) if (!l.liberado && l.data > hoje) { const x = porData[l.data] = porData[l.data] || { valor: 0, vendas: 0 }; x.valor += l.valor; x.vendas += l.vendas; }
+  const futuras = Object.entries(porData).sort((a, b) => a[0].localeCompare(b[0]));
+  const aLiberar = futuras.reduce((s, [, x]) => s + x.valor, 0), aLibN = futuras.reduce((s, [, x]) => s + x.vendas, 0);
+  // vendas do período (líquido), do painel
+  let vendasPer = 0, vendasPerN = 0;
+  for (let dia = de; dia <= ate; dia = _vmlSomaDias(dia, 1)) { const v = st.aLiberar[dia]; if (v) { vendasPer += v.liquido; vendasPerN += v.n; } }
+
+  const disponivel = R?.final ?? null;
+  const total = disponivel != null ? disponivel + aLiberar : null;
+  const NOMES = { vendas: "Vendas liberadas", saques: "Saques e transferências", ads: "Mercado Ads", full: "Full (armazenagem, retirada)", devolucoes: "Devoluções e reclamações", outros_entrada: "Outras entradas", outros_saida: "Outros débitos" };
+  const card = (rot, val, sub, cor, extra = "") => `<div class="smp-c"${extra}><small>${rot}</small><b style="${cor ? `color:${cor}` : ""}">${val}</b><div>${sub}</div></div>`;
+  const PER = [["ontem", "Ontem"], ["7d", "7 dias"], ["mes", "Mês"]];
+
+  let corpo;
+  if (st.erro) corpo = `<div class="smp-aviso" style="color:${T.errText};background:${T.errBg};border-color:${T.errBor}">Erro: ${esc(st.erro)}</div>`;
+  else if (!R) corpo = `<div class="smp-aviso">${d?.status === "gerando" ? `O Mercado Pago está gerando o extrato desse período… costuma levar de 1 a 5 minutos. Pode sair da aba que ele continua.${d.desde ? ` <span style="color:${G}">(pedido às ${new Date(d.desde).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })})</span>` : ""}` : "Buscando o extrato no Mercado Pago…"}</div>`;
+  else {
+    const linhasFluxo = [
+      `<div class="smp-l"><span>Saldo disponível em ${dBR(de)}</span><span>${rs(R.inicial)}</span></div>`,
+      ...Object.entries(R.entradas || {}).sort((a, b) => b[1] - a[1]).map(([c, v]) => `<div class="smp-l"><span>+ ${NOMES[c] || c}</span><span style="color:${verde}">+ ${rs(v)}</span></div>`),
+      ...Object.entries(R.saidas || {}).sort((a, b) => b[1] - a[1]).map(([c, v]) => `<div class="smp-l"><span>− ${NOMES[c] || c}</span><span style="color:${verm}">− ${rs(v)}</span></div>`),
+      `<div class="smp-l smp-tot"><span>= Saldo disponível calculado</span><span>${rs(R.calculado)}</span></div>`,
+      `<div class="smp-l"><span>Saldo disponível no extrato do MP</span><span>${rs(R.final)}</span></div>`,
+    ].join("");
+    const movs = (R.movimentos || []).slice(0, st.limite);
+    const tag = c => `<span class="smp-tag">${(NOMES[c] || c).split(" (")[0]}</span>`;
+    corpo = `
+    <div class="smp-g2">
+      <div class="smp-box"><div class="smp-h">PARA ONDE FOI O DINHEIRO · ${dBR(de)} → ${dBR(ate)}</div>${linhasFluxo}
+        <div class="smp-nota">Vendas feitas no período (líquido): <b>${rs(vendasPer)}</b> em ${vendasPerN} vendas — entram no "a liberar" e só passam para o disponível ~28 dias depois.</div>
+        <details class="smp-det"><summary>Tipos de movimento encontrados (${Object.keys(R.tipos || {}).length})</summary>
+          ${Object.entries(R.tipos || {}).sort((a, b) => (b[1].credito + b[1].debito) - (a[1].credito + a[1].debito)).map(([t, x]) => `<div class="smp-l"><span>${esc(t)} <span style="color:${G}">· ${x.n}× · ${NOMES[x.cat] || x.cat}</span></span><span>${x.credito ? `<span style="color:${verde}">+${n2(x.credito)}</span> ` : ""}${x.debito ? `<span style="color:${verm}">−${n2(x.debito)}</span>` : ""}</span></div>`).join("")}
+        </details>
+      </div>
+      <div class="smp-box"><div class="smp-h">EXTRATO · MOVIMENTOS DO DISPONÍVEL (${R.n})</div>
+        <div class="smp-sc"><table class="smp-t"><thead><tr><th>Data</th><th>Movimento</th><th>Valor</th><th>Saldo</th></tr></thead><tbody>
+        ${movs.map(m => `<tr><td>${quando(m.data)}</td><td>${tag(m.cat)} ${esc(m.descricao || "")}${m.origem ? ` <span style="color:${G}">#${esc(m.origem)}</span>` : ""}</td>
+          <td style="color:${m.credito ? verde : verm}">${m.credito ? "+" + n2(m.credito) : "−" + n2(m.debito)}</td><td>${n2(m.saldo)}</td></tr>`).join("")}
+        </tbody></table></div>
+        ${(R.movimentos || []).length > st.limite ? `<button class="smp-mais" data-smp-mais>Mostrar mais</button>` : ""}
+        <div class="smp-h" style="margin-top:14px">VAI CAIR NO DISPONÍVEL</div>
+        <div class="smp-chips">${futuras.slice(0, 8).map(([dt, x]) => `<span class="smp-chip" title="${x.vendas} vendas"><em>${dBR(dt)}</em>R$ ${n2(x.valor)}</span>`).join("")}${futuras.length > 8 ? `<span class="smp-chip"><em>+ ${futuras.length - 8} datas</em>até ${dBR(futuras[futuras.length - 1][0])}</span>` : ""}${!futuras.length ? `<span style="color:${G};font-size:12px">sem vendas a liberar no painel</span>` : ""}</div>
+      </div>
+    </div>`;
+  }
+
+  const html = `
+  <style>
+    .smp{font-variant-numeric:tabular-nums;color:${T.text};font-size:13px}
+    .smp-top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+    .smp-top h2{font-size:20px;font-weight:600;margin:0}
+    .smp-ctl{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+    .smp-ctl button,.smp-ctl select,.smp-ctl input{background:${T.bg3};color:${G};border:0.5px solid ${T.border2};border-radius:99px;padding:7px 14px;font-size:13px;font-family:inherit;cursor:pointer}
+    .smp-ctl button.on{background:${T.text};color:${T.bg};border-color:${T.text};font-weight:600}
+    .smp-ctl select{color:${T.text}}
+    .smp-k{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-top:14px}
+    @media (max-width:820px){.smp-k{grid-template-columns:1fr 1fr}}
+    .smp-c{background:${T.bg3};border:0.5px solid ${T.border};border-radius:10px;padding:13px 15px;min-width:0}
+    .smp-c small{display:block;font-size:12px;font-weight:500;color:${G};margin-bottom:5px}
+    .smp-c b{display:block;font-size:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .smp-c div{font-size:12px;color:${G};margin-top:3px}
+    .smp-g2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:12px;margin-top:16px}
+    @media (max-width:900px){.smp-g2{grid-template-columns:1fr}}
+    .smp-box{background:${T.isLight ? "#fff" : "#101012"};border:0.5px solid ${T.border2};border-radius:12px;padding:14px 16px;min-width:0}
+    .smp-h{font-size:11px;font-weight:700;letter-spacing:.6px;color:${G};margin-bottom:8px}
+    .smp-l{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:0.5px solid ${T.border}}
+    .smp-l span:first-child{min-width:0}
+    .smp-tot{font-weight:700;border-top:0.5px solid ${T.border2};margin-top:4px}
+    .smp-nota{font-size:12px;color:${G};margin-top:10px;line-height:1.5}
+    .smp-det{margin-top:10px;font-size:12px}
+    .smp-det summary{cursor:pointer;color:${G}}
+    .smp-sc{overflow:auto;max-height:520px}
+    .smp-t{width:100%;border-collapse:collapse;font-size:12.5px}
+    .smp-t th{position:sticky;top:0;background:${T.isLight ? "#fff" : "#101012"};font-size:11px;color:${G};font-weight:600;text-align:right;padding:7px 6px;border-bottom:0.5px solid ${T.border2}}
+    .smp-t td{text-align:right;padding:7px 6px;border-bottom:0.5px solid ${T.border};white-space:nowrap}
+    .smp-t th:nth-child(-n+2),.smp-t td:nth-child(-n+2){text-align:left}
+    .smp-t td:nth-child(2){white-space:normal}
+    .smp-tag{font-size:11px;padding:0 7px;border-radius:6px;background:${T.isLight ? "#f0f0f2" : "#1b1b1f"};border:0.5px solid ${T.border2};white-space:nowrap}
+    .smp-chips{display:flex;gap:6px;flex-wrap:wrap}
+    .smp-chip{background:${T.bg3};border:0.5px solid ${T.border2};border-radius:99px;padding:5px 11px;font-size:12px;font-weight:600}
+    .smp-chip em{font-style:normal;font-weight:400;color:${G};margin-right:6px}
+    .smp-aviso{margin-top:16px;padding:16px;border-radius:12px;border:0.5px solid ${T.border2};background:${T.bg3};line-height:1.5}
+    .smp-mais{margin-top:8px;width:100%;padding:8px;border-radius:9px;background:${T.bg3};border:0.5px solid ${T.border2};color:${T.text};font-family:inherit;cursor:pointer}
+  </style>
+  <div class="smp">
+    <div class="smp-top"><h2>Saldo MP</h2>
+      <div class="smp-ctl">
+        ${PER.map(([p, r]) => `<button data-smp-per="${p}" class="${st.periodo === p ? "on" : ""}">${r}</button>`).join("")}
+        <input type="date" data-smp="de" value="${de}" max="${hoje}" title="De"><input type="date" data-smp="ate" value="${ate}" max="${hoje}" title="Até">
+        <select data-smp="conta"><option value="filial"${st.conta === "filial" ? " selected" : ""}>Filial SP</option><option value="matriz"${st.conta === "matriz" ? " selected" : ""}>Matriz RS</option></select>
+        <button data-smp="novo" title="Gerar o extrato de novo">${st.carregando ? "…" : "↻"}</button>
+      </div>
+    </div>
+    <div class="smp-k">
+      ${card("Disponível", rs(disponivel), R ? `no extrato até ${quando(d.end)}` : "esperando o extrato")}
+      ${card("A liberar", carregadosAL ? rs(aLiberar) : "—", `${aLibN} vendas${futuras.length ? ` até ${dBR(futuras[futuras.length - 1][0])}` : ""}${semResumo ? ` · ${semResumo} dias sem resumo` : ""}`)}
+      ${card("Saldo total", rs(total), "disponível + a liberar")}
+      ${card("Entrou no período", R ? rs(R.entrou) : "—", R ? "no disponível" : "")}
+      ${card("Saiu no período", R ? rs(R.saiu) : "—", R ? `saques ${rs(R.saidas?.saques || 0)}` : "")}
+      ${card("Conferência", R ? (R.bate ? "✓ Bate" : rs(Math.abs((R.calculado || 0) - (R.final || 0)))) : "—", R ? (R.bate ? "extrato completo, sem furo" : "diferença no extrato") : "", R ? (R.bate ? verde : verm) : null)}
+    </div>
+    ${corpo}
+  </div>`;
+  let raiz = container._smpRaiz;
+  if (!raiz || raiz.parentNode !== container) { container.innerHTML = "<div></div>"; raiz = container._smpRaiz = container.firstChild; raiz.innerHTML = html; }
+  else morphHTML(raiz, html);
+
+  if (!container.dataset.smpPronto) {
+    container.dataset.smpPronto = "1";
+    container.addEventListener("click", e => {
+      const per = e.target.closest("[data-smp-per]");
+      if (per) { st.periodo = per.dataset.smpPer; st.erro = null; st.limite = 100; renderSaldoMP(container); return; }
+      if (e.target.closest('[data-smp="novo"]')) { saldoCarregar(true); return; }
+      if (e.target.closest("[data-smp-mais]")) { st.limite += 200; renderSaldoMP(container); }
+    });
+    container.addEventListener("change", e => {
+      const el = e.target.closest("[data-smp]"); if (!el) return;
+      if (el.dataset.smp === "conta") st.conta = el.value;
+      if (el.dataset.smp === "de" || el.dataset.smp === "ate") {
+        const p = saldoPeriodo();
+        st.de = el.dataset.smp === "de" ? el.value : p.de; st.ate = el.dataset.smp === "ate" ? el.value : p.ate;
+        if (st.de > st.ate) [st.de, st.ate] = [st.ate, st.de];
+        st.periodo = "custom";
+      }
+      st.erro = null; st.limite = 100;
+      renderSaldoMP(container);
     });
   }
 }
