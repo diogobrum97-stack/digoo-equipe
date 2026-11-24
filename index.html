@@ -13359,8 +13359,16 @@ function renderVendasML(container) {
   const prodCel = (itens, titulo, sub) => `<div class="vml-prod">${foto(itens)}<div style="min-width:0"><span class="vml-ttl">${esc(titulo)}</span><span class="vml-sk">${sub}</span></div></div>`;
 
   const card = (rot, val, sub, cor) => `<div class="vml-c"><small>${rot}</small><b style="${cor ? `color:${cor}` : ""}">${val}</b><div class="vml-sk">${sub}</div></div>`;
-  const tituloLinha = v => v.itens.length > 1 ? v.itens.map(i => i.titulo).join(" + ") : (v.itens[0]?.titulo || "—");
-  const skuLinha = v => (v.itens.length > 1 ? `${v.itens.length} itens${v.envios <= 1 ? " · 1 frete" : ""}` : (v.itens[0]?.sku || "sem SKU") + (v.itens[0]?.qtd > 1 ? ` · ${v.itens[0].qtd} un` : "")) + " · " + hora(v.criado);
+  // compra com vários pedidos/itens do mesmo produto aparece como um produto só, com a quantidade somada
+  const mesmoProduto = v => v.itens.length > 1 && v.itens.every(i => (i.sku || i.titulo) === (v.itens[0].sku || v.itens[0].titulo));
+  const tituloLinha = v => v.itens.length > 1 && !mesmoProduto(v) ? v.itens.map(i => i.titulo).join(" + ") : (v.itens[0]?.titulo || "—");
+  const skuLinha = v => {
+    const un = v.itens.reduce((s, i) => s + (i.qtd || 1), 0);
+    const base = v.itens.length > 1 && !mesmoProduto(v) ? `${v.itens.length} itens` : (v.itens[0]?.sku || "sem SKU") + (un > 1 ? ` · ${un} un` : "");
+    const ped = (v.pedidos || []).length;
+    const fretes = ped > 1 || v.itens.length > 1 ? (v.envios > 1 ? ` · ${v.envios} pacotes` : " · 1 frete") : "";
+    return base + (ped > 1 ? ` · ${ped} pedidos` : "") + fretes + " · " + hora(v.criado);
+  };
 
   // Celular: cada venda em 2 linhas (produto em cima, números embaixo) — sem rolar pro lado e com títulos fixos no topo
   const mob = window.innerWidth < 768;
