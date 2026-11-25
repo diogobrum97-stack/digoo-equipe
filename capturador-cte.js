@@ -4,7 +4,7 @@ const zlib = require('zlib');
 const crypto = require('crypto');
 
 const FIREBASE_URL = "https://digoo-equipe-default-rtdb.firebaseio.com";
-const PASSPHRASE = "***REMOVIDO***";
+const { opcoesCertificado } = require("./cert-loader");   // certificado: Configurações → Certificado digital
 
 const EMPRESAS = [
   { nome: "Matriz", pfx: "/opt/digoo-capturador/matriz_new.pfx", cnpj: "40981026000182", uf: "RS" },
@@ -93,9 +93,9 @@ function montarSoapDistDFe(cnpj, ultNSU) {
 </soap12:Envelope>`;
 }
 
-function consultarSefazNacional(empresa, ultNSU) {
+async function consultarSefazNacional(empresa, ultNSU) {
+  const cert = await opcoesCertificado(empresa);
   return new Promise((resolve, reject) => {
-    const pfxData = fs.readFileSync(empresa.pfx);
     const soapBody = montarSoapDistDFe(empresa.cnpj, ultNSU);
     const bodyBuf = Buffer.from(soapBody, "utf-8");
 
@@ -103,8 +103,7 @@ function consultarSefazNacional(empresa, ultNSU) {
       hostname: SEFAZ_HOST,
       path: SEFAZ_PATH,
       method: "POST",
-      pfx: pfxData,
-      passphrase: PASSPHRASE,
+      ...cert,
       headers: {
         "Content-Type": "application/soap+xml; charset=utf-8",
         "Content-Length": bodyBuf.length,

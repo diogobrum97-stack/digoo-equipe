@@ -10943,7 +10943,7 @@ function renderConfig(panel, color) {
   if(!window._configTab) window._configTab = "geral";
   const configTabs = document.createElement("div");
   configTabs.style.cssText = "display:flex;gap:2px;margin-bottom:18px;background:var(--bg3);border-radius:7px;padding:3px;";
-  [["geral","Geral"],["apis","APIs"],["notificacoes","Notificações"],["impressao","Impressão"]].forEach(([t, label]) => {
+  [["geral","Geral"],["apis","APIs"],["notificacoes","Notificações"],["impressao","Impressão"],...(currentUser === "Diogo" ? [["certificado","Certificado"]] : [])].forEach(([t, label]) => {
     const btn = document.createElement("button");
     btn.textContent = label;
     btn.style.cssText = `flex:1;padding:6px;border:none;border-radius:5px;font-size:11px;letter-spacing:1px;cursor:pointer;font-family:inherit;transition:all .15s;background:${window._configTab===t?"var(--bg2)":"none"};color:${window._configTab===t?"var(--text)":"var(--text3)"};font-weight:${window._configTab===t?"600":"400"};`;
@@ -10951,6 +10951,75 @@ function renderConfig(panel, color) {
     configTabs.appendChild(btn);
   });
   panel.appendChild(configTabs);
+
+  // ── Sub-aba: Certificado digital (só Diogo) ──────────────────
+  // O arquivo e a senha vão para o backend, que confere e guarda tudo criptografado com a chave da VPS.
+  if(window._configTab === "certificado" && currentUser === "Diogo") {
+    const box = document.createElement("div");
+    panel.appendChild(box);
+    const cs = window._certSt = window._certSt || { info: null, lido: false, form: null };
+    if (!cs.lido) { cs.lido = true; Promise.all([get(ref(db, "/certificados_info")), get(ref(db, "/certificados_chave/criada_em"))]).then(([a, b]) => { cs.info = a.val() || {}; cs.vps = !!b.val(); if (window._configTab === "certificado") render(); }).catch(() => {}); }
+    const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    const dt = ms => ms ? new Date(ms).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : null;
+    const cartao = (conta, nome, cnpjFmt) => {
+      const i = (cs.info || {})[conta];
+      let selo = `<span style="font-size:11px;padding:3px 9px;border-radius:6px;background:var(--bg3);color:var(--text3);">Arquivo antigo da VPS</span>`, borda = "var(--border)", linhas = `CNPJ ${cnpjFmt}<br>Ainda não enviado pelo sistema`;
+      if (i) {
+        const dias = Math.ceil((new Date(i.validade) - Date.now()) / 864e5);
+        const cor = dias <= 0 ? T.cVermelho : dias <= 30 ? T.cAmarelo : T.cVerde;
+        borda = dias <= 30 ? cor : "var(--border)";
+        selo = `<span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:6px;background:${cor}22;color:${cor};">${dias <= 0 ? "Vencido" : dias <= 30 ? `Vence em ${dias} dia${dias === 1 ? "" : "s"}` : "Válido"}</span>`;
+        linhas = `${esc(i.titular || "")}<br>CNPJ ${cnpjFmt}<br>Vence em ${new Date(i.validade).toLocaleDateString("pt-BR")}${dias > 0 ? ` · faltam ${dias} dias` : ""}<br>Enviado ${dt(i.enviado_em)}` +
+          (i.erro ? `<br><span style="color:${T.cVermelho};">${esc(i.erro)}</span>` : i.usado_em ? `<br>Usado pelo capturador ${dt(i.usado_em)}` : `<br>Aguardando a próxima rodada do capturador`);
+      }
+      const aberto = cs.form === conta;
+      return `<div style="background:var(--bg3);border:0.5px solid ${borda};border-radius:12px;padding:14px 16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><span style="font-size:14px;font-weight:600;color:var(--text);">${nome}</span>${selo}</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:8px;line-height:1.7;">${linhas}</div>
+        ${aberto ? `<div style="margin-top:12px;padding-top:12px;border-top:0.5px solid var(--border);display:grid;gap:8px;">
+            <label style="font-size:12px;color:var(--text2);">Arquivo .pfx${cs.arquivo ? ` <b style="color:var(--text);">· ${esc(cs.arquivo.name)}</b>` : ""}<input id="cert-arq" type="file" accept=".pfx,.p12" style="display:block;width:100%;margin-top:4px;font-size:12px;color:var(--text);"></label>
+            <label style="font-size:12px;color:var(--text2);">Senha<input id="cert-senha" type="password" autocomplete="new-password" placeholder="senha do certificado" style="display:block;width:100%;box-sizing:border-box;margin-top:4px;padding:8px 10px;border-radius:7px;border:0.5px solid var(--border);background:var(--bg2);color:var(--text);font:13px Inter,sans-serif;"></label>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <button id="cert-salvar" data-conta="${conta}" style="font:600 12px Inter,sans-serif;padding:8px 14px;border-radius:7px;border:none;background:${T.cAzul};color:#fff;cursor:pointer;">Conferir e salvar</button>
+              <button id="cert-cancelar" style="font:12px Inter,sans-serif;padding:8px 12px;border-radius:7px;border:0.5px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;">Cancelar</button>
+            </div>
+            <div id="cert-msg" style="font-size:12px;min-height:16px;"></div>
+          </div>` : `<button data-cert-trocar="${conta}" style="margin-top:12px;font:12px Inter,sans-serif;padding:7px 12px;border-radius:7px;border:0.5px solid var(--border);background:transparent;color:var(--text);cursor:pointer;">${i ? "Trocar certificado" : "Enviar certificado"}</button>`}
+      </div>`;
+    };
+    box.innerHTML = (cs.info === null ? `<div style="font-size:12px;color:var(--text3);">Carregando...</div>` : `
+      ${cs.vps === false ? `<div style="font-size:12px;color:${T.cAmarelo};background:${T.cAmarelo}18;border-radius:10px;padding:10px 12px;margin-bottom:12px;">A VPS ainda não foi configurada para receber certificados. Até lá, o envio não funciona.</div>` : ""}
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;">
+        ${cartao("matriz", "Matriz RS", "40.981.026/0001-82")}${cartao("filial", "Filial SP", "40.981.026/0003-44")}
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:12px;line-height:1.6;">O arquivo e a senha são conferidos e guardados criptografados — só a VPS consegue abrir. Os capturadores passam a usar o certificado novo na próxima rodada.</div>`);
+    box.querySelectorAll("[data-cert-trocar]").forEach(b => b.onclick = () => { cs.form = b.dataset.certTrocar; cs.arquivo = null; cs.senha = ""; render(); });
+    const limpar = () => { cs.form = null; cs.arquivo = null; cs.senha = ""; };
+    const canc = box.querySelector("#cert-cancelar"); if (canc) canc.onclick = () => { limpar(); render(); };
+    // guarda o que foi digitado/escolhido: o app redesenha a tela sozinho às vezes
+    const inArq = box.querySelector("#cert-arq"), inSenha = box.querySelector("#cert-senha");
+    if (inArq) inArq.onchange = () => { cs.arquivo = inArq.files[0] || cs.arquivo; };
+    if (inSenha) { inSenha.value = cs.senha || ""; inSenha.oninput = () => { cs.senha = inSenha.value; }; }
+    const salvar = box.querySelector("#cert-salvar");
+    if (salvar) salvar.onclick = async () => {
+      const msg = box.querySelector("#cert-msg"), arq = box.querySelector("#cert-arq").files[0] || cs.arquivo, senha = box.querySelector("#cert-senha").value;
+      const erro = t => { msg.style.color = T.cVermelho; msg.textContent = t; };
+      if (!arq) return erro("Escolha o arquivo .pfx do certificado.");
+      if (!senha) return erro("Digite a senha do certificado.");
+      if (arq.size > 200000) return erro("Esse arquivo é grande demais para um certificado.");
+      salvar.disabled = true; msg.style.color = "var(--text3)"; msg.textContent = "Conferindo...";
+      try {
+        const b64 = await new Promise((ok, falha) => { const fr = new FileReader(); fr.onload = () => ok(String(fr.result).split(",")[1]); fr.onerror = () => falha(new Error("Não deu pra ler o arquivo.")); fr.readAsDataURL(arq); });
+        const r = await fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=cert-enviar`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ conta: salvar.dataset.conta, pfx: b64, senha }) });
+        const d = await r.json().catch(() => ({}));
+        if (!d.ok) throw new Error(d.error || "Não foi possível salvar.");
+        cs.info = { ...(cs.info || {}), [salvar.dataset.conta]: d.info }; limpar();
+        msg.style.color = T.cVerde; msg.textContent = "Salvo.";
+        setTimeout(() => render(), 600);
+      } catch (e) { salvar.disabled = false; erro(e.message); }
+    };
+    return;
+  }
 
   // ── Sub-aba: Notificações ─────────────────────────────────────
   if(window._configTab === "notificacoes") {

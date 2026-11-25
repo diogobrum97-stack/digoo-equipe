@@ -3,7 +3,7 @@ const fs = require('fs');
 const zlib = require('zlib');
 
 const FIREBASE_URL = "https://digoo-equipe-default-rtdb.firebaseio.com";
-const PASSPHRASE = "***REMOVIDO***";
+const { opcoesCertificado } = require("./cert-loader");   // certificado: Configurações → Certificado digital
 
 const EMPRESAS = [
   { nome: "Matriz", pfx: "/opt/digoo-capturador/matriz_new.pfx", cnpj: "40981026000182" },
@@ -74,14 +74,14 @@ async function fbPut(path, dados) {
   });
 }
 
-function buscarSefaz(pfxPath, nsu) {
+async function buscarSefaz(empresa, nsu) {
+  const cert = await opcoesCertificado(empresa);
   return new Promise((resolve, reject) => {
-    const pfx = fs.readFileSync(pfxPath);
     const opts = {
       hostname: "adn.nfse.gov.br",
       path: "/contribuintes/DFe/" + nsu,
       method: "GET",
-      pfx, passphrase: PASSPHRASE,
+      ...cert,
       headers: { "Accept": "application/json" },
       timeout: 30000
     };
@@ -252,7 +252,7 @@ async function sincronizarEmpresa(empresa) {
   while (true) {
     let resp;
     try {
-      resp = await buscarSefaz(empresa.pfx, nsuAtual);
+      resp = await buscarSefaz(empresa, nsuAtual);
     } catch(e) {
       console.error("  Erro SEFAZ:", e.message);
       break;
