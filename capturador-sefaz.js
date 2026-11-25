@@ -170,35 +170,6 @@ async function processarNfse(doc, empresa) {
   return true;
 }
 
-async function processarCte(doc, empresa) {
-  if (doc.TipoDocumento !== "CTE") return false;
-
-  const xmlRaw = doc.ArquivoXml ? descomprimirXml(doc.ArquivoXml) : "";
-  const chaveAcesso = doc.ChaveAcesso || extrairXml("chCTe", xmlRaw) || "";
-  const numero = extrairXml("nCT", xmlRaw) || doc.NSU;
-  const dataEmissao = (extrairXml("dhEmi", xmlRaw) || "").slice(0, 10);
-  const valor = parseFloat(extrairXml("vTPrest", xmlRaw) || extrairXml("vRec", xmlRaw) || "0");
-  const emitNome = (extrairXml("xNome", xmlRaw) || "").split("<")[0].slice(0, 100);
-  const emitCnpj = extrairXml("CNPJ", xmlRaw) || "";
-  const mp = mesPath(dataEmissao);
-  const chave = limparChave(chaveAcesso || ("CTE_" + empresa.cnpj + "_" + numero + "_" + (dataEmissao || doc.NSU)));
-
-  const existe = await fbGet("cte_tomados/" + mp + "/" + chave);
-  if (existe) return false;
-
-  await fbPut("cte_tomados/" + mp + "/" + chave, {
-    nsu: doc.NSU, chaveAcesso,
-    numero, dataEmissao,
-    emitenteCnpj: emitCnpj.replace(/\D/g, ""),
-    emitenteRazaoSocial: emitNome,
-    tomadorCnpj: empresa.cnpj,
-    empresa: empresa.nome,
-    valor, criadoEm: Date.now(),
-  });
-
-  console.log("  [CT-e] " + emitNome + " R$" + valor + " — " + dataEmissao);
-  return true;
-}
 
 async function processarNfe(doc, empresa) {
   if (doc.TipoDocumento !== "NFE") return false;
@@ -233,7 +204,7 @@ async function processarNfe(doc, empresa) {
 async function processarDoc(doc, empresa) {
   switch (doc.TipoDocumento) {
     case "NFSE": return await processarNfse(doc, empresa);
-    case "CTE":  return await processarCte(doc, empresa);
+    case "CTE":  return false;   // CT-e não é mais capturado
     case "NFE":  return await processarNfe(doc, empresa);
     default:
       console.log("  [?] Tipo desconhecido:", doc.TipoDocumento);
@@ -285,7 +256,7 @@ async function sincronizarEmpresa(empresa) {
 }
 
 async function main() {
-  console.log("[" + new Date().toISOString() + "] Capturador SEFAZ v3 — NFS-e + CT-e + NF-e");
+  console.log("[" + new Date().toISOString() + "] Capturador SEFAZ v4 — NFS-e + NF-e");
   let total = 0;
   for (const empresa of EMPRESAS) {
     total += await sincronizarEmpresa(empresa);
