@@ -13539,7 +13539,7 @@ function renderVendasML(container) {
     if (un > 1) b.push(`<span class="vml-b vml-b-un">${un} un</span>`);
     if (ped > 1) b.push(`<span class="vml-b">${ped} pedidos</span>`);
     if (!mob) { /* computador: a nota tem coluna própria */ }
-    else if ((v.nfs || []).length) for (const n of v.nfs.slice(0, 2)) b.push(`<span class="vml-b vml-b-nf" data-vml-nfc="${v.conta || ""}" data-vml-nf="${esc(String(n.pedido))}" title="Ver a nota fiscal">NF ${esc(String(n.numero))}</span>`);
+    else if ((v.nfs || []).some(n => Number(n.numero))) for (const n of v.nfs.filter(n => Number(n.numero)).slice(0, 2)) b.push(`<span class="vml-b vml-b-nf" data-vml-nfc="${v.conta || ""}" data-vml-nf="${esc(String(n.pedido))}" title="Ver a nota fiscal">NF ${esc(String(n.numero))}</span>`);
     else if (v.status !== "cancelada" && Date.now() - new Date(v.criado).getTime() < 5 * 864e5) b.push(`<span class="vml-b vml-b-snf" title="O Mercado Livre ainda não emitiu a nota — o sistema confere de novo a cada ~30 min">sem NF ainda</span>`);
     b.push(`<span class="vml-b-hr">${hora(v.criado)}</span>`);
     return `<span class="vml-bs">${b.join("")}</span>`;
@@ -13576,6 +13576,7 @@ function renderVendasML(container) {
         <div class="vml-db"><div class="vml-dh">DE ONDE VEM A MARGEM</div>
           ${lnD("Venda", rs(v.bruto))}${lnD("− Tarifa ML", rs(v.tarifa))}${lnD("− Frete", rs(v.frete))}
           <div class="vml-dsep"></div>${lnD(`= Líquido ${conf}`, rs(v.liquido))}
+          ${v.credito_frete ? `<div class="vml-dl" style="font-size:12px;opacity:.85"><span>inclui + frete pago pelo comprador (o MP credita separado)</span><span>R$ ${n2(v.credito_frete)}</span></div>` : ""}
           ${v.diferenca != null && Math.abs(v.diferenca) > 0.10 ? `<div class="vml-difbox">
             <div class="vml-dl"><span>Esperado (venda − tarifa − frete)</span><span>${rs(v.esperado)}</span></div>
             <div class="vml-dl"><span>Caiu no Mercado Pago</span><span>${rs(v.liquido)}</span></div>
@@ -13601,7 +13602,7 @@ function renderVendasML(container) {
       </div>      </div>`;
   };
   const celulaNF = v => {
-    const nfs = v.nfs || [];
+    const nfs = (v.nfs || []).filter(n => Number(n.numero));   // nota ainda sem número (vem 0) = aguardando
     if (nfs.length) return `<td class="vml-nfcol">${nfs.slice(0, 3).map(n => `<span class="vml-nfb" data-vml-nfc="${v.conta || ""}" data-vml-nf="${esc(String(n.pedido))}" title="Ver a nota fiscal">NF ${esc(String(n.numero))}</span>`).join("")}</td>`;
     if (v.status !== "cancelada" && Date.now() - new Date(v.criado).getTime() < 5 * 864e5) return `<td class="vml-nfcol"><span class="vml-nfa" title="O Mercado Livre ainda não emitiu a nota — o sistema confere de novo a cada ~30 min">aguardando NF</span></td>`;
     return `<td class="vml-nfcol" style="color:${T.isLight ? "#6e6e77" : "#a1a1aa"}">—</td>`;
