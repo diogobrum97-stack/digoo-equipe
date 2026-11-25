@@ -4,7 +4,7 @@ const zlib = require('zlib');
 const crypto = require('crypto');
 
 const FIREBASE_URL = "https://digoo-equipe-default-rtdb.firebaseio.com";
-const { opcoesCertificado } = require("./cert-loader");   // certificado: Configurações → Certificado digital
+const { opcoesCertificado, fbAdmin } = require("./cert-loader");   // certificado: Configurações → Certificado digital
 
 const EMPRESAS = [
   { nome: "Matriz", pfx: "/opt/digoo-capturador/matriz_new.pfx", cnpj: "40981026000182", uf: "RS" },
@@ -41,34 +41,10 @@ function descomprimir(base64) {
   return buf.toString("utf-8");
 }
 
-async function fbGet(path) {
-  return new Promise((resolve) => {
-    https.get(FIREBASE_URL + "/" + path + ".json", res => {
-      let data = "";
-      res.on("data", d => data += d);
-      res.on("end", () => { try { resolve(JSON.parse(data)); } catch(e) { resolve(null); } });
-    }).on("error", () => resolve(null));
-  });
-}
-
-async function fbPut(path, dados) {
-  return new Promise((resolve) => {
-    const body = JSON.stringify(dados);
-    const opts = {
-      hostname: "digoo-equipe-default-rtdb.firebaseio.com",
-      path: "/" + path + ".json",
-      method: "PUT",
-      headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) }
-    };
-    const req = https.request(opts, res => {
-      res.on("data", () => {});
-      res.on("end", resolve);
-    });
-    req.on("error", resolve);
-    req.write(body);
-    req.end();
-  });
-}
+// Firebase como ADMIN (as regras não aceitam mais acesso anônimo). Erro de leitura PARA a rodada —
+// assim nunca volta a consultar a SEFAZ do NSU 0 por engano (o que dava bloqueio 656).
+async function fbGet(path) { return fbAdmin("GET", path); }
+async function fbPut(path, dados) { return fbAdmin("PUT", path, dados); }
 
 // Código IBGE da UF do interessado (cUFAutor)
 const COD_UF = { RS: "43", SP: "35" };
@@ -97,7 +73,7 @@ function montarSoapDistDFe(empresa, ultNSU, variante) {
     </nfeDistDFeInteresse>
   </soap12:Body>
 </soap12:Envelope>`;
-  return `<?xml version="1.0" encoding="utf-8"?><soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope"><soap12:Body><nfeDistDFeInteresse xmlns="http://www.portalfiscal.inf.br/nfe/wsdl/NFeDistribuicaoDFe"><nfeDadosMsg>${dist}</nfeDadosMsg></nfeDistDFeInteresse></soap12:Body></soap12:Envelope>`;
+  return `<?xml version="1.0" encoding="utf-8"?><soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope"><soap12:Body><nfeDistDFeInteresse xmlns="http://www.portalfiscal.inf.br/nfe/wsdl/NFeDistribuicaoDFe"><nfeDadosMsg xmlns="http://www.portalfiscal.inf.br/nfe/wsdl/NFeDistribuicaoDFe">${dist}</nfeDadosMsg></nfeDistDFeInteresse></soap12:Body></soap12:Envelope>`;
 }
 
 async function consultarSefazNacional(empresa, ultNSU, variante) {
@@ -112,9 +88,9 @@ async function consultarSefazNacional(empresa, ultNSU, variante) {
       method: "POST",
       ...cert,
       headers: {
-        "Content-Type": "application/soap+xml; charset=utf-8",
+        // SOAP 1.2: a action vai DENTRO do Content-Type (igual à sped-nfe); sem header SOAPAction
+        "Content-Type": 'application/soap+xml;charset=utf-8;action="http://www.portalfiscal.inf.br/nfe/wsdl/NFeDistribuicaoDFe/nfeDistDFeInteresse"',
         "Content-Length": bodyBuf.length,
-        "SOAPAction": "http://www.portalfiscal.inf.br/nfe/wsdl/NFeDistribuicaoDFe/nfeDistDFeInteresse",
       },
       timeout: 30000,
     };
@@ -255,11 +231,12 @@ async function sincronizarEmpresa(empresa) {
   return totalNovas;
 }
 
-// Diagnóstico: node capturador-cte.js --teste  → testa 3 formatos de envio na Matriz, sem gravar nada
+// Diagnóstico: node capturador-cte.js --teste  → 1 consulta na Matriz com o NSU salvo, sem gravar nada
 async function teste() {
   const empresa = EMPRESAS[0];
   const ult = (await fbGet("capturador_nsu_dist/" + empresa.cnpj)) || 0;
-  for (const v of ["novo", "uf43", "antigo"]) {
+  console.log("NSU salvo:", ult);
+  for (const v of ["novo"]) {
     try {
       const r = await consultarSefazNacional(empresa, ult, v);
       console.log(v.padEnd(7), "→", extrairTag("cStat", r), extrairTag("xMotivo", r), "| ultNSU", extrairTag("ultNSU", r), "maxNSU", extrairTag("maxNSU", r));
@@ -274,7 +251,8 @@ async function main() {
   console.log("[" + new Date().toISOString() + "] Capturador NF-e (entradas) — SEFAZ Nacional DistDFeInt");
   let total = 0;
   for (const empresa of EMPRESAS) {
-    total += await sincronizarEmpresa(empresa);
+    try { total += await sincronizarEmpresa(empresa); }
+    catch (e) { console.error("  [" + empresa.nome + "] rodada interrompida: " + e.message); }
   }
   console.log("\n[" + new Date().toISOString() + "] Concluído — " + total + " documentos novos.");
 }

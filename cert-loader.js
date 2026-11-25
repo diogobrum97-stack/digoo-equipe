@@ -114,4 +114,4 @@ async function opcoesCertificado(empresa) {
   return (memo[conta] = { pfx: fs.readFileSync(empresa.pfx), passphrase: senhaDoArquivo() });
 }
 
-module.exports = { opcoesCertificado, garantirChave };
+module.exports = { opcoesCertificado, garantirChave, fbAdmin: fb };

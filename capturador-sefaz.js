@@ -3,7 +3,7 @@ const fs = require('fs');
 const zlib = require('zlib');
 
 const FIREBASE_URL = "https://digoo-equipe-default-rtdb.firebaseio.com";
-const { opcoesCertificado } = require("./cert-loader");   // certificado: Configurações → Certificado digital
+const { opcoesCertificado, fbAdmin } = require("./cert-loader");   // certificado: Configurações → Certificado digital
 
 const EMPRESAS = [
   { nome: "Matriz", pfx: "/opt/digoo-capturador/matriz_new.pfx", cnpj: "40981026000182" },
@@ -45,34 +45,10 @@ function descomprimirXml(base64) {
   return buf.toString("utf-8");
 }
 
-async function fbGet(path) {
-  return new Promise((resolve) => {
-    https.get(FIREBASE_URL + "/" + path + ".json", res => {
-      let data = "";
-      res.on("data", d => data += d);
-      res.on("end", () => { try { resolve(JSON.parse(data)); } catch(e) { resolve(null); } });
-    }).on("error", () => resolve(null));
-  });
-}
-
-async function fbPut(path, dados) {
-  return new Promise((resolve) => {
-    const body = JSON.stringify(dados);
-    const opts = {
-      hostname: "digoo-equipe-default-rtdb.firebaseio.com",
-      path: "/" + path + ".json",
-      method: "PUT",
-      headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) }
-    };
-    const req = https.request(opts, res => {
-      res.on("data", () => {});
-      res.on("end", resolve);
-    });
-    req.on("error", resolve);
-    req.write(body);
-    req.end();
-  });
-}
+// Firebase como ADMIN (as regras não aceitam mais acesso anônimo). Erro de leitura PARA a rodada —
+// assim nunca volta a consultar a SEFAZ do NSU 0 por engano (o que dava bloqueio 656).
+async function fbGet(path) { return fbAdmin("GET", path); }
+async function fbPut(path, dados) { return fbAdmin("PUT", path, dados); }
 
 async function buscarSefaz(empresa, nsu) {
   const cert = await opcoesCertificado(empresa);
@@ -259,7 +235,8 @@ async function main() {
   console.log("[" + new Date().toISOString() + "] Capturador SEFAZ v4 — NFS-e + NF-e");
   let total = 0;
   for (const empresa of EMPRESAS) {
-    total += await sincronizarEmpresa(empresa);
+    try { total += await sincronizarEmpresa(empresa); }
+    catch (e) { console.error("  [" + empresa.nome + "] rodada interrompida: " + e.message); }
   }
   console.log("\n[" + new Date().toISOString() + "] Concluído — " + total + " documentos novos.");
 }
