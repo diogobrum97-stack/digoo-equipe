@@ -51,7 +51,8 @@ $nroEmit   = '700';
 $bairroEmit= 'Cristal';
 
 $pfxPath   = '/opt/digoo-capturador/matriz_new.pfx';
-$pfxPass   = '***REMOVIDO***';
+// senha fica só na VPS (fora do repositório)
+$pfxPass   = getenv('CERT_SENHA') ?: trim((string)@file_get_contents('/opt/digoo-capturador/senha.txt'));
 
 $configJson = json_encode([
     'atualizacao' => date('Y-m-d H:i:s'),
