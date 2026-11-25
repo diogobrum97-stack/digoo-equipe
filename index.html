@@ -13201,6 +13201,8 @@ function vendasDias() {
   if (st.periodo === "mes") { const n = Number(hoje.slice(8, 10)); return { dias: Array.from({ length: n }, (_, i) => _vmlSomaDias(hoje, -i)) }; }
   return { dias: [st.data], comp: _vmlSomaDias(st.data, -1), nomeComp: "o dia anterior" };
 }
+// Contas da tela: "ambas" = Filial SP + Matriz RS juntas
+function vendasContas() { const c = window._vendasState.conta; return c === "ambas" ? ["filial", "matriz"] : [c]; }
 // Fonte principal: resumo pronto em /vendas_dia/{conta}/{data} (a VPS mantém atualizado; ao vivo pelo Firebase).
 // O backend só é chamado quando o dia ainda não tem resumo ou ele está velho (VPS parada).
 st_vmlInit();
@@ -13249,18 +13251,18 @@ async function vendasCarregarDia(conta, dia, forcar) {
 async function vendasCarregar(forcar) {
   const st = window._vendasState;
   if (st.carregando) return;
-  const conta = st.conta, { dias, comp } = vendasDias();
+  const { dias, comp } = vendasDias();
   const todos = comp ? [...dias, comp] : [...dias];
   const hoje = _vmlHoje();
   // ↻ força hoje (ou o dia escolhido); o resto só se não tiver resumo
-  const fila = todos.filter(dia => (forcar && (dia === hoje || (dias.length === 1 && dia === dias[0]))) || vendasPrecisaBackend(`${conta}|${dia}`, dia));
+  const fila = vendasContas().flatMap(conta => todos.filter(dia => (forcar && (dia === hoje || (dias.length === 1 && dia === dias[0]))) || vendasPrecisaBackend(`${conta}|${dia}`, dia)).map(dia => ({ conta, dia })));
   if (!fila.length) return;
   st.carregando = true; st.erro = null; st.progresso = fila.length > 2 ? { feitos: 0, total: fila.length } : null; vendasDesenhar();
   try {
     let i = 0;
     await Promise.all(Array.from({ length: Math.min(3, fila.length) }, async () => {
       while (i < fila.length) {
-        const dia = fila[i++];
+        const { conta, dia } = fila[i++];
         await vendasCarregarDia(conta, dia, forcar && (dia === hoje || (dias.length === 1 && dia === dias[0])));
         if (st.progresso) st.progresso.feitos++;
         vendasDesenhar();
@@ -13357,7 +13359,8 @@ function renderVendasML(container) {
   const hoje = _vmlHoje();
   const { dias, comp, compAteAgora, nomeComp } = vendasDias();
   const multi = dias.length > 1;
-  const chaves = [...dias, ...(comp ? [comp] : [])].map(dia => `${st.conta}|${dia}`);
+  const contas = vendasContas(), ambas = contas.length > 1;
+  const chaves = contas.flatMap(c => [...dias, ...(comp ? [comp] : [])].map(dia => `${c}|${dia}`));
   vendasOuvir(chaves);
   const esperandoFb = chaves.some(k => !st.fbChegou[k]);
   const falta = chaves.some(k => vendasPrecisaBackend(k, k.split("|")[1]));
@@ -13381,10 +13384,10 @@ function renderVendasML(container) {
   // Junta os dias do período
   const juntar = lista => {
     const out = { vendas: [], excecoes: [], liberacoes: {}, fotos: {}, parcial: false, faltam: 0, algum: false };
-    for (const dia of lista) {
-      const x = st.dados[`${st.conta}|${dia}`]; if (!x) continue;
+    for (const conta of contas) for (const dia of lista) {
+      const x = st.dados[`${conta}|${dia}`]; if (!x) continue;
       out.algum = true;
-      out.vendas.push(...(x.vendas || [])); out.excecoes.push(...(x.excecoes || []));
+      out.vendas.push(...(x.vendas || []).map(v => ({ ...v, conta }))); out.excecoes.push(...(x.excecoes || []).map(e => ({ ...e, conta })));
       Object.assign(out.fotos, x.fotos || {});
       if (x.parcial) { out.parcial = true; out.faltam += x.faltam || 0; }
       for (const l of x.liberacoes || []) {
@@ -13418,7 +13421,8 @@ function renderVendasML(container) {
 
   // Comparação da margem com o dia anterior (hoje: ontem até a mesma hora)
   let compTxt = "";
-  const dc = comp && st.dados[`${st.conta}|${comp}`];
+  const dcs = comp ? contas.map(c => st.dados[`${c}|${comp}`]) : [];
+  const dc = dcs.length && dcs.every(Boolean) ? { parcial: dcs.some(x => x.parcial), vendas: dcs.flatMap(x => x.vendas || []) } : null;
   if (dc && !dc.parcial && comCusto.length) {
     let vc = dc.vendas || [];
     let rotulo = `vs ${nomeComp}`;
@@ -13459,12 +13463,13 @@ function renderVendasML(container) {
     const varios = v.itens.length > 1 && !mesmoProduto(v);
     const ped = (v.pedidos || []).length;
     const b = [];
+    if (ambas) b.push(`<span class="vml-b" title="${v.conta === "matriz" ? "Matriz RS" : "Filial SP"}">${v.conta === "matriz" ? "RS" : "SP"}</span>`);
     const cp = t => `data-vml-copiar="${esc(t)}" title="Clique para copiar"`;
     b.push(varios ? `<span class="vml-b">${v.itens.length} itens</span>` : (v.itens[0]?.sku ? `<span class="vml-b vml-b-sku" ${cp(v.itens[0].sku)}>${esc(v.itens[0].sku)}</span>` : `<span class="vml-b">sem SKU</span>`));
     if (un > 1) b.push(`<span class="vml-b vml-b-un">${un} un</span>`);
     if (ped > 1) b.push(`<span class="vml-b">${ped} pedidos</span>`);
     if (!mob) { /* computador: a nota tem coluna própria */ }
-    else if ((v.nfs || []).length) for (const n of v.nfs.slice(0, 2)) b.push(`<span class="vml-b vml-b-nf" data-vml-nf="${esc(String(n.pedido))}" title="Ver a nota fiscal">NF ${esc(String(n.numero))}</span>`);
+    else if ((v.nfs || []).length) for (const n of v.nfs.slice(0, 2)) b.push(`<span class="vml-b vml-b-nf" data-vml-nfc="${v.conta || ""}" data-vml-nf="${esc(String(n.pedido))}" title="Ver a nota fiscal">NF ${esc(String(n.numero))}</span>`);
     else if (v.status !== "cancelada" && Date.now() - new Date(v.criado).getTime() < 5 * 864e5) b.push(`<span class="vml-b vml-b-snf" title="O Mercado Livre ainda não emitiu a nota — o sistema confere de novo a cada ~30 min">sem NF ainda</span>`);
     b.push(`<span class="vml-b-hr">${hora(v.criado)}</span>`);
     return `<span class="vml-bs">${b.join("")}</span>`;
@@ -13527,7 +13532,7 @@ function renderVendasML(container) {
   };
   const celulaNF = v => {
     const nfs = v.nfs || [];
-    if (nfs.length) return `<td class="vml-nfcol">${nfs.slice(0, 3).map(n => `<span class="vml-nfb" data-vml-nf="${esc(String(n.pedido))}" title="Ver a nota fiscal">NF ${esc(String(n.numero))}</span>`).join("")}</td>`;
+    if (nfs.length) return `<td class="vml-nfcol">${nfs.slice(0, 3).map(n => `<span class="vml-nfb" data-vml-nfc="${v.conta || ""}" data-vml-nf="${esc(String(n.pedido))}" title="Ver a nota fiscal">NF ${esc(String(n.numero))}</span>`).join("")}</td>`;
     if (v.status !== "cancelada" && Date.now() - new Date(v.criado).getTime() < 5 * 864e5) return `<td class="vml-nfcol"><span class="vml-nfa" title="O Mercado Livre ainda não emitiu a nota — o sistema confere de novo a cada ~30 min">aguardando NF</span></td>`;
     return `<td class="vml-nfcol" style="color:${T.isLight ? "#6e6e77" : "#a1a1aa"}">—</td>`;
   };
@@ -13749,7 +13754,7 @@ function renderVendasML(container) {
       <div class="vml-ctl">
         ${PER.map(([p, rot]) => `<button data-vml-per="${p}" class="${st.periodo === p ? "on" : ""}">${rot}</button>`).join("")}
         <input type="date" data-vml="data" class="${st.periodo === "dia" ? "on" : ""}" value="${st.periodo === "dia" ? st.data : ""}" max="${hoje}" title="Outro dia">
-        <select data-vml="conta"><option value="filial"${st.conta === "filial" ? " selected" : ""}>Filial SP</option><option value="matriz"${st.conta === "matriz" ? " selected" : ""}>Matriz RS</option></select>
+        <select data-vml="conta"><option value="filial"${st.conta === "filial" ? " selected" : ""}>Filial SP</option><option value="matriz"${st.conta === "matriz" ? " selected" : ""}>Matriz RS</option><option value="ambas"${st.conta === "ambas" ? " selected" : ""}>Ambas (SP + RS)</option></select>
         <button data-vml="atualizar" title="Atualizar">${st.carregando ? "Buscando..." : "↻"}</button>
       </div>
     </div>
@@ -13788,7 +13793,7 @@ function renderVendasML(container) {
     container.addEventListener("click", e => {
       if (e.target.closest("a")) return;
       const nfb = e.target.closest("[data-vml-nf]");
-      if (nfb) { e.stopPropagation(); vendasAbrirNF(st.conta, nfb.dataset.vmlNf); return; }
+      if (nfb) { e.stopPropagation(); vendasAbrirNF(nfb.dataset.vmlNfc || (st.conta === "ambas" ? "filial" : st.conta), nfb.dataset.vmlNf); return; }
       const cop = e.target.closest("[data-vml-copiar]");
       if (cop) {
         e.stopPropagation();
