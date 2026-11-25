@@ -16359,7 +16359,9 @@ function renderListaPromocoes(container, promocoes, BACKEND, fmtVal, fmtData, to
     const atencao = diasRestantes !== null && diasRestantes > 3 && diasRestantes <= 7;
     const corDias = urgente ? T.cVermelho : atencao ? T.cAmarelo : T.text2;
     const corBorda = urgente ? T.cVermelho : atencao ? T.cAmarelo : T.border;
-    const labelDias = diasRestantes === null ? "Sem data" : diasRestantes <= 0 ? "Vencida" : `${diasRestantes}d restantes`;
+    const TIPOS_PROMO = { SMART: "Automática ML", PRICE_MATCHING: "Preço competitivo", PRICE_MATCHING_MELI_ALL: "Preço competitivo", MARKETPLACE_CAMPAIGN: "Campanha ML", SELLER_CAMPAIGN: "Campanha", DEAL: "Oferta do dia", LIGHTNING: "Relâmpago", DOD: "Oferta do dia", VOLUME: "Desc. por volume", PRE_NEGOTIATED: "Pré-negociada", UNHEALTHY_STOCK: "Estoque parado", PRICE_DISCOUNT: "Desconto" };
+    const tipoTxt = TIPOS_PROMO[p.tipo_promo] || p.nome_promo || p.tipo_promo || "";
+    const labelDias = diasRestantes === null ? `Sem prazo${tipoTxt ? " · " + tipoTxt : ""}` : diasRestantes <= 0 ? "Vencida" : `${diasRestantes}d restantes`;
     const animBadge = urgente ? "animation:pulse-badge 1s ease-in-out infinite;" : "";
     const drawerId = `prom-drawer-${idx}`;
     const corAcao = urgente ? T.cVermelho : atencao ? T.cAmarelo : T.cAzul;
@@ -16396,8 +16398,8 @@ function renderListaPromocoes(container, promocoes, BACKEND, fmtVal, fmtData, to
           </div>
           <div style="background:${T.bg3};border-radius:8px;padding:10px;">
             <div style="font-size:10px;color:${T.text2};">Vence em</div>
-            <div style="font-size:14px;font-weight:600;color:${corDias};margin-top:3px;">${diasRestantes !== null ? (diasRestantes <= 0 ? "Vencida" : diasRestantes+"d") : "—"}</div>
-            <div style="font-size:10px;color:${T.text2};">${p.finish_date ? fmtData(p.finish_date) : "—"}</div>
+            <div style="font-size:14px;font-weight:600;color:${corDias};margin-top:3px;">${diasRestantes !== null ? (diasRestantes <= 0 ? "Vencida" : diasRestantes+"d") : "Sem prazo"}</div>
+            <div style="font-size:10px;color:${T.text2};">${p.finish_date ? fmtData(p.finish_date) : "o ML não informa"}</div>
           </div>
           <div style="background:${T.bg3};border-radius:8px;padding:10px;">
             <div style="font-size:10px;color:${T.text2};">Início</div>
@@ -16454,6 +16456,12 @@ function renderListaPromocoes(container, promocoes, BACKEND, fmtVal, fmtData, to
   function _atualizarTendCard(idx, v) {
     const el = document.getElementById(`prom-tend-${idx}`);
     if (!el) return;
+    if (!promocoes[idx]?.start_date) {   // sem data de início não dá pra comparar com "antes"
+      el.innerHTML = `<div style="font-size:10px;color:${T.text2};">vs. antes da promo</div>
+        <div style="font-size:14px;font-weight:600;color:${T.text2};margin-top:3px;">—</div>
+        <div style="font-size:10px;color:${T.text2};">sem data de início</div>`;
+      return;
+    }
     const tend = v.tendencia ?? 0;
     const cor = tend >= 10 ? T.cVerde : tend <= -10 ? T.cVermelho : T.text2;
     const label = tend > 0 ? `↑ +${tend}%` : tend < 0 ? `↓ ${tend}%` : "→ 0%";
