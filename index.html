@@ -10958,7 +10958,7 @@ function renderConfig(panel, color) {
     const box = document.createElement("div");
     panel.appendChild(box);
     const cs = window._certSt = window._certSt || { info: null, lido: false, form: null };
-    if (!cs.lido) { cs.lido = true; Promise.all([get(ref(db, "/certificados_info")), get(ref(db, "/certificados_chave/criada_em"))]).then(([a, b]) => { cs.info = a.val() || {}; cs.vps = !!b.val(); if (window._configTab === "certificado") render(); }).catch(() => {}); }
+    if (!cs.lido) { cs.lido = true; fetch(`${VERCEL_BACKEND}/api/ml-vendas?action=cert-info`).then(r => r.json()).then(d => { if (!d.ok) throw new Error(d.error); cs.info = d.info || {}; cs.vps = !!d.vps; }).catch(e => { cs.info = {}; cs.erroInfo = e.message; }).finally(() => { if (window._configTab === "certificado") render(); }); }
     const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
     const dt = ms => ms ? new Date(ms).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : null;
     const cartao = (conta, nome, cnpjFmt) => {
@@ -10988,6 +10988,7 @@ function renderConfig(panel, color) {
       </div>`;
     };
     box.innerHTML = (cs.info === null ? `<div style="font-size:12px;color:var(--text3);">Carregando...</div>` : `
+      ${cs.erroInfo ? `<div style="font-size:12px;color:${T.cVermelho};margin-bottom:12px;">Não carregou os certificados: ${esc(cs.erroInfo)}</div>` : ""}
       ${cs.vps === false ? `<div style="font-size:12px;color:${T.cAmarelo};background:${T.cAmarelo}18;border-radius:10px;padding:10px 12px;margin-bottom:12px;">A VPS ainda não foi configurada para receber certificados. Até lá, o envio não funciona.</div>` : ""}
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;">
         ${cartao("matriz", "Matriz RS", "40.981.026/0001-82")}${cartao("filial", "Filial SP", "40.981.026/0003-44")}
