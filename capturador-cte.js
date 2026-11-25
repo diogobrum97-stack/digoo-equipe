@@ -136,6 +136,13 @@ async function processarNfe(chave, xmlDoc, empresa) {
 async function sincronizarEmpresa(empresa) {
   console.log("\n[" + empresa.nome + "] Consultando SEFAZ Nacional...");
   const nsuKey = "capturador_nsu_dist/" + empresa.cnpj;
+  // bloqueio de 1h da SEFAZ (656): não consulta antes de passar, senão o relógio do bloqueio recomeça
+  const bloqKey = "capturador_bloqueio/" + empresa.cnpj;
+  const bloqueio = await fbGet(bloqKey);
+  if (bloqueio && Date.now() - bloqueio < 62 * 60e3) {
+    console.log("  Bloqueio SEFAZ até " + new Date(bloqueio + 62 * 60e3).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo" }) + " — pulando esta rodada.");
+    return 0;
+  }
   let ultNSU = (await fbGet(nsuKey)) || 0;
   console.log("  Último NSU dist: " + ultNSU);
 
@@ -156,28 +163,21 @@ async function sincronizarEmpresa(empresa) {
     const xMotivo = extrairTag("xMotivo", respostaXml);
     console.log("  Status:", cStat, xMotivo);
 
-    // Sempre salvar o ultNSU retornado, mesmo em erros
-    const ultNSUResp = extrairTag("ultNSU", respostaXml);
-    if (ultNSUResp && parseInt(ultNSUResp) > ultNSU) {
-      ultNSU = parseInt(ultNSUResp);
-      await fbPut(nsuKey, ultNSU);
-      console.log("  NSU salvo:", ultNSU);
+    // O NSU só avança quando os documentos foram de fato recebidos (137 = nada novo; 138 = avança doc a doc).
+    // No 656 NÃO avança: a SEFAZ devolve o NSU máximo, e salvar ele pularia notas que nunca chegaram.
+    if (cStat === "137") {
+      const ultNSUResp = parseInt(extrairTag("ultNSU", respostaXml)) || 0;
+      if (ultNSUResp > ultNSU) { ultNSU = ultNSUResp; await fbPut(nsuKey, ultNSU); console.log("  NSU salvo:", ultNSU); }
+      console.log("  Nenhum documento novo."); break;
     }
-
-    if (cStat === "137") { console.log("  Nenhum documento novo."); break; }
-    if (cStat === "656") { console.log("  Bloqueio SEFAZ — NSU salvo para próxima hora."); break; }
+    if (cStat === "656") { await fbPut(bloqKey, Date.now()); console.log("  Bloqueio SEFAZ de 1h — NSU mantido em " + ultNSU + "."); break; }
     if (cStat !== "138") { console.log("  Resposta inesperada:", cStat, xMotivo, "|", respostaXml.slice(0, 400)); break; }
 
     // Extrair NSUs do XML de resposta
     const maxNSU = extrairTag("maxNSU", respostaXml);
     const ultNSURet = extrairTag("ultNSU", respostaXml);
 
-    // Atualizar NSU imediatamente com o retornado pela SEFAZ
-    if (ultNSURet && parseInt(ultNSURet) > ultNSU) {
-      ultNSU = parseInt(ultNSURet);
-      await fbPut(nsuKey, ultNSU);
-      console.log("  NSU salvo:", ultNSU);
-    }
+    // (o NSU é salvo documento a documento, abaixo — só depois de cada nota processada)
 
     // Processar cada docZip — tenta os dois formatos de atributo
     const docZipRe = /<docZip[^>]*>([^<]+)<\/docZip>/g;
@@ -219,6 +219,9 @@ async function sincronizarEmpresa(empresa) {
       }
     }
     console.log("  Total docZip encontrados:", totalDocs);
+    // lote inteiro processado: avança até o ultNSU do lote (cobre NSUs sem documento para nós)
+    if (ultNSURet && parseInt(ultNSURet) > ultNSU) { ultNSU = parseInt(ultNSURet); await fbPut(nsuKey, ultNSU); }
+    console.log("  NSU salvo:", ultNSU);
 
     // Continuar só se há mais documentos — espera 3s entre chamadas
     continuar = maxNSU && parseInt(maxNSU) > ultNSU;
