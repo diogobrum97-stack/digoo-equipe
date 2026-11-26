@@ -15111,7 +15111,7 @@ window._ofertasLive = { filial: { itens: null, meta: null }, matriz: { itens: nu
 // Vencendo: calculado aqui a partir das ofertas ao vivo. Caíram: a VPS grava em /promo_alertas/{conta}/caidas.
 {
   const alertas = { filial: {}, matriz: {} };
-  const aberto = { vencer: false, caidas: false };
+  const aberto = { vencer: false, caidas: false, melhores: false, melhoresTodos: false };
   const CONTA_NOME = { filial: "Filial", matriz: "Matriz" };
   const escP = v => String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
   const fmtR = v => v == null ? "—" : "R$ " + Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -15134,12 +15134,26 @@ window._ofertasLive = { filial: { itens: null, meta: null }, matriz: { itens: nu
   };
 
   const calcular = () => {
-    const vencer = [], caidas = [];
+    const vencer = [], caidas = [], melhores = [];
     const agora = Date.now(), LIM = 48 * 3600e3;
     for (const conta of ["filial", "matriz"]) {
       const itens = window._ofertasLive?.[conta]?.itens || {};
       for (const it of Object.values(itens)) {
         const ofs = listaOf(it);
+        // Proposta melhor que a atual (mesma conta do selo "Sugestão do OPS"): compartilhada que mais sobra por venda
+        if (it.estoque !== 0) {
+          const origDe = o => o.preco_original || it.preco || 0;
+          const sobra = o => finalDe(o) + meliR(o, origDe(o));
+          const futuro = o => o.inicio && new Date(o.inicio).getTime() > agora;
+          const valendo = ofs.filter(o => o.status === "started" && !futuro(o) && finalDe(o) > 0);
+          const atual = valendo.length ? valendo.reduce((m, o) => finalDe(o) < finalDe(m) ? o : m) : null;
+          const cands = ofs.filter(o => o.status === "candidate" && finalDe(o) > 0 && o.tipo !== "DEAL" && meliR(o, origDe(o)) > 0);
+          if (atual && cands.length) {
+            const melhor = cands.reduce((m, o) => sobra(o) > sobra(m) + 0.005 || (Math.abs(sobra(o) - sobra(m)) <= 0.005 && meliR(o, origDe(o)) > meliR(m, origDe(m))) ? o : m);
+            const ganho = sobra(melhor) - sobra(atual);
+            if (ganho > 0.005) melhores.push({ conta, it, o: melhor, ganho, orig: origDe(melhor) });
+          }
+        }
         const ini = ofs.filter(o => o.status === "started" && finalDe(o) > 0);
         if (!ini.length) continue;
         const v = ini.reduce((a, b) => finalDe(b) < finalDe(a) ? b : a);
@@ -15166,8 +15180,9 @@ window._ofertasLive = { filial: { itens: null, meta: null }, matriz: { itens: nu
       }
     }
     vencer.sort((x, y) => x.fim - y.fim);
+    melhores.sort((x, y) => y.ganho - x.ganho);
     caidas.sort((x, y) => (x.a.caiu_em || 0) - (y.a.caiu_em || 0));
-    return { vencer, caidas };
+    return { vencer, caidas, melhores };
   };
 
   const badgeTipo = cat => `<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:${T.text3}22;color:${T.text2};">${cat ? "Catálogo" : "Tradicional"}</span>`;
@@ -15186,8 +15201,8 @@ window._ofertasLive = { filial: { itens: null, meta: null }, matriz: { itens: nu
     const el = elDireto || window._dashPromoSlot;
     if (elDireto) window._dashPromoSlot = elDireto;
     if (!el || !el.isConnected && !elDireto) return;
-    const { vencer, caidas } = calcular();
-    if (!vencer.length && !caidas.length) { el.style.display = "none"; el.innerHTML = ""; return; }
+    const { vencer, caidas, melhores } = calcular();
+    if (!vencer.length && !caidas.length && !melhores.length) { el.style.display = "none"; el.innerHTML = ""; return; }
     el.style.display = "";
     const linhaTopo = (chave, titulo, sub, n, cor) => `
       <div data-promo-toggle="${chave}" style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;cursor:pointer;border-top:0.5px solid ${T.border};user-select:none;">
@@ -15213,11 +15228,19 @@ window._ofertasLive = { filial: { itens: null, meta: null }, matriz: { itens: nu
           : `<span style="color:${velho ? T.cVermelho : T.text3};">sem promoção ${haQuanto(a.caiu_em)}</span>`,
         btn("Dispensar", `data-promo-dispensar="${conta}|${a.item_id}"`, false) + btn("Ver ofertas", `data-promo-ver="${conta}|${a.item_id}"`, true));
     }).join("");
+    const verdeG = T.cVerde;
+    const listaMelhores = (aberto.melhoresTodos ? melhores : melhores.slice(0, 5)).map(({ conta, it, o, ganho, orig }) => itemBox(conta, it.item_id, it.titulo, it.sku, it.catalogo,
+      [{ txt: escP(resumo(o, orig)) + ` · ${fmtR(finalDe(o))}` }],
+      `<span style="color:${verdeG};font-weight:600;">+${fmtR(ganho)} por venda</span>`,
+      btn("Ver ofertas", `data-promo-ver="${conta}|${it.item_id}"`, true))).join("")
+      + (melhores.length > 5 ? `<button data-promo-todas="1" style="display:block;width:100%;margin-top:8px;background:none;border:none;color:${T.text2};font:500 12px Inter,sans-serif;cursor:pointer;padding:6px;">${aberto.melhoresTodos ? "Mostrar só as 5 melhores" : `Ver todas (${melhores.length})`}</button>` : "");
     el.innerHTML = `
       <div style="font-size:11px;font-weight:600;color:${T.text2};text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Promoções</div>
+      ${melhores.length ? linhaTopo("melhores", "Propostas melhores", `até +${fmtR(melhores[0].ganho)} por venda`, melhores.length, T.cAzul) + (aberto.melhores ? `<div style="padding-bottom:8px;">${listaMelhores}</div>` : "") : ""}
       ${vencer.length ? linhaTopo("vencer", "Prestes a vencer", "até 2 dias", vencer.length, T.cAmarelo) + (aberto.vencer ? `<div style="padding-bottom:8px;">${listaVencer}</div>` : "") : ""}
       ${caidas.length ? linhaTopo("caidas", "Caíram", "sem promoção agora", caidas.length, T.cVermelho) + (aberto.caidas ? `<div style="padding-bottom:8px;">${listaCaidas}</div>` : "") : ""}`;
     el.querySelectorAll("[data-promo-toggle]").forEach(b => b.onclick = () => { aberto[b.dataset.promoToggle] = !aberto[b.dataset.promoToggle]; window._dashPromoDesenhar(); });
+    el.querySelectorAll("[data-promo-todas]").forEach(b => b.onclick = () => { aberto.melhoresTodos = !aberto.melhoresTodos; window._dashPromoDesenhar(); });
     el.querySelectorAll("[data-promo-ver]").forEach(b => b.onclick = () => {
       const [conta, id] = b.dataset.promoVer.split("|");
       Object.assign(window.promState, { aba: "ofertas", conta, ofertasFiltro: "todas", ofertasBusca: id, detalhe: null });
