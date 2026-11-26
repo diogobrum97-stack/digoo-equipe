@@ -1673,7 +1673,7 @@ function _pergCriarCard(p) {
   const contaBadgeBorder = contaLabel.includes("Filial") ? "#10b981" : "#3b82f6";
   const contaBadgeColor = contaLabel.includes("Filial") ? "#10b981" : "#60a5fa";
   const statusBadge = requerAtencao
-    ? `<span style="font-size:10px;color:#e8432d;border:1px solid #e8432d;border-radius:99px;padding:2px 8px;white-space:nowrap;">Atenção</span>`
+    ? `<span style="font-size:10px;color:#e8432d;border:1px solid #e8432d;border-radius:99px;padding:2px 8px;white-space:nowrap;"${p.sem_anuncio ? ' title="O ML não devolveu os dados do anúncio — a IA não sugere resposta sem eles. Clique em Buscar para tentar de novo."' : ""}>${p.sem_anuncio ? "Atenção: sem dados do anúncio" : "Atenção"}</span>`
     : semSugestao
       ? `<span style="font-size:10px;color:#f59e0b;border:1px solid #f59e0b;border-radius:99px;padding:2px 8px;white-space:nowrap;">Sem sugestão</span>`
       : `<span style="font-size:10px;color:#10b981;border:1px solid #10b981;border-radius:99px;padding:2px 8px;white-space:nowrap;">IA sugeriu</span>`;
