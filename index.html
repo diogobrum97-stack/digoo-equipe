@@ -15141,7 +15141,7 @@ window._ofertasLive = { filial: { itens: null, meta: null }, matriz: { itens: nu
       for (const it of Object.values(itens)) {
         const ofs = listaOf(it);
         // Proposta melhor que a atual (mesma conta do selo "Sugestão do OPS"): compartilhada que mais sobra por venda
-        if (it.estoque !== 0) {
+        if (it.estoque !== 0 && !Object.keys(window._ofertasPend || {}).some(k => k.startsWith(`${conta}|${it.item_id}|`))) {
           const origDe = o => o.preco_original || it.preco || 0;
           const sobra = o => finalDe(o) + meliR(o, origDe(o));
           const futuro = o => o.inicio && new Date(o.inicio).getTime() > agora;
@@ -15197,10 +15197,88 @@ window._ofertasLive = { filial: { itens: null, meta: null }, matriz: { itens: nu
         <span style="font-size:12px;">${rodapeEsq}</span><span style="display:flex;gap:6px;">${botoes}</span></div>
     </div>`;
 
+  // Botão "Participar" (mesmo fluxo da aba Ofertas: confere o valor no ML, pede confirmação se mudou)
+  const partConfirmar = {};   // chave → valores novos aguardando o 2º clique
+  const chavePart = (conta, id, o) => `${conta}|${id}|${o.promotion_id || ""}|${o.tipo}`;
+  const btnPart = (conta, id, o) => {
+    const k = chavePart(conta, id, o), c = partConfirmar[k];
+    return btn(c ? `Confirmar ${fmtR(c.final)}` : "Participar", `data-promo-part="${escP(k)}"`, true);
+  };
+  const participar = async b => {
+    const k = b.dataset.promoPart, [conta, itemId, pid, tipo] = k.split("|");
+    const BACKEND = "https://digoo-backend.vercel.app";
+    const token = conta === "filial" ? state?.ml_token_filial?.access_token : state?.ml_token?.access_token;
+    const it = window._ofertasLive?.[conta]?.itens?.[itemId];
+    const mesma = x => (x.promotion_id || "") === pid && x.tipo === tipo;
+    const o = listaOf(it).find(mesma);
+    const titulo = escP(it?.titulo || itemId);
+    if (!token || !o) { window._ofToast({ ok: false, titulo: "Não deu pra participar", l1: titulo, l2: !token ? "Token do Mercado Livre indisponível." : "Proposta não encontrada." }); return; }
+    b.disabled = true; b.dataset.ocupado = "1"; b.textContent = "Conferindo...";
+    const solta = () => { delete b.dataset.ocupado; b.disabled = false; };
+    try {
+      const buscar = async () => {
+        const r = await fetch(`${BACKEND}/api/ml-vendas?action=oferta-item-atual&conta=${conta}&item_id=${itemId}`);
+        const d = await r.json();
+        if (!d.ok) throw new Error(d.error || `HTTP ${r.status}`);
+        if (it) it.ofertas = d.ofertas;
+        return d.ofertas;
+      };
+      const atuais = await buscar();
+      const alvo = atuais.find(mesma);
+      if (!alvo || alvo.status !== "candidate") {
+        delete partConfirmar[k]; solta(); b.textContent = "Indisponível";
+        window._ofToast({ ok: false, titulo: "Essa proposta não está mais disponível no ML", l1: titulo });
+        setTimeout(() => window._dashPromoDesenhar(), 2500);
+        return;
+      }
+      const mudou = Math.abs((alvo.preco || 0) - (o.preco || 0)) > 0.005 || Math.abs((alvo.meli_pct || 0) - (o.meli_pct || 0)) > 0.001;
+      if (mudou && !partConfirmar[k]) {
+        const orig = alvo.preco_original || it?.preco || 0;
+        partConfirmar[k] = { final: finalDe(alvo) };
+        solta(); b.textContent = `Confirmar ${fmtR(finalDe(alvo))}`;
+        window._ofToast({ ok: false, titulo: "O ML mudou os valores agora", l1: titulo, l2: `${escP(resumo(alvo, orig))} · ${fmtR(finalDe(alvo))} — confira e clique em Confirmar` });
+        return;
+      }
+      b.textContent = "Enviando...";
+      const r = await fetch(`${BACKEND}/api/ml-vendas?action=participar-oferta`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, item_id: itemId, promotion_id: alvo.promotion_id, tipo: alvo.tipo, offer_id: alvo.offer_id,
+          preco: alvo.tipo === "DEAL" ? null : (alvo.preco || alvo.preco_sugerido),
+          estoque: alvo.estoque_min || (it?.estoque ? Math.min(it.estoque, alvo.estoque_max || it.estoque) : null) }),
+      });
+      const d = await r.json();
+      if (!d.ok) throw new Error((d.error || "Erro") + (d.causa ? " — " + d.causa : ""));
+      delete partConfirmar[k];
+      const futuro = alvo.inicio && new Date(alvo.inicio).getTime() > Date.now();
+      if (!futuro) { delete alertas[conta]?.[itemId]; remove(ref(db, `/promo_alertas/${conta}/caidas/${itemId}`)).catch(() => {}); }
+      (window._ofertasPend || (window._ofertasPend = {}))[k] = { acao: "participar", status: futuro ? "pending" : "started", desde: Date.now() };
+      b.textContent = futuro ? "✓ Programada" : "✓ Participando";
+      const orig = alvo.preco_original || it?.preco || 0;
+      window._ofToast({ ok: true, titulo: futuro ? "Promoção programada" : "Entrou na promoção", l1: titulo, l2: `${escP(resumo(alvo, orig))} · ${fmtR(finalDe(alvo))}` });
+      delete b.dataset.ocupado;
+      setTimeout(() => window._ofertasMudou?.(conta, true), 1500);
+      // confirma com o ML em 3, 8 e 20 s (igual à aba Ofertas)
+      (async () => {
+        for (const sg of [3, 5, 12]) {
+          await new Promise(res => setTimeout(res, sg * 1000));
+          if (!window._ofertasPend?.[k]) return;
+          try { await buscar(); } catch (_) {}
+          window._ofertasMudou?.(conta, true);
+        }
+        if (window._ofertasPend?.[k]) { delete window._ofertasPend[k]; window._ofertasMudou?.(conta, true); }
+      })();
+    } catch (e) {
+      solta(); b.textContent = partConfirmar[k] ? `Confirmar ${fmtR(partConfirmar[k].final)}` : "Participar";
+      window._ofToast({ ok: false, titulo: "O ML não aceitou a promoção", l1: titulo, l2: escP(e.message) });
+    }
+  };
+
   window._dashPromoDesenhar = (elDireto) => {
     const el = elDireto || window._dashPromoSlot;
     if (elDireto) window._dashPromoSlot = elDireto;
     if (!el || !el.isConnected && !elDireto) return;
+    // não redesenha no meio de um "Participar" (o botão perderia o estado)
+    if (el.querySelector?.('[data-ocupado="1"]')) { clearTimeout(window._dashPromoEspera); window._dashPromoEspera = setTimeout(() => window._dashPromoDesenhar(), 2000); return; }
     const { vencer, caidas, melhores } = calcular();
     if (!vencer.length && !caidas.length && !melhores.length) { el.style.display = "none"; el.innerHTML = ""; return; }
     el.style.display = "";
@@ -15226,13 +15304,13 @@ window._ofertasLive = { filial: { itens: null, meta: null }, matriz: { itens: nu
       return itemBox(conta, a.item_id, it?.titulo || a.titulo, it?.sku || a.sku, it?.catalogo ?? a.catalogo, linhas,
         programada ? `<span style="color:${T.cAzul};font-weight:600;">Programada${quandoProg ? " p/ " + quandoProg : ""}</span>`
           : `<span style="color:${velho ? T.cVermelho : T.text3};">sem promoção ${haQuanto(a.caiu_em)}</span>`,
-        btn("Dispensar", `data-promo-dispensar="${conta}|${a.item_id}"`, false) + btn("Ver ofertas", `data-promo-ver="${conta}|${a.item_id}"`, true));
+        btn("Dispensar", `data-promo-dispensar="${conta}|${a.item_id}"`, false) + btn("Ver ofertas", `data-promo-ver="${conta}|${a.item_id}"`, !melhor) + (melhor ? btnPart(conta, a.item_id, melhor) : ""));
     }).join("");
     const verdeG = T.cVerde;
     const listaMelhores = (aberto.melhoresTodos ? melhores : melhores.slice(0, 5)).map(({ conta, it, o, ganho, orig }) => itemBox(conta, it.item_id, it.titulo, it.sku, it.catalogo,
       [{ txt: escP(resumo(o, orig)) + ` · ${fmtR(finalDe(o))}` }],
       `<span style="color:${verdeG};font-weight:600;">+${fmtR(ganho)} por venda</span>`,
-      btn("Ver ofertas", `data-promo-ver="${conta}|${it.item_id}"`, true))).join("")
+      btn("Ver ofertas", `data-promo-ver="${conta}|${it.item_id}"`, false) + btnPart(conta, it.item_id, o))).join("")
       + (melhores.length > 5 ? `<button data-promo-todas="1" style="display:block;width:100%;margin-top:8px;background:none;border:none;color:${T.text2};font:500 12px Inter,sans-serif;cursor:pointer;padding:6px;">${aberto.melhoresTodos ? "Mostrar só as 5 melhores" : `Ver todas (${melhores.length})`}</button>` : "");
     el.innerHTML = `
       <div style="font-size:11px;font-weight:600;color:${T.text2};text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Promoções</div>
@@ -15240,6 +15318,7 @@ window._ofertasLive = { filial: { itens: null, meta: null }, matriz: { itens: nu
       ${vencer.length ? linhaTopo("vencer", "Prestes a vencer", "até 2 dias", vencer.length, T.cAmarelo) + (aberto.vencer ? `<div style="padding-bottom:8px;">${listaVencer}</div>` : "") : ""}
       ${caidas.length ? linhaTopo("caidas", "Caíram", "sem promoção agora", caidas.length, T.cVermelho) + (aberto.caidas ? `<div style="padding-bottom:8px;">${listaCaidas}</div>` : "") : ""}`;
     el.querySelectorAll("[data-promo-toggle]").forEach(b => b.onclick = () => { aberto[b.dataset.promoToggle] = !aberto[b.dataset.promoToggle]; window._dashPromoDesenhar(); });
+    el.querySelectorAll("[data-promo-part]").forEach(b => b.onclick = () => participar(b));
     el.querySelectorAll("[data-promo-todas]").forEach(b => b.onclick = () => { aberto.melhoresTodos = !aberto.melhoresTodos; window._dashPromoDesenhar(); });
     el.querySelectorAll("[data-promo-ver]").forEach(b => b.onclick = () => {
       const [conta, id] = b.dataset.promoVer.split("|");
