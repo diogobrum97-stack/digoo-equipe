@@ -7963,10 +7963,10 @@ function renderChatModal(memberName, color) {
 
 // ── Menu em cards (abas com sub-abas: Equipe, Mercado Livre, Gestão, Mais) ──
 // Ícones: Tabler Icons (MIT), embutidos para não depender de rede.
-const MENU_ICO = {"receipt": "<path d=\"M5 21v-16a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16l-3 -2l-2 2l-2 -2l-2 2l-2 -2l-3 2m4 -14h6m-6 4h6m-2 4h2\" />", "wallet": "<path d=\"M17 8v-3a1 1 0 0 0 -1 -1h-10a2 2 0 0 0 0 4h12a1 1 0 0 1 1 1v3m0 4v3a1 1 0 0 1 -1 1h-12a2 2 0 0 1 -2 -2v-12\" /> <path d=\"M20 12v4h-4a2 2 0 0 1 0 -4h4\" />", "percentage": "<path d=\"M17 17m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0\" /> <path d=\"M7 7m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0\" /> <path d=\"M6 18l12 -12\" />", "packages": "<path d=\"M7 16.5l-5 -3l5 -3l5 3v5.5l-5 3z\" /> <path d=\"M2 13.5v5.5l5 3\" /> <path d=\"M7 16.545l5 -3.03\" /> <path d=\"M17 16.5l-5 -3l5 -3l5 3v5.5l-5 3z\" /> <path d=\"M12 19l5 3\" /> <path d=\"M17 16.5l5 -3\" /> <path d=\"M12 13.5v-5.5l-5 -3l5 -3l5 3v5.5\" /> <path d=\"M7 5.03v5.455\" /> <path d=\"M12 8l5 -3\" />", "box": "<path d=\"M12 3l8 4.5l0 9l-8 4.5l-8 -4.5l0 -9l8 -4.5\" /> <path d=\"M12 12l8 -4.5\" /> <path d=\"M12 12l0 9\" /> <path d=\"M12 12l-8 -4.5\" />", "stack-2": "<path d=\"M12 4l-8 4l8 4l8 -4l-8 -4\" /> <path d=\"M4 12l8 4l8 -4\" /> <path d=\"M4 16l8 4l8 -4\" />", "adjustments-horizontal": "<path d=\"M14 6m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0\" /> <path d=\"M4 6l8 0\" /> <path d=\"M16 6l4 0\" /> <path d=\"M8 12m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0\" /> <path d=\"M4 12l2 0\" /> <path d=\"M10 12l10 0\" /> <path d=\"M17 18m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0\" /> <path d=\"M4 18l11 0\" /> <path d=\"M19 18l1 0\" />", "message-question": "<path d=\"M8 9h8\" /> <path d=\"M8 13h6\" /> <path d=\"M14 18h-1l-5 3v-3h-2a3 3 0 0 1 -3 -3v-8a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v4.5\" /> <path d=\"M19 22v.01\" /> <path d=\"M19 19a2.003 2.003 0 0 0 .914 -3.782a1.98 1.98 0 0 0 -2.414 .483\" />", "alert-triangle": "<path d=\"M12 9v4\" /> <path d=\"M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0z\" /> <path d=\"M12 16h.01\" />", "circle-x": "<path d=\"M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0\" /> <path d=\"M10 10l4 4m0 -4l-4 4\" />", "mood-smile": "<path d=\"M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0\" /> <path d=\"M9 10l.01 0\" /> <path d=\"M15 10l.01 0\" /> <path d=\"M9.5 15a3.5 3.5 0 0 0 5 0\" />", "discount": "<path d=\"M9 15l6 -6\" /> <circle cx=\"9.5\" cy=\"9.5\" r=\".5\" fill=\"currentColor\" /> <circle cx=\"14.5\" cy=\"14.5\" r=\".5\" fill=\"currentColor\" /> <path d=\"M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0\" />", "copy": "<path d=\"M7 7m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z\" /> <path d=\"M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1\" />", "checks": "<path d=\"M7 12l5 5l10 -10\" /> <path d=\"M2 12l5 5m5 -5l5 -5\" />", "messages": "<path d=\"M21 14l-3 -3h-7a1 1 0 0 1 -1 -1v-6a1 1 0 0 1 1 -1h9a1 1 0 0 1 1 1v10\" /> <path d=\"M14 15v2a1 1 0 0 1 -1 1h-7l-3 3v-10a1 1 0 0 1 1 -1h2\" />", "file-invoice": "<path d=\"M14 3v4a1 1 0 0 0 1 1h4\" /> <path d=\"M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z\" /> <path d=\"M9 7l1 0\" /> <path d=\"M9 13l6 0\" /> <path d=\"M13 17l2 0\" />", "truck-delivery": "<path d=\"M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0\" /> <path d=\"M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0\" /> <path d=\"M5 17h-2v-4m-1 -8h11v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5\" /> <path d=\"M3 9l4 0\" />", "file-import": "<path d=\"M14 3v4a1 1 0 0 0 1 1h4\" /> <path d=\"M5 13v-8a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2h-5.5m-9.5 -2h7m-3 -3l3 3l-3 3\" />", "credit-card": "<path d=\"M3 5m0 3a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3z\" /> <path d=\"M3 10l18 0\" /> <path d=\"M7 15l.01 0\" /> <path d=\"M11 15l2 0\" />", "report-money": "<path d=\"M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2\" /> <path d=\"M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z\" /> <path d=\"M14 11h-2.5a1.5 1.5 0 0 0 0 3h1a1.5 1.5 0 0 1 0 3h-2.5\" /> <path d=\"M12 17v1m0 -8v1\" />", "scale": "<path d=\"M7 20l10 0\" /> <path d=\"M6 6l6 -1l6 1\" /> <path d=\"M12 3l0 17\" /> <path d=\"M9 12l-3 -6l-3 6a3 3 0 0 0 6 0\" /> <path d=\"M21 12l-3 -6l-3 6a3 3 0 0 0 6 0\" />", "mail": "<path d=\"M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-10z\" /> <path d=\"M3 7l9 6l9 -6\" />", "settings": "<path d=\"M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z\" /> <path d=\"M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0\" />", "bulb": "<path d=\"M3 12h1m8 -9v1m8 8h1m-15.4 -6.4l.7 .7m12.1 -.7l-.7 .7\" /> <path d=\"M9 16a5 5 0 1 1 6 0a3.5 3.5 0 0 0 -1 3a2 2 0 0 1 -4 0a3.5 3.5 0 0 0 -1 -3\" /> <path d=\"M9.7 17l4.6 0\" />", "layout-grid": "<path d=\"M4 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z\" /> <path d=\"M14 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z\" /> <path d=\"M4 14m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z\" /> <path d=\"M14 14m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z\" />"};
+const MENU_ICO = {"chart-bar": '<path d="M3 13a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /> <path d="M15 9a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /> <path d="M9 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /> <path d="M4 20h14" />',"receipt": "<path d=\"M5 21v-16a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16l-3 -2l-2 2l-2 -2l-2 2l-2 -2l-3 2m4 -14h6m-6 4h6m-2 4h2\" />", "wallet": "<path d=\"M17 8v-3a1 1 0 0 0 -1 -1h-10a2 2 0 0 0 0 4h12a1 1 0 0 1 1 1v3m0 4v3a1 1 0 0 1 -1 1h-12a2 2 0 0 1 -2 -2v-12\" /> <path d=\"M20 12v4h-4a2 2 0 0 1 0 -4h4\" />", "percentage": "<path d=\"M17 17m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0\" /> <path d=\"M7 7m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0\" /> <path d=\"M6 18l12 -12\" />", "packages": "<path d=\"M7 16.5l-5 -3l5 -3l5 3v5.5l-5 3z\" /> <path d=\"M2 13.5v5.5l5 3\" /> <path d=\"M7 16.545l5 -3.03\" /> <path d=\"M17 16.5l-5 -3l5 -3l5 3v5.5l-5 3z\" /> <path d=\"M12 19l5 3\" /> <path d=\"M17 16.5l5 -3\" /> <path d=\"M12 13.5v-5.5l-5 -3l5 -3l5 3v5.5\" /> <path d=\"M7 5.03v5.455\" /> <path d=\"M12 8l5 -3\" />", "box": "<path d=\"M12 3l8 4.5l0 9l-8 4.5l-8 -4.5l0 -9l8 -4.5\" /> <path d=\"M12 12l8 -4.5\" /> <path d=\"M12 12l0 9\" /> <path d=\"M12 12l-8 -4.5\" />", "stack-2": "<path d=\"M12 4l-8 4l8 4l8 -4l-8 -4\" /> <path d=\"M4 12l8 4l8 -4\" /> <path d=\"M4 16l8 4l8 -4\" />", "adjustments-horizontal": "<path d=\"M14 6m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0\" /> <path d=\"M4 6l8 0\" /> <path d=\"M16 6l4 0\" /> <path d=\"M8 12m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0\" /> <path d=\"M4 12l2 0\" /> <path d=\"M10 12l10 0\" /> <path d=\"M17 18m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0\" /> <path d=\"M4 18l11 0\" /> <path d=\"M19 18l1 0\" />", "message-question": "<path d=\"M8 9h8\" /> <path d=\"M8 13h6\" /> <path d=\"M14 18h-1l-5 3v-3h-2a3 3 0 0 1 -3 -3v-8a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v4.5\" /> <path d=\"M19 22v.01\" /> <path d=\"M19 19a2.003 2.003 0 0 0 .914 -3.782a1.98 1.98 0 0 0 -2.414 .483\" />", "alert-triangle": "<path d=\"M12 9v4\" /> <path d=\"M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0z\" /> <path d=\"M12 16h.01\" />", "circle-x": "<path d=\"M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0\" /> <path d=\"M10 10l4 4m0 -4l-4 4\" />", "mood-smile": "<path d=\"M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0\" /> <path d=\"M9 10l.01 0\" /> <path d=\"M15 10l.01 0\" /> <path d=\"M9.5 15a3.5 3.5 0 0 0 5 0\" />", "discount": "<path d=\"M9 15l6 -6\" /> <circle cx=\"9.5\" cy=\"9.5\" r=\".5\" fill=\"currentColor\" /> <circle cx=\"14.5\" cy=\"14.5\" r=\".5\" fill=\"currentColor\" /> <path d=\"M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0\" />", "copy": "<path d=\"M7 7m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z\" /> <path d=\"M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1\" />", "checks": "<path d=\"M7 12l5 5l10 -10\" /> <path d=\"M2 12l5 5m5 -5l5 -5\" />", "messages": "<path d=\"M21 14l-3 -3h-7a1 1 0 0 1 -1 -1v-6a1 1 0 0 1 1 -1h9a1 1 0 0 1 1 1v10\" /> <path d=\"M14 15v2a1 1 0 0 1 -1 1h-7l-3 3v-10a1 1 0 0 1 1 -1h2\" />", "file-invoice": "<path d=\"M14 3v4a1 1 0 0 0 1 1h4\" /> <path d=\"M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z\" /> <path d=\"M9 7l1 0\" /> <path d=\"M9 13l6 0\" /> <path d=\"M13 17l2 0\" />", "truck-delivery": "<path d=\"M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0\" /> <path d=\"M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0\" /> <path d=\"M5 17h-2v-4m-1 -8h11v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5\" /> <path d=\"M3 9l4 0\" />", "file-import": "<path d=\"M14 3v4a1 1 0 0 0 1 1h4\" /> <path d=\"M5 13v-8a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2h-5.5m-9.5 -2h7m-3 -3l3 3l-3 3\" />", "credit-card": "<path d=\"M3 5m0 3a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3z\" /> <path d=\"M3 10l18 0\" /> <path d=\"M7 15l.01 0\" /> <path d=\"M11 15l2 0\" />", "report-money": "<path d=\"M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2\" /> <path d=\"M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z\" /> <path d=\"M14 11h-2.5a1.5 1.5 0 0 0 0 3h1a1.5 1.5 0 0 1 0 3h-2.5\" /> <path d=\"M12 17v1m0 -8v1\" />", "scale": "<path d=\"M7 20l10 0\" /> <path d=\"M6 6l6 -1l6 1\" /> <path d=\"M12 3l0 17\" /> <path d=\"M9 12l-3 -6l-3 6a3 3 0 0 0 6 0\" /> <path d=\"M21 12l-3 -6l-3 6a3 3 0 0 0 6 0\" />", "mail": "<path d=\"M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-10z\" /> <path d=\"M3 7l9 6l9 -6\" />", "settings": "<path d=\"M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z\" /> <path d=\"M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0\" />", "bulb": "<path d=\"M3 12h1m8 -9v1m8 8h1m-15.4 -6.4l.7 .7m12.1 -.7l-.7 .7\" /> <path d=\"M9 16a5 5 0 1 1 6 0a3.5 3.5 0 0 0 -1 3a2 2 0 0 1 -4 0a3.5 3.5 0 0 0 -1 -3\" /> <path d=\"M9.7 17l4.6 0\" />", "layout-grid": "<path d=\"M4 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z\" /> <path d=\"M14 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z\" /> <path d=\"M4 14m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z\" /> <path d=\"M14 14m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z\" />"};
 const MENU_GRUPO_COR = { "FINANCEIRO": "#14b8a6", "OPERAÇÃO": "#3b82f6", "ATENDIMENTO": "#f97316", "ANÚNCIOS": "#8b5cf6", "FISCAL": "#3b82f6", "EQUIPE": "#22c55e", "GERAL": "#94a3b8", "OUTROS": "#94a3b8" };
 const MENU_INFO = {
-  "vendas": ["receipt", "FINANCEIRO"], "saldo-mp": ["wallet", "FINANCEIRO"], "conf-icms": ["percentage", "FINANCEIRO"],
+  "vendas": ["receipt", "FINANCEIRO"], "anuncios": ["chart-bar", "FINANCEIRO"], "saldo-mp": ["wallet", "FINANCEIRO"], "conf-icms": ["percentage", "FINANCEIRO"],
   "estoque": ["packages", "OPERAÇÃO"], "picking": ["box", "OPERAÇÃO"], "kits-full": ["stack-2", "OPERAÇÃO"], "ajuste-filial": ["adjustments-horizontal", "OPERAÇÃO"],
   "perguntas": ["message-question", "ATENDIMENTO"], "reclamacoes-ml": ["alert-triangle", "ATENDIMENTO"], "cancelamentos": ["circle-x", "ATENDIMENTO"], "experiencia": ["mood-smile", "ATENDIMENTO"],
   "promocoes": ["discount", "ANÚNCIOS"], "clonar": ["copy", "ANÚNCIOS"],
@@ -7975,7 +7975,7 @@ const MENU_INFO = {
   "concluidas": ["checks", "EQUIPE"], "conversas": ["messages", "EQUIPE"], "email": ["mail", "GERAL"], "config": ["settings", "GERAL"], "_ideias": ["bulb", "GERAL"],
 };
 // Ordem dos itens dentro do painel (por grupo); o que não está aqui segue a ordem original
-const MENU_ORDEM = ["vendas", "saldo-mp", "conf-icms", "estoque", "picking", "kits-full", "ajuste-filial", "perguntas", "reclamacoes-ml", "cancelamentos", "experiencia", "promocoes", "clonar", "nf-full", "nf-importacao", "nfs-emitidas", "painel-fiscal", "conferencia", "contas-pagar"];
+const MENU_ORDEM = ["vendas", "anuncios", "saldo-mp", "conf-icms", "estoque", "picking", "kits-full", "ajuste-filial", "perguntas", "reclamacoes-ml", "cancelamentos", "experiencia", "promocoes", "clonar", "nf-full", "nf-importacao", "nfs-emitidas", "painel-fiscal", "conferencia", "contas-pagar"];
 function menuCss() {
   if (document.getElementById("menu-cards-css")) return;
   const st = document.createElement("style");
@@ -8293,7 +8293,7 @@ function render(){
             { label: "Dashboard", tab: "dashboard", subs: [] },
             { label: "Tarefas", tab: "tarefas", subs: [] },
             { label: "Equipe", tab: null, subs: [{label:"Concluídas",tab:"concluidas"},{label:"Conversas",tab:"conversas"}] },
-            { label: "Mercado Livre", tab: null, subs: [{label:"Vendas",tab:"vendas"},{label:"Saldo MP",tab:"saldo-mp"},{label:"ICMS (temp)",tab:"conf-icms"},{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência de Compra",tab:"experiencia"},{label:"Clonar Anúncio",tab:"clonar"},{label:"Perguntas",tab:"perguntas"},{label:"Reclamações",tab:"reclamacoes-ml"},{label:"Picking & Packing",tab:"picking"},{label:"Promoções",tab:"promocoes"},{label:"Kits Full",tab:"kits-full"},{label:"⚠ Ajuste Filial",tab:"ajuste-filial"}] },
+            { label: "Mercado Livre", tab: null, subs: [{label:"Vendas",tab:"vendas"},{label:"Anúncios",tab:"anuncios"},{label:"Saldo MP",tab:"saldo-mp"},{label:"ICMS (temp)",tab:"conf-icms"},{label:"Estoque",tab:"estoque"},{label:"Cancelamentos",tab:"cancelamentos"},{label:"Experiência de Compra",tab:"experiencia"},{label:"Clonar Anúncio",tab:"clonar"},{label:"Perguntas",tab:"perguntas"},{label:"Reclamações",tab:"reclamacoes-ml"},{label:"Picking & Packing",tab:"picking"},{label:"Promoções",tab:"promocoes"},{label:"Kits Full",tab:"kits-full"},{label:"⚠ Ajuste Filial",tab:"ajuste-filial"}] },
             { label: "Gestão", tab: null, subs: [{label:"Conferência",tab:"conferencia"},{label:"NF Transferência Full",tab:"nf-full"},{label:"NF Importação",tab:"nf-importacao"},{label:"Contas a Pagar",tab:"contas-pagar"},{label:"NFs Emitidas",tab:"nfs-emitidas"},{label:"Painel Fiscal",tab:"painel-fiscal"}] },
             { label: "Email", tab: "email", subs: [] },
           ].filter(g => {
@@ -9021,6 +9021,13 @@ function render(){
             let afContainer = panel.querySelector(".ajuste-filial-container");
             if(!afContainer){ afContainer=document.createElement("div"); afContainer.className="ajuste-filial-container"; panel.appendChild(afContainer); }
             renderAjusteFilial(afContainer, color);
+          }else if(window._diogotab==="anuncios"){
+            panel.style.maxHeight="none"; panel.style.overflowY="auto";
+            if(!window._anShell){ window._anShell=document.createElement("div"); }
+            const anC = window._anShell;
+            anC.style.cssText=`background:${T.card};border:1px solid ${T.border};border-radius:12px;padding:16px;box-shadow:${T.cardShadow};`;
+            if(anC.parentNode !== panel) panel.appendChild(anC);
+            renderAnunciosML(anC);
           }else if(window._diogotab==="conf-icms"){
             panel.style.maxHeight="none"; panel.style.overflowY="auto";
             if(!window._icmsShell){ window._icmsShell=document.createElement("div"); window._icmsShell.className="conf-icms-container"; }
@@ -14072,6 +14079,221 @@ function renderConfICMS(container) {
       if (e.target.matches('[data-ic="dias"]')) { st.dias = Number(e.target.value); confIcmsCarregar(); }
     });
   }
+}
+
+// ── ANÚNCIOS (Mercado Livre → Anúncios): quanto cada anúncio vende no período ──
+// Lê /vendas_dia/{conta}/{data}/por_item (resumo por anúncio gravado pela VPS) e o custo do Bling para a margem.
+window._anState = window._anState || { periodo: "30", conta: "ambas", busca: "", ord: "bruto", modo: "anuncio", semVenda: false, de: null, ate: null, dados: {}, fotos: {}, lidoEm: {}, aberto: null };
+function anDias() {
+  const st = window._anState, hoje = _vmlHoje();
+  const soma = (d, n) => { const x = new Date(d + "T12:00:00Z"); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); };
+  const faixa = (de, ate) => { const out = []; for (let d = de; d <= ate && out.length < 62; d = soma(d, 1)) out.push(d); return out; };
+  let atual, anterior;
+  if (st.periodo === "hoje") { atual = [hoje]; anterior = [soma(hoje, -1)]; }
+  else if (st.periodo === "7" || st.periodo === "30") {
+    const n = Number(st.periodo); atual = faixa(soma(hoje, -(n - 1)), hoje); anterior = faixa(soma(hoje, -(2 * n - 1)), soma(hoje, -n));
+  } else if (st.periodo === "mes") {
+    atual = faixa(hoje.slice(0, 8) + "01", hoje);
+    const x = new Date(hoje.slice(0, 8) + "01T12:00:00Z"); x.setUTCMonth(x.getUTCMonth() - 1);
+    const ini = x.toISOString().slice(0, 10); anterior = faixa(ini, soma(ini, atual.length - 1));
+  } else {
+    const de = st.de || soma(hoje, -6), ate = st.ate || hoje;
+    atual = faixa(de, ate); anterior = faixa(soma(de, -atual.length), soma(de, -1));
+  }
+  return { atual, anterior };
+}
+const _anContas = () => window._anState.conta === "ambas" ? ["filial", "matriz"] : [window._anState.conta];
+async function anCarregar() {
+  const st = window._anState, { atual, anterior } = anDias(), hoje = _vmlHoje();
+  const precisa = [];
+  for (const c of _anContas()) for (const d of [...atual, ...anterior]) {
+    const k = `${c}|${d}`, velho = Date.now() - (st.lidoEm[k] || 0) > (d === hoje ? 5 * 60e3 : 30 * 60e3);
+    if (!(k in st.dados) || velho) precisa.push([c, d, k, atual.includes(d)]);
+  }
+  if (!precisa.length) return;
+  st.carregando = true; anDesenhar();
+  let i = 0;
+  const trabalhador = async () => {
+    while (i < precisa.length) {
+      const [c, d, k, comFoto] = precisa[i++];
+      try {
+        const [pi, fo] = await Promise.all([
+          get(ref(db, `/vendas_dia/${c}/${d}/por_item`)).then(x => x.val()),
+          comFoto && !st.fotos[k] ? get(ref(db, `/vendas_dia/${c}/${d}/fotos`)).then(x => x.val()) : null,
+        ]);
+        st.dados[k] = pi;                     // null = dia sem resumo por anúncio (ainda não recalculado)
+        if (fo) { st.fotos[k] = true; Object.assign(st.fotosItem || (st.fotosItem = {}), fo); }
+        st.lidoEm[k] = Date.now();
+      } catch (e) { st.erro = e.message; }
+    }
+  };
+  await Promise.all(Array.from({ length: 6 }, trabalhador));
+  st.carregando = false; anDesenhar();
+}
+let _anTimer = null;
+function anDesenhar() { clearTimeout(_anTimer); _anTimer = setTimeout(() => { if (window._diogotab === "anuncios" && window._anShell) renderAnunciosML(window._anShell, true); }, 120); }
+
+function renderAnunciosML(container, soDesenhar) {
+  const st = window._anState;
+  if (!soDesenhar) anCarregar();
+  if (!estoqueBlingData && !estoqueBlingLoading && !window._blingTokenInvalido && !window._fetchBlingProdutosRunning && tokenValido(state.bling_token)) fetchBlingProdutos().then(anDesenhar);
+  const custos = estoqueBlingData || {};
+  const esc = v => String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+  const rs = v => v == null ? "—" : "R$ " + Math.round(v).toLocaleString("pt-BR");
+  const rsK = v => v == null ? "—" : Math.abs(v) >= 10000 ? "R$ " + (v / 1000).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + "k" : rs(v);
+  const { atual, anterior } = anDias(), contas = _anContas();
+  const live = c => window._ofertasLive?.[c]?.itens || {};
+  const chaveDe = (c, id, x) => st.modo === "sku" ? (normSku(x.sku) || id) : `${c}|${id}`;
+
+  // soma por anúncio (ou por SKU)
+  const agg = {}, faltaDias = new Set();
+  const somar = (dias, campo) => {
+    for (const c of contas) for (const d of dias) {
+      const k = `${c}|${d}`;
+      if (!(k in st.dados)) continue;
+      const pi = st.dados[k];
+      if (pi == null) { faltaDias.add(d); continue; }
+      for (const [id, x] of Object.entries(pi)) {
+        const ch = chaveDe(c, id, x);
+        const a = agg[ch] = agg[ch] || { ids: new Set(), contas: new Set(), titulo: x.titulo, sku: x.sku, u: 0, bruto: 0, liquido: 0, semLiq: 0, pu: 0, pbruto: 0, dia: {} };
+        a.ids.add(id); a.contas.add(c); if (!a.titulo) a.titulo = x.titulo;
+        if (campo === "atual") { a.u += x.u || 0; a.bruto += x.bruto || 0; a.liquido += x.liquido || 0; a.semLiq += x.sem_liquido || 0; a.dia[d] = (a.dia[d] || 0) + (x.u || 0); }
+        else { a.pu += x.u || 0; a.pbruto += x.bruto || 0; }
+      }
+    }
+  };
+  somar(atual, "atual"); somar(anterior, "ant");
+  let lista = Object.entries(agg).map(([ch, a]) => {
+    const cu = custos[normSku(a.sku)];
+    const custo = cu ? cu * a.u : null;
+    const margem = custo != null && a.u ? a.liquido - custo : null;
+    const id0 = [...a.ids][0], c0 = [...a.contas][0];
+    const li = live(c0)[id0];
+    const tipo = st.modo === "sku" ? (a.ids.size > 1 ? `${a.ids.size} anúncios` : "") : (li ? (li.catalogo ? "Catálogo" : "Tradicional") : "");
+    return { ch, ...a, custo, margem, pct: margem != null && a.bruto ? margem / a.bruto * 100 : null,
+      varPct: a.pbruto ? (a.bruto - a.pbruto) / a.pbruto * 100 : (a.bruto ? null : 0),
+      foto: (st.fotosItem || {})[id0] || li?.foto || null, id0, c0, tipo, estoque: li?.estoque };
+  }).filter(a => a.u > 0);
+  // sem venda no período: anúncios ativos com estoque e nenhuma venda
+  let semVendaLista = [];
+  if (st.semVenda) {
+    const comVenda = new Set(lista.flatMap(a => [...a.ids].map(id => id)));
+    for (const c of contas) for (const [id, it] of Object.entries(live(c))) {
+      if (comVenda.has(id) || !(it.estoque > 0)) continue;
+      semVendaLista.push({ ch: `${c}|${id}`, titulo: it.titulo, sku: it.sku, contas: new Set([c]), ids: new Set([id]), id0: id, c0: c, u: 0, bruto: 0, foto: it.foto || null, tipo: it.catalogo ? "Catálogo" : "Tradicional", estoque: it.estoque, dia: {} });
+    }
+  }
+  const q = st.busca.trim().toLowerCase();
+  const filtra = a => !q || String(a.titulo || "").toLowerCase().includes(q) || String(a.sku || "").toLowerCase().includes(q) || a.id0?.toLowerCase().includes(q);
+  lista = lista.filter(filtra); semVendaLista = semVendaLista.filter(filtra);
+  const ORD = { u: a => a.u, bruto: a => a.bruto, margem: a => a.pct ?? -1e9, var: a => a.varPct ?? -1e9 };
+  lista.sort((a, b) => ORD[st.ord](b) - ORD[st.ord](a) || b.bruto - a.bruto);
+  semVendaLista.sort((a, b) => (b.estoque || 0) - (a.estoque || 0));
+
+  const tot = lista.reduce((t, a) => (t.u += a.u, t.bruto += a.bruto, a.margem != null && (t.m += a.margem, t.bm += a.bruto), t), { u: 0, bruto: 0, m: 0, bm: 0 });
+  const totAnt = Object.values(agg).reduce((s, a) => s + a.pbruto, 0);
+  const lido = contas.every(c => atual.every(d => `${c}|${d}` in st.dados));
+  const spark = a => {
+    const vals = atual.map(d => a.dia[d] || 0); if (vals.length < 2) return "";
+    const mx = Math.max(...vals) || 1, w = 70, h = 20, passo = w / (vals.length - 1);
+    return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><polyline fill="none" stroke="var(--text2)" stroke-width="1.5" points="${vals.map((v, i) => `${(i * passo).toFixed(1)},${(h - 2 - v / mx * (h - 4)).toFixed(1)}`).join(" ")}"/></svg>`;
+  };
+  const varTxt = v => v == null ? `<span style="color:var(--text3)">novo</span>` : Math.abs(v) < 0.5 ? `<span style="color:var(--text3)">=</span>` : `<span style="color:${v > 0 ? T.cVerde : T.cVermelho}">${v > 0 ? "↑" : "↓"} ${Math.abs(Math.round(v))}%</span>`;
+  const contaTxt = a => [...a.contas].map(c => c === "matriz" ? "Matriz" : "Filial").join(" + ");
+  const th = (k, t) => `<th data-an-ord="${k}" class="an-th${st.ord === k ? " on" : ""}">${t}${st.ord === k ? " ▾" : ""}</th>`;
+  const linha = a => `<tr data-an-abrir="${esc(a.ch)}" class="an-tr">
+      <td><div class="an-pr">${a.foto ? `<img src="${esc(a.foto)}" loading="lazy" alt="">` : `<span class="an-ph"></span>`}<div style="min-width:0"><div class="an-nm">${esc(a.titulo || a.id0)}</div><div class="an-sb">${esc(a.sku || "sem SKU")} · ${contaTxt(a)}${a.tipo ? " · " + a.tipo : ""}${a.estoque != null ? ` · estoque ${a.estoque}` : ""}</div></div></div></td>
+      <td>${a.u}</td><td>${rsK(a.bruto)}</td><td>${a.pct == null ? `<span style="color:var(--text3)">${a.u ? "sem custo" : "—"}</span>` : `${Math.round(a.pct)}%`}</td><td>${a.u ? varTxt(a.varPct) : "—"}</td><td class="an-sp">${spark(a)}</td></tr>
+    ${st.aberto === a.ch ? `<tr class="an-det"><td colspan="6">${anDetalhe(a, atual, rs)}</td></tr>` : ""}`;
+  const P = [["hoje", "Hoje"], ["7", "7 dias"], ["30", "30 dias"], ["mes", "Mês atual"], ["datas", "Datas"]];
+  const C = [["ambas", "Ambas"], ["filial", "Filial SP"], ["matriz", "Matriz RS"]];
+  const busca = container.querySelector("#an-busca"), focado = document.activeElement === busca, pos = busca?.selectionStart;
+  const scroll = container.querySelector(".an-wrap")?.scrollLeft || 0;
+  container.innerHTML = `<style>
+    .an{font-size:13px;color:${T.text}}
+    .an-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+    .an-seg{display:inline-flex;border:0.5px solid var(--border2);border-radius:9px;overflow:hidden}
+    .an-seg button{border:none;background:transparent;color:var(--text2);font:500 12px Inter,sans-serif;padding:7px 12px;cursor:pointer}
+    .an-seg button.on{background:var(--bg3);color:var(--text)}
+    .an input[type=text],.an input[type=date]{background:var(--bg3);border:0.5px solid var(--border2);border-radius:9px;color:var(--text);font:13px Inter,sans-serif;padding:7px 10px}
+    .an-kp{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:12px}
+    .an-k{background:var(--bg3);border-radius:10px;padding:10px 12px}
+    .an-kl{font-size:11px;color:var(--text2)}.an-kv{font-size:19px;font-weight:600;margin-top:2px}
+    .an-wrap{overflow-x:auto}
+    .an table{width:100%;border-collapse:collapse;min-width:640px}
+    .an th{font-size:11px;font-weight:600;color:var(--text2);text-align:right;padding:7px 8px;border-bottom:0.5px solid var(--border2);white-space:nowrap;cursor:pointer;user-select:none}
+    .an th.on{color:var(--text)}
+    .an th:first-child{text-align:left;cursor:default}
+    .an td{padding:9px 8px;border-bottom:0.5px solid var(--border2);text-align:right;vertical-align:middle;white-space:nowrap}
+    .an td:first-child{text-align:left;white-space:normal;width:48%}
+    .an-tr{cursor:pointer}.an-tr:hover td{background:var(--bg3)}
+    .an-pr{display:flex;align-items:center;gap:10px;min-width:0}
+    .an-pr img,.an-ph{width:36px;height:36px;border-radius:7px;object-fit:contain;background:#fff;flex-shrink:0}
+    .an-ph{background:var(--bg3)}
+    .an-nm{font-weight:600;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
+    .an-sb{font-size:11px;color:var(--text2);margin-top:2px}
+    .an-det td{background:var(--bg3);text-align:left;white-space:normal}
+    .an-aviso{font-size:12px;color:var(--text2);background:var(--bg3);border-radius:9px;padding:9px 12px;margin-bottom:10px}
+    .an h3{font-size:13px;margin:18px 0 8px;color:var(--text2);font-weight:600}
+  </style>
+  <div class="an">
+    <div class="an-bar">
+      <span class="an-seg">${P.map(([k, t]) => `<button data-an-per="${k}" class="${st.periodo === k ? "on" : ""}">${t}</button>`).join("")}</span>
+      ${st.periodo === "datas" ? `<input type="date" data-an-de value="${st.de || atual[0]}"> <input type="date" data-an-ate value="${st.ate || atual[atual.length - 1]}">` : ""}
+      <span class="an-seg">${C.map(([k, t]) => `<button data-an-conta="${k}" class="${st.conta === k ? "on" : ""}">${t}</button>`).join("")}</span>
+      <span class="an-seg"><button data-an-modo="anuncio" class="${st.modo === "anuncio" ? "on" : ""}">Por anúncio</button><button data-an-modo="sku" class="${st.modo === "sku" ? "on" : ""}">Por SKU</button></span>
+      <input id="an-busca" type="text" placeholder="Buscar nome, SKU ou MLB" value="${esc(st.busca)}" style="flex:1;min-width:160px">
+    </div>
+    <div class="an-kp">
+      <div class="an-k"><div class="an-kl">${st.modo === "sku" ? "SKUs" : "Anúncios"} com venda</div><div class="an-kv">${lista.length}</div></div>
+      <div class="an-k"><div class="an-kl">Unidades</div><div class="an-kv">${tot.u.toLocaleString("pt-BR")}</div></div>
+      <div class="an-k"><div class="an-kl">Faturamento</div><div class="an-kv">${rsK(tot.bruto)}</div><div class="an-kl" style="margin-top:2px">${totAnt ? varTxt((tot.bruto - totAnt) / totAnt * 100) + " vs período anterior" : ""}</div></div>
+      <div class="an-k"><div class="an-kl">Margem média</div><div class="an-kv">${tot.bm ? Math.round(tot.m / tot.bm * 100) + "%" : "—"}</div><div class="an-kl" style="margin-top:2px">${tot.bm ? rsK(tot.m) + " de lucro" : ""}</div></div>
+    </div>
+    ${faltaDias.size ? `<div class="an-aviso">${faltaDias.size} dia(s) do período ainda sem o resumo por anúncio — a VPS calcula sozinha (ou rode o recálculo). Esses dias ficam de fora da soma.</div>` : ""}
+    ${st.erro ? `<div class="an-aviso" style="color:${T.cVermelho}">Erro ao ler: ${esc(st.erro)}</div>` : ""}
+    ${!lido ? `<div class="an-aviso">Carregando ${atual.length > 1 ? atual.length + " dias" : "o dia"}…</div>` : ""}
+    <div class="an-wrap"><table>
+      <thead><tr><th>${st.modo === "sku" ? "SKU" : "Anúncio"}</th>${th("u", "Unid.")}${th("bruto", "Faturam.")}${th("margem", "Margem")}${th("var", "vs ant.")}<th style="cursor:default">Ritmo</th></tr></thead>
+      <tbody>${lista.length ? lista.map(linha).join("") : `<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:24px">${lido ? "Nenhuma venda no período." : ""}</td></tr>`}</tbody>
+    </table></div>
+    <h3><label style="cursor:pointer"><input type="checkbox" data-an-sem ${st.semVenda ? "checked" : ""}> Mostrar anúncios com estoque e sem venda no período</label></h3>
+    ${st.semVenda ? (semVendaLista.length ? `<div class="an-wrap"><table><tbody>${semVendaLista.slice(0, 200).map(a => `<tr><td><div class="an-pr">${a.foto ? `<img src="${esc(a.foto)}" loading="lazy" alt="">` : `<span class="an-ph"></span>`}<div style="min-width:0"><div class="an-nm">${esc(a.titulo || a.id0)}</div><div class="an-sb">${esc(a.sku || "sem SKU")} · ${contaTxt(a)} · ${a.tipo} · ${esc(a.id0)}</div></div></div></td><td>estoque ${a.estoque}</td></tr>`).join("")}</tbody></table></div>` : `<div class="an-aviso">${Object.keys(live(contas[0])).length ? "Todos os anúncios com estoque venderam no período." : "A lista de anúncios ainda não carregou (vem da aba Promoções)."}</div>`) : ""}
+  </div>`;
+  const nb = container.querySelector("#an-busca");
+  if (focado && nb) { nb.focus(); try { nb.setSelectionRange(pos, pos); } catch (_) {} }
+  const w = container.querySelector(".an-wrap"); if (w) w.scrollLeft = scroll;
+  if (!container.dataset.anPronto) {
+    container.dataset.anPronto = "1";
+    container.addEventListener("click", e => {
+      const t = e.target;
+      const per = t.closest("[data-an-per]"); if (per) { st.periodo = per.dataset.anPer; st.aberto = null; renderAnunciosML(container); return; }
+      const ct = t.closest("[data-an-conta]"); if (ct) { st.conta = ct.dataset.anConta; st.aberto = null; renderAnunciosML(container); return; }
+      const md = t.closest("[data-an-modo]"); if (md) { st.modo = md.dataset.anModo; st.aberto = null; anDesenhar(); return; }
+      const or = t.closest("[data-an-ord]"); if (or) { st.ord = or.dataset.anOrd; anDesenhar(); return; }
+      const ab = t.closest("[data-an-abrir]"); if (ab) { st.aberto = st.aberto === ab.dataset.anAbrir ? null : ab.dataset.anAbrir; anDesenhar(); return; }
+    });
+    container.addEventListener("input", e => { if (e.target.id === "an-busca") { st.busca = e.target.value; anDesenhar(); } });
+    container.addEventListener("change", e => {
+      if (e.target.matches("[data-an-sem]")) { st.semVenda = e.target.checked; anDesenhar(); }
+      if (e.target.matches("[data-an-de]")) { st.de = e.target.value; renderAnunciosML(container); }
+      if (e.target.matches("[data-an-ate]")) { st.ate = e.target.value; renderAnunciosML(container); }
+    });
+  }
+}
+// Detalhe do anúncio: vendas dia a dia no período + preço médio, ticket, margem por unidade
+function anDetalhe(a, dias, rs) {
+  const vals = dias.map(d => ({ d, u: a.dia[d] || 0 }));
+  const mx = Math.max(1, ...vals.map(v => v.u));
+  const barras = vals.map(v => `<div title="${v.d.slice(8)}/${v.d.slice(5, 7)}: ${v.u} un" style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:3px;min-width:6px"><div style="width:100%;max-width:22px;height:${Math.max(2, v.u / mx * 70)}px;background:var(--text3);border-radius:3px 3px 0 0;opacity:${v.u ? 0.9 : 0.25}"></div>${dias.length <= 15 ? `<span style="font-size:10px;color:var(--text3)">${v.d.slice(8)}</span>` : ""}</div>`).join("");
+  const item = (t, v) => `<div><div style="font-size:11px;color:var(--text2)">${t}</div><div style="font-size:14px;font-weight:600;margin-top:2px">${v}</div></div>`;
+  return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin:4px 0 12px">
+      ${item("Preço médio", a.u ? rs(a.bruto / a.u) : "—")}${item("Líquido por unidade", a.u ? rs(a.liquido / a.u) : "—")}
+      ${item("Custo por unidade", a.custo != null && a.u ? rs(a.custo / a.u) : "sem custo no Bling")}${item("Margem por unidade", a.margem != null && a.u ? rs(a.margem / a.u) : "—")}
+      ${item("Média por dia", (a.u / dias.length).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + " un")}${item("Período anterior", a.pu + " un · " + rs(a.pbruto))}
+    </div>
+    <div style="display:flex;align-items:flex-end;gap:3px;height:90px">${barras}</div>
+    <div style="font-size:11px;color:var(--text3);margin-top:6px">${a.ids.size > 1 ? `Soma de ${a.ids.size} anúncios: ${[...a.ids].join(", ")}` : `<a href="https://produto.mercadolivre.com.br/${String(a.id0).replace(/^MLB/, "MLB-")}" target="_blank" rel="noopener" style="color:var(--text2)">Abrir anúncio no ML ↗</a>`}</div>`;
 }
 
 // ── SALDO MP (Mercado Livre → Saldo MP) ─────────────────────
