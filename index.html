@@ -16866,10 +16866,13 @@ function renderListaPromocoes(container, promocoes, BACKEND, fmtVal, fmtData, to
             <div style="font-size:10px;color:${T.text2};">da promoção</div>
           </div>
           <div id="prom-tend-${idx}" style="background:${T.bg3};border-radius:8px;padding:10px;">
-            <div style="font-size:10px;color:${T.text2};">Tendência</div>
+            <div style="font-size:10px;color:${T.text2};">Vendas na promo</div>
             <div style="font-size:14px;font-weight:600;color:${T.text2};margin-top:3px;">—</div>
             <div style="font-size:10px;color:${T.text2};">carregando</div>
           </div>
+        </div>
+        <div id="prom-comp-${idx}" style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px;padding-top:10px;border-top:0.5px solid ${T.border};font-size:11px;color:${T.text2};">
+          <span>Comparando com o período anterior...</span>
         </div>
       </div>
 
@@ -16901,7 +16904,7 @@ function renderListaPromocoes(container, promocoes, BACKEND, fmtVal, fmtData, to
     if (tokenBg) {
       fetch(`${BACKEND}/api/ml-vendas?action=buscar-vendas-promocao`, {
         method: "POST", headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ itens: promocoes.map(p => ({ item_id: p.item_id, start_date: p.start_date })), token: tokenBg })
+        body: JSON.stringify({ itens: promocoes.map(p => ({ item_id: p.item_id, start_date: p.start_date, preco_original: p.preco_original })), token: tokenBg })
       }).then(r => r.json()).then(d => {
         if (d.ok && d.vendas) {
           itemIds.forEach((id, idx) => {
@@ -16912,26 +16915,44 @@ function renderListaPromocoes(container, promocoes, BACKEND, fmtVal, fmtData, to
     }
   })();
 
+  // Card: vendas da promo atual (bloco 4) + linha comparando com o período anterior
+  // (promo anterior ou preço cheio, reconstruído pelo backend a partir do preço unitário dos pedidos)
   function _atualizarTendCard(idx, v) {
     const el = document.getElementById(`prom-tend-${idx}`);
+    const comp = document.getElementById(`prom-comp-${idx}`);
     if (!el) return;
-    if (!promocoes[idx]?.start_date) {   // sem data de início não dá pra comparar com "antes"
-      el.innerHTML = `<div style="font-size:10px;color:${T.text2};">vs. antes da promo</div>
+    const fmtN = (n) => String(n ?? 0).replace(".", ",");
+    const fmtD = (iso) => { const d = new Date(iso); return isNaN(d) ? "—" : String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0"); };
+    if (!promocoes[idx]?.start_date || v.sem_inicio) {
+      el.innerHTML = `<div style="font-size:10px;color:${T.text2};">Vendas na promo</div>
         <div style="font-size:14px;font-weight:600;color:${T.text2};margin-top:3px;">—</div>
         <div style="font-size:10px;color:${T.text2};">sem data de início</div>`;
+      if (comp) comp.innerHTML = `<span>O ML não informa o início desta promo</span>`;
       return;
     }
-    const tend = v.tendencia ?? 0;
-    const cor = tend >= 10 ? T.cVerde : tend <= -10 ? T.cVermelho : T.text2;
-    const label = tend > 0 ? `↑ +${tend}%` : tend < 0 ? `↓ ${tend}%` : "→ 0%";
     const vendas = v.vendas_na_promo ?? 0;
-    const antes = v.vendas_antes_promo ?? 0;
-    const mediaDia = v.media_dia ?? 0;
-    const tooltip = antes > 0 ? `${vendas} un com desc. vs ${antes} un antes` : `${vendas} un desde o início`;
+    const dias = v.dias_ativo ?? 0;
+    const diasTxt = dias < 1 ? "hoje" : `${Math.round(dias)} ${Math.round(dias) === 1 ? "dia" : "dias"}`;
     el.innerHTML = `
-      <div style="font-size:10px;color:${T.text2};">vs. antes da promo</div>
-      <div style="font-size:14px;font-weight:600;color:${cor};margin-top:3px;">${label}</div>
-      <div style="font-size:10px;color:${T.text2};" title="${tooltip}">${vendas} un · ${mediaDia}/dia</div>`;
+      <div style="font-size:10px;color:${T.text2};">Vendas na promo</div>
+      <div style="font-size:14px;font-weight:600;color:${T.text};margin-top:3px;">${vendas} un</div>
+      <div style="font-size:10px;color:${T.text2};">${fmtN(v.media_dia)}/dia · ${diasTxt}</div>`;
+    if (!comp) return;
+    const ant = v.anterior;
+    if (v.anterior === undefined) { comp.innerHTML = `<span>Comparando com o período anterior...</span>`; return; } // cache antigo
+    if (!ant) { comp.innerHTML = `<span>Sem vendas nos 60 dias antes da promo</span>`; return; }
+    const rotulo = ant.era_promo === false ? "Antes (preço cheio)" : "Promo anterior";
+    const desde = ant.limite_janela ? "até 60d antes" : fmtD(ant.de);
+    const detalhe = `${rotulo} · ${fmtVal(ant.preco)} · ${desde} a ${fmtD(ant.ate)} · <span style="color:${T.text};">${ant.vendas} un</span> · ${fmtN(ant.media_dia)}/dia`;
+    let dir;
+    if (v.aguardando) dir = `<span style="white-space:nowrap;">aguardando dados</span>`;
+    else if (v.tendencia === null || v.tendencia === undefined) dir = `<span>—</span>`;
+    else {
+      const t = v.tendencia;
+      const cor = t >= 10 ? T.cVerde : t <= -10 ? T.cVermelho : T.text2;
+      dir = `<span style="white-space:nowrap;font-weight:600;color:${cor};">${t > 0 ? "↑ +" : t < 0 ? "↓ " : "→ "}${t}%/dia</span>`;
+    }
+    comp.innerHTML = `<span title="Ritmo da promo atual vs período anterior, pela média de vendas por dia">${detalhe}</span>${dir}`;
   }
 
   // Encerrar a promoção ativa: o anúncio volta ao preço cheio (2 toques pra confirmar)
