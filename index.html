@@ -16849,7 +16849,7 @@ function renderListaPromocoes(container, promocoes, BACKEND, fmtVal, fmtData, to
         </div>
 
         <!-- 4 métricas -->
-        <div class="m-prom-met" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;">
+        <div class="m-prom-met" style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;">
           <div style="background:${T.bg3};border-radius:8px;padding:10px;">
             <div style="font-size:10px;color:${T.text2};">Preço com desc.</div>
             <div style="font-size:14px;font-weight:600;color:${T.text};margin-top:3px;">${fmtVal(p.preco_desconto)}</div>
@@ -16870,9 +16870,11 @@ function renderListaPromocoes(container, promocoes, BACKEND, fmtVal, fmtData, to
             <div style="font-size:14px;font-weight:600;color:${T.text2};margin-top:3px;">—</div>
             <div style="font-size:10px;color:${T.text2};">carregando</div>
           </div>
-        </div>
-        <div id="prom-comp-${idx}" style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px;padding-top:10px;border-top:0.5px solid ${T.border};font-size:11px;color:${T.text2};">
-          <span>Comparando com o período anterior...</span>
+          <div id="prom-ant-${idx}" class="m-prom-ant" style="background:${T.bg3};border-radius:8px;padding:10px;">
+            <div style="font-size:10px;color:${T.text2};">Promo anterior</div>
+            <div style="font-size:14px;font-weight:600;color:${T.text2};margin-top:3px;">—</div>
+            <div style="font-size:10px;color:${T.text2};">carregando</div>
+          </div>
         </div>
       </div>
 
@@ -16919,7 +16921,7 @@ function renderListaPromocoes(container, promocoes, BACKEND, fmtVal, fmtData, to
   // (promo anterior ou preço cheio, reconstruído pelo backend a partir do preço unitário dos pedidos)
   function _atualizarTendCard(idx, v) {
     const el = document.getElementById(`prom-tend-${idx}`);
-    const comp = document.getElementById(`prom-comp-${idx}`);
+    const comp = document.getElementById(`prom-ant-${idx}`);
     if (!el) return;
     const fmtN = (n) => String(n ?? 0).replace(".", ",");
     const fmtD = (iso) => { const d = new Date(iso); return isNaN(d) ? "—" : String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0"); };
@@ -16927,7 +16929,7 @@ function renderListaPromocoes(container, promocoes, BACKEND, fmtVal, fmtData, to
       el.innerHTML = `<div style="font-size:10px;color:${T.text2};">Vendas na promo</div>
         <div style="font-size:14px;font-weight:600;color:${T.text2};margin-top:3px;">—</div>
         <div style="font-size:10px;color:${T.text2};">sem data de início</div>`;
-      if (comp) comp.innerHTML = `<span>O ML não informa o início desta promo</span>`;
+      if (comp) comp.innerHTML = `<div style="font-size:10px;color:${T.text2};">Promo anterior</div><div style="font-size:14px;font-weight:600;color:${T.text2};margin-top:3px;">—</div><div style="font-size:10px;color:${T.text2};">sem data de início</div>`;
       return;
     }
     const vendas = v.vendas_na_promo ?? 0;
@@ -16939,20 +16941,29 @@ function renderListaPromocoes(container, promocoes, BACKEND, fmtVal, fmtData, to
       <div style="font-size:10px;color:${T.text2};">${fmtN(v.media_dia)}/dia · ${diasTxt}</div>`;
     if (!comp) return;
     const ant = v.anterior;
-    if (v.anterior === undefined) { comp.innerHTML = `<span>Comparando com o período anterior...</span>`; return; } // cache antigo
-    if (!ant) { comp.innerHTML = `<span>Sem vendas nos 60 dias antes da promo</span>`; return; }
-    const rotulo = ant.era_promo === false ? "Antes (preço cheio)" : "Promo anterior";
-    const desde = ant.limite_janela ? "até 60d antes" : fmtD(ant.de);
-    const detalhe = `${rotulo} · ${fmtVal(ant.preco)} · ${desde} a ${fmtD(ant.ate)} · <span style="color:${T.text};">${ant.vendas} un</span> · ${fmtN(ant.media_dia)}/dia`;
-    let dir;
-    if (v.aguardando) dir = `<span style="white-space:nowrap;">aguardando dados</span>`;
-    else if (v.tendencia === null || v.tendencia === undefined) dir = `<span>—</span>`;
+    const caixa = (titulo, selo, valor, l1, l2) => `
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;"><span style="font-size:10px;color:${T.text2};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${titulo}</span>${selo || ""}</div>
+      <div style="font-size:14px;font-weight:600;color:${T.text2};margin-top:3px;">${valor}</div>
+      <div style="font-size:10px;color:${T.text2};">${l1}</div>${l2 ? `<div style="font-size:10px;color:${T.text2};">${l2}</div>` : ""}`;
+    if (v.anterior === undefined) { comp.innerHTML = caixa("Promo anterior", "", "—", "carregando"); return; } // cache antigo
+    if (!ant) { comp.innerHTML = caixa("Promo anterior", "", "—", "sem vendas nos 60d antes"); return; }
+    const rotulo = ant.era_promo === false ? "Preço cheio" : "Promo anterior";
+    const desde = ant.limite_janela ? "60d antes" : fmtD(ant.de);
+    let selo;
+    if (v.aguardando) selo = `<span style="font-size:10px;color:${T.text2};white-space:nowrap;">aguardando</span>`;
+    else if (v.tendencia === null || v.tendencia === undefined) selo = "";
     else {
       const t = v.tendencia;
       const cor = t >= 10 ? T.cVerde : t <= -10 ? T.cVermelho : T.text2;
-      dir = `<span style="white-space:nowrap;font-weight:600;color:${cor};">${t > 0 ? "↑ +" : t < 0 ? "↓ " : "→ "}${t}%/dia</span>`;
+      selo = `<span style="font-size:10px;font-weight:600;color:${cor};white-space:nowrap;">${t > 0 ? "↑ +" : t < 0 ? "↓ " : "→ "}${t}%/dia</span>`;
     }
-    comp.innerHTML = `<span title="Ritmo da promo atual vs período anterior, pela média de vendas por dia">${detalhe}</span>${dir}`;
+    const ign = (ant.ignorados || []);
+    const ignTxt = ign.length
+      ? "Ignorado " + ign.map(x => `${fmtD(x.de)} a ${fmtVal(x.preco)} (${Math.max(1, Math.round(x.dias))}d)`).join(", ")
+      : (ant.curto ? "período curto" : "");
+    comp.innerHTML = caixa(`${rotulo} · ${fmtVal(ant.preco)}`, selo, `${ant.vendas} un`,
+      `${fmtN(ant.media_dia)}/dia · ${desde} a ${fmtD(ant.ate)}`, ignTxt);
+    comp.title = "Ritmo da promo atual vs período anterior, pela média de vendas por dia. Períodos com menos de 3 dias são pulados.";
   }
 
   // Encerrar a promoção ativa: o anúncio volta ao preço cheio (2 toques pra confirmar)

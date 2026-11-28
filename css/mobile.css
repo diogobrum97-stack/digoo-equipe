@@ -149,6 +149,7 @@
   .m-prom-lista > * > div:first-child { padding: 14px !important; }
   .m-prom-met { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
   .m-prom-met > * { padding: 10px 12px !important; }
+  .m-prom-met > .m-prom-ant { grid-column: span 2; }
   .m-prom-met > * > div:nth-child(2) { font-size: 16px !important; }
 
   /* utilitários */
