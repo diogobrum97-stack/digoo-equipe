@@ -16849,7 +16849,7 @@ function renderListaPromocoes(container, promocoes, BACKEND, fmtVal, fmtData, to
         </div>
 
         <!-- 4 métricas -->
-        <div class="m-prom-met" style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;">
+        <div class="m-prom-met" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;">
           <div style="background:${T.bg3};border-radius:8px;padding:10px;">
             <div style="font-size:10px;color:${T.text2};">Preço com desc.</div>
             <div style="font-size:14px;font-weight:600;color:${T.text};margin-top:3px;">${fmtVal(p.preco_desconto)}</div>
@@ -16870,7 +16870,7 @@ function renderListaPromocoes(container, promocoes, BACKEND, fmtVal, fmtData, to
             <div style="font-size:14px;font-weight:600;color:${T.text2};margin-top:3px;">—</div>
             <div style="font-size:10px;color:${T.text2};">carregando</div>
           </div>
-          <div id="prom-ant-${idx}" class="m-prom-ant" style="background:${T.bg3};border-radius:8px;padding:10px;">
+          <div id="prom-ant-${idx}" class="m-prom-ant" style="grid-column:1 / -1;background:${T.bg3};border-radius:8px;padding:10px;">
             <div style="font-size:10px;color:${T.text2};">Promo anterior</div>
             <div style="font-size:14px;font-weight:600;color:${T.text2};margin-top:3px;">—</div>
             <div style="font-size:10px;color:${T.text2};">carregando</div>
@@ -16958,9 +16958,13 @@ function renderListaPromocoes(container, promocoes, BACKEND, fmtVal, fmtData, to
       selo = `<span style="font-size:10px;font-weight:600;color:${cor};white-space:nowrap;">${t > 0 ? "↑ +" : t < 0 ? "↓ " : "→ "}${t}%/dia</span>`;
     }
     const ign = (ant.ignorados || []);
-    const ignTxt = ign.length
-      ? "Ignorado " + ign.map(x => `${fmtD(x.de)} a ${fmtVal(x.preco)} (${Math.max(1, Math.round(x.dias))}d)`).join(", ")
-      : (ant.curto ? "período curto" : "");
+    // Vários períodos curtos viram um resumo só (ex.: semana de Black Friday com o preço trocando todo dia)
+    let ignTxt = "";
+    if (ign.length === 1) ignTxt = `Ignorado ${fmtD(ign[0].de)} a ${fmtVal(ign[0].preco)} (${Math.max(1, Math.round(ign[0].dias))}d)`;
+    else if (ign.length > 1) {
+      const deIgn = ign[ign.length - 1].de, ateIgn = ign[0].ate || ign[0].de;
+      ignTxt = `Ignorado ${fmtD(deIgn)} a ${fmtD(ateIgn)}: ${ign.length} trocas de preço em períodos curtos`;
+    } else if (ant.curto) ignTxt = "período curto";
     comp.innerHTML = caixa(`${rotulo} · ${fmtVal(ant.preco)}`, selo, `${ant.vendas} un`,
       `${fmtN(ant.media_dia)}/dia · ${desde} a ${fmtD(ant.ate)}`, ignTxt);
     comp.title = "Ritmo da promo atual vs período anterior, pela média de vendas por dia. Períodos com menos de 3 dias são pulados.";
